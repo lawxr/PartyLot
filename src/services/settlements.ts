@@ -13,8 +13,9 @@ export function calculateNetBalances(expenses: Expense[], members: Member[]): Ne
     balanceMap[m.id] = 0;
   });
 
-  // Accumulate paid amounts and owed shares
+  // Accumulate paid amounts and owed shares for unsettled expenses
   expenses.forEach(exp => {
+    if (exp.isSettled) return;
     if (!exp.splitBetweenIds || exp.splitBetweenIds.length === 0) return;
 
     const share = exp.amount / exp.splitBetweenIds.length;

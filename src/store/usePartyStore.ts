@@ -15,10 +15,10 @@ import {
   GameId,
   CrewMember,
   CrewMemory,
+  ExpenseCategory,
 } from '@/types';
 import {
   CURRENT_USER,
-  INITIAL_MEMBERS,
   INITIAL_PARTIES,
   INITIAL_CREWS,
   INITIAL_EXPENSES,
@@ -38,6 +38,8 @@ import {
   persistActivityToSupabase,
   persistCrewToSupabase,
   addMemberToCrewInDb,
+  persistSettlementToSupabase,
+  persistPotRolloverToSupabase,
 } from '@/services/supabaseService';
 
 export type AppView =
@@ -113,12 +115,14 @@ interface PartyStoreState {
     amount: number;
     paidById: string;
     splitBetweenIds: string[];
+    category?: ExpenseCategory;
   }) => void;
-  settleAllDebts: (partyId: string) => void;
+  settleAllDebts: (partyId: string, txHash?: string) => void;
 
   // Party Pot Actions
   addToPot: (partyId: string, amount: number, description?: string) => void;
   spendFromPot: (partyId: string, amount: number, description: string) => void;
+  rolloverPotToCrew: (partyId: string, crewId: string) => void;
 
   // Polls Actions
   votePoll: (pollId: string, optionId: string) => void;
@@ -435,7 +439,7 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      addExpense: ({ partyId, description, amount, paidById, splitBetweenIds }) => {
+      addExpense: ({ partyId, description, amount, paidById, splitBetweenIds, category = 'general' }) => {
         set((state) => {
           const payer = state.parties
             .find((p) => p.id === partyId)
@@ -450,6 +454,8 @@ export const usePartyStore = create<PartyStoreState>()(
             paidByName: payer.name,
             paidByAvatar: payer.avatar,
             splitBetweenIds,
+            category,
+            isSettled: false,
             createdAt: 'Just now',
           };
 
@@ -457,7 +463,7 @@ export const usePartyStore = create<PartyStoreState>()(
             id: `act-${Date.now()}`,
             partyId,
             type: 'expense',
-            text: `${payer.name} added expense: "${description}" ($${amount.toFixed(2)})`,
+            text: `${payer.name} added ${category !== 'general' ? `[${category.toUpperCase()}] ` : ''}expense: "${description}" ($${amount.toFixed(2)})`,
             time: 'Just now',
             avatar: payer.avatar,
           };
@@ -472,20 +478,37 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      settleAllDebts: (partyId) => {
+      settleAllDebts: (partyId, txHash) => {
         set((state) => {
           const party = state.parties.find((p) => p.id === partyId);
+          const resolvedTxHash =
+            txHash ||
+            `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+
           const newActivity: ActivityItem = {
             id: `act-${Date.now()}`,
             partyId,
             type: 'expense',
-            text: `All expenses settled up for ${party?.title || 'the party'}! 🎉`,
+            text: `All expenses settled on Monad for ${party?.title || 'the party'}! (0 Gas via Pimlico Paymaster) 🎉${txHash ? ` [tx: ${txHash.slice(0, 10)}...]` : ''}`,
             time: 'Just now',
             avatar: state.currentUser.avatar,
           };
 
+          const updatedExpenses = state.expenses.map((e) =>
+            e.partyId === partyId ? { ...e, isSettled: true, txHash: resolvedTxHash } : e
+          );
+
+          const updatedUser = {
+            ...state.currentUser,
+            settlementsCount: (state.currentUser.settlementsCount ?? 0) + 1,
+          };
+
+          persistSettlementToSupabase(partyId, resolvedTxHash);
+          persistActivityToSupabase(newActivity);
+
           return {
-            // Keep expenses history but record settlement event
+            expenses: updatedExpenses,
+            currentUser: updatedUser,
             activities: [newActivity, ...state.activities],
           };
         });
@@ -564,6 +587,53 @@ export const usePartyStore = create<PartyStoreState>()(
           return {
             parties: updatedParties,
             transactions: [newTx, ...state.transactions],
+            activities: [newActivity, ...state.activities],
+          };
+        });
+      },
+
+      rolloverPotToCrew: (partyId, crewId) => {
+        set((state) => {
+          const party = state.parties.find((p) => p.id === partyId);
+          const crew = state.crews.find((c) => c.id === crewId);
+          if (!party || !crew || party.potBalance <= 0) return state;
+
+          const amount = party.potBalance;
+          const rolloverTx: PotTransaction = {
+            id: `tx-roll-${Date.now()}`,
+            partyId,
+            crewId,
+            type: 'rollover',
+            amount,
+            description: `Rollover to ${crew.name} Treasury`,
+            userName: state.currentUser.name,
+            userAvatar: state.currentUser.avatar,
+            timestamp: 'Just now',
+          };
+
+          const updatedParty = { ...party, potBalance: 0 };
+          const updatedCrew = {
+            ...crew,
+            treasuryBalance: (crew.treasuryBalance ?? 0) + amount,
+          };
+
+          const newActivity: ActivityItem = {
+            id: `act-${Date.now()}`,
+            partyId,
+            type: 'pot',
+            text: `${state.currentUser.name} rolled over $${amount.toFixed(2)} from party pot to ${crew.name} Treasury! 🏦✨`,
+            time: 'Just now',
+            avatar: state.currentUser.avatar,
+          };
+
+          persistPotRolloverToSupabase(rolloverTx, partyId);
+          persistCrewToSupabase(updatedCrew);
+          persistActivityToSupabase(newActivity);
+
+          return {
+            parties: state.parties.map((p) => (p.id === partyId ? updatedParty : p)),
+            crews: state.crews.map((c) => (c.id === crewId ? updatedCrew : c)),
+            transactions: [rolloverTx, ...state.transactions],
             activities: [newActivity, ...state.activities],
           };
         });

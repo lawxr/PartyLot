@@ -82,6 +82,15 @@ export interface Crew {
   createdAt?: string;
 }
 
+export type ExpenseCategory =
+  | 'drinks'
+  | 'food'
+  | 'transport'
+  | 'music'
+  | 'venue'
+  | 'supplies'
+  | 'general';
+
 export interface Expense {
   id: string;
   partyId: string;
@@ -92,7 +101,9 @@ export interface Expense {
   paidByAvatar: string;
   splitBetweenIds: string[];
   createdAt: string;
+  category?: ExpenseCategory;
   isSettled?: boolean;
+  txHash?: string;
 }
 
 export interface NetBalance {
@@ -115,7 +126,7 @@ export interface DebtSettlement {
 export interface PotTransaction {
   id: string;
   partyId: string;
-  type: 'add' | 'spend';
+  type: 'add' | 'spend' | 'reward' | 'rollover';
   amount: number;
   description: string;
   userName: string;
@@ -123,6 +134,8 @@ export interface PotTransaction {
   timestamp: string;
   userId?: string;
   txHash?: string;
+  crewId?: string;
+  recipientName?: string;
 }
 
 export interface PollOption {

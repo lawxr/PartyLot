@@ -153,7 +153,9 @@ export async function persistExpenseToSupabase(expense: Expense): Promise<void> 
       paid_by_id: expense.paidById,
       paid_by_name: expense.paidByName,
       split_between_ids: expense.splitBetweenIds,
+      category: expense.category || 'general',
       is_settled: expense.isSettled || false,
+      tx_hash: expense.txHash || null,
     });
   } catch (err) {
     console.warn('Failed to persist expense:', err);
@@ -188,6 +190,57 @@ export async function persistPotTransactionToSupabase(
       .eq('id', tx.partyId);
   } catch (err) {
     console.warn('Failed to persist pot transaction:', err);
+  }
+}
+
+/**
+ * Persists an onchain debt settlement in Supabase
+ */
+export async function persistSettlementToSupabase(
+  partyId: string,
+  txHash: string
+): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    await supabase
+      .from('expenses')
+      .update({ is_settled: true, tx_hash: txHash || null })
+      .eq('party_id', partyId);
+  } catch (err) {
+    console.warn('Failed to persist settlement in Supabase:', err);
+  }
+}
+
+/**
+ * Persists a Party Pot rollover to Crew Treasury
+ */
+export async function persistPotRolloverToSupabase(
+  tx: PotTransaction,
+  partyId: string
+): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    await supabase.from('pot_transactions').upsert({
+      id: tx.id,
+      party_id: partyId,
+      user_id: tx.userId || null,
+      user_name: tx.userName,
+      type: 'rollover',
+      amount: tx.amount,
+      description: tx.description,
+      tx_hash: tx.txHash || null,
+    });
+
+    await supabase
+      .from('parties')
+      .update({ pot_balance: 0 })
+      .eq('id', partyId);
+  } catch (err) {
+    console.warn('Failed to persist pot rollover in Supabase:', err);
   }
 }
 
@@ -277,26 +330,29 @@ export function subscribeToPartyRealtime(
   */
 export async function persistCrewToSupabase(
   crew: Crew,
-  owner: { id: string; name: string }
+  owner?: { id: string; name: string }
 ): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
 
   try {
-    // 1. Insert Crew
+    // 1. Insert or update Crew
     await supabase.from('crews').upsert({
       id: crew.id,
       name: crew.name,
       cover_image: crew.coverImage,
-      owner_id: owner.id,
+      owner_id: owner?.id || crew.members.find((m) => m.role === 'owner')?.id || null,
+      treasury_balance: crew.treasuryBalance ?? 0,
     });
 
-    // 2. Insert Owner in crew_members junction
-    await supabase.from('crew_members').upsert({
-      crew_id: crew.id,
-      user_id: owner.id,
-      role: 'owner',
-    });
+    // 2. Insert Owner in crew_members junction if provided
+    if (owner) {
+      await supabase.from('crew_members').upsert({
+        crew_id: crew.id,
+        user_id: owner.id,
+        role: 'owner',
+      });
+    }
   } catch (err) {
     console.warn('Failed to persist crew to Supabase:', err);
   }

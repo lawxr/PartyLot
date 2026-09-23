@@ -228,6 +228,7 @@ export const usePartyStore = create<PartyStoreState>()(
             role: 'guest',
             status: 'going',
             nightsTogether: 1,
+            walletAddress: state.currentUser.walletAddress,
           };
 
           const updatedParties = state.parties.map((p) =>

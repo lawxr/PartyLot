@@ -21,6 +21,7 @@ export interface Member {
   role?: 'host' | 'guest';
   status?: 'going' | 'maybe' | 'invited';
   nightsTogether?: number;
+  walletAddress?: string;
 }
 
 export interface Party {

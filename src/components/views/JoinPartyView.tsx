@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Sparkles, Check, AlertCircle, ShieldCheck, MapPin, Clock } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
@@ -10,19 +10,59 @@ import { AvatarStack } from '@/components/ui/AvatarStack';
 import { Party } from '@/types';
 import { resolveInviteCodeToPermit } from '@/lib/web3/permits';
 import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
+import { usePrivySync } from '@/hooks/usePrivySync';
+import { useLogin } from '@privy-io/react-auth';
+import { PrivyAuthModal } from '@/components/ui/PrivyAuthModal';
 import confetti from 'canvas-confetti';
 
 export const JoinPartyView: React.FC = () => {
   const { parties, joinPartyByCode, selectParty, goBack } = usePartyStore();
+  const { authenticated, ready } = usePrivySync();
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '']);
   const [isJoining, setIsJoining] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
+  const pendingPartyRef = useRef<Party | null>(null);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
   const fullCode = digits.join('').toUpperCase();
   const matchedParty = fullCode.length === 4 ? parties.find((p) => p.code.toUpperCase() === fullCode) || null : null;
   const errorMsg = fullCode.length === 4 && !matchedParty ? 'No party found with this code. Double-check with your host!' : null;
+
+  const executeJoinFlow = useCallback(
+    async (party: Party) => {
+      setIsJoining(true);
+
+      // Simulate smart account sponsored UserOp execution of joinPartyWithPermit()
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      const res = joinPartyByCode(party.code);
+      if (res.success) {
+        confetti({
+          particleCount: 60,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ['#E9FF32', '#FFFFFF'],
+        });
+        setTimeout(() => {
+          selectParty(party.id);
+        }, 500);
+      }
+      setIsJoining(false);
+    },
+    [joinPartyByCode, selectParty]
+  );
+
+  const { login } = useLogin({
+    onComplete: () => {
+      if (pendingPartyRef.current) {
+        const target = pendingPartyRef.current;
+        pendingPartyRef.current = null;
+        executeJoinFlow(target);
+      }
+    },
+  });
 
   // Resolve EIP-712 permit offchain whenever a valid 4-digit code is found
   useEffect(() => {
@@ -65,23 +105,29 @@ export const JoinPartyView: React.FC = () => {
 
   const handleConfirmJoin = async () => {
     if (!matchedParty) return;
-    setIsJoining(true);
 
-    // Simulate smart account sponsored UserOp execution of joinPartyWithPermit()
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    if (!authenticated) {
+      pendingPartyRef.current = matchedParty;
+      const isLivePrivy =
+        Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID) &&
+        !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('demo') &&
+        !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('placeholder');
 
-    const res = joinPartyByCode(matchedParty.code);
-    if (res.success) {
-      confetti({
-        particleCount: 60,
-        spread: 60,
-        origin: { y: 0.6 },
-        colors: ['#E9FF32', '#FFFFFF'],
-      });
-      setTimeout(() => {
-        selectParty(matchedParty.id);
-      }, 500);
+      if (isLivePrivy && ready) {
+        try {
+          login();
+          return;
+        } catch {
+          setIsAuthOpen(true);
+          return;
+        }
+      } else {
+        setIsAuthOpen(true);
+        return;
+      }
     }
+
+    executeJoinFlow(matchedParty);
   };
 
   return (
@@ -266,7 +312,11 @@ export const JoinPartyView: React.FC = () => {
                             )
                           }
                         >
-                          {isJoining ? 'Signing Permit...' : 'Join party'}
+                          {isJoining
+                            ? 'Signing Permit...'
+                            : !authenticated
+                            ? 'Sign in to join party'
+                            : 'Join party'}
                         </GlassButton>
                       </div>
                     </div>
@@ -284,6 +334,23 @@ export const JoinPartyView: React.FC = () => {
           SPONSORED BY PIMLICO PAYMASTER · ZERO GAS REQUIRED
         </p>
       </div>
+
+      {/* Privy Auth BottomSheet Gate */}
+      <PrivyAuthModal
+        isOpen={isAuthOpen}
+        onClose={() => {
+          setIsAuthOpen(false);
+          pendingPartyRef.current = null;
+        }}
+        onSuccess={() => {
+          setIsAuthOpen(false);
+          const target = pendingPartyRef.current || matchedParty;
+          pendingPartyRef.current = null;
+          if (target) {
+            executeJoinFlow(target);
+          }
+        }}
+      />
     </div>
   );
 };

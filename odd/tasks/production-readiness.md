@@ -29,6 +29,8 @@ Audit complete: synthetic transaction receipts, permissive RLS, insecure invite 
 
 PR-01 implementation is present but remains unchecked pending required verification. Financial action UI entry points are disabled and explain that payments are unavailable; store mutations for contributions, spending, rollover, settlement, and payouts are inert; treasury service calls now fail with a typed unavailable error instead of fabricating receipts. Settlement and game/task reward screens no longer report payments as successful.
 
+Implementation commit: `d1b7267` (`fix(finance): disable unconfirmed payment actions`).
+
 Checks observed:
 - `pnpm lint` — passed.
 - `pnpm exec tsc --noEmit` — passed.

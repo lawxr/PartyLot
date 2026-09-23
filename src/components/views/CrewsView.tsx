@@ -1,14 +1,15 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Users, Plus, Sparkles, ShieldCheck, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, ShieldCheck, ArrowRight, UserPlus } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { CreateCrewModal } from '@/components/ui/CreateCrewModal';
 
 export const CrewsView: React.FC = () => {
-  const { crews, setCurrentView, selectParty, parties } = usePartyStore();
+  const { crews, setCurrentView, selectCrew, parties } = usePartyStore();
+  const [isCreateCrewOpen, setIsCreateCrewOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#050505] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
@@ -23,24 +24,38 @@ export const CrewsView: React.FC = () => {
           </h2>
         </div>
 
-        <GlassButton
-          variant="accent"
-          size="md"
-          onClick={() => setCurrentView('create-party')}
-          icon={<Plus className="w-4 h-4 text-black stroke-[3]" />}
-        >
-          New Gathering
-        </GlassButton>
+        <div className="flex items-center gap-3">
+          <GlassButton
+            variant="glass"
+            size="md"
+            onClick={() => setIsCreateCrewOpen(true)}
+            icon={<UserPlus className="w-4 h-4 text-[#E9FF32]" />}
+          >
+            Create Crew
+          </GlassButton>
+
+          <GlassButton
+            variant="accent"
+            size="md"
+            onClick={() => setCurrentView('create-party')}
+            icon={<Plus className="w-4 h-4 text-black stroke-[3]" />}
+          >
+            New Gathering
+          </GlassButton>
+        </div>
       </header>
 
       {/* Grid of Crews (Responsive 1-col on mobile, 2-col on tablet, 3-col on desktop) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        {crews.map((crew) => (
-          <GlassPanel
-            key={crew.id}
-            level={2}
-            className="p-5 flex flex-col justify-between h-64 relative overflow-hidden border border-white/15 hover:border-white/30 transition-all cursor-pointer group"
-          >
+        {crews.map((crew) => {
+          const activePartiesCount = parties.filter((p) => p.crewId === crew.id).length;
+          return (
+            <GlassPanel
+              key={crew.id}
+              level={2}
+              onClick={() => selectCrew(crew.id)}
+              className="p-5 flex flex-col justify-between h-64 relative overflow-hidden border border-white/15 hover:border-white/30 transition-all cursor-pointer group"
+            >
             {/* Background Cover Thumbnail with Fade */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -62,12 +77,12 @@ export const CrewsView: React.FC = () => {
                 {crew.name}
               </h3>
               <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">
-                Private inner circle for secret rooftop sessions and festival adventures.
+                {crew.description || 'Private inner circle for secret rooftop sessions and festival adventures.'}
               </p>
 
               <div className="pt-3 mt-3 border-t border-white/15 flex items-center justify-between">
                 <span className="text-[11px] font-mono text-white/70">
-                  3 active gatherings
+                  {activePartiesCount} active {activePartiesCount === 1 ? 'gathering' : 'gatherings'}
                 </span>
                 <span className="text-xs font-bold text-[#E9FF32] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                   Enter Crew <ArrowRight className="w-3.5 h-3.5" />
@@ -75,7 +90,8 @@ export const CrewsView: React.FC = () => {
               </div>
             </div>
           </GlassPanel>
-        ))}
+          );
+        })}
       </div>
 
       {/* Metropolis Security Badge Banner */}
@@ -103,6 +119,12 @@ export const CrewsView: React.FC = () => {
           Join with Code
         </GlassButton>
       </div>
+
+      {/* Modal to create a new Crew */}
+      <CreateCrewModal
+        isOpen={isCreateCrewOpen}
+        onClose={() => setIsCreateCrewOpen(false)}
+      />
     </div>
   );
 };

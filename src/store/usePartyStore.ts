@@ -13,9 +13,12 @@ import {
   ThisOrThatQuestion,
   TriviaQuestion,
   GameId,
+  CrewMember,
+  CrewMemory,
 } from '@/types';
 import {
   CURRENT_USER,
+  INITIAL_MEMBERS,
   INITIAL_PARTIES,
   INITIAL_CREWS,
   INITIAL_EXPENSES,
@@ -33,6 +36,8 @@ import {
   persistExpenseToSupabase,
   persistPotTransactionToSupabase,
   persistActivityToSupabase,
+  persistCrewToSupabase,
+  addMemberToCrewInDb,
 } from '@/services/supabaseService';
 
 export type AppView =
@@ -41,6 +46,7 @@ export type AppView =
   | 'create-party'
   | 'join-party'
   | 'party-detail'
+  | 'crew-detail'
   | 'games'
   | 'split'
   | 'party-pot'
@@ -58,6 +64,7 @@ interface PartyStoreState {
   parties: Party[];
   currentPartyId: string;
   crews: Crew[];
+  currentCrewId: string | null;
   expenses: Expense[];
   transactions: PotTransaction[];
   polls: Poll[];
@@ -72,6 +79,19 @@ interface PartyStoreState {
   goBack: () => void;
   setActiveTab: (tab: MainTab) => void;
   selectParty: (partyId: string) => void;
+  selectCrew: (crewId: string) => void;
+
+  // Crew Actions
+  createCrew: (params: {
+    name: string;
+    description: string;
+    coverImage: string;
+  }) => Crew;
+  addCrewMember: (crewId: string, member: Partial<CrewMember>) => void;
+  addCrewMemory: (
+    crewId: string,
+    memory: { imageUrl: string; caption: string; partyTitle?: string }
+  ) => void;
 
   // Party Actions
   createParty: (params: {
@@ -81,6 +101,7 @@ interface PartyStoreState {
     location: string;
     description: string;
     coverImage: string;
+    crewId?: string;
   }) => Party;
   joinPartyByCode: (code: string) => { success: boolean; party?: Party; message?: string };
   toggleRsvp: (partyId: string) => void;
@@ -126,6 +147,7 @@ export const usePartyStore = create<PartyStoreState>()(
       parties: INITIAL_PARTIES,
       currentPartyId: 'p-404',
       crews: INITIAL_CREWS,
+      currentCrewId: 'c-404',
       expenses: INITIAL_EXPENSES,
       transactions: INITIAL_TRANSACTIONS,
       polls: INITIAL_POLLS,
@@ -169,7 +191,112 @@ export const usePartyStore = create<PartyStoreState>()(
         }));
       },
 
-      createParty: ({ title, date, time, location, description, coverImage }) => {
+      selectCrew: (crewId) => {
+        set((state) => ({
+          currentCrewId: crewId,
+          previousView: state.currentView,
+          currentView: 'crew-detail',
+        }));
+      },
+
+      createCrew: ({ name, description, coverImage }) => {
+        const state = get();
+        const newCrew: Crew = {
+          id: `c-${Date.now()}`,
+          name: name.trim() || 'My Secret Crew',
+          description: description.trim() || 'Private trust network for gatherings.',
+          coverImage: coverImage || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
+          ownerId: state.currentUser.id,
+          membersCount: 1,
+          partiesCount: 0,
+          totalSpent: 0,
+          nightsTogether: 1,
+          topGame: "Who's Most Likely",
+          treasuryBalance: 0,
+          lastActivity: 'Just now',
+          createdAt: new Date().toISOString(),
+          members: [
+            {
+              id: `cm-${Date.now()}`,
+              userId: state.currentUser.id,
+              name: state.currentUser.name,
+              handle: state.currentUser.handle,
+              avatar: state.currentUser.avatar,
+              role: 'owner',
+              joinedAt: 'Today',
+              walletAddress: state.currentUser.walletAddress,
+              nightsTogether: 1,
+            },
+          ],
+          memories: [],
+        };
+
+        set((s) => ({
+          crews: [newCrew, ...s.crews],
+          currentCrewId: newCrew.id,
+          previousView: s.currentView,
+          currentView: 'crew-detail',
+        }));
+
+        persistCrewToSupabase(newCrew, state.currentUser);
+        return newCrew;
+      },
+
+      addCrewMember: (crewId, memberData) => {
+        set((s) => ({
+          crews: s.crews.map((c) => {
+            if (c.id !== crewId) return c;
+            const newMember: CrewMember = {
+              id: `cm-${Date.now()}`,
+              userId: memberData.userId || `u-${Date.now()}`,
+              name: memberData.name || 'Anonymous Guest',
+              handle: memberData.handle || '@guest',
+              avatar: memberData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+              role: memberData.role || 'member',
+              joinedAt: 'Today',
+              walletAddress: memberData.walletAddress,
+              nightsTogether: 1,
+            };
+            return {
+              ...c,
+              membersCount: c.membersCount + 1,
+              members: [...c.members, newMember],
+              lastActivity: 'Just now',
+            };
+          }),
+        }));
+
+        addMemberToCrewInDb(crewId, {
+          id: memberData.userId || `u-${Date.now()}`,
+          name: memberData.name || 'Anonymous Guest',
+          role: memberData.role || 'member',
+        });
+      },
+
+      addCrewMemory: (crewId, memory) => {
+        const state = get();
+        set((s) => ({
+          crews: s.crews.map((c) => {
+            if (c.id !== crewId) return c;
+            const newMemory: CrewMemory = {
+              id: `mem-${Date.now()}`,
+              crewId,
+              imageUrl: memory.imageUrl,
+              caption: memory.caption,
+              uploadedBy: state.currentUser.name,
+              uploadedAt: 'Just now',
+              partyTitle: memory.partyTitle,
+            };
+            return {
+              ...c,
+              memories: [newMemory, ...c.memories],
+              lastActivity: 'Just now',
+            };
+          }),
+        }));
+      },
+
+      createParty: ({ title, date, time, location, description, coverImage, crewId }) => {
         const state = get();
         const code = generatePartyCode();
         const newParty: Party = {
@@ -183,6 +310,7 @@ export const usePartyStore = create<PartyStoreState>()(
           coverImage,
           hostId: state.currentUser.id,
           hostName: state.currentUser.name,
+          crewId: crewId || undefined,
           members: [
             {
               id: state.currentUser.id,
@@ -211,6 +339,13 @@ export const usePartyStore = create<PartyStoreState>()(
           parties: [newParty, ...s.parties],
           currentPartyId: newParty.id,
           activities: [newActivity, ...s.activities],
+          crews: crewId
+            ? s.crews.map((c) =>
+                c.id === crewId
+                  ? { ...c, partiesCount: c.partiesCount + 1, lastActivity: 'Just now' }
+                  : c
+              )
+            : s.crews,
         }));
 
         persistPartyToSupabase(newParty, state.currentUser);
@@ -581,6 +716,8 @@ export const usePartyStore = create<PartyStoreState>()(
       partialize: (state) => ({
         currentUser: state.currentUser,
         parties: state.parties,
+        crews: state.crews,
+        currentCrewId: state.currentCrewId,
         expenses: state.expenses,
         transactions: state.transactions,
         polls: state.polls,

@@ -39,14 +39,47 @@ export interface Party {
   potBalance: number;
   createdAt: string;
   status: 'upcoming' | 'live' | 'past';
+  crewId?: string;
+}
+
+export interface CrewMember {
+  id: string;
+  userId: string;
+  name: string;
+  handle: string;
+  avatar: string;
+  role: 'owner' | 'admin' | 'member';
+  joinedAt: string;
+  walletAddress?: string;
+  nightsTogether: number;
+}
+
+export interface CrewMemory {
+  id: string;
+  crewId: string;
+  imageUrl: string;
+  caption: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  partyTitle?: string;
 }
 
 export interface Crew {
   id: string;
   name: string;
+  description?: string;
   coverImage: string;
+  ownerId?: string;
   membersCount: number;
+  members: CrewMember[];
+  partiesCount: number;
+  totalSpent: number;
+  nightsTogether: number;
+  topGame: string;
+  treasuryBalance: number;
+  memories: CrewMemory[];
   lastActivity: string;
+  createdAt?: string;
 }
 
 export interface Expense {

@@ -22,10 +22,11 @@ import { Party } from '@/types';
 import confetti from 'canvas-confetti';
 
 export const CreatePartyView: React.FC = () => {
-  const { createParty, selectParty, goBack, currentUser } = usePartyStore();
+  const { createParty, selectParty, goBack, currentUser, crews, currentCrewId } = usePartyStore();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [partyName, setPartyName] = useState('');
+  const [selectedCrewId, setSelectedCrewId] = useState<string>(currentCrewId || 'c-404');
   const [selectedCover, setSelectedCover] = useState(SAMPLE_PARTY_COVERS[0].url);
   const [date, setDate] = useState('TONIGHT');
   const [time, setTime] = useState('10:00 PM');
@@ -47,6 +48,7 @@ export const CreatePartyView: React.FC = () => {
         location,
         description,
         coverImage: selectedCover,
+        crewId: selectedCrewId || undefined,
       });
 
       setCreatedParty(newParty);
@@ -297,6 +299,43 @@ export const CreatePartyView: React.FC = () => {
                           autoFocus
                           className="w-full px-5 py-4 rounded-2xl liquid-glass-card text-white placeholder-white/30 text-lg sm:text-xl font-display font-bold outline-none border border-white/20 focus:border-[#E9FF32] transition-colors"
                         />
+                      </div>
+
+                      {/* Crew Selector */}
+                      <div className="mb-6">
+                        <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2 flex items-center justify-between">
+                          <span>Host for which Crew?</span>
+                          <span className="text-[11px] text-[#E9FF32] font-mono">Durable Social Circle</span>
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {crews.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setSelectedCrewId(c.id)}
+                              className={`px-3 py-2.5 rounded-xl text-xs font-bold text-left border transition-all ${
+                                selectedCrewId === c.id
+                                  ? 'bg-[#E9FF32]/20 border-[#E9FF32] text-white shadow-sm shadow-[#E9FF32]/20'
+                                  : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:border-white/20'
+                              }`}
+                            >
+                              <span className="block truncate">{c.name}</span>
+                              <span className="text-[10px] text-white/40 font-mono block">{c.membersCount} members</span>
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCrewId('')}
+                            className={`px-3 py-2.5 rounded-xl text-xs font-bold text-left border transition-all ${
+                              selectedCrewId === ''
+                                ? 'bg-[#E9FF32]/20 border-[#E9FF32] text-white shadow-sm shadow-[#E9FF32]/20'
+                                : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:border-white/20'
+                            }`}
+                          >
+                            <span className="block truncate">Standalone</span>
+                            <span className="text-[10px] text-white/40 font-mono block">No crew</span>
+                          </button>
+                        </div>
                       </div>
 
                       <div>

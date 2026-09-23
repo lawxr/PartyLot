@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useSyncExternalStore } from 'react';
+import React, { useSyncExternalStore, useEffect } from 'react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { SplashView } from '@/components/views/SplashView';
 import { HomeView } from '@/components/views/HomeView';
@@ -13,6 +13,7 @@ import { PartyPotView } from '@/components/views/PartyPotView';
 import { PollsView } from '@/components/views/PollsView';
 import { RecapView } from '@/components/views/RecapView';
 import { ProfileView } from '@/components/views/ProfileView';
+import { CrewDetailView } from '@/components/views/CrewDetailView';
 import { TabBar } from '@/components/navigation/TabBar';
 import { usePrivySync } from '@/hooks/usePrivySync';
 
@@ -26,6 +27,13 @@ export default function App() {
 
   // Synchronize Privy auth & embedded wallet state across views
   usePrivySync();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__partyStore = usePartyStore;
+    }
+  }, []);
 
   if (!mounted) {
     // Avoid hydration mismatch on initial render
@@ -51,6 +59,7 @@ export default function App() {
         {currentView === 'create-party' && <CreatePartyView />}
         {currentView === 'join-party' && <JoinPartyView />}
         {currentView === 'party-detail' && <PartyDetailView />}
+        {currentView === 'crew-detail' && <CrewDetailView />}
         {currentView === 'games' && <GamesView />}
         {currentView === 'split' && <SplitView />}
         {currentView === 'party-pot' && <PartyPotView />}

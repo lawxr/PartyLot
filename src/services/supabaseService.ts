@@ -1,5 +1,5 @@
 import { getSupabase } from '@/lib/supabase/client';
-import { Party, Member, Expense, PotTransaction, ActivityItem, Poll } from '@/types';
+import { Party, Member, Expense, PotTransaction, ActivityItem, Poll, Crew } from '@/types';
 
 /**
  * Service providing database persistence and Realtime synchronization
@@ -72,6 +72,7 @@ export async function persistPartyToSupabase(party: Party, hostUser: { id: strin
     // 1. Insert Party
     await supabase.from('parties').upsert({
       id: party.id,
+      crew_id: party.crewId || null,
       code: party.code,
       title: party.title,
       date: party.date,
@@ -263,6 +264,79 @@ export function subscribeToPartyRealtime(
         filter: `party_id=eq.${partyId}`,
       },
       () => onPartyChange()
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+/**
+  * Persists a newly created Crew and assigns owner role in Supabase
+  */
+export async function persistCrewToSupabase(
+  crew: Crew,
+  owner: { id: string; name: string }
+): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    // 1. Insert Crew
+    await supabase.from('crews').upsert({
+      id: crew.id,
+      name: crew.name,
+      cover_image: crew.coverImage,
+      owner_id: owner.id,
+    });
+
+    // 2. Insert Owner in crew_members junction
+    await supabase.from('crew_members').upsert({
+      crew_id: crew.id,
+      user_id: owner.id,
+      role: 'owner',
+    });
+  } catch (err) {
+    console.warn('Failed to persist crew to Supabase:', err);
+  }
+}
+
+/**
+  * Adds a member to an existing Crew in Supabase
+  */
+export async function addMemberToCrewInDb(
+  crewId: string,
+  user: { id: string; name: string; role?: string }
+): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    await supabase.from('crew_members').upsert({
+      crew_id: crewId,
+      user_id: user.id,
+      role: user.role || 'member',
+    });
+  } catch (err) {
+    console.warn('Failed to add crew member to Supabase:', err);
+  }
+}
+
+/**
+  * Subscribes to real-time changes on Crews and Crew Members
+  */
+export function subscribeToCrewsRealtime(onCrewChange: () => void): () => void {
+  const supabase = getSupabase();
+  if (!supabase) return () => {};
+
+  const channel = supabase
+    .channel('crews-channel')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'crews' }, () =>
+      onCrewChange()
+    )
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'crew_members' }, () =>
+      onCrewChange()
     )
     .subscribe();
 

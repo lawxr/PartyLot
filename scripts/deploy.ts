@@ -3,12 +3,18 @@ import { privateKeyToAccount } from 'viem/accounts';
 import fs from 'fs';
 import path from 'path';
 
+const rpcUrl =
+  process.env.NEXT_PUBLIC_MONAD_RPC_URL &&
+  !process.env.NEXT_PUBLIC_MONAD_RPC_URL.includes('your-api-key')
+    ? process.env.NEXT_PUBLIC_MONAD_RPC_URL
+    : 'https://testnet-rpc.monad.xyz';
+
 const monadTestnet = defineChain({
   id: 10143,
   name: 'Monad Testnet',
   nativeCurrency: { name: 'Monad', symbol: 'MON', decimals: 18 },
   rpcUrls: {
-    default: { http: [process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz'] },
+    default: { http: [rpcUrl] },
   },
   testnet: true,
 });
@@ -26,13 +32,13 @@ async function main() {
 
   const publicClient = createPublicClient({
     chain: monadTestnet,
-    transport: http(process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz'),
+    transport: http(rpcUrl),
   });
 
   const walletClient = createWalletClient({
     account,
     chain: monadTestnet,
-    transport: http(process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz'),
+    transport: http(rpcUrl),
   });
 
   const balance = await publicClient.getBalance({ address: account.address });

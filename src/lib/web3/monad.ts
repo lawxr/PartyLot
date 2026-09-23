@@ -6,6 +6,12 @@
 
 import { defineChain, createPublicClient, http } from 'viem';
 
+const monadRpcUrl =
+  process.env.NEXT_PUBLIC_MONAD_RPC_URL &&
+  !process.env.NEXT_PUBLIC_MONAD_RPC_URL.includes('your-api-key')
+    ? process.env.NEXT_PUBLIC_MONAD_RPC_URL
+    : 'https://testnet-rpc.monad.xyz';
+
 export const monadTestnet = defineChain({
   id: 10143,
   name: 'Monad Testnet',
@@ -16,12 +22,12 @@ export const monadTestnet = defineChain({
   },
   rpcUrls: {
     default: {
-      http: [
-        process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz',
-      ],
-      webSocket: process.env.NEXT_PUBLIC_MONAD_WSS_URL
-        ? [process.env.NEXT_PUBLIC_MONAD_WSS_URL]
-        : undefined,
+      http: [monadRpcUrl],
+      webSocket:
+        process.env.NEXT_PUBLIC_MONAD_WSS_URL &&
+        !process.env.NEXT_PUBLIC_MONAD_WSS_URL.includes('your-api-key')
+          ? [process.env.NEXT_PUBLIC_MONAD_WSS_URL]
+          : undefined,
     },
   },
   blockExplorers: {
@@ -35,7 +41,7 @@ export const monadTestnet = defineChain({
 
 export const publicMonadClient = createPublicClient({
   chain: monadTestnet,
-  transport: http(process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz'),
+  transport: http(monadRpcUrl),
 });
 
 export interface MonadNetworkConfig {

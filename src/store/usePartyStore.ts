@@ -27,6 +27,13 @@ import {
   TRIVIA_QUESTIONS,
 } from '@/data/mockData';
 import { generatePartyCode } from '@/services/party';
+import {
+  persistPartyToSupabase,
+  persistMemberJoinToSupabase,
+  persistExpenseToSupabase,
+  persistPotTransactionToSupabase,
+  persistActivityToSupabase,
+} from '@/services/supabaseService';
 
 export type AppView =
   | 'splash'
@@ -206,6 +213,9 @@ export const usePartyStore = create<PartyStoreState>()(
           activities: [newActivity, ...s.activities],
         }));
 
+        persistPartyToSupabase(newParty, state.currentUser);
+        persistActivityToSupabase(newActivity);
+
         return newParty;
       },
 
@@ -249,6 +259,9 @@ export const usePartyStore = create<PartyStoreState>()(
             currentPartyId: matched.id,
             activities: [newActivity, ...state.activities],
           });
+
+          persistMemberJoinToSupabase(matched.id, newMember);
+          persistActivityToSupabase(newActivity);
         } else {
           set({ currentPartyId: matched.id });
         }
@@ -309,10 +322,13 @@ export const usePartyStore = create<PartyStoreState>()(
             id: `act-${Date.now()}`,
             partyId,
             type: 'expense',
-            text: `${payer.name} added expense: ${description} ($${amount.toFixed(2)})`,
+            text: `${payer.name} added expense: "${description}" ($${amount.toFixed(2)})`,
             time: 'Just now',
             avatar: payer.avatar,
           };
+
+          persistExpenseToSupabase(newExpense);
+          persistActivityToSupabase(newActivity);
 
           return {
             expenses: [newExpense, ...state.expenses],
@@ -366,6 +382,11 @@ export const usePartyStore = create<PartyStoreState>()(
             avatar: state.currentUser.avatar,
           };
 
+          const targetParty = state.parties.find((p) => p.id === partyId);
+          const newBal = (targetParty?.potBalance || 0) + amount;
+          persistPotTransactionToSupabase(newTx, newBal);
+          persistActivityToSupabase(newActivity);
+
           return {
             parties: updatedParties,
             transactions: [newTx, ...state.transactions],
@@ -399,6 +420,11 @@ export const usePartyStore = create<PartyStoreState>()(
             time: 'Just now',
             avatar: state.currentUser.avatar,
           };
+
+          const targetParty = state.parties.find((p) => p.id === partyId);
+          const newBal = Math.max(0, (targetParty?.potBalance || 0) - amount);
+          persistPotTransactionToSupabase(newTx, newBal);
+          persistActivityToSupabase(newActivity);
 
           return {
             parties: updatedParties,

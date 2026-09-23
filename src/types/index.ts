@@ -59,6 +59,7 @@ export interface Expense {
   paidByAvatar: string;
   splitBetweenIds: string[];
   createdAt: string;
+  isSettled?: boolean;
 }
 
 export interface NetBalance {
@@ -87,6 +88,8 @@ export interface PotTransaction {
   userName: string;
   userAvatar: string;
   timestamp: string;
+  userId?: string;
+  txHash?: string;
 }
 
 export interface PollOption {

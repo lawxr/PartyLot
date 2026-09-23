@@ -13,6 +13,25 @@
 }
 
 body {
+  --privy-border-radius: 24px;
+  --privy-border-radius-md: 18px;
+  --privy-border-radius-lg: 28px;
+  --privy-color-background: rgba(21, 20, 15, 0.86);
+  --privy-color-background-2: rgba(255, 255, 255, 0.08);
+  --privy-color-background-3: rgba(255, 255, 255, 0.12);
+  --privy-color-foreground: #fcfaf7;
+  --privy-color-foreground-2: rgba(252, 250, 247, 0.72);
+  --privy-color-foreground-3: rgba(252, 250, 247, 0.5);
+  --privy-color-foreground-4: rgba(252, 250, 247, 0.35);
+  --privy-color-foreground-accent: #15140f;
+  --privy-color-accent: #f0dc00;
+  --privy-color-accent-light: #fff3a3;
+  --privy-color-accent-lightest: rgba(240, 220, 0, 0.2);
+  --privy-color-accent-dark: #b8a700;
+  --privy-color-accent-darkest: #786e00;
+  --privy-color-success: #34d399;
+  --privy-color-error: #fb7185;
+  --privy-color-error-light: rgba(251, 113, 133, 0.16);
   background-color: #15140f;
   color: #fcfaf7;
   font-family: var(--font-ui);

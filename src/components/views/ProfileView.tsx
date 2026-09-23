@@ -280,16 +280,6 @@ export const ProfileView: React.FC = () => {
             </div>
           </section>
 
-          {/* Action Buttons: Log Out */}
-          <div className="pt-2">
-            <button
-              onClick={privyLogout}
-              className="w-full text-xs text-red-400 hover:text-red-300 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl liquid-glass-card border border-red-500/20 hover:border-red-500/40 transition-colors cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Log out</span>
-            </button>
-          </div>
         </div>
 
         {/* Right Column: Badges, Past Nights, Metropolis Diagnostics (7 cols on desktop) */}

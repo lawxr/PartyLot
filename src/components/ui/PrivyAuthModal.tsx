@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ShieldCheck, Mail, Apple, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ShieldCheck, Mail, Apple, CheckCircle2, Wallet } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 import { usePrivy } from '@privy-io/react-auth';
@@ -125,6 +125,19 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
               >
                 <Mail className="w-3.5 h-3.5 text-white/60 shrink-0" />
                 <span className="truncate">Continue with Email or Phone</span>
+              </button>
+
+              {/* WalletConnect / External Wallet */}
+              <button
+                onClick={() => {
+                  onClose();
+                  login();
+                }}
+                disabled={loadingMethod !== null}
+                className="w-full min-h-[44px] py-2.5 px-4 rounded-2xl liquid-glass-card text-white/80 font-medium text-xs flex items-center justify-center gap-2 hover:text-[#E9FF32] hover:border-[#E9FF32]/40 transition-all border border-white/10"
+              >
+                <Wallet className="w-3.5 h-3.5 text-[#E9FF32] shrink-0" />
+                <span className="truncate">Connect with WalletConnect / Web3</span>
               </button>
 
               <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-white/40 font-mono text-center">

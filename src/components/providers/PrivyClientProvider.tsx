@@ -25,8 +25,20 @@ export const PrivyClientProvider: React.FC<PrivyClientProviderProps> = ({ childr
           accentColor: '#E9FF32',
           showWalletLoginFirst: false,
           walletChainType: 'ethereum-only',
+          walletList: [
+            'detected_wallets',
+            'metamask',
+            'coinbase_wallet',
+            'rainbow',
+            'wallet_connect',
+          ],
         },
-        loginMethods: ['email', 'google', 'apple', 'sms'],
+        loginMethods: ['email', 'google', 'apple', 'sms', 'wallet'],
+        externalWallets: {
+          walletConnect: {
+            enabled: true,
+          },
+        },
         embeddedWallets: {
           ethereum: {
             createOnLogin: 'users-without-wallets',

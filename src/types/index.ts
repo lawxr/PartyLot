@@ -202,3 +202,31 @@ export interface PartyRecapData {
   dj: { name: string; avatar: string };
   rolloverAmount: number;
 }
+
+export type TaskStatus = 'open' | 'claimed' | 'completed' | 'verified';
+
+export interface PartyTask {
+  id: string;
+  partyId: string;
+  title: string;
+  rewardAmount: number;
+  status: TaskStatus;
+  claimedById?: string;
+  claimedByName?: string;
+  claimedByAvatar?: string;
+  completedAt?: string;
+  createdAt: string;
+}
+
+export interface SharedExperienceConnection {
+  targetUserId: string;
+  targetUserName: string;
+  targetUserHandle: string;
+  targetUserAvatar: string;
+  gatheringsTogether: number;
+  gamesPlayedTogether: number;
+  settlementsTogether: number;
+  recurringCrewsShared: number;
+  sparkLevel: 'Kindling' | 'Ignited' | 'Soul Crew' | 'Ride or Die';
+}
+

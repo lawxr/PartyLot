@@ -1,5 +1,5 @@
 import { getSupabase } from '@/lib/supabase/client';
-import { Party, Member, Expense, PotTransaction, ActivityItem, Poll, Crew } from '@/types';
+import { Party, Member, Expense, PotTransaction, ActivityItem, Crew, PartyTask } from '@/types';
 
 /**
  * Service providing database persistence and Realtime synchronization
@@ -393,6 +393,79 @@ export function subscribeToCrewsRealtime(onCrewChange: () => void): () => void {
     )
     .on('postgres_changes', { event: '*', schema: 'public', table: 'crew_members' }, () =>
       onCrewChange()
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+/**
+ * Persists a new Party Task / Bounty to Supabase
+ */
+export async function persistTaskToSupabase(task: PartyTask): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    await supabase.from('tasks').upsert({
+      id: task.id,
+      party_id: task.partyId,
+      title: task.title,
+      reward_amount: task.rewardAmount,
+      status: task.status,
+      claimed_by_id: task.claimedById || null,
+      claimed_by_name: task.claimedByName || null,
+      claimed_by_avatar: task.claimedByAvatar || null,
+      completed_at: task.completedAt || null,
+    });
+  } catch (err) {
+    console.warn('Failed to persist task to Supabase:', err);
+  }
+}
+
+/**
+ * Updates an existing Party Task in Supabase
+ */
+export async function updateTaskInSupabase(task: PartyTask): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    await supabase
+      .from('tasks')
+      .update({
+        status: task.status,
+        claimed_by_id: task.claimedById || null,
+        claimed_by_name: task.claimedByName || null,
+        claimed_by_avatar: task.claimedByAvatar || null,
+        completed_at: task.completedAt || null,
+      })
+      .eq('id', task.id);
+  } catch (err) {
+    console.warn('Failed to update task in Supabase:', err);
+  }
+}
+
+/**
+ * Subscribes to real-time changes on Tasks/Bounties for a specific Party
+ */
+export function subscribeToTasksRealtime(partyId: string, onTaskChange: () => void): () => void {
+  const supabase = getSupabase();
+  if (!supabase) return () => {};
+
+  const channel = supabase
+    .channel(`tasks-${partyId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'tasks',
+        filter: `party_id=eq.${partyId}`,
+      },
+      () => onTaskChange()
     )
     .subscribe();
 

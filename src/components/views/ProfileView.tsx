@@ -1,29 +1,71 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Calendar, Gamepad2, Users, Receipt, RotateCcw, Award, ShieldCheck, Copy, Check, ChevronDown, ChevronUp, Server, LogOut } from 'lucide-react';
+import { RotateCcw, ShieldCheck, Copy, Check, LogOut, Sparkles } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
-import { GlassButton } from '@/components/ui/GlassButton';
 import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
-import { METROPOLIS_CONFIG, getEnvioSyncStatus } from '@/lib/web3/metropolis';
+import { getEnvioSyncStatus } from '@/lib/web3/metropolis';
 import { usePrivySync } from '@/hooks/usePrivySync';
+import { SharedExperienceConnection } from '@/types';
 
 export const ProfileView: React.FC = () => {
   const { currentUser, resetToDefaults } = usePartyStore();
-  const { logout: privyLogout, authenticated } = usePrivySync();
-  const [showWeb3Details, setShowWeb3Details] = useState(true);
+  const { logout: privyLogout } = usePrivySync();
   const [copied, setCopied] = useState(false);
 
   const smartAccount = getOrCreateSmartAccount();
   const activeAddress = currentUser.walletAddress || smartAccount.address;
   const envioStatus = getEnvioSyncStatus();
 
-  const closeCrew = [
-    { name: 'Ana', nights: 12, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80' },
-    { name: 'Carlos', nights: 9, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80' },
-    { name: 'Sofi', nights: 7, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80' },
+  const sharedConnections: SharedExperienceConnection[] = [
+    {
+      targetUserId: 'u-ana',
+      targetUserName: 'Ana',
+      targetUserHandle: '@ana.monad',
+      targetUserAvatar:
+        'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+      gatheringsTogether: 12,
+      gamesPlayedTogether: 31,
+      settlementsTogether: 8,
+      recurringCrewsShared: 3,
+      sparkLevel: 'Soul Crew',
+    },
+    {
+      targetUserId: 'u-carlos',
+      targetUserName: 'Carlos',
+      targetUserHandle: '@carlos.lens',
+      targetUserAvatar:
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+      gatheringsTogether: 9,
+      gamesPlayedTogether: 24,
+      settlementsTogether: 5,
+      recurringCrewsShared: 2,
+      sparkLevel: 'Ride or Die',
+    },
+    {
+      targetUserId: 'u-valen',
+      targetUserName: 'Valen',
+      targetUserHandle: '@valen.eth',
+      targetUserAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+      gatheringsTogether: 7,
+      gamesPlayedTogether: 18,
+      settlementsTogether: 4,
+      recurringCrewsShared: 2,
+      sparkLevel: 'Ignited',
+    },
+    {
+      targetUserId: 'u-sofi',
+      targetUserName: 'Sofi',
+      targetUserHandle: '@sofi.partylot',
+      targetUserAvatar:
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+      gatheringsTogether: 6,
+      gamesPlayedTogether: 14,
+      settlementsTogether: 3,
+      recurringCrewsShared: 1,
+      sparkLevel: 'Kindling',
+    },
   ];
 
   const pastNights = [
@@ -122,40 +164,89 @@ export const ProfileView: React.FC = () => {
         <div className="lg:col-span-5 space-y-6">
           <section>
             <div className="flex items-center justify-between mb-3 px-1">
-              <h3 className="font-display font-extrabold text-base sm:text-lg tracking-wide uppercase text-white/90">
-                CLOSE CREW
-              </h3>
-              <span className="text-xs text-[#E9FF32] font-semibold">Verified Co-Presence</span>
+              <div>
+                <h3 className="font-display font-extrabold text-base sm:text-lg tracking-wide uppercase text-white/90">
+                  SHARED-EXPERIENCE GRAPH
+                </h3>
+                <p className="text-[11px] text-white/50">Verified co-presence · No vanity followers</p>
+              </div>
+              <span className="text-xs text-[#E9FF32] font-semibold bg-[#E9FF32]/10 border border-[#E9FF32]/20 px-2 py-0.5 rounded-full">
+                Onchain Matrix
+              </span>
             </div>
 
             <div className="space-y-3">
-              {closeCrew.map((c, idx) => (
-                <GlassPanel
-                  key={idx}
-                  level={2}
-                  className="p-4 flex items-center justify-between border border-white/15 hover:border-white/30 transition-colors"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-full overflow-hidden border border-white/20 shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={c.avatar} alt={c.name} className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <h4 className="font-display font-bold text-base text-white">
-                        {c.name}
-                      </h4>
-                      <span className="text-xs text-white/50">Core party accomplice</span>
-                    </div>
-                  </div>
+              {sharedConnections.map((c) => {
+                const sparkColors: Record<string, { bg: string; text: string; border: string }> = {
+                  'Soul Crew': { bg: 'bg-purple-500/15', text: 'text-purple-300', border: 'border-purple-500/30' },
+                  'Ride or Die': { bg: 'bg-[#E9FF32]/15', text: 'text-[#E9FF32]', border: 'border-[#E9FF32]/30' },
+                  'Ignited': { bg: 'bg-orange-500/15', text: 'text-orange-300', border: 'border-orange-500/30' },
+                  'Kindling': { bg: 'bg-cyan-500/15', text: 'text-cyan-300', border: 'border-cyan-500/30' },
+                };
+                const spark = sparkColors[c.sparkLevel] || sparkColors['Kindling'];
 
-                  <div className="text-right">
-                    <span className="font-display font-black text-sm sm:text-base text-[#E9FF32]">
-                      {c.nights} nights
-                    </span>
-                    <span className="text-[10px] text-white/40 block font-mono">SocialGraph.sol</span>
-                  </div>
-                </GlassPanel>
-              ))}
+                return (
+                  <GlassPanel
+                    key={c.targetUserId}
+                    level={2}
+                    className="p-4 border border-white/15 hover:border-white/30 transition-all space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full overflow-hidden border border-white/20 shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={c.targetUserAvatar} alt={c.targetUserName} className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-display font-bold text-base text-white">
+                              {c.targetUserName}
+                            </h4>
+                            <span className="text-[10px] text-white/40 font-mono">
+                              {c.targetUserHandle}
+                            </span>
+                          </div>
+                          <span className="text-xs text-white/50 block">Recurring Accomplice</span>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${spark.bg} ${spark.text} ${spark.border} shadow-sm`}
+                      >
+                        ⚡ {c.sparkLevel}
+                      </span>
+                    </div>
+
+                    {/* Co-Presence Multi-Metrics Grid */}
+                    <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-white/5 text-center">
+                      <div className="p-1.5 rounded-lg bg-white/[0.02]">
+                        <span className="text-[10px] text-white/40 block">Parties</span>
+                        <span className="font-display font-black text-xs sm:text-sm text-white">
+                          {c.gatheringsTogether}
+                        </span>
+                      </div>
+                      <div className="p-1.5 rounded-lg bg-white/[0.02]">
+                        <span className="text-[10px] text-white/40 block">Games</span>
+                        <span className="font-display font-black text-xs sm:text-sm text-[#E9FF32]">
+                          {c.gamesPlayedTogether}
+                        </span>
+                      </div>
+                      <div className="p-1.5 rounded-lg bg-white/[0.02]">
+                        <span className="text-[10px] text-white/40 block">Settled</span>
+                        <span className="font-display font-black text-xs sm:text-sm text-white">
+                          {c.settlementsTogether}
+                        </span>
+                      </div>
+                      <div className="p-1.5 rounded-lg bg-white/[0.02]">
+                        <span className="text-[10px] text-white/40 block">Crews</span>
+                        <span className="font-display font-black text-xs sm:text-sm text-white">
+                          {c.recurringCrewsShared}
+                        </span>
+                      </div>
+                    </div>
+                  </GlassPanel>
+                );
+              })}
             </div>
           </section>
 

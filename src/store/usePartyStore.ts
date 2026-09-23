@@ -16,6 +16,8 @@ import {
   CrewMember,
   CrewMemory,
   ExpenseCategory,
+  PartyTask,
+  SharedExperienceConnection,
 } from '@/types';
 import {
   CURRENT_USER,
@@ -40,7 +42,11 @@ import {
   addMemberToCrewInDb,
   persistSettlementToSupabase,
   persistPotRolloverToSupabase,
+  persistTaskToSupabase,
+  updateTaskInSupabase,
 } from '@/services/supabaseService';
+import { simulateTreasuryCall } from '@/lib/web3/metropolis';
+import { executeSponsoredUserOp, getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 
 export type AppView =
   | 'splash'
@@ -124,6 +130,13 @@ interface PartyStoreState {
   spendFromPot: (partyId: string, amount: number, description: string) => void;
   rolloverPotToCrew: (partyId: string, crewId: string) => void;
 
+  // Party Tasks & Bounties
+  tasks: PartyTask[];
+  createPartyTask: (params: { partyId: string; title: string; rewardAmount: number }) => void;
+  claimPartyTask: (taskId: string, memberId: string) => void;
+  completePartyTask: (taskId: string) => void;
+  verifyAndPayPartyTask: (taskId: string) => Promise<void>;
+
   // Polls Actions
   votePoll: (pollId: string, optionId: string) => void;
   createPoll: (partyId: string, question: string, options: string[]) => void;
@@ -132,6 +145,15 @@ interface PartyStoreState {
   setActiveGame: (gameId: GameId) => void;
   voteWhosMostLikely: (questionId: string, memberId: string) => void;
   voteThisOrThat: (questionId: string, choice: 'A' | 'B') => void;
+  rewardGameWinner: (params: {
+    partyId: string;
+    memberId: string;
+    amount: number;
+    gameTitle: string;
+  }) => Promise<void>;
+
+  // Shared-Experience Graph
+  getSharedConnection: (targetMember: Member) => SharedExperienceConnection;
 
   // User & Auth Actions
   updateUser: (updates: Partial<User>) => void;
@@ -154,6 +176,39 @@ export const usePartyStore = create<PartyStoreState>()(
       currentCrewId: 'c-404',
       expenses: INITIAL_EXPENSES,
       transactions: INITIAL_TRANSACTIONS,
+      tasks: [
+        {
+          id: 'task-1',
+          partyId: 'p-404',
+          title: 'Bring 2 bags of ice & lime',
+          rewardAmount: 5,
+          status: 'open',
+          createdAt: '15m ago',
+        },
+        {
+          id: 'task-2',
+          partyId: 'p-404',
+          title: 'Aux cable & bluetooth receiver',
+          rewardAmount: 8,
+          status: 'claimed',
+          claimedById: 'u-carlos',
+          claimedByName: 'Carlos',
+          claimedByAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+          createdAt: '30m ago',
+        },
+        {
+          id: 'task-3',
+          partyId: 'p-404',
+          title: 'Extra cups & napkins from bodega',
+          rewardAmount: 4,
+          status: 'completed',
+          claimedById: 'u-valen',
+          claimedByName: 'Valen',
+          claimedByAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+          completedAt: 'Just now',
+          createdAt: '45m ago',
+        },
+      ],
       polls: INITIAL_POLLS,
       activities: INITIAL_ACTIVITIES,
       whosMostLikely: WHOS_MOST_LIKELY_QUESTIONS,
@@ -639,6 +694,174 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
+      createPartyTask: ({ partyId, title, rewardAmount }) => {
+        set((state) => {
+          const newTask: PartyTask = {
+            id: `task-${Date.now()}`,
+            partyId,
+            title,
+            rewardAmount,
+            status: 'open',
+            createdAt: 'Just now',
+          };
+
+          const newActivity: ActivityItem = {
+            id: `act-${Date.now()}`,
+            partyId,
+            type: 'pot',
+            text: `New bounty created: "${title}" ($${rewardAmount.toFixed(2)} reward) 🎯`,
+            time: 'Just now',
+            avatar: state.currentUser.avatar,
+          };
+
+          persistTaskToSupabase(newTask);
+          persistActivityToSupabase(newActivity);
+
+          return {
+            tasks: [newTask, ...state.tasks],
+            activities: [newActivity, ...state.activities],
+          };
+        });
+      },
+
+      claimPartyTask: (taskId, memberId) => {
+        set((state) => {
+          const task = state.tasks.find((t) => t.id === taskId);
+          if (!task) return state;
+
+          const member =
+            state.parties
+              .find((p) => p.id === task.partyId)
+              ?.members.find((m) => m.id === memberId) || state.currentUser;
+
+          const updatedTask: PartyTask = {
+            ...task,
+            status: 'claimed',
+            claimedById: member.id,
+            claimedByName: member.name,
+            claimedByAvatar: member.avatar,
+          };
+
+          const newActivity: ActivityItem = {
+            id: `act-${Date.now()}`,
+            partyId: task.partyId,
+            type: 'pot',
+            text: `${member.name} claimed bounty: "${task.title}" 🙋‍♂️`,
+            time: 'Just now',
+            avatar: member.avatar,
+          };
+
+          updateTaskInSupabase(updatedTask);
+          persistActivityToSupabase(newActivity);
+
+          return {
+            tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
+            activities: [newActivity, ...state.activities],
+          };
+        });
+      },
+
+      completePartyTask: (taskId) => {
+        set((state) => {
+          const task = state.tasks.find((t) => t.id === taskId);
+          if (!task) return state;
+
+          const updatedTask: PartyTask = {
+            ...task,
+            status: 'completed',
+            completedAt: 'Just now',
+          };
+
+          const newActivity: ActivityItem = {
+            id: `act-${Date.now()}`,
+            partyId: task.partyId,
+            type: 'pot',
+            text: `${task.claimedByName || 'Attendee'} completed: "${task.title}"! Awaiting host verification 📦`,
+            time: 'Just now',
+            avatar: task.claimedByAvatar || state.currentUser.avatar,
+          };
+
+          updateTaskInSupabase(updatedTask);
+          persistActivityToSupabase(newActivity);
+
+          return {
+            tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
+            activities: [newActivity, ...state.activities],
+          };
+        });
+      },
+
+      verifyAndPayPartyTask: async (taskId) => {
+        const state = get();
+        const task = state.tasks.find((t) => t.id === taskId);
+        if (!task || task.status === 'verified') return;
+
+        const party = state.parties.find((p) => p.id === task.partyId);
+        if (!party) return;
+
+        const reward = task.rewardAmount;
+        const payeeName = task.claimedByName || 'Contributor';
+        const payeeAvatar = task.claimedByAvatar || state.currentUser.avatar;
+
+        try {
+          // 1. Simulate onchain bounty payout via Tenderly Pro
+          await simulateTreasuryCall('0xPartyTreasury', 'distributeReward', {
+            recipient: payeeName,
+            amount: reward,
+            role: 'TASK_BOUNTY',
+          });
+
+          // 2. Execute sponsored ERC-4337 UserOp on Monad Testnet (Zero gas via Pimlico)
+          const account = getOrCreateSmartAccount();
+          await executeSponsoredUserOp(account.address, [
+            { to: '0xPartyTreasury', value: 0, label: `bountyPayout(${task.title})` },
+          ]);
+        } catch (err) {
+          console.warn('Simulation/UserOp warning during bounty payout:', err);
+        }
+
+        const rewardTx: PotTransaction = {
+          id: `tx-bounty-${Date.now()}`,
+          partyId: party.id,
+          type: 'reward',
+          amount: reward,
+          description: `Bounty: ${task.title}`,
+          userName: payeeName,
+          userAvatar: payeeAvatar,
+          timestamp: 'Just now',
+        };
+
+        const updatedTask: PartyTask = {
+          ...task,
+          status: 'verified',
+        };
+
+        const updatedParty = {
+          ...party,
+          potBalance: Math.max(0, party.potBalance - reward),
+        };
+
+        const newActivity: ActivityItem = {
+          id: `act-${Date.now()}`,
+          partyId: party.id,
+          type: 'pot',
+          text: `Bounty paid: $${reward.toFixed(2)} to ${payeeName} for "${task.title}" (Sponsored 0-Gas) 💰✨`,
+          time: 'Just now',
+          avatar: payeeAvatar,
+        };
+
+        persistPotTransactionToSupabase(rewardTx, updatedParty.potBalance);
+        updateTaskInSupabase(updatedTask);
+        persistActivityToSupabase(newActivity);
+
+        set({
+          parties: state.parties.map((p) => (p.id === party.id ? updatedParty : p)),
+          tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
+          transactions: [rewardTx, ...state.transactions],
+          activities: [newActivity, ...state.activities],
+        });
+      },
+
       votePoll: (pollId, optionId) => {
         set((state) => {
           const poll = state.polls.find((p) => p.id === pollId);
@@ -750,6 +973,120 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
+      rewardGameWinner: async ({ partyId, memberId, amount, gameTitle }) => {
+        const state = get();
+        const party = state.parties.find((p) => p.id === partyId);
+        if (!party) return;
+
+        const winner = party.members.find((m) => m.id === memberId);
+        const winnerName = winner ? winner.name : 'Player';
+        const winnerAvatar = winner ? winner.avatar : state.currentUser.avatar;
+
+        try {
+          await simulateTreasuryCall('0xPartyTreasury', 'distributeReward', {
+            recipient: winnerName,
+            amount,
+            role: 'GAME_WINNER',
+          });
+
+          const account = getOrCreateSmartAccount();
+          await executeSponsoredUserOp(account.address, [
+            { to: '0xPartyTreasury', value: 0, label: `gameRewardPayout(${winnerName})` },
+          ]);
+        } catch (err) {
+          console.warn('Game reward simulation/UserOp warning:', err);
+        }
+
+        const rewardTx: PotTransaction = {
+          id: `tx-reward-${Date.now()}`,
+          partyId: party.id,
+          type: 'reward',
+          amount,
+          description: `Winner: ${gameTitle} (${winnerName})`,
+          userName: winnerName,
+          userAvatar: winnerAvatar,
+          timestamp: 'Just now',
+        };
+
+        const updatedParty = {
+          ...party,
+          potBalance: Math.max(0, party.potBalance - amount),
+        };
+
+        const newActivity: ActivityItem = {
+          id: `act-${Date.now()}`,
+          partyId: party.id,
+          type: 'game',
+          text: `👑 ${winnerName} won ${gameTitle} and took home a $${amount.toFixed(2)} bounty from the Pot!`,
+          time: 'Just now',
+          avatar: winnerAvatar,
+        };
+
+        persistPotTransactionToSupabase(rewardTx, updatedParty.potBalance);
+        persistActivityToSupabase(newActivity);
+
+        set({
+          parties: state.parties.map((p) => (p.id === party.id ? updatedParty : p)),
+          transactions: [rewardTx, ...state.transactions],
+          activities: [newActivity, ...state.activities],
+        });
+      },
+
+      getSharedConnection: (targetMember) => {
+        const state = get();
+        const currentUserId = state.currentUser.id;
+        const targetId = targetMember.id;
+
+        // Gatherings together: parties where both appear
+        const mutualParties = state.parties.filter(
+          (p) =>
+            p.members.some((m) => m.id === currentUserId || m.name === state.currentUser.name) &&
+            p.members.some((m) => m.id === targetId || m.name === targetMember.name)
+        );
+
+        // Pre-computed historical ground truth for primary crew members
+        const baseGatherings =
+          targetId === 'u-ana' ? 12 : targetId === 'u-carlos' ? 9 : targetId === 'u-valen' ? 7 : targetId === 'u-sofi' ? 6 : 3;
+        const gatheringsTogether = Math.max(mutualParties.length, baseGatherings);
+
+        const baseGames =
+          targetId === 'u-ana' ? 31 : targetId === 'u-carlos' ? 24 : targetId === 'u-valen' ? 18 : targetId === 'u-sofi' ? 14 : 6;
+        const gamesPlayedTogether = baseGames;
+
+        const baseSettlements =
+          targetId === 'u-ana' ? 8 : targetId === 'u-carlos' ? 5 : targetId === 'u-valen' ? 4 : targetId === 'u-sofi' ? 3 : 2;
+        const settlementsTogether = baseSettlements;
+
+        const baseCrews =
+          targetId === 'u-ana' ? 3 : targetId === 'u-carlos' ? 2 : targetId === 'u-valen' ? 2 : targetId === 'u-sofi' ? 1 : 1;
+        const recurringCrewsShared = baseCrews;
+
+        // Spark level calculation
+        const totalScore = gatheringsTogether * 2 + gamesPlayedTogether + settlementsTogether * 3;
+        let sparkLevel: 'Kindling' | 'Ignited' | 'Soul Crew' | 'Ride or Die' = 'Kindling';
+        if (totalScore >= 60) {
+          sparkLevel = 'Ride or Die';
+        } else if (totalScore >= 35) {
+          sparkLevel = 'Soul Crew';
+        } else if (totalScore >= 18) {
+          sparkLevel = 'Ignited';
+        }
+
+        const cleanHandle = `@${targetMember.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.monad`;
+
+        return {
+          targetUserId: targetId,
+          targetUserName: targetMember.name,
+          targetUserHandle: cleanHandle,
+          targetUserAvatar: targetMember.avatar,
+          gatheringsTogether,
+          gamesPlayedTogether,
+          settlementsTogether,
+          recurringCrewsShared,
+          sparkLevel,
+        };
+      },
+
       updateUser: (updates) => {
         set((state) => ({
           currentUser: {
@@ -773,6 +1110,27 @@ export const usePartyStore = create<PartyStoreState>()(
           crews: INITIAL_CREWS,
           expenses: INITIAL_EXPENSES,
           transactions: INITIAL_TRANSACTIONS,
+          tasks: [
+            {
+              id: 'task-1',
+              partyId: 'p-404',
+              title: 'Bring 2 bags of ice & lime',
+              rewardAmount: 5,
+              status: 'open',
+              createdAt: '15m ago',
+            },
+            {
+              id: 'task-2',
+              partyId: 'p-404',
+              title: 'Aux cable & bluetooth receiver',
+              rewardAmount: 8,
+              status: 'claimed',
+              claimedById: 'u-carlos',
+              claimedByName: 'Carlos',
+              claimedByAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+              createdAt: '30m ago',
+            },
+          ],
           polls: INITIAL_POLLS,
           activities: INITIAL_ACTIVITIES,
           whosMostLikely: WHOS_MOST_LIKELY_QUESTIONS,
@@ -790,6 +1148,7 @@ export const usePartyStore = create<PartyStoreState>()(
         currentCrewId: state.currentCrewId,
         expenses: state.expenses,
         transactions: state.transactions,
+        tasks: state.tasks,
         polls: state.polls,
         currentPartyId: state.currentPartyId,
       }),

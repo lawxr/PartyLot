@@ -20,6 +20,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { LiquidBlob } from '@/components/ui/LiquidBlob';
 import { executeSponsoredUserOp, getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 import { simulateTreasuryCall } from '@/lib/web3/metropolis';
+import { PartyTasksBoard } from '@/components/party/PartyTasksBoard';
 import confetti from 'canvas-confetti';
 
 export const PartyPotView: React.FC = () => {
@@ -462,6 +463,11 @@ export const PartyPotView: React.FC = () => {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Social Bounties & Tasks Board */}
+        <div className="mt-12 pt-8 border-t border-white/10">
+          <PartyTasksBoard partyId={party.id} />
         </div>
       </main>
 

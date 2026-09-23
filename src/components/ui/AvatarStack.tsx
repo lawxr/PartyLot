@@ -10,6 +10,7 @@ interface AvatarStackProps {
   showCount?: boolean;
   countLabel?: string;
   className?: string;
+  onMemberClick?: (member: Member) => void;
 }
 
 export const AvatarStack: React.FC<AvatarStackProps> = ({
@@ -19,6 +20,7 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
   showCount = true,
   countLabel = 'going',
   className = '',
+  onMemberClick,
 }) => {
   const sizeMap = {
     sm: 'w-6 h-6 -space-x-1.5 text-[10px]',
@@ -41,8 +43,12 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
         {visibleMembers.map((member, index) => (
           <div
             key={member.id || index}
-            className={`relative rounded-full overflow-hidden border-[#050505] bg-neutral-800 shrink-0 shadow-md ${avatarSize}`}
+            onClick={() => onMemberClick?.(member)}
+            className={`relative rounded-full overflow-hidden border-[#050505] bg-neutral-800 shrink-0 shadow-md ${avatarSize} ${
+              onMemberClick ? 'cursor-pointer hover:scale-110 hover:z-20 transition-transform' : ''
+            }`}
             style={{ zIndex: maxDisplay - index }}
+            title={member.name}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

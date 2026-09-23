@@ -2,19 +2,22 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, Sparkles, RefreshCw } from 'lucide-react';
+import { Crown, RefreshCw, Coins, Check } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import confetti from 'canvas-confetti';
 
 export const WhosMostLikely: React.FC = () => {
-  const { parties, currentPartyId, whosMostLikely, voteWhosMostLikely } = usePartyStore();
+  const { parties, currentPartyId, whosMostLikely, voteWhosMostLikely, rewardGameWinner } =
+    usePartyStore();
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const [questionIndex, setQuestionIndex] = useState(0);
   const [votedMemberId, setVotedMemberId] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [isRewarding, setIsRewarding] = useState(false);
+  const [rewardedWinnerId, setRewardedWinnerId] = useState<string | null>(null);
 
   const currentQ = whosMostLikely[questionIndex % whosMostLikely.length];
 
@@ -44,6 +47,28 @@ export const WhosMostLikely: React.FC = () => {
     setVotedMemberId(null);
     setShowResults(false);
     setQuestionIndex((prev) => prev + 1);
+  };
+
+  const handleRewardWinner = async () => {
+    if (!winnerMember || isRewarding || rewardedWinnerId === winnerMember.id) return;
+    setIsRewarding(true);
+    try {
+      await rewardGameWinner({
+        partyId: party.id,
+        memberId: winnerMember.id,
+        amount: 3,
+        gameTitle: "Who's Most Likely",
+      });
+      setRewardedWinnerId(winnerMember.id);
+      confetti({
+        particleCount: 70,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#E9FF32', '#10B981', '#FFFFFF'],
+      });
+    } finally {
+      setIsRewarding(false);
+    }
   };
 
   return (
@@ -130,10 +155,10 @@ export const WhosMostLikely: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full p-4 rounded-2xl bg-[#E9FF32]/10 border border-[#E9FF32]/30 flex items-center justify-between mb-4"
+            className="w-full p-4 rounded-2xl bg-[#E9FF32]/10 border border-[#E9FF32]/30 flex flex-col sm:flex-row items-center justify-between gap-3 mb-4"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-[#E9FF32]">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#E9FF32] shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={winnerMember.avatar}
@@ -142,23 +167,54 @@ export const WhosMostLikely: React.FC = () => {
                 />
               </div>
               <div>
-                <span className="text-[10px] uppercase font-bold text-[#E9FF32] tracking-wider">
-                  CREW CONSENSUS
+                <span className="text-[10px] uppercase font-bold text-[#E9FF32] tracking-wider block">
+                  CREW CONSENSUS · ROUND WINNER
                 </span>
-                <p className="font-display font-extrabold text-sm text-white">
+                <p className="font-display font-black text-base text-white">
                   {winnerMember.name} takes the crown! 👑
                 </p>
+                <span className="text-[11px] text-white/60">
+                  {party.potBalance > 0
+                    ? `Party Pot: $${party.potBalance.toFixed(2)} available`
+                    : 'Party Pot empty'}
+                </span>
               </div>
             </div>
 
-            <GlassButton
-              variant="accent"
-              size="sm"
-              onClick={handleNextQuestion}
-              icon={<RefreshCw className="w-3.5 h-3.5 text-black" />}
-            >
-              Next
-            </GlassButton>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              {party.potBalance >= 3 && (
+                <button
+                  onClick={handleRewardWinner}
+                  disabled={isRewarding || rewardedWinnerId === winnerMember.id}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold font-display flex items-center gap-1.5 transition-all active:scale-95 ${
+                    rewardedWinnerId === winnerMember.id
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-[#E9FF32] text-black hover:brightness-105 shadow-md'
+                  }`}
+                >
+                  {rewardedWinnerId === winnerMember.id ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>$3 Bounty Paid</span>
+                    </>
+                  ) : (
+                    <>
+                      <Coins className="w-3.5 h-3.5" />
+                      <span>{isRewarding ? 'Paying...' : 'Reward $3 from Pot'}</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              <GlassButton
+                variant="glass"
+                size="sm"
+                onClick={handleNextQuestion}
+                icon={<RefreshCw className="w-3.5 h-3.5 text-white" />}
+              >
+                Next
+              </GlassButton>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

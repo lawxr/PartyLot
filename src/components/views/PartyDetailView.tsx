@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Gamepad2,
@@ -10,17 +10,19 @@ import {
   Share2,
   ArrowLeft,
   MapPin,
-  Clock,
   Sparkles,
   CheckCircle2,
   FileText,
   ShieldCheck,
+  QrCode,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { AvatarStack } from '@/components/ui/AvatarStack';
 import { GlassPanel } from '@/components/ui/GlassPanel';
-import { GlassButton } from '@/components/ui/GlassButton';
-import { formatPartyInviteText } from '@/services/party';
+import { PartyTasksBoard } from '@/components/party/PartyTasksBoard';
+import { PartyInviteModal } from '@/components/ui/PartyInviteModal';
+import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
+import { Member } from '@/types';
 
 export const PartyDetailView: React.FC = () => {
   const {
@@ -37,19 +39,11 @@ export const PartyDetailView: React.FC = () => {
   const partyActivities = activities.filter((a) => a.partyId === party.id);
   const isGoing = party.members.some((m) => m.id === currentUser.id);
 
-  const handleShare = async () => {
-    const text = formatPartyInviteText(party);
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: party.title, text });
-      } catch {
-        await navigator.clipboard.writeText(text);
-        alert('Invite link copied!');
-      }
-    } else {
-      await navigator.clipboard.writeText(text);
-      alert('Invite link copied to clipboard!');
-    }
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+
+  const handleShare = () => {
+    setIsInviteOpen(true);
   };
 
   const quickActions = [
@@ -140,9 +134,14 @@ export const PartyDetailView: React.FC = () => {
               <span className="px-3 py-1 rounded-full liquid-glass-nav text-xs font-extrabold text-[#E9FF32] tracking-wider uppercase">
                 {party.date} · {party.time}
               </span>
-              <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-mono text-white/80 border border-white/10">
-                CODE: {party.code}
-              </span>
+              <button
+                onClick={() => setIsInviteOpen(true)}
+                className="px-2.5 py-1 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-[11px] font-mono text-white/90 border border-white/20 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-md"
+                title="Tap to show QR and invite crew"
+              >
+                <QrCode className="w-3.5 h-3.5 text-[#E9FF32]" />
+                <span>CODE: {party.code}</span>
+              </button>
               <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-mono text-white/70 border border-white/10">
                 <ShieldCheck className="w-3 h-3 text-[#E9FF32]" />
                 MONAD VERIFIED
@@ -163,7 +162,12 @@ export const PartyDetailView: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-white/15">
-              <AvatarStack members={party.members} size="md" countLabel="going" />
+              <AvatarStack
+                members={party.members}
+                size="md"
+                countLabel="going"
+                onMemberClick={(m) => setSelectedMember(m)}
+              />
 
               <button
                 onClick={() => toggleRsvp(party.id)}
@@ -209,19 +213,30 @@ export const PartyDetailView: React.FC = () => {
             {/* Section: Who's Coming */}
             <section>
               <div className="flex items-center justify-between mb-3 px-1">
-                <h3 className="font-display font-extrabold text-base tracking-wide text-white uppercase">
-                  Who&apos;s Coming ({party.members.length})
-                </h3>
-                <span className="text-xs text-white/40">Private guest circle</span>
+                <div>
+                  <h3 className="font-display font-extrabold text-base tracking-wide text-white uppercase">
+                    Who&apos;s Coming ({party.members.length})
+                  </h3>
+                  <span className="text-[11px] text-white/40">Tap any avatar for mutual chemistry & stats</span>
+                </div>
+                <button
+                  onClick={() => setIsInviteOpen(true)}
+                  className="text-xs text-[#E9FF32] hover:underline font-bold flex items-center gap-1"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  Invite +
+                </button>
               </div>
 
               <div className="grid grid-cols-4 sm:grid-cols-6 xl:grid-cols-8 gap-3">
                 {party.members.map((member) => (
                   <div
                     key={member.id}
-                    className="p-3 rounded-2xl liquid-glass-card flex flex-col items-center text-center border border-white/10 hover:border-white/30 transition-all"
+                    onClick={() => setSelectedMember(member)}
+                    className="p-3 rounded-2xl liquid-glass-card flex flex-col items-center text-center border border-white/10 hover:border-[#E9FF32]/50 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+                    title={`View shared experience with ${member.name}`}
                   >
-                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-white/20 p-0.5 shadow-md mb-1.5">
+                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-white/20 p-0.5 shadow-md mb-1.5 group-hover:border-[#E9FF32]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={member.avatar}
@@ -234,7 +249,7 @@ export const PartyDetailView: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    <span className="text-xs font-bold text-white/90 truncate w-full">
+                    <span className="text-xs font-bold text-white/90 truncate w-full group-hover:text-[#E9FF32]">
                       {member.name}
                     </span>
                     <span className="text-[10px] text-white/40 truncate w-full">
@@ -243,6 +258,11 @@ export const PartyDetailView: React.FC = () => {
                   </div>
                 ))}
               </div>
+            </section>
+
+            {/* Social Bounties & Tasks Board */}
+            <section className="pt-2">
+              <PartyTasksBoard partyId={party.id} />
             </section>
           </div>
 
@@ -334,6 +354,19 @@ export const PartyDetailView: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Social & Viral Modals */}
+      <PartyInviteModal
+        party={party}
+        isOpen={isInviteOpen}
+        onClose={() => setIsInviteOpen(false)}
+      />
+
+      <SharedExperienceModal
+        member={selectedMember}
+        isOpen={Boolean(selectedMember)}
+        onClose={() => setSelectedMember(null)}
+      />
     </div>
   );
 };

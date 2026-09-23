@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Gamepad2,
@@ -32,14 +32,24 @@ export const PartyDetailView: React.FC = () => {
     setCurrentView,
     toggleRsvp,
     goBack,
+    listenToActivePartyRealtime,
+    loadPartyFromSupabase,
   } = usePartyStore();
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
-  const partyActivities = activities.filter((a) => a.partyId === party.id);
-  const isGoing = party.members.some((m) => m.id === currentUser.id);
+  const partyActivities = activities.filter((a) => a.partyId === party?.id);
+  const isGoing = party?.members.some((m) => m.id === currentUser.id);
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+
+  useEffect(() => {
+    if (party?.id) {
+      loadPartyFromSupabase(party.id);
+      const unsub = listenToActivePartyRealtime(party.id);
+      return () => unsub();
+    }
+  }, [party?.id, listenToActivePartyRealtime, loadPartyFromSupabase]);
 
   const handleShare = () => {
     setIsInviteOpen(true);

@@ -1,5 +1,15 @@
 import { getSupabase } from '@/lib/supabase/client';
-import { Party, Member, Expense, PotTransaction, ActivityItem, Crew, PartyTask } from '@/types';
+import {
+  Party,
+  Member,
+  Expense,
+  PotTransaction,
+  ActivityItem,
+  Crew,
+  PartyTask,
+  User,
+  CrewMember,
+} from '@/types';
 
 /**
  * Service providing database persistence and Realtime synchronization
@@ -473,3 +483,260 @@ export function subscribeToTasksRealtime(partyId: string, onTaskChange: () => vo
     supabase.removeChannel(channel);
   };
 }
+
+/**
+ * Persists or updates user profile in Supabase
+ */
+export async function syncUserDataToDb(user: User): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    await supabase.from('users').upsert({
+      id: user.id,
+      name: user.name,
+      handle: user.handle,
+      avatar: user.avatar,
+      wallet_address: user.walletAddress || null,
+      email: user.email || null,
+      gatherings_count: user.gatheringsCount || 0,
+      games_count: user.gamesCount || 0,
+      people_count: user.peopleCount || 0,
+      settlements_count: user.settlementsCount || 0,
+      balance: user.balance || 0,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('Failed to sync user to Supabase:', err);
+  }
+}
+
+/**
+ * Fetches all parties from Supabase with their associated members
+ */
+export async function fetchPartiesFromDb(): Promise<Party[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  try {
+    const { data: partiesData, error: partiesErr } = await supabase
+      .from('parties')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (partiesErr || !partiesData) return [];
+
+    const { data: membersData } = await supabase
+      .from('party_members')
+      .select('*');
+
+    const membersByParty: Record<string, Member[]> = {};
+    (membersData || []).forEach((m) => {
+      if (!membersByParty[m.party_id]) {
+        membersByParty[m.party_id] = [];
+      }
+      membersByParty[m.party_id].push({
+        id: m.user_id,
+        name: m.name,
+        avatar: m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        role: m.role as 'host' | 'guest',
+        status: m.status as 'going' | 'maybe' | 'invited',
+        nightsTogether: m.nights_together || 1,
+        walletAddress: m.wallet_address || undefined,
+      });
+    });
+
+    return partiesData.map((p) => ({
+      id: p.id,
+      code: p.code,
+      title: p.title,
+      date: p.date,
+      time: p.time,
+      location: p.location,
+      description: p.description || '',
+      coverImage: p.cover_image || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
+      hostId: p.host_id || 'u-host',
+      hostName: p.host_name || 'Host',
+      potBalance: Number(p.pot_balance) || 0,
+      status: (p.status as 'upcoming' | 'live' | 'past') || 'upcoming',
+      createdAt: p.created_at,
+      crewId: p.crew_id || undefined,
+      members: membersByParty[p.id] || [],
+    }));
+  } catch (err) {
+    console.warn('Failed to fetch parties from Supabase:', err);
+    return [];
+  }
+}
+
+/**
+ * Fetches all details, expenses, pot transactions, tasks and activities for a specific party
+ */
+export async function fetchPartyDetailsFromDb(partyId: string) {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  try {
+    const [partyRes, membersRes, expensesRes, transactionsRes, tasksRes, activitiesRes] = await Promise.all([
+      supabase.from('parties').select('*').eq('id', partyId).single(),
+      supabase.from('party_members').select('*').eq('party_id', partyId),
+      supabase.from('expenses').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
+      supabase.from('pot_transactions').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
+      supabase.from('tasks').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
+      supabase.from('activities').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
+    ]);
+
+    if (!partyRes.data) return null;
+
+    const members: Member[] = (membersRes.data || []).map((m) => ({
+      id: m.user_id,
+      name: m.name,
+      avatar: m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      role: m.role as 'host' | 'guest',
+      status: m.status as 'going' | 'maybe' | 'invited',
+      nightsTogether: m.nights_together || 1,
+      walletAddress: m.wallet_address || undefined,
+    }));
+
+    const expenses: Expense[] = (expensesRes.data || []).map((e) => ({
+      id: e.id,
+      partyId: e.party_id,
+      description: e.description,
+      amount: Number(e.amount),
+      paidById: e.paid_by_id || 'u-unknown',
+      paidByName: e.paid_by_name,
+      paidByAvatar:
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      splitBetweenIds: Array.isArray(e.split_between_ids) ? e.split_between_ids : [],
+      category: 'general',
+      isSettled: e.is_settled ?? false,
+      createdAt: e.created_at,
+      txHash: e.tx_hash || undefined,
+    }));
+
+    const transactions: PotTransaction[] = (transactionsRes.data || []).map((t) => ({
+      id: t.id,
+      partyId: t.party_id,
+      userId: t.user_id || undefined,
+      userName: t.user_name,
+      userAvatar:
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      type: (t.type === 'deposit'
+        ? 'add'
+        : t.type === 'reimbursement'
+        ? 'spend'
+        : t.type) as 'add' | 'spend' | 'reward' | 'rollover',
+      amount: Number(t.amount),
+      description: t.description || '',
+      timestamp: t.created_at,
+      txHash: t.tx_hash || undefined,
+    }));
+
+    const tasks: PartyTask[] = (tasksRes.data || []).map((tk) => ({
+      id: tk.id,
+      partyId: tk.party_id,
+      title: tk.title,
+      rewardAmount: Number(tk.reward_amount),
+      status: tk.status as 'open' | 'claimed' | 'completed' | 'verified',
+      claimedById: tk.claimed_by_id || undefined,
+      claimedByName: tk.claimed_by_name || undefined,
+      claimedByAvatar: tk.claimed_by_avatar || undefined,
+      completedAt: tk.completed_at || undefined,
+      createdAt: tk.created_at || 'Just now',
+    }));
+
+    const activities: ActivityItem[] = (activitiesRes.data || []).map((a) => ({
+      id: a.id,
+      partyId: a.party_id,
+      type: (a.type === 'deposit' ? 'pot' : a.type) as 'join' | 'pot' | 'poll' | 'game' | 'expense',
+      text: a.text,
+      time: a.time,
+      avatar: a.avatar || undefined,
+    }));
+
+    const p = partyRes.data;
+    const party: Party = {
+      id: p.id,
+      code: p.code,
+      title: p.title,
+      date: p.date,
+      time: p.time,
+      location: p.location,
+      description: p.description || '',
+      coverImage: p.cover_image || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
+      hostId: p.host_id || 'u-host',
+      hostName: p.host_name || 'Host',
+      potBalance: Number(p.pot_balance) || 0,
+      status: (p.status as 'upcoming' | 'live' | 'past') || 'upcoming',
+      createdAt: p.created_at,
+      crewId: p.crew_id || undefined,
+      members,
+    };
+
+    return { party, members, expenses, transactions, tasks, activities };
+  } catch (err) {
+    console.warn('Failed to fetch party details from Supabase:', err);
+    return null;
+  }
+}
+
+/**
+ * Fetches Crews and their members from Supabase
+ */
+export async function fetchCrewsFromDb(): Promise<Crew[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  try {
+    const { data: crewsData, error: crewsErr } = await supabase
+      .from('crews')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (crewsErr || !crewsData) return [];
+
+    const { data: crewMembersData } = await supabase
+      .from('crew_members')
+      .select('*, users(*)');
+
+    const membersByCrew: Record<string, CrewMember[]> = {};
+    (crewMembersData || []).forEach((cm) => {
+      if (!membersByCrew[cm.crew_id]) {
+        membersByCrew[cm.crew_id] = [];
+      }
+      const u = cm.users;
+      membersByCrew[cm.crew_id].push({
+        id: cm.id,
+        userId: cm.user_id,
+        name: u?.name || 'Member',
+        handle: u?.handle || '@member',
+        avatar: u?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        role: cm.role as 'owner' | 'admin' | 'member',
+        joinedAt: cm.joined_at,
+        walletAddress: u?.wallet_address || undefined,
+        nightsTogether: u?.gatherings_count || 1,
+      });
+    });
+
+    return crewsData.map((c) => ({
+      id: c.id,
+      name: c.name,
+      coverImage: c.cover_image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
+      ownerId: c.owner_id || undefined,
+      membersCount: (membersByCrew[c.id] || []).length || 1,
+      members: membersByCrew[c.id] || [],
+      partiesCount: 1,
+      totalSpent: 0,
+      nightsTogether: 1,
+      topGame: "Who's Most Likely",
+      treasuryBalance: Number(c.treasury_balance) || 0,
+      memories: [],
+      lastActivity: 'Active',
+      createdAt: c.created_at,
+    }));
+  } catch (err) {
+    console.warn('Failed to fetch crews from Supabase:', err);
+    return [];
+  }
+}
+

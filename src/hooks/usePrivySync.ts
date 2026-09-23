@@ -11,7 +11,7 @@ import { usePartyStore } from '@/store/usePartyStore';
 export function usePrivySync() {
   const { ready, authenticated, user, logout: privyLogout, login: privyLogin } = usePrivy();
   const { wallets } = useWallets();
-  const { updateUser, resetUserSession, currentView, setCurrentView } = usePartyStore();
+  const { updateUser, resetUserSession, currentView, setCurrentView, hydrateFromSupabase } = usePartyStore();
 
   useEffect(() => {
     if (!ready) return;
@@ -39,7 +39,7 @@ export function usePrivySync() {
 
       const displayName =
         user.google?.name ||
-        (email ? email.split('@')[0] : 'Law');
+        (email ? email.split('@')[0] : 'PartyMember');
 
       updateUser({
         name: displayName,
@@ -50,12 +50,17 @@ export function usePrivySync() {
         isPrivyAuthenticated: true,
       });
 
+      // Hydrate live data from Supabase for this session
+      hydrateFromSupabase().catch((err) =>
+        console.warn('Initial Supabase hydration fallback:', err)
+      );
+
       // Automatically transition from splash to home upon authenticating
       if (currentView === 'splash') {
         setCurrentView('home');
       }
     }
-  }, [ready, authenticated, user, wallets, updateUser, currentView, setCurrentView]);
+  }, [ready, authenticated, user, wallets, updateUser, currentView, setCurrentView, hydrateFromSupabase]);
 
   const handleLogout = async () => {
     try {

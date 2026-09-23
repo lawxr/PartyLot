@@ -44,6 +44,12 @@ import {
   persistPotRolloverToSupabase,
   persistTaskToSupabase,
   updateTaskInSupabase,
+  fetchPartiesFromDb,
+  fetchPartyDetailsFromDb,
+  fetchCrewsFromDb,
+  syncUserDataToDb,
+  subscribeToPartyRealtime,
+  subscribeToTasksRealtime,
 } from '@/services/supabaseService';
 import { distributeBountyOnchain } from '@/services/treasury';
 
@@ -157,6 +163,11 @@ interface PartyStoreState {
   // User & Auth Actions
   updateUser: (updates: Partial<User>) => void;
   resetUserSession: () => void;
+
+  // Realtime Supabase Persistence & Hydration
+  hydrateFromSupabase: () => Promise<void>;
+  loadPartyFromSupabase: (partyId: string) => Promise<void>;
+  listenToActivePartyRealtime: (partyId: string) => () => void;
 
   // Reset
   resetToDefaults: () => void;
@@ -1083,12 +1094,14 @@ export const usePartyStore = create<PartyStoreState>()(
       },
 
       updateUser: (updates) => {
-        set((state) => ({
-          currentUser: {
+        set((state) => {
+          const updated = {
             ...state.currentUser,
             ...updates,
-          },
-        }));
+          };
+          syncUserDataToDb(updated);
+          return { currentUser: updated };
+        });
       },
 
       resetUserSession: () => {
@@ -1097,6 +1110,64 @@ export const usePartyStore = create<PartyStoreState>()(
           currentView: 'splash',
         });
       },
+
+      hydrateFromSupabase: async () => {
+        const [dbParties, dbCrews] = await Promise.all([
+          fetchPartiesFromDb(),
+          fetchCrewsFromDb(),
+        ]);
+
+        if (dbParties.length > 0) {
+          set((s) => ({
+            parties: dbParties,
+            currentPartyId:
+              s.currentPartyId && dbParties.some((p) => p.id === s.currentPartyId)
+                ? s.currentPartyId
+                : dbParties[0].id,
+          }));
+        }
+
+        if (dbCrews.length > 0) {
+          set((s) => ({
+            crews: dbCrews,
+            currentCrewId:
+              s.currentCrewId && dbCrews.some((c) => c.id === s.currentCrewId)
+                ? s.currentCrewId
+                : dbCrews[0].id,
+          }));
+        }
+      },
+
+      loadPartyFromSupabase: async (partyId: string) => {
+        const details = await fetchPartyDetailsFromDb(partyId);
+        if (!details || !details.party) return;
+
+        set((s) => ({
+          parties: s.parties.some((p) => p.id === partyId)
+            ? s.parties.map((p) => (p.id === partyId ? details.party : p))
+            : [details.party, ...s.parties],
+          currentPartyId: partyId,
+          expenses: details.expenses.length > 0 ? details.expenses : s.expenses,
+          transactions: details.transactions.length > 0 ? details.transactions : s.transactions,
+          tasks: details.tasks.length > 0 ? details.tasks : s.tasks,
+          activities: details.activities.length > 0 ? details.activities : s.activities,
+        }));
+      },
+
+      listenToActivePartyRealtime: (partyId: string) => {
+        const unsubParty = subscribeToPartyRealtime(partyId, () => {
+          get().loadPartyFromSupabase(partyId);
+        });
+        const unsubTasks = subscribeToTasksRealtime(partyId, () => {
+          get().loadPartyFromSupabase(partyId);
+        });
+
+        return () => {
+          unsubParty();
+          unsubTasks();
+        };
+      },
+
 
       resetToDefaults: () => {
         set({

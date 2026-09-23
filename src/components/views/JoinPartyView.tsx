@@ -13,10 +13,11 @@ import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 import { usePrivySync } from '@/hooks/usePrivySync';
 import { useLogin } from '@privy-io/react-auth';
 import { PrivyAuthModal } from '@/components/ui/PrivyAuthModal';
+import { validateServerInviteCode } from '@/services/supabaseService';
 import confetti from 'canvas-confetti';
 
 export const JoinPartyView: React.FC = () => {
-  const { parties, joinPartyByCode, selectParty, goBack } = usePartyStore();
+  const { parties, joinPartyByCode, selectParty, goBack, hydrateFromSupabase } = usePartyStore();
   const { authenticated, ready } = usePrivySync();
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '']);
@@ -26,8 +27,24 @@ export const JoinPartyView: React.FC = () => {
   const pendingPartyRef = useRef<Party | null>(null);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
+  useEffect(() => {
+    hydrateFromSupabase().catch(() => {});
+  }, [hydrateFromSupabase]);
+
   const fullCode = digits.join('').toUpperCase();
   const matchedParty = fullCode.length === 4 ? parties.find((p) => p.code.toUpperCase() === fullCode) || null : null;
+
+  // Auto-fetch if not found locally yet
+  useEffect(() => {
+    if (fullCode.length === 4 && !matchedParty) {
+      validateServerInviteCode(fullCode).then((res) => {
+        if (res.valid) {
+          hydrateFromSupabase();
+        }
+      });
+    }
+  }, [fullCode, matchedParty, hydrateFromSupabase]);
+
   const errorMsg = fullCode.length === 4 && !matchedParty ? 'No party found with this code. Double-check with your host!' : null;
 
   const executeJoinFlow = useCallback(

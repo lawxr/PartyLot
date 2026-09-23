@@ -19,78 +19,117 @@ import {
 export interface InviteValidationResult {
   valid: boolean;
   partyId?: string;
+  partyTitle?: string;
+  partyLocation?: string;
   error?: string;
 }
 
 /**
- * Validates a 4-character invite code against server-side invitation records.
+ * Validates an invite code against server-side invitation records via the API route.
  * Verifies revocation, expiration, and usage limits.
  */
 export async function validateServerInviteCode(code: string): Promise<InviteValidationResult> {
-  const supabase = getSupabase();
-  if (!supabase) {
-    return { valid: false, error: 'Invite validation is unavailable because the database is not configured.' };
+  const normalized = code.trim().toUpperCase();
+  if (!normalized) {
+    return { valid: false, error: 'Invite code cannot be empty.' };
+  }
+
+  try {
+    const res = await fetch(`/api/invites/validate?code=${encodeURIComponent(normalized)}`);
+    const data = await res.json();
+
+    if (!res.ok || !data.valid) {
+      return {
+        valid: false,
+        error: data.error || 'Invite code could not be verified. Check with the host.',
+      };
+    }
+
+    return {
+      valid: true,
+      partyId: data.party_id,
+      partyTitle: data.party_title,
+      partyLocation: data.party_location,
+    };
+  } catch (err) {
+    console.warn('Invite validation fetch failed:', err);
+    return { valid: false, error: 'Invite validation service is unreachable. Please try again later.' };
+  }
+}
+
+/**
+ * Atomically validates the invite code and enrolls the authenticated Privy user
+ * into the party via the server-side API route.
+ */
+export async function joinPartyWithInviteCode(
+  code: string,
+  authToken: string | null
+): Promise<{ success: boolean; partyId?: string; party?: Party; error?: string }> {
+  if (!authToken) {
+    return {
+      success: false,
+      error: 'Authentication is required to join a party. Please sign in first.',
+    };
   }
 
   const normalized = code.trim().toUpperCase();
 
   try {
-    const { data: invite, error } = await supabase
-      .from('invitations')
-      .select('party_id, expires_at, max_uses, used_count, is_revoked')
-      .eq('code', normalized)
-      .eq('is_revoked', false)
-      .single();
-
-    if (error || !invite) {
-      return { valid: false, error: 'Invite code could not be verified. Check with the host or try again later.' };
-    }
-
-    if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
-      return { valid: false, error: 'This invitation has expired' };
-    }
-
-    if (invite.max_uses && invite.used_count >= invite.max_uses) {
-      return { valid: false, error: 'Invitation code has reached maximum uses' };
-    }
-
-    return { valid: true, partyId: invite.party_id };
-  } catch (err) {
-    console.warn('Supabase invite validation failed:', err);
-    return { valid: false, error: 'Invite validation is unavailable. Please try again later.' };
-  }
-}
-
-/**
- * The server must atomically validate the invite and create membership using
- * its authenticated identity mapping. No client-provided user identity is sent.
- */
-export async function joinPartyWithInviteCode(code: string): Promise<{ success: boolean; partyId?: string; error?: string }> {
-  const validation = await validateServerInviteCode(code);
-  if (!validation.valid || !validation.partyId) {
-    return { success: false, error: validation.error || 'Invite code could not be verified.' };
-  }
-
-  const supabase = getSupabase();
-  if (!supabase) {
-    return { success: false, error: 'Joining is unavailable because the database is not configured.' };
-  }
-
-  try {
-    const { data, error } = await supabase.rpc('join_party_with_invite', {
-      p_code: code.trim().toUpperCase(),
+    const res = await fetch('/api/parties/join', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ inviteCode: normalized }),
     });
-    if (error || !data) {
-      console.warn('Authenticated invite join RPC unavailable:', error);
-      return { success: false, error: 'Joining is unavailable until the server-side authenticated invite service is configured.' };
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      return {
+        success: false,
+        error: data.message || data.error || 'The server could not confirm this invite join.',
+      };
     }
 
-    const result = Array.isArray(data) ? data[0] : data;
-    if (!result || result.party_id !== validation.partyId || result.joined !== true) {
-      return { success: false, error: 'The server could not confirm this invite join.' };
-    }
+    // Format the returned database party record to match the frontend Party interface
+    const rawParty = data.party;
+    const formattedParty: Party = {
+      id: rawParty.id,
+      crewId: rawParty.crew_id || undefined,
+      code: rawParty.code,
+      title: rawParty.title,
+      date: rawParty.date,
+      time: rawParty.time,
+      location: rawParty.location,
+      description: rawParty.description || '',
+      coverImage:
+        rawParty.cover_image ||
+        'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80',
+      hostId: rawParty.host_id || 'host',
+      hostName: rawParty.host_name || 'Host',
+      members: (rawParty.members || []).map((m: Record<string, unknown>) => ({
+        id: (m.user_id as string) || (m.id as string),
+        name: (m.name as string) || 'Member',
+        avatar:
+          (m.avatar as string) ||
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        role: (m.role as 'host' | 'guest') || 'guest',
+        status: (m.status as 'going' | 'maybe' | 'invited') || 'going',
+        nightsTogether: Number(m.nights_together) || 1,
+        walletAddress: (m.wallet_address as string) || undefined,
+      })),
+      potBalance: Number(rawParty.pot_balance) || 0,
+      createdAt: rawParty.created_at || new Date().toISOString(),
+      status: (rawParty.status as 'upcoming' | 'live' | 'past') || 'upcoming',
+    };
 
-    return { success: true, partyId: result.party_id };
+    return {
+      success: true,
+      partyId: data.party_id,
+      party: formattedParty,
+    };
   } catch (err) {
     console.warn('Authenticated invite join failed:', err);
     return { success: false, error: 'Joining is unavailable. Please try again later.' };
@@ -484,27 +523,45 @@ export function subscribeToTasksRealtime(partyId: string, onTaskChange: () => vo
 /**
  * Persists or updates user profile in Supabase
  */
-export async function syncUserDataToDb(user: User): Promise<void> {
+export async function syncUserDataToDb(user: User, authToken?: string | null): Promise<void> {
+  if (authToken) {
+    try {
+      const res = await fetch('/api/users/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          name: user.name,
+          handle: user.handle,
+          avatar: user.avatar,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to sync user profile via API.');
+      }
+      return;
+    } catch (apiErr) {
+      console.warn('API profile sync error:', apiErr);
+      throw apiErr;
+    }
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     throw new Error('User profile persistence is unavailable because the database is not configured.');
   }
 
   try {
-    await supabase.from('users').upsert({
-      id: user.id,
-      name: user.name,
-      handle: user.handle,
-      avatar: user.avatar,
-      wallet_address: user.walletAddress || null,
-      email: user.email || null,
-      gatherings_count: user.gatheringsCount || 0,
-      games_count: user.gamesCount || 0,
-      people_count: user.peopleCount || 0,
-      settlements_count: user.settlementsCount || 0,
-      balance: user.balance || 0,
-      updated_at: new Date().toISOString(),
+    const { error } = await supabase.rpc('update_user_profile', {
+      p_user_id: user.id,
+      p_name: user.name,
+      p_handle: user.handle,
+      p_avatar: user.avatar || null,
     });
+    if (error) throw error;
   } catch (err) {
     console.warn('Failed to sync user to Supabase:', err);
     throw err;

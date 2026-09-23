@@ -8,8 +8,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { AvatarStack } from '@/components/ui/AvatarStack';
 import { Party } from '@/types';
-import { usePrivySync } from '@/hooks/usePrivySync';
-import { useLogin } from '@privy-io/react-auth';
+import { usePrivy, useLogin } from '@privy-io/react-auth';
 import { PrivyAuthModal } from '@/components/ui/PrivyAuthModal';
 import { validateServerInviteCode } from '@/services/supabaseService';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -19,7 +18,7 @@ import { isExplicitDevelopmentDemoMode, isPrivyConfigured } from '@/lib/runtimeM
 
 export const JoinPartyView: React.FC = () => {
   const { parties, joinPartyByCode, selectParty, goBack, hydrateFromSupabase } = usePartyStore();
-  const { authenticated, ready } = usePrivySync();
+  const { authenticated, ready, getAccessToken } = usePrivy();
   const { t } = useTranslation();
   const demoMode = isExplicitDevelopmentDemoMode();
 
@@ -27,6 +26,12 @@ export const JoinPartyView: React.FC = () => {
   const [isJoining, setIsJoining] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [serverPreview, setServerPreview] = useState<{
+    id: string;
+    title: string;
+    location: string;
+    code: string;
+  } | null>(null);
 
   const pendingPartyRef = useRef<Party | null>(null);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
@@ -47,28 +52,72 @@ export const JoinPartyView: React.FC = () => {
   // Auto-fetch if not found locally yet
   useEffect(() => {
     if (fullCode.length === 4 && !matchedParty) {
-      validateServerInviteCode(fullCode).then((res) => {
-        if (res.valid) {
-          hydrateFromSupabase();
-        } else {
-          setJoinError(res.error || 'Invite validation is unavailable.');
-        }
-      }).catch(() => {
-        setJoinError('Invite validation is unavailable. Please try again later.');
-      });
+      validateServerInviteCode(fullCode)
+        .then((res) => {
+          if (res.valid && res.partyId) {
+            setJoinError(null);
+            setServerPreview({
+              id: res.partyId,
+              title: res.partyTitle || 'Private Gathering',
+              location: res.partyLocation || 'Secret Location',
+              code: fullCode,
+            });
+            hydrateFromSupabase().catch(() => {});
+          } else {
+            setServerPreview(null);
+            setJoinError(res.error || 'Invite validation is unavailable.');
+          }
+        })
+        .catch(() => {
+          setServerPreview(null);
+          setJoinError('Invite validation is unavailable. Please try again later.');
+        });
     }
   }, [fullCode, matchedParty, hydrateFromSupabase]);
 
-  const errorMsg = joinError || (fullCode.length === 4 && !matchedParty ? 'No party found with this code. Double-check with your host!' : null);
+  const activeParty: Party | null =
+    matchedParty ||
+    (serverPreview && serverPreview.code === fullCode
+      ? {
+          id: serverPreview.id,
+          code: fullCode,
+          title: serverPreview.title,
+          location: serverPreview.location,
+          date: 'Upcoming',
+          time: 'TBA',
+          description: 'Private gathering invitation confirmed by server.',
+          coverImage:
+            'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80',
+          members: [],
+          potBalance: 0,
+          status: 'upcoming',
+          hostId: 'host',
+          hostName: 'Host',
+          createdAt: new Date().toISOString(),
+        }
+      : null);
+
+  const errorMsg =
+    joinError ||
+    (fullCode.length === 4 && !activeParty
+      ? 'No party found with this code. Double-check with your host!'
+      : null);
 
   const executeJoinFlow = useCallback(
-    async (party: Party) => {
+    async (code: string) => {
       setIsJoining(true);
-
       setJoinError(null);
       try {
-        const res = await joinPartyByCode(party.code);
-        if (res.success) {
+        let token: string | null = null;
+        if (authenticated) {
+          try {
+            token = await getAccessToken();
+          } catch (tErr) {
+            console.warn('Failed to obtain Privy access token:', tErr);
+          }
+        }
+        const res = await joinPartyByCode(code, token);
+        if (res.success && res.party) {
           confetti({
             particleCount: 60,
             spread: 60,
@@ -76,7 +125,7 @@ export const JoinPartyView: React.FC = () => {
             colors: ['#F0DC00', '#FFFFFF'],
           });
           setDigits(['', '', '', '']);
-          selectParty(party.id);
+          selectParty(res.party.id);
         } else {
           setJoinError(res.message || 'The server could not confirm this invite join.');
         }
@@ -85,7 +134,7 @@ export const JoinPartyView: React.FC = () => {
       }
       setIsJoining(false);
     },
-    [joinPartyByCode, selectParty]
+    [joinPartyByCode, selectParty, authenticated, getAccessToken]
   );
 
   const { login } = useLogin({
@@ -93,7 +142,7 @@ export const JoinPartyView: React.FC = () => {
       if (pendingPartyRef.current) {
         const target = pendingPartyRef.current;
         pendingPartyRef.current = null;
-        executeJoinFlow(target);
+        executeJoinFlow(target.code);
       }
     },
   });
@@ -130,10 +179,10 @@ export const JoinPartyView: React.FC = () => {
   };
 
   const handleConfirmJoin = async () => {
-    if (!matchedParty) return;
+    if (!activeParty) return;
 
     if (!authenticated && !demoMode) {
-      pendingPartyRef.current = matchedParty;
+      pendingPartyRef.current = activeParty;
       if (isPrivyConfigured() && ready) {
         try {
           login();
@@ -148,7 +197,7 @@ export const JoinPartyView: React.FC = () => {
       }
     }
 
-    executeJoinFlow(matchedParty);
+    executeJoinFlow(activeParty.code);
   };
 
   return (
@@ -181,13 +230,13 @@ export const JoinPartyView: React.FC = () => {
         >
           <div
             className={`w-full transition-all duration-300 ${
-              matchedParty
+              activeParty
                 ? 'grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center'
                 : 'flex flex-col items-center text-center max-w-lg mx-auto'
             }`}
           >
             {/* Left Column: Code Input & Instructions */}
-            <div className={matchedParty ? 'text-left' : 'text-center w-full'}>
+            <div className={activeParty ? 'text-left' : 'text-center w-full'}>
               <span className="text-xs font-extrabold uppercase tracking-widest text-[#F0DC00] mb-2 block">
                 {t.joinParty.joinCircle}
               </span>
@@ -203,7 +252,7 @@ export const JoinPartyView: React.FC = () => {
               {/* 4-Capsule Code Input (Fully responsive from mobile to desktop) */}
               <div
                 className={`flex items-center gap-2.5 sm:gap-3.5 md:gap-4 mb-4 ${
-                  matchedParty ? 'justify-start' : 'justify-center'
+                  activeParty ? 'justify-start' : 'justify-center'
                 }`}
               >
                 {digits.map((digit, idx) => (
@@ -240,12 +289,12 @@ export const JoinPartyView: React.FC = () => {
                   className="flex items-center gap-2 text-xs text-rose-300 font-medium mb-4 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 max-w-sm"
                 >
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-                  <span>{t.joinParty.errorNotFound}</span>
+                  <span>{errorMsg}</span>
                 </motion.div>
               )}
 
               {/* Quick Preset Hints */}
-              {demoMode && !matchedParty && !errorMsg && (
+              {demoMode && !activeParty && !errorMsg && (
                 <div className="text-xs text-white/50 mt-3">
                   {t.joinParty.testCodesHint}{' '}
                   <span
@@ -267,7 +316,7 @@ export const JoinPartyView: React.FC = () => {
 
             {/* Right Column: Resolved Party Card (Desktop & Mobile) */}
             <AnimatePresence>
-              {matchedParty && (
+              {activeParty && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.92, y: 15 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -280,42 +329,42 @@ export const JoinPartyView: React.FC = () => {
                     <div className="h-36 sm:h-44 w-full relative overflow-hidden">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={matchedParty.coverImage}
-                        alt={matchedParty.title}
+                        src={activeParty.coverImage}
+                        alt={activeParty.title}
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0C0C10] via-black/30 to-transparent" />
 
                       <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-bold text-[#F0DC00] border border-white/15 flex items-center gap-1.5 shadow-lg">
                         <ShieldCheck className="w-3.5 h-3.5 text-[#F0DC00]" />
-                          <span>{demoMode ? 'Demo fixture' : 'Invite preview'}</span>
+                        <span>{demoMode ? 'Demo fixture' : 'Invite preview'}</span>
                       </div>
                     </div>
 
                     {/* Party Details */}
                     <div className="p-5 sm:p-6">
                       <h3 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight">
-                        {matchedParty.title}
+                        {activeParty.title}
                       </h3>
 
                       <div className="flex flex-wrap items-center gap-3 text-xs text-white/80 font-semibold mt-1 mb-2">
                         <span className="flex items-center gap-1 text-[#F0DC00]">
                           <Clock className="w-3.5 h-3.5" />
-                          {matchedParty.date} · {matchedParty.time}
+                          {activeParty.date} · {activeParty.time}
                         </span>
                         <span>•</span>
                         <span className="flex items-center gap-1 text-white/70">
                           <MapPin className="w-3.5 h-3.5 text-white/50" />
-                          {matchedParty.location}
+                          {activeParty.location}
                         </span>
                       </div>
 
                       <p className="text-xs text-white/60 line-clamp-2 mb-4 font-normal">
-                        {matchedParty.description}
+                        {activeParty.description}
                       </p>
 
                       <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                        <AvatarStack members={matchedParty.members} size="sm" countLabel={t.home.going} />
+                        <AvatarStack members={activeParty.members} size="sm" countLabel={t.home.going} />
                       </div>
 
                       {/* Confirm Join Button */}

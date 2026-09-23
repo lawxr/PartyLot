@@ -144,7 +144,10 @@ interface PartyStoreState {
     coverImage: string;
     crewId?: string;
   }) => Party;
-  joinPartyByCode: (code: string) => Promise<{ success: boolean; party?: Party; message?: string }>;
+  joinPartyByCode: (
+    code: string,
+    authToken?: string | null
+  ) => Promise<{ success: boolean; party?: Party; message?: string }>;
   toggleRsvp: (partyId: string) => void;
 
   // Expense & Split Actions
@@ -189,7 +192,7 @@ interface PartyStoreState {
   getSharedConnection: (targetMember: Member) => SharedExperienceConnection;
 
   // User & Auth Actions
-  updateUser: (updates: Partial<User>) => void;
+  updateUser: (updates: Partial<User>, authToken?: string | null) => void;
   resetUserSession: () => void;
 
   // Realtime Supabase Persistence & Hydration
@@ -461,20 +464,47 @@ export const usePartyStore = create<PartyStoreState>()(
         return newParty;
       },
 
-      joinPartyByCode: async (code) => {
+      joinPartyByCode: async (code, authToken) => {
         const state = get();
         const normalized = code.trim().toUpperCase();
+
+        if (!demoMode) {
+          const result = await joinPartyWithInviteCode(normalized, authToken || null);
+          if (!result.success || !result.party) {
+            return {
+              success: false,
+              message: result.error || 'The server could not confirm this invite join.',
+            };
+          }
+
+          const confirmedParty = result.party;
+          const partyExists = state.parties.some((p) => p.id === confirmedParty.id);
+          const updatedParties = partyExists
+            ? state.parties.map((p) => (p.id === confirmedParty.id ? confirmedParty : p))
+            : [...state.parties, confirmedParty];
+
+          const newActivity: ActivityItem = {
+            id: `act-${Date.now()}`,
+            partyId: confirmedParty.id,
+            type: 'join',
+            text: `${state.currentUser.name} joined via code ${confirmedParty.code}`,
+            time: 'Just now',
+            avatar: state.currentUser.avatar,
+          };
+
+          set({
+            parties: updatedParties,
+            currentPartyId: confirmedParty.id,
+            activities: [newActivity, ...state.activities],
+          });
+
+          return { success: true, party: confirmedParty };
+        }
+
         const matched = state.parties.find((p) => p.code.toUpperCase() === normalized);
 
         if (!matched) {
           return { success: false, message: 'Party code not found. Check with host!' };
-        }
-
-        if (!demoMode) {
-          const result = await joinPartyWithInviteCode(normalized);
-          if (!result.success || result.partyId !== matched.id) {
-            return { success: false, message: result.error || 'The server could not confirm this invite join.' };
-          }
         }
 
         const isAlreadyMember = matched.members.some((m) => m.id === state.currentUser.id);
@@ -863,14 +893,14 @@ export const usePartyStore = create<PartyStoreState>()(
         };
       },
 
-      updateUser: (updates) => {
+      updateUser: (updates, authToken) => {
         set((state) => {
           const updated = {
             ...state.currentUser,
             ...updates,
           };
-          if (!demoMode) {
-            void syncUserDataToDb(updated).catch((error) =>
+          if (!demoMode && updated.id) {
+            void syncUserDataToDb(updated, authToken).catch((error) =>
               console.warn('User profile changes are not persisted:', error)
             );
           }

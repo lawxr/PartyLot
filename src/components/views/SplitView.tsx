@@ -78,33 +78,55 @@ export const SplitView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-32">
+    <div className="min-h-screen bg-[#050505] text-white pb-32 select-none">
       <TopNav title="EXPENSE ENGINE" />
 
-      <main className="px-4 sm:px-6 max-w-xl mx-auto pt-2 select-none">
+      <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
         {/* Editorial Header */}
-        <div className="mb-6 flex items-end justify-between">
+        <div className="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-5">
           <div>
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#E9FF32]">
               AUTOMATIC LIQUIDATION
             </span>
-            <h2 className="font-display font-black text-3xl sm:text-4xl text-white tracking-tight leading-none mt-1">
+            <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight leading-none mt-1">
               SPLIT THE DAMAGE
             </h2>
           </div>
 
-          <div className="text-right">
-            <span className="text-[10px] uppercase font-bold text-white/50 block">
-              TOTAL SPENT
-            </span>
-            <span className="font-display font-black text-xl text-[#E9FF32]">
-              ${totalAmount.toFixed(2)}
-            </span>
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <span className="text-[10px] uppercase font-bold text-white/50 block">
+                TOTAL SPENT
+              </span>
+              <span className="font-display font-black text-2xl sm:text-3xl text-[#E9FF32]">
+                ${totalAmount.toFixed(2)}
+              </span>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-3">
+              <GlassButton
+                variant="accent"
+                size="md"
+                onClick={() => setIsAddOpen(true)}
+                icon={<Plus className="w-4 h-4 text-black stroke-[3]" />}
+              >
+                Add expense
+              </GlassButton>
+
+              <GlassButton
+                variant="glass"
+                size="md"
+                onClick={() => setIsSettleOpen(true)}
+                icon={<CheckCircle2 className="w-4 h-4 text-[#E9FF32]" />}
+              >
+                SETTLE UP
+              </GlassButton>
+            </div>
           </div>
         </div>
 
-        {/* Action Bar */}
-        <div className="flex items-center gap-3 mb-6">
+        {/* Mobile Action Bar */}
+        <div className="flex sm:hidden items-center gap-3 mb-6">
           <GlassButton
             variant="accent"
             size="md"
@@ -126,100 +148,128 @@ export const SplitView: React.FC = () => {
           </GlassButton>
         </div>
 
-        {/* Net Balances Summary Section */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-white/60">
-              WHO OWES WHO
-            </span>
-            <span className="text-[11px] text-white/40">Real-time ledger</span>
+        {/* Responsive Multi-Column Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Net Balances & Settle Card (5 cols on desktop) */}
+          <div className="lg:col-span-5 space-y-6">
+            {/* Net Balances Summary Section */}
+            <section>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-white/60">
+                  WHO OWES WHO
+                </span>
+                <span className="text-[11px] text-white/40">Real-time ledger</span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5">
+                {netBalances.map((b) => {
+                  const isPositive = b.netAmount > 0.001;
+                  const isNegative = b.netAmount < -0.001;
+
+                  return (
+                    <GlassPanel
+                      key={b.memberId}
+                      level={2}
+                      className="p-3.5 flex flex-col justify-between border border-white/10"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-7 h-7 rounded-full overflow-hidden border border-white/20 shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={b.avatar} alt={b.memberName} className="w-full h-full object-cover" />
+                        </div>
+                        <span className="text-xs font-bold text-white truncate">
+                          {b.memberName}
+                        </span>
+                      </div>
+
+                      <div className="text-left">
+                        <span
+                          className={`font-display font-black text-base ${
+                            isPositive
+                              ? 'text-[#E9FF32]'
+                              : isNegative
+                              ? 'text-rose-400'
+                              : 'text-white/40'
+                          }`}
+                        >
+                          {isPositive ? `+$${b.netAmount.toFixed(2)}` : isNegative ? `-$${Math.abs(b.netAmount).toFixed(2)}` : '$0.00'}
+                        </span>
+                        <span className="block text-[9px] uppercase font-bold text-white/40 tracking-wider">
+                          {isPositive ? 'gets back' : isNegative ? 'owes' : 'settled'}
+                        </span>
+                      </div>
+                    </GlassPanel>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Desktop Quick Settlement Summary */}
+            <div className="hidden lg:block p-5 rounded-3xl liquid-glass-card border border-white/15">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#E9FF32] block mb-1">
+                SETTLEMENT ENGINE
+              </span>
+              <h4 className="font-display font-black text-xl text-white mb-2">
+                Optimal Debt Routing
+              </h4>
+              <p className="text-xs text-white/70 leading-relaxed mb-4">
+                Reduces total bank transfers using a greedy debt minimization algorithm.
+              </p>
+              <GlassButton
+                variant="glass"
+                size="md"
+                fullWidth
+                onClick={() => setIsSettleOpen(true)}
+                icon={<CheckCircle2 className="w-4 h-4 text-[#E9FF32]" />}
+              >
+                Review & Settle Up
+              </GlassButton>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {netBalances.map((b) => {
-              const isPositive = b.netAmount > 0.001;
-              const isNegative = b.netAmount < -0.001;
-              const isZero = !isPositive && !isNegative;
+          {/* Right Column: Expenses List (7 cols on desktop) */}
+          <div className="lg:col-span-7">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-white/60">
+                RECENT BILLS ({partyExpenses.length})
+              </span>
+              <span className="text-xs text-white/40">Itemized expenses</span>
+            </div>
 
-              return (
+            <div className="space-y-3">
+              {partyExpenses.map((exp) => (
                 <GlassPanel
-                  key={b.memberId}
+                  key={exp.id}
                   level={2}
-                  className="p-3.5 flex flex-col justify-between border border-white/10"
+                  className="p-4 sm:p-5 flex items-center justify-between border border-white/15 hover:border-white/25 transition-colors"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-full overflow-hidden border border-white/20 shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={b.avatar} alt={b.memberName} className="w-full h-full object-cover" />
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center border border-white/15 shrink-0">
+                      <Receipt className="w-5 h-5 text-white/80" />
                     </div>
-                    <span className="text-xs font-bold text-white truncate">
-                      {b.memberName}
-                    </span>
+                    <div>
+                      <h4 className="font-display font-bold text-base sm:text-lg text-white">
+                        {exp.description}
+                      </h4>
+                      <p className="text-xs text-white/50">
+                        Paid by <span className="text-white font-semibold">{exp.paidByName}</span> · split by {exp.splitBetweenIds.length} people
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="text-left">
-                    <span
-                      className={`font-display font-black text-base ${
-                        isPositive
-                          ? 'text-[#E9FF32]'
-                          : isNegative
-                          ? 'text-rose-400'
-                          : 'text-white/40'
-                      }`}
-                    >
-                      {isPositive ? `+$${b.netAmount.toFixed(2)}` : isNegative ? `-$${Math.abs(b.netAmount).toFixed(2)}` : '$0.00'}
+                  <div className="text-right">
+                    <span className="font-display font-black text-lg sm:text-xl text-white">
+                      ${exp.amount.toFixed(2)}
                     </span>
-                    <span className="block text-[9px] uppercase font-bold text-white/40 tracking-wider">
-                      {isPositive ? 'gets back' : isNegative ? 'owes' : 'settled'}
+                    <span className="block text-xs text-[#E9FF32] font-semibold">
+                      ${(exp.amount / exp.splitBetweenIds.length).toFixed(2)} / ea
                     </span>
                   </div>
                 </GlassPanel>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </section>
-
-        {/* Expenses List */}
-        <section>
-          <div className="flex items-center justify-between mb-3 px-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-white/60">
-              RECENT BILLS ({partyExpenses.length})
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {partyExpenses.map((exp) => (
-              <GlassPanel
-                key={exp.id}
-                level={2}
-                className="p-4 flex items-center justify-between border border-white/15"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center border border-white/15 shrink-0">
-                    <Receipt className="w-5 h-5 text-white/80" />
-                  </div>
-                  <div>
-                    <h4 className="font-display font-bold text-base text-white">
-                      {exp.description}
-                    </h4>
-                    <p className="text-xs text-white/50">
-                      Paid by <span className="text-white font-semibold">{exp.paidByName}</span> · split by {exp.splitBetweenIds.length} people
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="font-display font-black text-lg text-white">
-                    ${exp.amount.toFixed(2)}
-                  </span>
-                  <span className="block text-[10px] text-[#E9FF32] font-semibold">
-                    ${(exp.amount / exp.splitBetweenIds.length).toFixed(2)} / ea
-                  </span>
-                </div>
-              </GlassPanel>
-            ))}
-          </div>
-        </section>
+        </div>
       </main>
 
       {/* BottomSheet: + Add Expense */}

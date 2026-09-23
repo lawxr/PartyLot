@@ -52,38 +52,40 @@ export const TopNav: React.FC<TopNavProps> = ({
   };
 
   return (
-    <header className="sticky top-0 left-0 right-0 z-40 px-4 py-3 safe-top flex items-center justify-between pointer-events-none">
-      <div className="flex items-center gap-2 pointer-events-auto">
-        {showBack && (
-          <button
-            onClick={handleBack}
-            className="w-10 h-10 rounded-full liquid-glass-button flex items-center justify-center text-white/90 hover:text-white"
-            aria-label="Back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-        )}
-      </div>
-
-      {title && (
-        <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none max-w-[55%] truncate">
-          <span className="font-display font-bold text-sm tracking-tight text-white drop-shadow-md">
-            {title}
-          </span>
+    <header className="sticky top-0 left-0 right-0 z-40 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-3 safe-top pointer-events-none">
+      <div className="max-w-[1800px] mx-auto flex items-center justify-between relative w-full">
+        <div className="flex items-center gap-2 pointer-events-auto">
+          {showBack && (
+            <button
+              onClick={handleBack}
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full liquid-glass-button flex items-center justify-center text-white/90 hover:text-white transition-transform active:scale-95"
+              aria-label="Back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
         </div>
-      )}
 
-      <div className="flex items-center gap-2 pointer-events-auto">
-        {showShare && (
-          <button
-            onClick={handleShare}
-            className="w-10 h-10 rounded-full liquid-glass-button flex items-center justify-center text-white/90 hover:text-white"
-            aria-label="Share"
-          >
-            <Share2 className="w-4 h-4" />
-          </button>
+        {title && (
+          <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none max-w-[55%] truncate">
+            <span className="font-display font-bold text-sm sm:text-base tracking-tight text-white drop-shadow-md">
+              {title}
+            </span>
+          </div>
         )}
-        {rightAction}
+
+        <div className="flex items-center gap-2 pointer-events-auto">
+          {showShare && (
+            <button
+              onClick={handleShare}
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full liquid-glass-button flex items-center justify-center text-white/90 hover:text-white transition-transform active:scale-95"
+              aria-label="Share"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          )}
+          {rightAction}
+        </div>
       </div>
     </header>
   );

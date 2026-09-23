@@ -22,16 +22,16 @@ export const GamesView: React.FC = () => {
     <div className="min-h-screen bg-[#050505] text-white pb-32">
       <TopNav title={`${party.title} · GAMES`} />
 
-      <main className="px-4 sm:px-6 max-w-xl mx-auto pt-2">
-        {/* Game Switcher Pills */}
-        <div className="flex gap-2 p-1.5 rounded-full liquid-glass-nav mb-6 overflow-x-auto no-scrollbar">
+      <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
+        {/* Game Switcher Pills (Centered on desktop) */}
+        <div className="flex sm:justify-center gap-2 p-1.5 rounded-full liquid-glass-nav mb-8 overflow-x-auto no-scrollbar max-w-lg mx-auto">
           {games.map((g) => {
             const isActive = activeGameId === g.id;
             return (
               <button
                 key={g.id}
                 onClick={() => setActiveGame(g.id)}
-                className={`py-2 px-3 sm:px-4 rounded-full text-xs font-display font-bold shrink-0 transition-all ${
+                className={`py-2 px-3.5 sm:px-5 rounded-full text-xs sm:text-sm font-display font-bold shrink-0 transition-all ${
                   isActive
                     ? 'bg-[#E9FF32] text-black shadow-md'
                     : 'text-white/60 hover:text-white'

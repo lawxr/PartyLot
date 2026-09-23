@@ -54,46 +54,48 @@ export const PollsView: React.FC = () => {
     <div className="min-h-screen bg-[#050505] text-white pb-32 select-none">
       <TopNav title="GROUP POLLS" />
 
-      <main className="px-4 sm:px-6 max-w-xl mx-auto pt-2">
-        {/* Header */}
-        <div className="flex items-end justify-between mb-6">
+      <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
+        {/* Responsive Header */}
+        <div className="flex items-end justify-between mb-8 border-b border-white/10 pb-5">
           <div>
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#E9FF32]">
               REAL-TIME DECISIONS
             </span>
-            <h2 className="font-display font-black text-3xl sm:text-4xl text-white tracking-tight leading-none mt-1">
+            <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight leading-none mt-1">
               CREW POLLS
             </h2>
           </div>
 
           <GlassButton
             variant="accent"
-            size="sm"
+            size="md"
             onClick={() => setIsCreateOpen(true)}
             icon={<Plus className="w-4 h-4 text-black stroke-[3]" />}
           >
-            Create
+            Create Poll
           </GlassButton>
         </div>
 
-        {/* Poll Cards List */}
-        <div className="space-y-6">
+        {/* Poll Cards Multi-Column Grid on Desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {partyPolls.map((poll) => (
             <GlassPanel
               key={poll.id}
               level={2}
-              className="p-5 sm:p-6 border border-white/15"
+              className="p-5 sm:p-6 border border-white/15 hover:border-white/25 transition-colors flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
-                  {poll.totalVotes} TOTAL VOTES
-                </span>
-                <span className="text-[11px] text-white/40">{poll.createdAt}</span>
-              </div>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+                    {poll.totalVotes} TOTAL VOTES
+                  </span>
+                  <span className="text-[11px] text-white/40">{poll.createdAt}</span>
+                </div>
 
-              <h3 className="font-display font-black text-xl sm:text-2xl text-white tracking-tight mb-4">
-                {poll.question}
-              </h3>
+                <h3 className="font-display font-black text-xl sm:text-2xl text-white tracking-tight mb-5">
+                  {poll.question}
+                </h3>
+              </div>
 
               {/* Poll Options with Animated Bars */}
               <div className="space-y-3">
@@ -109,7 +111,7 @@ export const PollsView: React.FC = () => {
                       key={opt.id}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleVote(poll.id, opt.id)}
-                      className={`relative p-3.5 rounded-2xl overflow-hidden cursor-pointer border transition-all ${
+                      className={`relative p-3.5 sm:p-4 rounded-2xl overflow-hidden cursor-pointer border transition-all ${
                         isSelected
                           ? 'border-[#E9FF32] shadow-[0_0_15px_rgba(233,255,50,0.2)]'
                           : 'border-white/10 hover:border-white/25'

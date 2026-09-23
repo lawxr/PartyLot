@@ -76,3 +76,8 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Local Docs & Specs
+PRODUCT.md
+product.md
+

@@ -8,8 +8,8 @@ import { usePartyStore, MainTab } from '@/store/usePartyStore';
 export const TabBar: React.FC = () => {
   const { activeTab, setActiveTab, currentView } = usePartyStore();
 
-  // Hide TabBar on splash, create-party, or join-party flows if focused
-  if (['splash', 'create-party', 'join-party'].includes(currentView)) {
+  // TabBar belongs strictly to the root dashboard/tabs view
+  if (currentView !== 'home') {
     return null;
   }
 
@@ -24,7 +24,7 @@ export const TabBar: React.FC = () => {
     <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none flex justify-center px-4 pb-4 safe-bottom">
       <nav
         aria-label="Main Navigation"
-        className="pointer-events-auto liquid-glass-nav rounded-full px-3 py-2 flex items-center gap-1 sm:gap-2 shadow-2xl border border-white/15 max-w-sm w-full justify-around backdrop-blur-2xl"
+        className="pointer-events-auto liquid-glass-nav rounded-full px-3 sm:px-6 py-2 sm:py-2.5 flex items-center gap-1 sm:gap-4 shadow-2xl border border-white/15 max-w-sm sm:max-w-md md:max-w-lg w-full justify-around backdrop-blur-2xl"
       >
         {tabs.map((tab) => {
           const Icon = tab.icon;

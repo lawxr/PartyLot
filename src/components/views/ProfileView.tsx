@@ -11,7 +11,7 @@ import { METROPOLIS_CONFIG, getEnvioSyncStatus } from '@/lib/web3/metropolis';
 
 export const ProfileView: React.FC = () => {
   const { currentUser, resetToDefaults } = usePartyStore();
-  const [showWeb3Details, setShowWeb3Details] = useState(false);
+  const [showWeb3Details, setShowWeb3Details] = useState(true);
   const [copied, setCopied] = useState(false);
 
   const smartAccount = getOrCreateSmartAccount();
@@ -51,253 +51,241 @@ export const ProfileView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-32 pt-4 px-4 sm:px-6 max-w-xl mx-auto safe-top select-none">
+    <div className="min-h-screen bg-[#050505] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
       {/* Profile Header */}
-      <header className="flex flex-col items-center text-center my-6">
-        <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-white/20 p-1 liquid-glass-card shadow-2xl mb-3">
+      <header className="flex flex-col items-center text-center my-6 sm:my-8 border-b border-white/10 pb-6">
+        <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-white/20 p-1 liquid-glass-card shadow-2xl mb-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={currentUser.avatar}
             alt={currentUser.name}
             className="w-full h-full object-cover rounded-full"
           />
-          <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#E9FF32] text-black flex items-center justify-center shadow-lg border border-black">
+          <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#E9FF32] text-black flex items-center justify-center shadow-lg border border-black">
             <Sparkles className="w-4 h-4 stroke-[2.5]" />
           </div>
         </div>
 
-        <h2 className="font-display font-black text-3xl sm:text-4xl text-white tracking-tight">
+        <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight">
           {currentUser.name}
         </h2>
-        <span className="text-xs font-mono text-[#E9FF32] font-semibold mt-0.5">
-          {currentUser.handle} · MEDELLÍN
+        <span className="text-xs sm:text-sm font-mono text-[#E9FF32] font-semibold mt-1">
+          {currentUser.handle} · MEDELLÍN · PRIVY VERIFIED
         </span>
       </header>
 
       {/* 4 Social Metrics (Shared-Experience Graph, No follower counts) */}
-      <div className="grid grid-cols-4 gap-2 mb-8 text-center">
-        <GlassPanel level={2} className="p-3 border border-white/10">
-          <span className="font-display font-black text-xl sm:text-2xl text-white block leading-none">
+      <div className="grid grid-cols-4 gap-3 sm:gap-4 mb-10 text-center">
+        <GlassPanel level={2} className="p-4 border border-white/10">
+          <span className="font-display font-black text-2xl sm:text-4xl text-white block leading-none">
             {currentUser.gatheringsCount}
           </span>
-          <span className="text-[10px] uppercase font-bold text-white/50 tracking-wider mt-1 block">
+          <span className="text-[10px] sm:text-xs uppercase font-bold text-white/50 tracking-wider mt-1.5 block">
             Nights
           </span>
         </GlassPanel>
 
-        <GlassPanel level={2} className="p-3 border border-white/10">
-          <span className="font-display font-black text-xl sm:text-2xl text-[#E9FF32] block leading-none">
+        <GlassPanel level={2} className="p-4 border border-white/10">
+          <span className="font-display font-black text-2xl sm:text-4xl text-[#E9FF32] block leading-none">
             {currentUser.gamesCount}
           </span>
-          <span className="text-[10px] uppercase font-bold text-white/50 tracking-wider mt-1 block">
+          <span className="text-[10px] sm:text-xs uppercase font-bold text-white/50 tracking-wider mt-1.5 block">
             Games
           </span>
         </GlassPanel>
 
-        <GlassPanel level={2} className="p-3 border border-white/10">
-          <span className="font-display font-black text-xl sm:text-2xl text-white block leading-none">
+        <GlassPanel level={2} className="p-4 border border-white/10">
+          <span className="font-display font-black text-2xl sm:text-4xl text-white block leading-none">
             {currentUser.peopleCount}
           </span>
-          <span className="text-[10px] uppercase font-bold text-white/50 tracking-wider mt-1 block">
+          <span className="text-[10px] sm:text-xs uppercase font-bold text-white/50 tracking-wider mt-1.5 block">
             People
           </span>
         </GlassPanel>
 
-        <GlassPanel level={2} className="p-3 border border-white/10">
-          <span className="font-display font-black text-xl sm:text-2xl text-white block leading-none">
+        <GlassPanel level={2} className="p-4 border border-white/10">
+          <span className="font-display font-black text-2xl sm:text-4xl text-white block leading-none">
             {currentUser.settlementsCount}
           </span>
-          <span className="text-[10px] uppercase font-bold text-white/50 tracking-wider mt-1 block">
+          <span className="text-[10px] sm:text-xs uppercase font-bold text-white/50 tracking-wider mt-1.5 block">
             Settled
           </span>
         </GlassPanel>
       </div>
 
-      {/* Section: CLOSE CREW (Shared-Experience Graph) */}
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="font-display font-extrabold text-base tracking-wide uppercase text-white/90">
-            CLOSE CREW
-          </h3>
-          <span className="text-xs text-[#E9FF32] font-semibold">Verified Co-Presence</span>
-        </div>
-
-        <div className="space-y-2.5">
-          {closeCrew.map((c, idx) => (
-            <GlassPanel
-              key={idx}
-              level={2}
-              className="p-3.5 flex items-center justify-between border border-white/15"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={c.avatar} alt={c.name} className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <h4 className="font-display font-bold text-sm text-white">
-                    {c.name}
-                  </h4>
-                  <span className="text-xs text-white/50">Core party accomplice</span>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <span className="font-display font-black text-sm text-[#E9FF32]">
-                  {c.nights} nights together
-                </span>
-                <span className="text-[9px] text-white/40 block font-mono">SocialGraph.sol</span>
-              </div>
-            </GlassPanel>
-          ))}
-        </div>
-      </section>
-
-      {/* Section: BADGES & MOMENTS */}
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="font-display font-extrabold text-base tracking-wide uppercase text-white/90">
-            BADGES & MOMENTS
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          {badges.map((b, idx) => (
-            <GlassPanel key={idx} level={2} className="p-3.5 border border-white/10">
-              <span className="text-2xl mb-1.5 block">{b.icon}</span>
-              <h4 className="font-display font-bold text-sm text-white">
-                {b.name}
-              </h4>
-              <p className="text-[11px] text-white/50 mt-0.5 leading-snug">
-                {b.desc}
-              </p>
-            </GlassPanel>
-          ))}
-        </div>
-      </section>
-
-      {/* Section: PAST NIGHTS */}
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="font-display font-extrabold text-base tracking-wide uppercase text-white/90">
-            PAST NIGHTS
-          </h3>
-          <span className="text-xs text-white/40">Archive</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          {pastNights.map((night, idx) => (
-            <div
-              key={idx}
-              className="relative h-32 rounded-2xl overflow-hidden border border-white/15 p-3 flex flex-col justify-end"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={night.cover}
-                alt={night.title}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-
-              <div className="relative z-10">
-                <span className="text-[10px] font-bold text-[#E9FF32] uppercase">
-                  {night.date} · {night.people} people
-                </span>
-                <h4 className="font-display font-bold text-xs text-white truncate">
-                  {night.title}
-                </h4>
-              </div>
+      {/* Multi-Column Desktop Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Close Crew (5 cols on desktop) */}
+        <div className="lg:col-span-5 space-y-6">
+          <section>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h3 className="font-display font-extrabold text-base sm:text-lg tracking-wide uppercase text-white/90">
+                CLOSE CREW
+              </h3>
+              <span className="text-xs text-[#E9FF32] font-semibold">Verified Co-Presence</span>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* Expandable Advanced: Monad Verification & Metropolis Stack */}
-      <section className="mb-8">
-        <button
-          onClick={() => setShowWeb3Details(!showWeb3Details)}
-          className="w-full p-4 rounded-2xl liquid-glass-card border border-white/15 flex items-center justify-between text-left hover:border-white/30 transition-all"
-        >
-          <div className="flex items-center gap-2.5">
-            <ShieldCheck className="w-5 h-5 text-[#E9FF32]" />
-            <div>
-              <span className="font-display font-bold text-sm text-white block">
-                Onchain Identity & Metropolis Stack
-              </span>
-              <span className="text-[11px] text-white/50">
-                Privy Smart Wallet · QuickNode · Tenderly · Envio
-              </span>
-            </div>
-          </div>
-          {showWeb3Details ? (
-            <ChevronUp className="w-4 h-4 text-white/60" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-white/60" />
-          )}
-        </button>
+            <div className="space-y-3">
+              {closeCrew.map((c, idx) => (
+                <GlassPanel
+                  key={idx}
+                  level={2}
+                  className="p-4 flex items-center justify-between border border-white/15 hover:border-white/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-full overflow-hidden border border-white/20 shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={c.avatar} alt={c.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <h4 className="font-display font-bold text-base text-white">
+                        {c.name}
+                      </h4>
+                      <span className="text-xs text-white/50">Core party accomplice</span>
+                    </div>
+                  </div>
 
-        <AnimatePresence>
-          {showWeb3Details && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-3 space-y-2.5 text-xs text-white/80 overflow-hidden"
-            >
-              <GlassPanel level={2} className="p-4 space-y-3 border border-white/10">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">
-                    COUNTERFACTUAL SMART ACCOUNT
-                  </span>
-                  <div className="flex items-center justify-between mt-1 p-2 rounded-xl bg-black/50 border border-white/10 font-mono text-[11px]">
-                    <span className="text-[#E9FF32] truncate max-w-[240px]">
-                      {smartAccount.address}
+                  <div className="text-right">
+                    <span className="font-display font-black text-sm sm:text-base text-[#E9FF32]">
+                      {c.nights} nights
                     </span>
-                    <button
-                      onClick={handleCopyAddress}
-                      className="text-white/60 hover:text-white p-1"
-                    >
-                      {copied ? <Check className="w-3.5 h-3.5 text-[#E9FF32]" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
+                    <span className="text-[10px] text-white/40 block font-mono">SocialGraph.sol</span>
+                  </div>
+                </GlassPanel>
+              ))}
+            </div>
+          </section>
+
+          {/* Reset Demo Data Button */}
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                resetToDefaults();
+                alert('App state restored to fresh demo data!');
+              }}
+              className="w-full text-xs text-white/50 hover:text-white flex items-center justify-center gap-2 py-3 px-4 rounded-2xl liquid-glass-card border border-white/10 transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Reset Local Demo Data</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Right Column: Badges, Past Nights, Metropolis Diagnostics (7 cols on desktop) */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Section: BADGES & MOMENTS */}
+          <section>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h3 className="font-display font-extrabold text-base sm:text-lg tracking-wide uppercase text-white/90">
+                BADGES & MOMENTS
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {badges.map((b, idx) => (
+                <GlassPanel key={idx} level={2} className="p-4 border border-white/10 hover:border-white/25 transition-colors">
+                  <span className="text-3xl mb-2 block">{b.icon}</span>
+                  <h4 className="font-display font-bold text-sm sm:text-base text-white">
+                    {b.name}
+                  </h4>
+                  <p className="text-xs text-white/50 mt-1 leading-snug">
+                    {b.desc}
+                  </p>
+                </GlassPanel>
+              ))}
+            </div>
+          </section>
+
+          {/* Section: PAST NIGHTS */}
+          <section>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h3 className="font-display font-extrabold text-base sm:text-lg tracking-wide uppercase text-white/90">
+                PAST NIGHTS
+              </h3>
+              <span className="text-xs text-white/40">Event archive</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3.5">
+              {pastNights.map((night, idx) => (
+                <div
+                  key={idx}
+                  className="relative h-36 sm:h-40 rounded-3xl overflow-hidden border border-white/15 p-4 flex flex-col justify-end group shadow-lg"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={night.cover}
+                    alt={night.title}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+
+                  <div className="relative z-10">
+                    <span className="text-[10px] font-bold text-[#E9FF32] uppercase tracking-wider">
+                      {night.date} · {night.people} people
+                    </span>
+                    <h4 className="font-display font-bold text-sm sm:text-base text-white truncate">
+                      {night.title}
+                    </h4>
                   </div>
                 </div>
+              ))}
+            </div>
+          </section>
 
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/10 text-[11px]">
-                  <div>
-                    <span className="text-white/40 block">Gas Sponsorship</span>
-                    <span className="font-bold text-[#E9FF32]">Pimlico Paymaster (100%)</span>
-                  </div>
-                  <div>
-                    <span className="text-white/40 block">RPC Provider</span>
-                    <span className="font-bold text-white">QuickNode Build Plan</span>
-                  </div>
-                  <div>
-                    <span className="text-white/40 block">Simulation Engine</span>
-                    <span className="font-bold text-white">Tenderly Pro</span>
-                  </div>
-                  <div>
-                    <span className="text-white/40 block">Indexer Pipeline</span>
-                    <span className="font-bold text-white">Envio HyperIndex ({envioStatus.indexerStatus})</span>
-                  </div>
+          {/* Advanced: Monad Verification & Metropolis Stack Diagnostics */}
+          <section>
+            <GlassPanel level={2} className="p-5 border border-white/15 shadow-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-5 h-5 text-[#E9FF32]" />
+                  <span className="font-display font-bold text-base text-white">
+                    Onchain Identity & Metropolis Stack
+                  </span>
                 </div>
-              </GlassPanel>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </section>
+                <span className="text-xs font-mono text-[#E9FF32] font-semibold">
+                  ACTIVE
+                </span>
+              </div>
 
-      {/* Reset Demo Data Button */}
-      <div className="pt-2 flex justify-center">
-        <button
-          onClick={() => {
-            resetToDefaults();
-            alert('App state restored to fresh demo data!');
-          }}
-          className="text-xs text-white/40 hover:text-white/80 flex items-center gap-1.5 py-2 px-4 rounded-full border border-white/10 transition-colors"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Reset Demo Data</span>
-        </button>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">
+                  COUNTERFACTUAL SMART ACCOUNT
+                </span>
+                <div className="flex items-center justify-between mt-1.5 p-3 rounded-2xl bg-black/60 border border-white/10 font-mono text-xs">
+                  <span className="text-[#E9FF32] truncate max-w-[340px]">
+                    {smartAccount.address}
+                  </span>
+                  <button
+                    onClick={handleCopyAddress}
+                    className="text-white/60 hover:text-white p-1 ml-2 shrink-0"
+                    aria-label="Copy Address"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-[#E9FF32]" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/10 text-xs">
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">Gas Sponsorship</span>
+                  <span className="font-bold text-[#E9FF32]">Pimlico Paymaster (100%)</span>
+                </div>
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">RPC Provider</span>
+                  <span className="font-bold text-white">QuickNode Build Plan</span>
+                </div>
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">Simulation Engine</span>
+                  <span className="font-bold text-white">Tenderly Pro</span>
+                </div>
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">Indexer Pipeline</span>
+                  <span className="font-bold text-white">Envio HyperIndex ({envioStatus.indexerStatus})</span>
+                </div>
+              </div>
+            </GlassPanel>
+          </section>
+        </div>
       </div>
     </div>
   );

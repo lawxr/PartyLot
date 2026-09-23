@@ -14,6 +14,7 @@ import {
   Sparkles,
   CheckCircle2,
   FileText,
+  ShieldCheck,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { AvatarStack } from '@/components/ui/AvatarStack';
@@ -88,229 +89,251 @@ export const PartyDetailView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white pb-32 select-none">
-      {/* 55-65vh Cinematic Hero Section */}
-      <div className="relative h-[60vh] sm:h-[65vh] w-full overflow-hidden">
-        {/* Background Image */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={party.coverImage}
-          alt={party.title}
-          className="absolute inset-0 w-full h-full object-cover object-center"
-        />
+      {/* Top Floating Navigation Bar (Mobile & Desktop) */}
+      <header className="sticky top-0 left-0 right-0 z-40 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-3 safe-top flex items-center justify-between pointer-events-none max-w-[1800px] mx-auto w-full">
+        <button
+          onClick={goBack}
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full liquid-glass-button flex items-center justify-center text-white pointer-events-auto shadow-lg"
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
 
-        {/* Cinematic Vignettes and Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/40 to-black/30" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent" />
-
-        {/* Top Navigation Bar Floating */}
-        <div className="absolute top-0 left-0 right-0 z-30 px-4 py-3 safe-top flex items-center justify-between">
+        <div className="flex items-center gap-2 pointer-events-auto">
           <button
-            onClick={goBack}
-            className="w-10 h-10 rounded-full liquid-glass-button flex items-center justify-center text-white"
-            aria-label="Back"
+            onClick={() => setCurrentView('recap')}
+            className="px-3.5 py-1.5 sm:py-2 rounded-full liquid-glass-button text-xs font-bold flex items-center gap-1.5 text-white/90 shadow-lg"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <FileText className="w-3.5 h-3.5 text-[#E9FF32]" />
+            <span>Recap</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentView('recap')}
-              className="px-3 py-1.5 rounded-full liquid-glass-button text-xs font-bold flex items-center gap-1.5 text-white/90"
-            >
-              <FileText className="w-3.5 h-3.5 text-[#E9FF32]" />
-              <span>Recap</span>
-            </button>
+          <button
+            onClick={handleShare}
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full liquid-glass-button flex items-center justify-center text-white shadow-lg"
+            aria-label="Share"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+        </div>
+      </header>
 
-            <button
-              onClick={handleShare}
-              className="w-10 h-10 rounded-full liquid-glass-button flex items-center justify-center text-white"
-              aria-label="Share"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
+      {/* Main Responsive Wrapper */}
+      <main className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 -mt-14 pt-14">
+        {/* Hero Section: Full bleed on mobile, Cinematic rounded banner on desktop */}
+        <div className="relative h-[55vh] sm:h-[60vh] lg:h-[500px] w-full rounded-b-[36px] lg:rounded-[36px] overflow-hidden border border-white/15 shadow-2xl mb-8">
+          {/* Background Image */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={party.coverImage}
+            alt={party.title}
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+
+          {/* Vignette Gradients */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/40 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent" />
+
+          {/* Hero Overlay Details */}
+          <div className="absolute bottom-6 sm:bottom-8 left-0 right-0 px-5 sm:px-8 z-20 flex flex-col justify-end">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="px-3 py-1 rounded-full liquid-glass-nav text-xs font-extrabold text-[#E9FF32] tracking-wider uppercase">
+                {party.date} · {party.time}
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-mono text-white/80 border border-white/10">
+                CODE: {party.code}
+              </span>
+              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-mono text-white/70 border border-white/10">
+                <ShieldCheck className="w-3 h-3 text-[#E9FF32]" />
+                MONAD VERIFIED
+              </span>
+            </div>
+
+            <h1 className="font-display font-black text-4xl sm:text-6xl lg:text-7xl text-white tracking-tight leading-[0.95] mb-2 drop-shadow-2xl">
+              {party.title}
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-white/90 font-medium mb-4">
+              <span className="flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-[#E9FF32]" />
+                {party.location}
+              </span>
+              <span>•</span>
+              <span className="text-white/60">Hosted by {party.hostName}</span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-white/15">
+              <AvatarStack members={party.members} size="md" countLabel="going" />
+
+              <button
+                onClick={() => toggleRsvp(party.id)}
+                className={`px-5 py-2.5 rounded-full text-xs font-bold flex items-center gap-2 transition-all ${
+                  isGoing
+                    ? 'bg-white/20 backdrop-blur-md text-white border border-white/25 hover:bg-white/30'
+                    : 'bg-[#E9FF32] text-black shadow-lg shadow-[#E9FF32]/25 hover:brightness-105'
+                }`}
+              >
+                {isGoing ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-[#E9FF32]" />
+                    <span>RSVP Confirmed</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-black" />
+                    <span>Join / RSVP</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Hero Overlay Content */}
-        <div className="absolute bottom-6 left-0 right-0 px-5 sm:px-8 z-20 max-w-2xl mx-auto flex flex-col justify-end">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="px-3 py-1 rounded-full liquid-glass-nav text-xs font-extrabold text-[#E9FF32] tracking-wider uppercase">
-              {party.date} · {party.time}
-            </span>
-            <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-mono text-white/80 border border-white/10">
-              CODE: {party.code}
-            </span>
-          </div>
+        {/* Multi-Column Desktop Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          {/* Left Column: Party Overview & Guests (7 cols on desktop) */}
+          <div className="lg:col-span-7 space-y-6">
+            {/* Host & Description */}
+            <GlassPanel level={2} className="p-5 sm:p-6 border border-white/15">
+              <span className="text-[11px] uppercase font-bold tracking-wider text-white/40 block mb-1">
+                ABOUT THE NIGHT
+              </span>
+              <h3 className="font-display font-black text-xl text-white mb-2">
+                Curated by {party.hostName}
+              </h3>
+              <p className="text-sm text-white/80 leading-relaxed font-normal">
+                {party.description}
+              </p>
+            </GlassPanel>
 
-          <h1 className="font-display font-black text-4xl sm:text-6xl text-white tracking-tight leading-[0.95] mb-2 drop-shadow-2xl">
-            {party.title}
-          </h1>
+            {/* Section: Who's Coming */}
+            <section>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <h3 className="font-display font-extrabold text-base tracking-wide text-white uppercase">
+                  Who&apos;s Coming ({party.members.length})
+                </h3>
+                <span className="text-xs text-white/40">Private guest circle</span>
+              </div>
 
-          <div className="flex items-center gap-3 text-xs sm:text-sm text-white/90 font-medium mb-3">
-            <span className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-[#E9FF32]" />
-              {party.location}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
-            <AvatarStack members={party.members} size="md" countLabel="going" />
-
-            <button
-              onClick={() => toggleRsvp(party.id)}
-              className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${
-                isGoing
-                  ? 'bg-white/20 backdrop-blur-md text-white border border-white/25'
-                  : 'bg-[#E9FF32] text-black shadow-lg shadow-[#E9FF32]/25'
-              }`}
-            >
-              {isGoing ? (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#E9FF32]" />
-                  <span>RSVP Confirmed</span>
-                </>
-              ) : (
-                <>
-                  <span>Join / RSVP</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Body */}
-      <div className="px-4 sm:px-6 max-w-2xl mx-auto -mt-2 relative z-30">
-        {/* Host & Description */}
-        <div className="mb-6 p-4 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[11px] uppercase font-bold tracking-wider text-white/40">
-              Host
-            </span>
-            <span className="text-xs font-bold text-white">Hosted by {party.hostName}</span>
-          </div>
-          <p className="text-sm text-white/80 leading-relaxed font-normal">
-            {party.description}
-          </p>
-        </div>
-
-        {/* Liquid Glass Floating Quick Actions Panel */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-white/60">
-              PARTY CONTROLS
-            </span>
-            <span className="text-[11px] text-[#E9FF32] font-semibold">Touch to interact</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {quickActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <motion.div
-                  key={action.id}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={action.onClick}
-                  className="liquid-glass-card p-4 rounded-3xl cursor-pointer hover:bg-white/10 transition-all flex flex-col justify-between h-28 group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="w-9 h-9 rounded-2xl bg-white/10 flex items-center justify-center border border-white/15 group-hover:scale-110 transition-transform">
-                      <Icon className={`w-5 h-5 ${action.color}`} />
+              <div className="grid grid-cols-4 sm:grid-cols-6 xl:grid-cols-8 gap-3">
+                {party.members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="p-3 rounded-2xl liquid-glass-card flex flex-col items-center text-center border border-white/10 hover:border-white/30 transition-all"
+                  >
+                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-white/20 p-0.5 shadow-md mb-1.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={member.avatar}
+                        alt={member.name}
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                      {member.role === 'host' && (
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full bg-[#E9FF32] text-black text-[9px] font-black uppercase">
+                          HOST
+                        </div>
+                      )}
                     </div>
-                    <span className="text-[10px] font-bold text-white/40 group-hover:text-white/80 transition-colors">
-                      →
+                    <span className="text-xs font-bold text-white/90 truncate w-full">
+                      {member.name}
+                    </span>
+                    <span className="text-[10px] text-white/40 truncate w-full">
+                      {member.role === 'host' ? 'Host' : 'Going'}
                     </span>
                   </div>
+                ))}
+              </div>
+            </section>
+          </div>
 
-                  <div>
-                    <h3 className="font-display font-black text-lg text-white tracking-tight">
-                      {action.label}
-                    </h3>
-                    <p className="text-[11px] text-white/50 truncate font-medium">
-                      {action.sub}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            })}
+          {/* Right Column: Controls Dock & Activity Feed (5 cols on desktop) */}
+          <div className="lg:col-span-5 space-y-6">
+            {/* Liquid Glass Floating Quick Actions Panel */}
+            <section>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-white/60">
+                  PARTY CONTROLS
+                </span>
+                <span className="text-[11px] text-[#E9FF32] font-semibold">Touch to interact</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {quickActions.map((action) => {
+                  const Icon = action.icon;
+                  return (
+                    <motion.div
+                      key={action.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={action.onClick}
+                      className="liquid-glass-card p-4 sm:p-5 rounded-3xl cursor-pointer hover:bg-white/10 transition-all flex flex-col justify-between h-32 group border border-white/15 shadow-lg"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center border border-white/15 group-hover:scale-110 transition-transform">
+                          <Icon className={`w-5 h-5 ${action.color}`} />
+                        </div>
+                        <span className="text-xs font-bold text-white/40 group-hover:text-white/80 group-hover:translate-x-0.5 transition-all">
+                          →
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-display font-black text-lg text-white tracking-tight">
+                          {action.label}
+                        </h4>
+                        <p className="text-xs text-white/50 truncate font-medium">
+                          {action.sub}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Section: Live Party Activity Feed */}
+            <section>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <h3 className="font-display font-extrabold text-base tracking-wide text-white uppercase">
+                  Party Activity
+                </h3>
+                <span className="text-xs text-[#E9FF32] font-semibold">Live feed</span>
+              </div>
+
+              <div className="flex flex-col gap-2.5 max-h-[380px] overflow-y-auto no-scrollbar pr-1">
+                {partyActivities.length > 0 ? (
+                  partyActivities.map((act) => (
+                    <GlassPanel
+                      key={act.id}
+                      level={2}
+                      className="p-3.5 flex items-center gap-3 border border-white/10 hover:border-white/20 transition-colors"
+                    >
+                      <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-white/20">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={act.avatar}
+                          alt="User"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-medium text-white/90 leading-tight">
+                          {act.text}
+                        </p>
+                        <span className="text-[10px] text-white/40">{act.time}</span>
+                      </div>
+                    </GlassPanel>
+                  ))
+                ) : (
+                  <p className="text-xs text-white/40 italic p-4 text-center">
+                    No activity yet. Be the first to start a game or add to the pot!
+                  </p>
+                )}
+              </div>
+            </section>
           </div>
         </div>
-
-        {/* Section: Who's Coming */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="font-display font-extrabold text-base tracking-wide text-white uppercase">
-              Who&apos;s Coming ({party.members.length})
-            </h3>
-            <span className="text-xs text-white/40">Private guest list</span>
-          </div>
-
-          <div className="flex gap-3 overflow-x-auto no-scrollbar py-1">
-            {party.members.map((member) => (
-              <div
-                key={member.id}
-                className="flex flex-col items-center gap-1.5 shrink-0 w-16 text-center"
-              >
-                <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 p-0.5 liquid-glass-card shadow-md">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={member.avatar}
-                    alt={member.name}
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                  {member.role === 'host' && (
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full bg-[#E9FF32] text-black text-[9px] font-black uppercase">
-                      HOST
-                    </div>
-                  )}
-                </div>
-                <span className="text-xs font-semibold text-white/90 truncate w-full">
-                  {member.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Section: Party Activity Feed */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="font-display font-extrabold text-base tracking-wide text-white uppercase">
-              Party Activity
-            </h3>
-            <span className="text-xs text-[#E9FF32] font-semibold">Live updates</span>
-          </div>
-
-          <div className="flex flex-col gap-2.5">
-            {partyActivities.length > 0 ? (
-              partyActivities.map((act) => (
-                <GlassPanel
-                  key={act.id}
-                  level={2}
-                  className="p-3.5 flex items-center gap-3 border border-white/10"
-                >
-                  <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-white/20">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={act.avatar}
-                      alt="User"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-white/90 leading-tight">
-                      {act.text}
-                    </p>
-                    <span className="text-[10px] text-white/40">{act.time}</span>
-                  </div>
-                </GlassPanel>
-              ))
-            ) : (
-              <p className="text-xs text-white/40 italic p-3">No activity yet. Be the first to start a game or add to the pot!</p>
-            )}
-          </div>
-        </section>
-      </div>
+      </main>
     </div>
   );
 };

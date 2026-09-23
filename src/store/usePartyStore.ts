@@ -36,12 +36,9 @@ import {
   persistPartyToSupabase,
   persistMemberJoinToSupabase,
   persistExpenseToSupabase,
-  persistPotTransactionToSupabase,
   persistActivityToSupabase,
   persistCrewToSupabase,
   addMemberToCrewInDb,
-  persistSettlementToSupabase,
-  persistPotRolloverToSupabase,
   persistTaskToSupabase,
   updateTaskInSupabase,
   fetchPartiesFromDb,
@@ -51,7 +48,6 @@ import {
   subscribeToPartyRealtime,
   subscribeToTasksRealtime,
 } from '@/services/supabaseService';
-import { distributeBountyOnchain } from '@/services/treasury';
 import { Language } from '@/lib/i18n/translations';
 
 export const detectInitialLanguage = (): Language => {
@@ -565,166 +561,14 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      settleAllDebts: (partyId, txHash) => {
-        set((state) => {
-          const party = state.parties.find((p) => p.id === partyId);
-          const resolvedTxHash =
-            txHash ||
-            `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+      // Payment actions stay inert until a real financial provider can confirm them.
+      settleAllDebts: () => undefined,
 
-          const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
-            partyId,
-            type: 'expense',
-            text: `¡Todos los gastos saldados para ${party?.title || 'la fiesta'}! 🎉${txHash ? ` [ref: ${txHash.slice(0, 10)}...]` : ''}`,
-            time: 'Just now',
-            avatar: state.currentUser.avatar,
-          };
+      addToPot: () => undefined,
 
-          const updatedExpenses = state.expenses.map((e) =>
-            e.partyId === partyId ? { ...e, isSettled: true, txHash: resolvedTxHash } : e
-          );
+      spendFromPot: () => undefined,
 
-          const updatedUser = {
-            ...state.currentUser,
-            settlementsCount: (state.currentUser.settlementsCount ?? 0) + 1,
-          };
-
-          persistSettlementToSupabase(partyId, resolvedTxHash);
-          persistActivityToSupabase(newActivity);
-
-          return {
-            expenses: updatedExpenses,
-            currentUser: updatedUser,
-            activities: [newActivity, ...state.activities],
-          };
-        });
-      },
-
-      addToPot: (partyId, amount, description = 'Pot contribution') => {
-        set((state) => {
-          const newTx: PotTransaction = {
-            id: `tx-${Date.now()}`,
-            partyId,
-            type: 'add',
-            amount,
-            description,
-            userName: state.currentUser.name,
-            userAvatar: state.currentUser.avatar,
-            timestamp: 'Just now',
-          };
-
-          const updatedParties = state.parties.map((p) =>
-            p.id === partyId ? { ...p, potBalance: p.potBalance + amount } : p
-          );
-
-          const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
-            partyId,
-            type: 'pot',
-            text: `${state.currentUser.name} added $${amount.toFixed(2)} to the pot`,
-            time: 'Just now',
-            avatar: state.currentUser.avatar,
-          };
-
-          const targetParty = state.parties.find((p) => p.id === partyId);
-          const newBal = (targetParty?.potBalance || 0) + amount;
-          persistPotTransactionToSupabase(newTx, newBal);
-          persistActivityToSupabase(newActivity);
-
-          return {
-            parties: updatedParties,
-            transactions: [newTx, ...state.transactions],
-            activities: [newActivity, ...state.activities],
-          };
-        });
-      },
-
-      spendFromPot: (partyId, amount, description) => {
-        set((state) => {
-          const newTx: PotTransaction = {
-            id: `tx-${Date.now()}`,
-            partyId,
-            type: 'spend',
-            amount,
-            description,
-            userName: state.currentUser.name,
-            userAvatar: state.currentUser.avatar,
-            timestamp: 'Just now',
-          };
-
-          const updatedParties = state.parties.map((p) =>
-            p.id === partyId ? { ...p, potBalance: Math.max(0, p.potBalance - amount) } : p
-          );
-
-          const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
-            partyId,
-            type: 'pot',
-            text: `Spent $${amount.toFixed(2)} from pot for "${description}"`,
-            time: 'Just now',
-            avatar: state.currentUser.avatar,
-          };
-
-          const targetParty = state.parties.find((p) => p.id === partyId);
-          const newBal = Math.max(0, (targetParty?.potBalance || 0) - amount);
-          persistPotTransactionToSupabase(newTx, newBal);
-          persistActivityToSupabase(newActivity);
-
-          return {
-            parties: updatedParties,
-            transactions: [newTx, ...state.transactions],
-            activities: [newActivity, ...state.activities],
-          };
-        });
-      },
-
-      rolloverPotToCrew: (partyId, crewId) => {
-        set((state) => {
-          const party = state.parties.find((p) => p.id === partyId);
-          const crew = state.crews.find((c) => c.id === crewId);
-          if (!party || !crew || party.potBalance <= 0) return state;
-
-          const amount = party.potBalance;
-          const rolloverTx: PotTransaction = {
-            id: `tx-roll-${Date.now()}`,
-            partyId,
-            crewId,
-            type: 'rollover',
-            amount,
-            description: `Rollover to ${crew.name} Treasury`,
-            userName: state.currentUser.name,
-            userAvatar: state.currentUser.avatar,
-            timestamp: 'Just now',
-          };
-
-          const updatedParty = { ...party, potBalance: 0 };
-          const updatedCrew = {
-            ...crew,
-            treasuryBalance: (crew.treasuryBalance ?? 0) + amount,
-          };
-
-          const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
-            partyId,
-            type: 'pot',
-            text: `${state.currentUser.name} rolled over $${amount.toFixed(2)} from party pot to ${crew.name} Treasury! 🏦✨`,
-            time: 'Just now',
-            avatar: state.currentUser.avatar,
-          };
-
-          persistPotRolloverToSupabase(rolloverTx, partyId);
-          persistCrewToSupabase(updatedCrew);
-          persistActivityToSupabase(newActivity);
-
-          return {
-            parties: state.parties.map((p) => (p.id === partyId ? updatedParty : p)),
-            crews: state.crews.map((c) => (c.id === crewId ? updatedCrew : c)),
-            transactions: [rolloverTx, ...state.transactions],
-            activities: [newActivity, ...state.activities],
-          };
-        });
-      },
+      rolloverPotToCrew: () => undefined,
 
       createPartyTask: ({ partyId, title, rewardAmount }) => {
         set((state) => {
@@ -823,73 +667,7 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      verifyAndPayPartyTask: async (taskId) => {
-        const state = get();
-        const task = state.tasks.find((t) => t.id === taskId);
-        if (!task || task.status === 'verified') return;
-
-        const party = state.parties.find((p) => p.id === task.partyId);
-        if (!party) return;
-
-        const reward = task.rewardAmount;
-        const payeeName = task.claimedByName || 'Contributor';
-        const payeeAvatar = task.claimedByAvatar || state.currentUser.avatar;
-
-        let onchainTxHash = '';
-        try {
-          const receipt = await distributeBountyOnchain(
-            party.id,
-            payeeName,
-            reward,
-            `Bounty: ${task.title}`
-          );
-          onchainTxHash = receipt.txHash;
-        } catch (err) {
-          console.warn('Onchain bounty payout warning:', err);
-        }
-
-        const rewardTx: PotTransaction = {
-          id: `tx-bounty-${Date.now()}`,
-          partyId: party.id,
-          type: 'reward',
-          amount: reward,
-          description: `Bounty: ${task.title}`,
-          userName: payeeName,
-          userAvatar: payeeAvatar,
-          timestamp: 'Just now',
-          txHash: onchainTxHash || undefined,
-        };
-
-        const updatedTask: PartyTask = {
-          ...task,
-          status: 'verified',
-        };
-
-        const updatedParty = {
-          ...party,
-          potBalance: Math.max(0, party.potBalance - reward),
-        };
-
-        const newActivity: ActivityItem = {
-          id: `act-${Date.now()}`,
-          partyId: party.id,
-          type: 'pot',
-          text: `Recompensa enviada: $${reward.toFixed(2)} a ${payeeName} por "${task.title}" 💰✨`,
-          time: 'Just now',
-          avatar: payeeAvatar,
-        };
-
-        persistPotTransactionToSupabase(rewardTx, updatedParty.potBalance);
-        updateTaskInSupabase(updatedTask);
-        persistActivityToSupabase(newActivity);
-
-        set({
-          parties: state.parties.map((p) => (p.id === party.id ? updatedParty : p)),
-          tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
-          transactions: [rewardTx, ...state.transactions],
-          activities: [newActivity, ...state.activities],
-        });
-      },
+      verifyAndPayPartyTask: async () => undefined,
 
       votePoll: (pollId, optionId) => {
         set((state) => {
@@ -1002,63 +780,7 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      rewardGameWinner: async ({ partyId, memberId, amount, gameTitle }) => {
-        const state = get();
-        const party = state.parties.find((p) => p.id === partyId);
-        if (!party) return;
-
-        const winner = party.members.find((m) => m.id === memberId);
-        const winnerName = winner ? winner.name : 'Player';
-        const winnerAvatar = winner ? winner.avatar : state.currentUser.avatar;
-
-        let onchainTxHash = '';
-        try {
-          const receipt = await distributeBountyOnchain(
-            party.id,
-            winnerName,
-            amount,
-            `Game Winner: ${gameTitle}`
-          );
-          onchainTxHash = receipt.txHash;
-        } catch (err) {
-          console.warn('Game reward onchain warning:', err);
-        }
-
-        const rewardTx: PotTransaction = {
-          id: `tx-reward-${Date.now()}`,
-          partyId: party.id,
-          type: 'reward',
-          amount,
-          description: `Winner: ${gameTitle} (${winnerName})`,
-          userName: winnerName,
-          userAvatar: winnerAvatar,
-          timestamp: 'Just now',
-          txHash: onchainTxHash || undefined,
-        };
-
-        const updatedParty = {
-          ...party,
-          potBalance: Math.max(0, party.potBalance - amount),
-        };
-
-        const newActivity: ActivityItem = {
-          id: `act-${Date.now()}`,
-          partyId: party.id,
-          type: 'game',
-          text: `👑 ${winnerName} won ${gameTitle} and took home a $${amount.toFixed(2)} bounty from the Pot!`,
-          time: 'Just now',
-          avatar: winnerAvatar,
-        };
-
-        persistPotTransactionToSupabase(rewardTx, updatedParty.potBalance);
-        persistActivityToSupabase(newActivity);
-
-        set({
-          parties: state.parties.map((p) => (p.id === party.id ? updatedParty : p)),
-          transactions: [rewardTx, ...state.transactions],
-          activities: [newActivity, ...state.activities],
-        });
-      },
+      rewardGameWinner: async () => undefined,
 
       getSharedConnection: (targetMember) => {
         const state = get();

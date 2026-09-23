@@ -9,14 +9,13 @@ import {
   Clock,
   UserCheck,
   PackageCheck,
-  Loader2,
-  Sparkles,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { FINANCIAL_ACTIONS_AVAILABLE, getFinancialActionsUnavailableMessage } from '@/services/treasury';
 import confetti from 'canvas-confetti';
 
 interface PartyTasksBoardProps {
@@ -31,7 +30,6 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
     createPartyTask,
     claimPartyTask,
     completePartyTask,
-    verifyAndPayPartyTask,
   } = usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
@@ -43,7 +41,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [rewardAmount, setRewardAmount] = useState('5');
-  const [isPayingId, setIsPayingId] = useState<string | null>(null);
+  const financialActionsMessage = getFinancialActionsUnavailableMessage(language);
 
   const filteredTasks =
     filter === 'all'
@@ -95,21 +93,6 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
     });
   };
 
-  const handleVerifyAndPay = async (taskId: string) => {
-    setIsPayingId(taskId);
-    try {
-      await verifyAndPayPartyTask(taskId);
-      confetti({
-        particleCount: 80,
-        spread: 75,
-        origin: { y: 0.5 },
-        colors: ['#F0DC00', '#10B981', '#F59E0B'],
-      });
-    } finally {
-      setIsPayingId(null);
-    }
-  };
-
   return (
     <div className="w-full space-y-4">
       {/* Editorial Header */}
@@ -121,7 +104,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <ShieldCheck className="w-2.5 h-2.5" />
-              {isEs ? 'Respaldado por el Pozo' : 'Party Pot Backed'}
+              {isEs ? 'Recompensa no pagada' : 'Reward not paid'}
             </span>
           </div>
           <h3 className="font-display font-black text-2xl text-white tracking-tight">
@@ -129,8 +112,8 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
           </h3>
           <p className="text-xs text-white/60">
             {isEs
-              ? 'Toma tareas de la fiesta para ganar recompensas instantáneas del fondo común.'
-              : 'Claim social chores to earn instant rewards from the shared Party Pot.'}
+              ? 'Las tareas pueden organizarse aquí; las recompensas son solo propuestas y no se pagan desde la app.'
+              : 'Tasks can be organized here; rewards are proposals only and are not paid by the app.'}
           </p>
         </div>
 
@@ -144,13 +127,17 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
         </GlassButton>
       </div>
 
+      <p role="status" className="rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-xs text-amber-100">
+        {financialActionsMessage}
+      </p>
+
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
         {[
           { id: 'all', label: `${isEs ? 'Todas' : 'All'} (${partyTasks.length})` },
           { id: 'open', label: `${isEs ? 'Abiertas' : 'Open'} (${partyTasks.filter((t) => t.status === 'open').length})` },
           { id: 'claimed', label: `${isEs ? 'En Progreso' : 'In Progress'} (${partyTasks.filter((t) => t.status === 'claimed' || t.status === 'completed').length})` },
-          { id: 'verified', label: `${isEs ? 'Pagadas' : 'Paid'} (${partyTasks.filter((t) => t.status === 'verified').length})` },
+          { id: 'verified', label: `${isEs ? 'Completadas' : 'Completed'} (${partyTasks.filter((t) => t.status === 'verified').length})` },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -176,7 +163,6 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
             const isCompleted = task.status === 'completed';
             const isVerified = task.status === 'verified';
             const isClaimedByMe = task.claimedById === currentUser.id;
-            const isPaying = isPayingId === task.id;
 
             return (
               <GlassPanel
@@ -211,7 +197,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
                     {isVerified && (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
                         <ShieldCheck className="w-2.5 h-2.5" />
-                        Recompensa Pagada
+                        {isEs ? 'Completada' : 'Completed'}
                       </span>
                     )}
                   </div>
@@ -235,10 +221,10 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
                 <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
                   <div className="text-left sm:text-right">
                     <span className="font-display font-black text-xl text-[#F0DC00] block leading-none">
-                      +${task.rewardAmount.toFixed(2)}
+                      ${task.rewardAmount.toFixed(2)}
                     </span>
                     <span className="text-[9px] uppercase font-bold text-white/40">
-                      from pot
+                      {isEs ? 'recompensa propuesta' : 'proposed reward'}
                     </span>
                   </div>
 
@@ -271,19 +257,11 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
 
                   {isCompleted && (
                     <GlassButton
-                      variant="accent"
+                      variant="glass"
                       size="sm"
-                      disabled={isPaying}
-                      onClick={() => handleVerifyAndPay(task.id)}
-                      icon={
-                        isPaying ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
-                        ) : (
-                          <Sparkles className="w-3.5 h-3.5 text-black" />
-                        )
-                      }
+                      disabled={!FINANCIAL_ACTIONS_AVAILABLE}
                     >
-                      {isPaying ? 'Paying...' : `Verify & Pay $${task.rewardAmount}`}
+                      {isEs ? 'Pago no disponible' : 'Payment unavailable'}
                     </GlassButton>
                   )}
 
@@ -312,7 +290,9 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
       >
         <form onSubmit={handleCreateTask} className="space-y-4">
           <p className="text-xs text-white/70">
-            Incentivize attendees to bring essentials or help out. The bounty is paid directly from the shared Party Pot.
+            {isEs
+              ? 'Organiza tareas y define una recompensa propuesta. La app no procesa pagos.'
+              : 'Organize tasks and set a proposed reward. The app does not process payments.'}
           </p>
 
           <div>

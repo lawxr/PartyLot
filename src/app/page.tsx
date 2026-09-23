@@ -16,7 +16,7 @@ import { ProfileView } from '@/components/views/ProfileView';
 import { CrewDetailView } from '@/components/views/CrewDetailView';
 import { TabBar } from '@/components/navigation/TabBar';
 import { usePrivySync } from '@/hooks/usePrivySync';
-import { isExplicitDevelopmentDemoMode, isPrivyConfigured } from '@/lib/runtimeMode';
+import { isPrivyConfigured, isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 const subscribe = () => () => {};
@@ -24,7 +24,7 @@ const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
 export default function App() {
-  const { currentView, parties, currentPartyId } = usePartyStore();
+  const { currentView, parties, currentPartyId, currentUser, setCurrentView } = usePartyStore();
   const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
 
   // Synchronize Privy auth & embedded wallet state across views
@@ -36,6 +36,15 @@ export default function App() {
       (window as any).__partyStore = usePartyStore;
     }
   }, []);
+
+  // Route gate: unauthenticated users (without Privy or demo mode) can only access splash or join-party
+  useEffect(() => {
+    if (!mounted) return;
+    const isAuthed = Boolean(currentUser?.isPrivyAuthenticated || isExplicitDevelopmentDemoMode());
+    if (!isAuthed && currentView !== 'splash' && currentView !== 'join-party') {
+      setCurrentView('splash');
+    }
+  }, [mounted, currentUser?.isPrivyAuthenticated, currentView, setCurrentView]);
 
   if (!mounted) {
     // Avoid hydration mismatch on initial render

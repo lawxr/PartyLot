@@ -132,14 +132,9 @@ export const ProfileView: React.FC = () => {
         <h2 className="bubble text-4xl sm:text-6xl text-white tracking-tight drop-shadow-lg">
           {currentUser.name}
         </h2>
-        <span className="text-xs sm:text-sm font-semibold text-white/70 mt-1">
-          @{currentUser.handle}{demoMode ? ' · Miami, FL' : ''}
+        <span className="text-xs sm:text-sm font-semibold text-white/70 mt-1 font-mono">
+          {currentUser.handle?.startsWith('@') ? currentUser.handle : `@${currentUser.handle || 'partymember'}`}
         </span>
-        {demoMode && (
-          <p className="text-xs sm:text-sm text-white/75 max-w-sm mt-2 leading-relaxed">
-            Amante de las rooftop parties y las buenas playlists. Siempre organizando el próximo golden hour.
-          </p>
-        )}
         <button
           onClick={() => setIsEditProfileOpen(true)}
           className="mt-3.5 px-6 py-2 rounded-full pill-outline font-display font-bold text-xs uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 cursor-pointer"
@@ -285,22 +280,11 @@ export const ProfileView: React.FC = () => {
             </div>
           </section>
 
-          {/* Action Buttons: Reset Demo & Log Out */}
-          <div className="pt-2 space-y-2.5">
-            <button
-              onClick={() => {
-                resetToDefaults();
-                alert('App state restored to fresh demo data!');
-              }}
-              className="w-full text-xs text-white/50 hover:text-white flex items-center justify-center gap-2 py-3 px-4 rounded-2xl liquid-glass-card border border-white/10 transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>Reset Local Demo Data</span>
-            </button>
-
+          {/* Action Buttons: Log Out */}
+          <div className="pt-2">
             <button
               onClick={privyLogout}
-              className="w-full text-xs text-red-400 hover:text-red-300 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl liquid-glass-card border border-red-500/20 hover:border-red-500/40 transition-colors"
+              className="w-full text-xs text-red-400 hover:text-red-300 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl liquid-glass-card border border-red-500/20 hover:border-red-500/40 transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               <span>Log out</span>

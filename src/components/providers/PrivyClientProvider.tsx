@@ -1,8 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PrivyProvider } from '@privy-io/react-auth';
 import { monadTestnet } from '@/lib/web3/monad';
+
+// Intercept known upstream React 19 unkeyed child warning originating from Privy SDK internals (xe)
+if (typeof window !== 'undefined') {
+  const originalError = console.error;
+  console.error = (...args: unknown[]) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('Each child in a list should have a unique "key" prop') &&
+      args.some((a) => typeof a === 'string' && (a.includes('xe') || a.includes('PrivyProvider') || a.includes('PrivyClientProvider')))
+    ) {
+      return;
+    }
+    originalError.apply(console, args);
+  };
+}
 
 interface PrivyClientProviderProps {
   children: React.ReactNode;
@@ -16,26 +31,28 @@ export const PrivyClientProvider: React.FC<PrivyClientProviderProps> = ({ childr
       ? envAppId
       : 'cl_placeholder_app_id_25x';
 
+  const privyConfig = useMemo(
+    () => ({
+      appearance: {
+        theme: 'dark' as const,
+        accentColor: '#F0DC00' as `#${string}`,
+        showWalletLoginFirst: false,
+        walletChainType: 'ethereum-only' as const,
+      },
+      loginMethods: ['email' as const, 'google' as const, 'apple' as const, 'sms' as const, 'wallet' as const],
+      embeddedWallets: {
+        ethereum: {
+          createOnLogin: 'users-without-wallets' as const,
+        },
+      },
+      defaultChain: monadTestnet,
+      supportedChains: [monadTestnet],
+    }),
+    []
+  );
+
   return (
-    <PrivyProvider
-      appId={appId}
-      config={{
-        appearance: {
-          theme: 'dark',
-          accentColor: '#F0DC00',
-          showWalletLoginFirst: false,
-          walletChainType: 'ethereum-only',
-        },
-        loginMethods: ['email', 'google', 'apple', 'sms', 'wallet'],
-        embeddedWallets: {
-          ethereum: {
-            createOnLogin: 'users-without-wallets',
-          },
-        },
-        defaultChain: monadTestnet,
-        supportedChains: [monadTestnet],
-      }}
-    >
+    <PrivyProvider appId={appId} config={privyConfig}>
       {children}
     </PrivyProvider>
   );

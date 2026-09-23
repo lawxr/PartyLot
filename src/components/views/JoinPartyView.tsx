@@ -14,13 +14,12 @@ import { validateServerInviteCode } from '@/services/supabaseService';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 import confetti from 'canvas-confetti';
-import { isExplicitDevelopmentDemoMode, isPrivyConfigured } from '@/lib/runtimeMode';
+import { isPrivyConfigured } from '@/lib/runtimeMode';
 
 export const JoinPartyView: React.FC = () => {
   const { parties, joinPartyByCode, selectParty, goBack, hydrateFromSupabase } = usePartyStore();
   const { authenticated, ready, getAccessToken } = usePrivy();
   const { t } = useTranslation();
-  const demoMode = isExplicitDevelopmentDemoMode();
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '']);
   const [isJoining, setIsJoining] = useState(false);
@@ -181,7 +180,7 @@ export const JoinPartyView: React.FC = () => {
   const handleConfirmJoin = async () => {
     if (!activeParty) return;
 
-    if (!authenticated && !demoMode) {
+    if (!authenticated) {
       pendingPartyRef.current = activeParty;
       if (isPrivyConfigured() && ready) {
         try {
@@ -212,13 +211,6 @@ export const JoinPartyView: React.FC = () => {
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-card border border-white/15">
-          <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
-          <span className="text-[11px] sm:text-xs uppercase tracking-wider text-white/80 font-mono font-semibold">
-            {demoMode ? 'Development demo data' : t.joinParty.privateAccessBadge}
-          </span>
-        </div>
-
         <LanguageSwitch compact />
       </div>
 
@@ -236,7 +228,7 @@ export const JoinPartyView: React.FC = () => {
             }`}
           >
             {/* Left Column: Code Input & Instructions */}
-            <div className={activeParty ? 'text-left' : 'text-center w-full'}>
+            <div className="flex flex-col items-center text-center w-full">
               <span className="text-xs font-extrabold uppercase tracking-widest text-[#F0DC00] mb-2 block">
                 {t.joinParty.joinCircle}
               </span>
@@ -245,16 +237,12 @@ export const JoinPartyView: React.FC = () => {
                 {t.joinParty.gotACode}
               </h2>
 
-              <p className="text-xs sm:text-sm text-white/60 mb-6 sm:mb-8 leading-relaxed max-w-sm">
+              <p className="text-xs sm:text-sm text-white/60 mb-6 sm:mb-8 leading-relaxed max-w-sm mx-auto">
                 {t.joinParty.codeDescription}
               </p>
 
               {/* 4-Capsule Code Input (Fully responsive from mobile to desktop) */}
-              <div
-                className={`flex items-center gap-2.5 sm:gap-3.5 md:gap-4 mb-4 ${
-                  activeParty ? 'justify-start' : 'justify-center'
-                }`}
-              >
+              <div className="flex items-center justify-center gap-2.5 sm:gap-3.5 md:gap-4 mb-4">
                 {digits.map((digit, idx) => (
                   <div
                     key={idx}
@@ -286,32 +274,14 @@ export const JoinPartyView: React.FC = () => {
                 <motion.div
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 text-xs text-rose-300 font-medium mb-4 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 max-w-sm"
+                  className="flex items-center justify-center gap-2 text-xs text-rose-300 font-medium mb-4 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 max-w-sm mx-auto"
                 >
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                   <span>{errorMsg}</span>
                 </motion.div>
               )}
 
-              {/* Quick Preset Hints */}
-              {demoMode && !activeParty && !errorMsg && (
-                <div className="text-xs text-white/50 mt-3">
-                  {t.joinParty.testCodesHint}{' '}
-                  <span
-                    className="font-mono text-[#F0DC00] font-bold cursor-pointer hover:underline underline-offset-4"
-                    onClick={() => setDigits(['8', 'F', '4', 'K'])}
-                  >
-                    8F4K
-                  </span>{' '}
-                  or{' '}
-                  <span
-                    className="font-mono text-[#F0DC00] font-bold cursor-pointer hover:underline underline-offset-4"
-                    onClick={() => setDigits(['9', 'X', '2', 'M'])}
-                  >
-                    9X2M
-                  </span>
-                </div>
-              )}
+
             </div>
 
             {/* Right Column: Resolved Party Card (Desktop & Mobile) */}
@@ -337,7 +307,7 @@ export const JoinPartyView: React.FC = () => {
 
                       <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-bold text-[#F0DC00] border border-white/15 flex items-center gap-1.5 shadow-lg">
                         <ShieldCheck className="w-3.5 h-3.5 text-[#F0DC00]" />
-                        <span>{demoMode ? 'Demo fixture' : 'Invite preview'}</span>
+                        <span>Invite preview</span>
                       </div>
                     </div>
 
@@ -384,7 +354,7 @@ export const JoinPartyView: React.FC = () => {
                         >
                           {isJoining
                             ? t.joinParty.enteringButton
-                            : !authenticated && !demoMode
+                            : !authenticated
                             ? t.joinParty.connectToJoin
                             : t.joinParty.enterPartyButton}
                         </GlassButton>

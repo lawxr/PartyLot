@@ -2,6 +2,12 @@ import type { DebtSettlement, PotTransaction } from '@/types';
 
 export const FINANCIAL_ACTIONS_AVAILABLE = false as const;
 
+export type FinancialActionResult = {
+  status: 'unavailable';
+  code: 'financial-provider-not-configured';
+  message: string;
+};
+
 export function calculateTotalContributed(transactions: PotTransaction[]): number {
   return transactions
     .filter((transaction) => transaction.type === 'add')
@@ -18,6 +24,16 @@ export function getFinancialActionsUnavailableMessage(language: 'en' | 'es'): st
   return language === 'es'
     ? 'Los pagos, retiros, recompensas y liquidaciones no están disponibles. No se ha movido dinero ni cambiado ningún saldo.'
     : 'Payments, spending, rewards, and settlements are unavailable. No money has moved and no balances have changed.';
+}
+
+export function getFinancialActionUnavailableResult(
+  language: 'en' | 'es' = 'en'
+): FinancialActionResult {
+  return {
+    status: 'unavailable',
+    code: 'financial-provider-not-configured',
+    message: getFinancialActionsUnavailableMessage(language),
+  };
 }
 
 export class TreasuryUnavailableError extends Error {

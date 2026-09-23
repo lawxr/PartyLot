@@ -49,6 +49,7 @@ import {
   subscribeToTasksRealtime,
 } from '@/services/supabaseService';
 import { Language } from '@/lib/i18n/translations';
+import { FinancialActionResult, getFinancialActionUnavailableResult } from '@/services/treasury';
 
 export const detectInitialLanguage = (): Language => {
   if (typeof window === 'undefined') return 'es';
@@ -136,19 +137,19 @@ interface PartyStoreState {
     splitBetweenIds: string[];
     category?: ExpenseCategory;
   }) => void;
-  settleAllDebts: (partyId: string, txHash?: string) => void;
+  settleAllDebts: () => FinancialActionResult;
 
   // Party Pot Actions
-  addToPot: (partyId: string, amount: number, description?: string) => void;
-  spendFromPot: (partyId: string, amount: number, description: string) => void;
-  rolloverPotToCrew: (partyId: string, crewId: string) => void;
+  addToPot: (partyId: string, amount: number, description?: string) => FinancialActionResult;
+  spendFromPot: (partyId: string, amount: number, description: string) => FinancialActionResult;
+  rolloverPotToCrew: (partyId: string, crewId: string) => FinancialActionResult;
 
   // Party Tasks & Bounties
   tasks: PartyTask[];
   createPartyTask: (params: { partyId: string; title: string; rewardAmount: number }) => void;
   claimPartyTask: (taskId: string, memberId: string) => void;
   completePartyTask: (taskId: string) => void;
-  verifyAndPayPartyTask: (taskId: string) => Promise<void>;
+  verifyAndPayPartyTask: (taskId: string) => Promise<FinancialActionResult>;
 
   // Polls Actions
   votePoll: (pollId: string, optionId: string) => void;
@@ -163,7 +164,7 @@ interface PartyStoreState {
     memberId: string;
     amount: number;
     gameTitle: string;
-  }) => Promise<void>;
+  }) => Promise<FinancialActionResult>;
 
   // Shared-Experience Graph
   getSharedConnection: (targetMember: Member) => SharedExperienceConnection;
@@ -562,13 +563,13 @@ export const usePartyStore = create<PartyStoreState>()(
       },
 
       // Payment actions stay inert until a real financial provider can confirm them.
-      settleAllDebts: () => undefined,
+      settleAllDebts: () => getFinancialActionUnavailableResult(),
 
-      addToPot: () => undefined,
+      addToPot: () => getFinancialActionUnavailableResult(),
 
-      spendFromPot: () => undefined,
+      spendFromPot: () => getFinancialActionUnavailableResult(),
 
-      rolloverPotToCrew: () => undefined,
+      rolloverPotToCrew: () => getFinancialActionUnavailableResult(),
 
       createPartyTask: ({ partyId, title, rewardAmount }) => {
         set((state) => {
@@ -667,7 +668,7 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      verifyAndPayPartyTask: async () => undefined,
+      verifyAndPayPartyTask: async () => getFinancialActionUnavailableResult(),
 
       votePoll: (pollId, optionId) => {
         set((state) => {
@@ -780,7 +781,7 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      rewardGameWinner: async () => undefined,
+      rewardGameWinner: async () => getFinancialActionUnavailableResult(),
 
       getSharedConnection: (targetMember) => {
         const state = get();

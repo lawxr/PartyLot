@@ -63,6 +63,19 @@ A shared group treasury contract where members pool funds for food, drinks, and 
 
 ---
 
+## 🚀 Deployed Smart Contracts (Monad Testnet)
+
+All smart contracts are compiled, deployed, and live on **Monad Testnet (Chain ID: 10143)**:
+
+| Contract | Address | Explorer Link |
+|---|---|---|
+| **SocialGraph** | `0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9` | [View on Monad Explorer](https://testnet.monadexplorer.com/address/0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9) |
+| **PartyRegistry** | `0xb7d922488daa522443ffe1627efc6d65825eebad` | [View on Monad Explorer](https://testnet.monadexplorer.com/address/0xb7d922488daa522443ffe1627efc6d65825eebad) |
+| **PartyTreasury** | `0x838ef69f8904af767e3ec8d04737417106225e6a` | [View on Monad Explorer](https://testnet.monadexplorer.com/address/0x838ef69f8904af767e3ec8d04737417106225e6a) |
+| **Deployer** | `0xc3aDb792001E9bd82ff54D4E226eC5882017f4be` | [View on Monad Explorer](https://testnet.monadexplorer.com/address/0xc3aDb792001E9bd82ff54D4E226eC5882017f4be) |
+
+---
+
 ## 🛠️ Metropolis Infrastructure Stack
 
 We leverage official Metropolis hackathon partner infrastructure:

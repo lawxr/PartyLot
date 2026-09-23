@@ -42,6 +42,7 @@ export function usePrivySync() {
         (email ? email.split('@')[0] : 'PartyMember');
 
       updateUser({
+        id: user.id,
         name: displayName,
         handle: `@${displayName.toLowerCase().replace(/[^a-z0-9_]/g, '')}`,
         email: email || undefined,

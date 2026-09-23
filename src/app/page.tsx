@@ -16,6 +16,8 @@ import { ProfileView } from '@/components/views/ProfileView';
 import { CrewDetailView } from '@/components/views/CrewDetailView';
 import { TabBar } from '@/components/navigation/TabBar';
 import { usePrivySync } from '@/hooks/usePrivySync';
+import { isExplicitDevelopmentDemoMode, isPrivyConfigured } from '@/lib/runtimeMode';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 const subscribe = () => () => {};
 const getClientSnapshot = () => true;
@@ -60,6 +62,15 @@ export default function App() {
 
       {/* Main Responsive View Container */}
       <div className="relative z-10 w-full min-h-screen flex flex-col justify-start">
+        {(isExplicitDevelopmentDemoMode() || !isPrivyConfigured() || !isSupabaseConfigured()) && (
+          <div role="status" className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-4xl rounded-xl border border-amber-300/25 bg-amber-300/10 px-4 py-2 text-center text-xs text-amber-100">
+            {isExplicitDevelopmentDemoMode()
+              ? 'Development demo mode — sample data and local changes are not real or persisted to a production database.'
+              : !isPrivyConfigured()
+              ? 'Sign-in is unavailable: configure the authentication provider. Demo fixtures are disabled.'
+              : 'Database access is unavailable. Invite joins need server-side authentication and an atomic invite-join service.'}
+          </div>
+        )}
         {currentView === 'splash' && <SplashView />}
         {currentView === 'home' && <HomeView />}
         {currentView === 'create-party' && <CreatePartyView />}

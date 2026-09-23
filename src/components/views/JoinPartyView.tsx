@@ -8,8 +8,6 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { AvatarStack } from '@/components/ui/AvatarStack';
 import { Party } from '@/types';
-import { resolveInviteCodeToPermit } from '@/lib/web3/permits';
-import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 import { usePrivySync } from '@/hooks/usePrivySync';
 import { useLogin } from '@privy-io/react-auth';
 import { PrivyAuthModal } from '@/components/ui/PrivyAuthModal';
@@ -17,15 +15,18 @@ import { validateServerInviteCode } from '@/services/supabaseService';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 import confetti from 'canvas-confetti';
+import { isExplicitDevelopmentDemoMode, isPrivyConfigured } from '@/lib/runtimeMode';
 
 export const JoinPartyView: React.FC = () => {
   const { parties, joinPartyByCode, selectParty, goBack, hydrateFromSupabase } = usePartyStore();
   const { authenticated, ready } = usePrivySync();
   const { t } = useTranslation();
+  const demoMode = isExplicitDevelopmentDemoMode();
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '']);
   const [isJoining, setIsJoining] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const pendingPartyRef = useRef<Party | null>(null);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
@@ -49,27 +50,38 @@ export const JoinPartyView: React.FC = () => {
       validateServerInviteCode(fullCode).then((res) => {
         if (res.valid) {
           hydrateFromSupabase();
+        } else {
+          setJoinError(res.error || 'Invite validation is unavailable.');
         }
+      }).catch(() => {
+        setJoinError('Invite validation is unavailable. Please try again later.');
       });
     }
   }, [fullCode, matchedParty, hydrateFromSupabase]);
 
-  const errorMsg = fullCode.length === 4 && !matchedParty ? 'No party found with this code. Double-check with your host!' : null;
+  const errorMsg = joinError || (fullCode.length === 4 && !matchedParty ? 'No party found with this code. Double-check with your host!' : null);
 
   const executeJoinFlow = useCallback(
     async (party: Party) => {
       setIsJoining(true);
 
-      const res = joinPartyByCode(party.code);
-      if (res.success) {
-        confetti({
-          particleCount: 60,
-          spread: 60,
-          origin: { y: 0.6 },
-          colors: ['#F0DC00', '#FFFFFF'],
-        });
-        setDigits(['', '', '', '']);
-        selectParty(party.id);
+      setJoinError(null);
+      try {
+        const res = await joinPartyByCode(party.code);
+        if (res.success) {
+          confetti({
+            particleCount: 60,
+            spread: 60,
+            origin: { y: 0.6 },
+            colors: ['#F0DC00', '#FFFFFF'],
+          });
+          setDigits(['', '', '', '']);
+          selectParty(party.id);
+        } else {
+          setJoinError(res.message || 'The server could not confirm this invite join.');
+        }
+      } catch {
+        setJoinError('Joining is unavailable. Please try again later.');
       }
       setIsJoining(false);
     },
@@ -85,14 +97,6 @@ export const JoinPartyView: React.FC = () => {
       }
     },
   });
-
-  // Resolve EIP-712 permit offchain whenever a valid 4-digit code is found
-  useEffect(() => {
-    if (fullCode.length === 4 && matchedParty) {
-      const account = getOrCreateSmartAccount();
-      resolveInviteCodeToPermit(fullCode, account.address);
-    }
-  }, [fullCode, matchedParty]);
 
   const handleChange = (index: number, value: string) => {
     const val = value.slice(-1).toUpperCase();
@@ -128,14 +132,9 @@ export const JoinPartyView: React.FC = () => {
   const handleConfirmJoin = async () => {
     if (!matchedParty) return;
 
-    if (!authenticated) {
+    if (!authenticated && !demoMode) {
       pendingPartyRef.current = matchedParty;
-      const isLivePrivy =
-        Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID) &&
-        !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('demo') &&
-        !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('placeholder');
-
-      if (isLivePrivy && ready) {
+      if (isPrivyConfigured() && ready) {
         try {
           login();
           return;
@@ -167,7 +166,7 @@ export const JoinPartyView: React.FC = () => {
         <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-card border border-white/15">
           <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
           <span className="text-[11px] sm:text-xs uppercase tracking-wider text-white/80 font-mono font-semibold">
-            {t.joinParty.privateAccessBadge}
+            {demoMode ? 'Development demo data' : t.joinParty.privateAccessBadge}
           </span>
         </div>
 
@@ -246,7 +245,7 @@ export const JoinPartyView: React.FC = () => {
               )}
 
               {/* Quick Preset Hints */}
-              {!matchedParty && !errorMsg && (
+              {demoMode && !matchedParty && !errorMsg && (
                 <div className="text-xs text-white/50 mt-3">
                   {t.joinParty.testCodesHint}{' '}
                   <span
@@ -289,7 +288,7 @@ export const JoinPartyView: React.FC = () => {
 
                       <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-bold text-[#F0DC00] border border-white/15 flex items-center gap-1.5 shadow-lg">
                         <ShieldCheck className="w-3.5 h-3.5 text-[#F0DC00]" />
-                        <span>{t.joinParty.verifiedBadge}</span>
+                          <span>{demoMode ? 'Demo fixture' : 'Invite preview'}</span>
                       </div>
                     </div>
 
@@ -336,7 +335,7 @@ export const JoinPartyView: React.FC = () => {
                         >
                           {isJoining
                             ? t.joinParty.enteringButton
-                            : !authenticated
+                            : !authenticated && !demoMode
                             ? t.joinParty.connectToJoin
                             : t.joinParty.enterPartyButton}
                         </GlassButton>
@@ -363,14 +362,6 @@ export const JoinPartyView: React.FC = () => {
         onClose={() => {
           setIsAuthOpen(false);
           pendingPartyRef.current = null;
-        }}
-        onSuccess={() => {
-          setIsAuthOpen(false);
-          const target = pendingPartyRef.current || matchedParty;
-          pendingPartyRef.current = null;
-          if (target) {
-            executeJoinFlow(target);
-          }
         }}
       />
     </div>

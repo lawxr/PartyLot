@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import {
   User,
   Party,
@@ -34,7 +34,7 @@ import {
 import { generatePartyCode } from '@/services/party';
 import {
   persistPartyToSupabase,
-  persistMemberJoinToSupabase,
+  joinPartyWithInviteCode,
   persistExpenseToSupabase,
   persistActivityToSupabase,
   persistCrewToSupabase,
@@ -50,6 +50,25 @@ import {
 } from '@/services/supabaseService';
 import { Language } from '@/lib/i18n/translations';
 import { FinancialActionResult, getFinancialActionUnavailableResult } from '@/services/treasury';
+import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
+
+const demoMode = isExplicitDevelopmentDemoMode();
+const signedOutUser: User = {
+  id: '',
+  name: 'Guest',
+  handle: '@guest',
+  avatar: '',
+  gatheringsCount: 0,
+  gamesCount: 0,
+  peopleCount: 0,
+  settlementsCount: 0,
+  balance: 0,
+};
+const volatileStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined,
+};
 
 export const detectInitialLanguage = (): Language => {
   if (typeof window === 'undefined') return 'es';
@@ -125,7 +144,7 @@ interface PartyStoreState {
     coverImage: string;
     crewId?: string;
   }) => Party;
-  joinPartyByCode: (code: string) => { success: boolean; party?: Party; message?: string };
+  joinPartyByCode: (code: string) => Promise<{ success: boolean; party?: Party; message?: string }>;
   toggleRsvp: (partyId: string) => void;
 
   // Expense & Split Actions
@@ -185,19 +204,19 @@ interface PartyStoreState {
 export const usePartyStore = create<PartyStoreState>()(
   persist(
     (set, get) => ({
-      currentUser: CURRENT_USER,
+      currentUser: demoMode ? CURRENT_USER : signedOutUser,
       currentView: 'splash',
       previousView: null,
       activeTab: 'home',
       language: detectInitialLanguage(),
       setLanguage: (lang) => set({ language: lang }),
-      parties: INITIAL_PARTIES,
-      currentPartyId: 'p-404',
-      crews: INITIAL_CREWS,
-      currentCrewId: 'c-404',
-      expenses: INITIAL_EXPENSES,
-      transactions: INITIAL_TRANSACTIONS,
-      tasks: [
+      parties: demoMode ? INITIAL_PARTIES : [],
+      currentPartyId: demoMode ? 'p-404' : '',
+      crews: demoMode ? INITIAL_CREWS : [],
+      currentCrewId: demoMode ? 'c-404' : null,
+      expenses: demoMode ? INITIAL_EXPENSES : [],
+      transactions: demoMode ? INITIAL_TRANSACTIONS : [],
+      tasks: demoMode ? [
         {
           id: 'task-1',
           partyId: 'p-404',
@@ -229,12 +248,12 @@ export const usePartyStore = create<PartyStoreState>()(
           completedAt: 'Just now',
           createdAt: '45m ago',
         },
-      ],
-      polls: INITIAL_POLLS,
-      activities: INITIAL_ACTIVITIES,
-      whosMostLikely: WHOS_MOST_LIKELY_QUESTIONS,
-      thisOrThat: THIS_OR_THAT_QUESTIONS,
-      trivia: TRIVIA_QUESTIONS,
+      ] : [],
+      polls: demoMode ? INITIAL_POLLS : [],
+      activities: demoMode ? INITIAL_ACTIVITIES : [],
+      whosMostLikely: demoMode ? WHOS_MOST_LIKELY_QUESTIONS : [],
+      thisOrThat: demoMode ? THIS_OR_THAT_QUESTIONS : [],
+      trivia: demoMode ? TRIVIA_QUESTIONS : [],
       activeGameId: 'whos-most-likely',
 
       setCurrentView: (view) => {
@@ -442,13 +461,20 @@ export const usePartyStore = create<PartyStoreState>()(
         return newParty;
       },
 
-      joinPartyByCode: (code) => {
+      joinPartyByCode: async (code) => {
         const state = get();
         const normalized = code.trim().toUpperCase();
         const matched = state.parties.find((p) => p.code.toUpperCase() === normalized);
 
         if (!matched) {
           return { success: false, message: 'Party code not found. Check with host!' };
+        }
+
+        if (!demoMode) {
+          const result = await joinPartyWithInviteCode(normalized);
+          if (!result.success || result.partyId !== matched.id) {
+            return { success: false, message: result.error || 'The server could not confirm this invite join.' };
+          }
         }
 
         const isAlreadyMember = matched.members.some((m) => m.id === state.currentUser.id);
@@ -483,7 +509,6 @@ export const usePartyStore = create<PartyStoreState>()(
             activities: [newActivity, ...state.activities],
           });
 
-          persistMemberJoinToSupabase(matched.id, newMember);
           persistActivityToSupabase(newActivity);
         } else {
           set({ currentPartyId: matched.id });
@@ -844,14 +869,18 @@ export const usePartyStore = create<PartyStoreState>()(
             ...state.currentUser,
             ...updates,
           };
-          syncUserDataToDb(updated);
+          if (!demoMode) {
+            void syncUserDataToDb(updated).catch((error) =>
+              console.warn('User profile changes are not persisted:', error)
+            );
+          }
           return { currentUser: updated };
         });
       },
 
       resetUserSession: () => {
         set({
-          currentUser: CURRENT_USER,
+          currentUser: demoMode ? CURRENT_USER : signedOutUser,
           currentView: 'splash',
         });
       },
@@ -916,12 +945,12 @@ export const usePartyStore = create<PartyStoreState>()(
 
       resetToDefaults: () => {
         set({
-          currentUser: CURRENT_USER,
-          parties: INITIAL_PARTIES,
-          crews: INITIAL_CREWS,
-          expenses: INITIAL_EXPENSES,
-          transactions: INITIAL_TRANSACTIONS,
-          tasks: [
+          currentUser: demoMode ? CURRENT_USER : signedOutUser,
+          parties: demoMode ? INITIAL_PARTIES : [],
+          crews: demoMode ? INITIAL_CREWS : [],
+          expenses: demoMode ? INITIAL_EXPENSES : [],
+          transactions: demoMode ? INITIAL_TRANSACTIONS : [],
+          tasks: demoMode ? [
             {
               id: 'task-1',
               partyId: 'p-404',
@@ -941,17 +970,20 @@ export const usePartyStore = create<PartyStoreState>()(
               claimedByAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
               createdAt: '30m ago',
             },
-          ],
-          polls: INITIAL_POLLS,
-          activities: INITIAL_ACTIVITIES,
-          whosMostLikely: WHOS_MOST_LIKELY_QUESTIONS,
-          thisOrThat: THIS_OR_THAT_QUESTIONS,
-          trivia: TRIVIA_QUESTIONS,
+          ] : [],
+          polls: demoMode ? INITIAL_POLLS : [],
+          activities: demoMode ? INITIAL_ACTIVITIES : [],
+          whosMostLikely: demoMode ? WHOS_MOST_LIKELY_QUESTIONS : [],
+          thisOrThat: demoMode ? THIS_OR_THAT_QUESTIONS : [],
+          trivia: demoMode ? TRIVIA_QUESTIONS : [],
         });
       },
     }),
     {
       name: 'partylot-storage-v1',
+      storage: createJSONStorage(() =>
+        demoMode && typeof window !== 'undefined' ? window.localStorage : volatileStorage
+      ),
       partialize: (state) => ({
         currentUser: state.currentUser,
         parties: state.parties,

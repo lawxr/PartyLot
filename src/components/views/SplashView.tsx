@@ -9,6 +9,7 @@ import { KeyRound, ShieldCheck, Sparkles, MapPin, Clock } from 'lucide-react';
 import { usePrivySync } from '@/hooks/usePrivySync';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
+import { isPrivyConfigured } from '@/lib/runtimeMode';
 
 export const SplashView: React.FC = () => {
   const { setCurrentView } = usePartyStore();
@@ -17,12 +18,7 @@ export const SplashView: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const handleGetStarted = () => {
-    const isLivePrivy =
-      Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID) &&
-      !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('demo') &&
-      !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('placeholder');
-
-    if (isLivePrivy && ready) {
+    if (isPrivyConfigured() && ready) {
       try {
         login();
       } catch {
@@ -260,7 +256,6 @@ export const SplashView: React.FC = () => {
       <PrivyAuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
-        onSuccess={() => setCurrentView('home')}
       />
     </div>
   );

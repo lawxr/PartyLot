@@ -4,22 +4,22 @@ import React, { useState } from 'react';
 import { RotateCcw, ShieldCheck, Copy, Check, LogOut, Globe } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
-import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 import { usePrivySync } from '@/hooks/usePrivySync';
 import { SharedExperienceConnection } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
+import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
 
 export const ProfileView: React.FC = () => {
   const { currentUser, resetToDefaults } = usePartyStore();
   const { logout: privyLogout } = usePrivySync();
   const { t, language } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const demoMode = isExplicitDevelopmentDemoMode();
 
-  const smartAccount = getOrCreateSmartAccount();
-  const activeAddress = currentUser.walletAddress || smartAccount.address;
+  const activeAddress = currentUser.walletAddress;
 
-  const sharedConnections: SharedExperienceConnection[] = [
+  const sharedConnections: SharedExperienceConnection[] = demoMode ? [
     {
       targetUserId: 'u-ana',
       targetUserName: 'Ana',
@@ -67,9 +67,9 @@ export const ProfileView: React.FC = () => {
       recurringCrewsShared: 1,
       sparkLevel: 'Kindling',
     },
-  ];
+  ] : [];
 
-  const pastNights = [
+  const pastNights = demoMode ? [
     {
       title: 'Neon Rooftop Sunset',
       date: 'Aug 14',
@@ -82,15 +82,16 @@ export const ProfileView: React.FC = () => {
       people: 26,
       cover: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=600&q=80',
     },
-  ];
+  ] : [];
 
-  const badges = [
+  const badges = demoMode ? [
     { name: 'Aux Cord Royalty', desc: 'Played 40+ tracks without a single skip', icon: '🎧' },
     { name: 'Late Night Survivor', desc: 'Present at 5+ sunrises in 2026', icon: '🌅' },
     { name: 'Instant Settler', desc: '100% on-time damage settlements', icon: '⚡' },
-  ];
+  ] : [];
 
   const handleCopyAddress = async () => {
+    if (!activeAddress) return;
     await navigator.clipboard.writeText(activeAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -124,11 +125,13 @@ export const ProfileView: React.FC = () => {
           {currentUser.name}
         </h2>
         <span className="text-xs sm:text-sm font-semibold text-white/70 mt-1">
-          @{currentUser.handle} · Miami, FL
+          @{currentUser.handle}{demoMode ? ' · Miami, FL' : ''}
         </span>
-        <p className="text-xs sm:text-sm text-white/75 max-w-sm mt-2 leading-relaxed">
-          Amante de las rooftop parties y las buenas playlists. Siempre organizando el próximo golden hour.
-        </p>
+        {demoMode && (
+          <p className="text-xs sm:text-sm text-white/75 max-w-sm mt-2 leading-relaxed">
+            Amante de las rooftop parties y las buenas playlists. Siempre organizando el próximo golden hour.
+          </p>
+        )}
         <button className="mt-3.5 px-6 py-2 rounded-full pill-outline font-display font-bold text-xs uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 cursor-pointer">
           Editar perfil
         </button>
@@ -379,8 +382,10 @@ export const ProfileView: React.FC = () => {
                     {language === 'es' ? 'Cuenta y Seguridad' : 'Account & Security'}
                   </span>
                 </div>
-                <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-0.5 rounded-full">
-                  {language === 'es' ? 'Verificado' : 'Verified'}
+                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${currentUser.isPrivyAuthenticated ? 'text-emerald-400 bg-emerald-400/10 border border-emerald-400/20' : 'text-amber-200 bg-amber-300/10 border border-amber-300/20'}`}>
+                  {currentUser.isPrivyAuthenticated
+                    ? language === 'es' ? 'Autenticado' : 'Authenticated'
+                    : language === 'es' ? 'Sin autenticar' : 'Not authenticated'}
                 </span>
               </div>
 
@@ -390,10 +395,11 @@ export const ProfileView: React.FC = () => {
                 </span>
                 <div className="flex items-center justify-between mt-1.5 p-3 rounded-2xl bg-black/60 border border-white/10 font-mono text-xs">
                   <span className="text-[#F0DC00] truncate max-w-[340px]">
-                    {activeAddress}
+                    {activeAddress || (language === 'es' ? 'Sin cartera autenticada' : 'No authenticated wallet connected')}
                   </span>
                   <button
                     onClick={handleCopyAddress}
+                    disabled={!activeAddress}
                     className="text-white/60 hover:text-white p-1 ml-2 shrink-0 cursor-pointer"
                     aria-label="Copy Address"
                   >

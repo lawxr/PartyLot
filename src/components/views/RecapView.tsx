@@ -12,11 +12,14 @@ import {
   Users,
   Receipt,
   Gamepad2,
+  ExternalLink,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { TopNav } from '@/components/navigation/TopNav';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassPanel } from '@/components/ui/GlassPanel';
+import { recordGatheringOnchain } from '@/services/socialGraphService';
+import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
 import confetti from 'canvas-confetti';
 
 export const RecapView: React.FC = () => {
@@ -40,7 +43,29 @@ export const RecapView: React.FC = () => {
 
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [isAttesting, setIsAttesting] = useState(false);
+  const [attestationTxHash, setAttestationTxHash] = useState<string | null>(null);
   const posterRef = useRef<HTMLDivElement | null>(null);
+
+  const handleAttestGathering = async () => {
+    if (isAttesting || attestationTxHash) return;
+    setIsAttesting(true);
+    try {
+      const addresses = party.members.map((m) => m.walletAddress || m.id);
+      const receipt = await recordGatheringOnchain(party.id, addresses);
+      setAttestationTxHash(receipt.txHash);
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#E9FF32', '#10B981', '#60A5FA'],
+      });
+    } catch (err) {
+      console.error('Failed to attest gathering onchain:', err);
+    } finally {
+      setIsAttesting(false);
+    }
+  };
 
   // Dynamic calculations from real party state
   const attendeesCount = party.members.length;
@@ -413,7 +438,7 @@ export const RecapView: React.FC = () => {
                 Attendance and shared treasury liquidation for <span className="text-white font-semibold">{party.title}</span> were signed via EIP-712 permits and attested on Monad.
               </p>
 
-              <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-white/10 text-center">
+              <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-white/10 text-center mb-4">
                 <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
                   <Users className="w-4 h-4 text-[#E9FF32] mx-auto mb-1" />
                   <span className="font-display font-black text-base text-white block">{attendeesCount}</span>
@@ -430,6 +455,29 @@ export const RecapView: React.FC = () => {
                   <span className="text-[9px] uppercase text-white/50">Games</span>
                 </div>
               </div>
+
+              {/* Onchain Attestation Action */}
+              {attestationTxHash ? (
+                <a
+                  href={getMonadExplorerTxUrl(attestationTxHash)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-bold flex items-center justify-center gap-2 hover:bg-emerald-500/25 transition-all"
+                >
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>Attested on SocialGraph [Tx: {attestationTxHash.slice(0, 8)}...]</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              ) : (
+                <button
+                  onClick={handleAttestGathering}
+                  disabled={isAttesting}
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#E9FF32] hover:brightness-105 active:scale-95 text-black text-xs font-display font-bold flex items-center justify-center gap-2 transition-all shadow-md"
+                >
+                  <ShieldCheck className="w-4 h-4 text-black stroke-[2.5]" />
+                  <span>{isAttesting ? 'Attesting on Monad...' : '⚡ Attest Co-Presence on Monad SocialGraph'}</span>
+                </button>
+              )}
             </GlassPanel>
 
             {/* Attendees Who Earned Co-Presence Badge */}

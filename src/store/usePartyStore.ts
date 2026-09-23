@@ -45,8 +45,7 @@ import {
   persistTaskToSupabase,
   updateTaskInSupabase,
 } from '@/services/supabaseService';
-import { simulateTreasuryCall } from '@/lib/web3/metropolis';
-import { executeSponsoredUserOp, getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
+import { distributeBountyOnchain } from '@/services/treasury';
 
 export type AppView =
   | 'splash'
@@ -803,21 +802,17 @@ export const usePartyStore = create<PartyStoreState>()(
         const payeeName = task.claimedByName || 'Contributor';
         const payeeAvatar = task.claimedByAvatar || state.currentUser.avatar;
 
+        let onchainTxHash = '';
         try {
-          // 1. Simulate onchain bounty payout via Tenderly Pro
-          await simulateTreasuryCall('0xPartyTreasury', 'distributeReward', {
-            recipient: payeeName,
-            amount: reward,
-            role: 'TASK_BOUNTY',
-          });
-
-          // 2. Execute sponsored ERC-4337 UserOp on Monad Testnet (Zero gas via Pimlico)
-          const account = getOrCreateSmartAccount();
-          await executeSponsoredUserOp(account.address, [
-            { to: '0xPartyTreasury', value: 0, label: `bountyPayout(${task.title})` },
-          ]);
+          const receipt = await distributeBountyOnchain(
+            party.id,
+            payeeName,
+            reward,
+            `Bounty: ${task.title}`
+          );
+          onchainTxHash = receipt.txHash;
         } catch (err) {
-          console.warn('Simulation/UserOp warning during bounty payout:', err);
+          console.warn('Onchain bounty payout warning:', err);
         }
 
         const rewardTx: PotTransaction = {
@@ -829,6 +824,7 @@ export const usePartyStore = create<PartyStoreState>()(
           userName: payeeName,
           userAvatar: payeeAvatar,
           timestamp: 'Just now',
+          txHash: onchainTxHash || undefined,
         };
 
         const updatedTask: PartyTask = {
@@ -982,19 +978,17 @@ export const usePartyStore = create<PartyStoreState>()(
         const winnerName = winner ? winner.name : 'Player';
         const winnerAvatar = winner ? winner.avatar : state.currentUser.avatar;
 
+        let onchainTxHash = '';
         try {
-          await simulateTreasuryCall('0xPartyTreasury', 'distributeReward', {
-            recipient: winnerName,
+          const receipt = await distributeBountyOnchain(
+            party.id,
+            winnerName,
             amount,
-            role: 'GAME_WINNER',
-          });
-
-          const account = getOrCreateSmartAccount();
-          await executeSponsoredUserOp(account.address, [
-            { to: '0xPartyTreasury', value: 0, label: `gameRewardPayout(${winnerName})` },
-          ]);
+            `Game Winner: ${gameTitle}`
+          );
+          onchainTxHash = receipt.txHash;
         } catch (err) {
-          console.warn('Game reward simulation/UserOp warning:', err);
+          console.warn('Game reward onchain warning:', err);
         }
 
         const rewardTx: PotTransaction = {
@@ -1006,6 +1000,7 @@ export const usePartyStore = create<PartyStoreState>()(
           userName: winnerName,
           userAvatar: winnerAvatar,
           timestamp: 'Just now',
+          txHash: onchainTxHash || undefined,
         };
 
         const updatedParty = {

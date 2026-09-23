@@ -55,7 +55,7 @@ contract PartyTreasury {
     /**
      * @notice Deposit funds into the shared party pot.
      */
-    function deposit() external payable {
+    function deposit() public payable {
         require(msg.value > 0, "Deposit must be > 0");
         memberBalances[msg.sender] += msg.value;
         totalDeposited += msg.value;

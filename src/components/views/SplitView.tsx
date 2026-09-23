@@ -25,8 +25,7 @@ import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
-import { executeSponsoredUserOp, getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
-import { simulateTreasuryCall } from '@/lib/web3/metropolis';
+import { settleDamageOnchain } from '@/services/treasury';
 import { ExpenseCategory } from '@/types';
 import confetti from 'canvas-confetti';
 
@@ -110,24 +109,11 @@ export const SplitView: React.FC = () => {
 
     setIsSettling(true);
     try {
-      // 1. Simulate onchain debt settlement with Tenderly Pro
-      await simulateTreasuryCall('0xSettlementEngine', 'settleDebts', {
-        partyId: party.id,
-        debtCount: settlements.length,
-        totalNetValue: settlements.reduce((acc, s) => acc + s.amount, 0),
-      });
+      // Execute sponsored 0-gas debt settlement on Monad Testnet
+      const receipt = await settleDamageOnchain(party.id, settlements);
 
-      // 2. Execute sponsored ERC-4337 UserOp on Monad Testnet (Zero gas via Pimlico Paymaster)
-      const account = getOrCreateSmartAccount();
-      const calls = settlements.map((s) => ({
-        to: '0xSettlementEngine',
-        value: s.amount,
-        label: `MonadDebtSettlement(${s.fromName}->${s.toName})`,
-      }));
-
-      const receipt = await executeSponsoredUserOp(account.address, calls);
-      settleAllDebts(party.id, receipt.transactionHash);
-      setSettlementSuccessTx(receipt.transactionHash);
+      settleAllDebts(party.id, receipt.txHash);
+      setSettlementSuccessTx(receipt.txHash);
 
       confetti({
         particleCount: 90,
@@ -136,7 +122,7 @@ export const SplitView: React.FC = () => {
         colors: ['#E9FF32', '#FFFFFF', '#10B981'],
       });
     } catch (err) {
-      console.error('Failed sponsored settlement, applying local settlement:', err);
+      console.error('Failed onchain settlement, applying local settlement:', err);
       settleAllDebts(party.id);
       setIsSettleOpen(false);
     } finally {

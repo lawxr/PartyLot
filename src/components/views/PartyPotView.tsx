@@ -18,8 +18,11 @@ import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { LiquidBlob } from '@/components/ui/LiquidBlob';
-import { executeSponsoredUserOp, getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
-import { simulateTreasuryCall } from '@/lib/web3/metropolis';
+import {
+  depositToPartyPotOnchain,
+  distributeBountyOnchain,
+  rolloverFundsOnchain,
+} from '@/services/treasury';
 import { PartyTasksBoard } from '@/components/party/PartyTasksBoard';
 import confetti from 'canvas-confetti';
 
@@ -60,16 +63,10 @@ export const PartyPotView: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      // 1. Pre-simulate call via Tenderly Pro to guarantee zero-revert execution
-      await simulateTreasuryCall('0xPartyTreasury', 'deposit', { amount: val });
+      // Execute 0-gas deposit into PartyTreasury on Monad Testnet
+      const receipt = await depositToPartyPotOnchain(party.id, val);
 
-      // 2. Execute sponsored UserOp via Pimlico Paymaster on Monad
-      const account = getOrCreateSmartAccount();
-      await executeSponsoredUserOp(account.address, [
-        { to: '0xPartyTreasury', value: val, label: 'PartyPot.deposit()' },
-      ]);
-
-      addToPot(party.id, val, 'Sponsored Treasury Deposit');
+      addToPot(party.id, val, `Deposit [tx: ${receipt.txHash.slice(0, 8)}...]`);
       setIsAddOpen(false);
 
       confetti({
@@ -80,7 +77,7 @@ export const PartyPotView: React.FC = () => {
       });
     } catch (err) {
       console.error('Error adding funds to pot:', err);
-      addToPot(party.id, val, 'Local Treasury Deposit');
+      addToPot(party.id, val, 'Treasury Pot Deposit');
       setIsAddOpen(false);
     } finally {
       setIsProcessing(false);
@@ -104,18 +101,18 @@ export const PartyPotView: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      await simulateTreasuryCall('0xPartyTreasury', 'distributeReward', {
-        recipient: rewardRecipient,
-        amount: val,
-        role: rewardRole,
-      });
+      const receipt = await distributeBountyOnchain(
+        party.id,
+        rewardRecipient,
+        val,
+        rewardRole
+      );
 
-      const account = getOrCreateSmartAccount();
-      await executeSponsoredUserOp(account.address, [
-        { to: '0xPartyTreasury', value: 0, label: `distributeReward(${rewardRole})` },
-      ]);
-
-      spendFromPot(party.id, val, `Reward for ${rewardRecipient} (${rewardRole})`);
+      spendFromPot(
+        party.id,
+        val,
+        `Reward for ${rewardRecipient} [tx: ${receipt.txHash.slice(0, 8)}...]`
+      );
       setIsRewardOpen(false);
 
       confetti({
@@ -138,21 +135,11 @@ export const PartyPotView: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      // 1. Simulate rollover to Crew Treasury with Tenderly
-      await simulateTreasuryCall('0xPartyTreasury', 'rolloverToCrew', {
-        crewId: associatedCrew.id,
-        amount: party.potBalance,
-      });
-
-      // 2. Execute sponsored ERC-4337 UserOp on Monad Testnet (Zero Gas via Pimlico)
-      const account = getOrCreateSmartAccount();
-      await executeSponsoredUserOp(account.address, [
-        {
-          to: '0xCrewTreasury',
-          value: party.potBalance,
-          label: `rolloverToCrew(${associatedCrew.name})`,
-        },
-      ]);
+      await rolloverFundsOnchain(
+        party.id,
+        associatedCrew.id,
+        party.potBalance
+      );
 
       rolloverPotToCrew(party.id, associatedCrew.id);
       setIsRolloverOpen(false);

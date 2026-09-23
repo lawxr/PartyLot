@@ -79,9 +79,31 @@ export const SplashView: React.FC = () => {
               48d
             </span>
             <b className="relative z-10 font-display text-xs text-white uppercase tracking-tight drop-shadow">New York Jam</b>
-            <small className="relative z-10 text-[10px] text-white/80 flex items-center gap-1 mt-0.5">
-              <MapPin className="w-2.5 h-2.5 text-[#F0DC00]" /> Miami
-            </small>
+            <div className="relative z-10 flex items-center justify-between mt-0.5">
+              <small className="text-[10px] text-white/80 flex items-center gap-1">
+                <MapPin className="w-2.5 h-2.5 text-[#F0DC00]" /> Miami
+              </small>
+              <div className="flex items-center -space-x-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80"
+                  alt="Attendee"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100&q=80"
+                  alt="Attendee"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&h=100&q=80"
+                  alt="Attendee"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Right card */}
@@ -99,9 +121,31 @@ export const SplashView: React.FC = () => {
               27d
             </span>
             <b className="relative z-10 font-display text-xs text-white uppercase tracking-tight drop-shadow">Rooftop Party</b>
-            <small className="relative z-10 text-[10px] text-white/80 flex items-center gap-1 mt-0.5">
-              <MapPin className="w-2.5 h-2.5 text-[#F0DC00]" /> Jersey
-            </small>
+            <div className="relative z-10 flex items-center justify-between mt-0.5">
+              <small className="text-[10px] text-white/80 flex items-center gap-1">
+                <MapPin className="w-2.5 h-2.5 text-[#F0DC00]" /> Jersey
+              </small>
+              <div className="flex items-center -space-x-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=100&h=100&q=80"
+                  alt="Attendee"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80"
+                  alt="Attendee"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=100&h=100&q=80"
+                  alt="Attendee"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Center card */}
@@ -122,10 +166,26 @@ export const SplashView: React.FC = () => {
             <small className="relative z-10 text-[10px] text-white/90 flex items-center gap-1 mt-1">
               <Clock className="w-2.5 h-2.5 text-[#F0DC00]" /> 3 jul · New York
             </small>
-            <div className="relative z-10 flex -space-x-1.5 mt-2">
-              <span className="w-4 h-4 rounded-full bg-[#f0dc00] border border-black/40" />
-              <span className="w-4 h-4 rounded-full bg-[#ff8fb1] border border-black/40" />
-              <span className="w-4 h-4 rounded-full bg-[#8fd1ff] border border-black/40" />
+            <div className="relative z-10 flex items-center -space-x-1.5 mt-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80"
+                alt="Sofia"
+                className="w-5 h-5 rounded-full object-cover border-[1.5px] border-[#15140f] ring-1 ring-white/20"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&h=120&q=80"
+                alt="Mateo"
+                className="w-5 h-5 rounded-full object-cover border-[1.5px] border-[#15140f] ring-1 ring-white/20"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=120&h=120&q=80"
+                alt="Lucas"
+                className="w-5 h-5 rounded-full object-cover border-[1.5px] border-[#15140f] ring-1 ring-white/20"
+              />
+              <span className="pl-2 text-[9px] font-bold text-white/90 drop-shadow">+14</span>
             </div>
           </div>
         </motion.div>

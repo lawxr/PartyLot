@@ -29,12 +29,12 @@ Audit complete: synthetic transaction receipts, permissive RLS, insecure invite 
 
 PR-01 implementation is present but remains unchecked pending required verification. Financial action UI entry points are disabled and explain that payments are unavailable; store mutations for contributions, spending, rollover, settlement, and payouts are inert; treasury service calls now fail with a typed unavailable error instead of fabricating receipts. Settlement and game/task reward screens no longer report payments as successful.
 
-Implementation commit: `d1b7267` (`fix(finance): disable unconfirmed payment actions`).
+Implementation commits: `d1b7267` (`fix(finance): disable unconfirmed payment actions`), `8d33b69` (`refactor(finance): retain pot total helpers`), and `0b9f91b` (`fix(finance): return typed unavailable action results`).
 
 Checks observed:
 - `pnpm lint` — passed.
 - `pnpm exec tsc --noEmit` — passed.
-- `pnpm build` — failed twice in Next.js 16.3.6 Turbopack before compilation, with `Operation not permitted` while creating a process/binding a port. The same failure occurred on the approved elevated rerun.
+- `pnpm build` — failed four attempts in Next.js 16.3.6 Turbopack before compilation, with `Operation not permitted` while creating a process/binding a port. The failure persisted on approved elevated reruns, including after the final safety-typing changes.
 
 ## Next step
 Resolve or rerun the required build in an environment where Turbopack can create its worker process, then re-check PR-01 before moving forward.

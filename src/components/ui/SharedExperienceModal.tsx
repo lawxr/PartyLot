@@ -121,13 +121,19 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
           <div className="flex items-center justify-center gap-4 mb-6">
             {/* Current User */}
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 shadow-md">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={currentUser.avatar}
-                  alt={currentUser.name}
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 shadow-md flex items-center justify-center bg-black/40">
+                {currentUser.avatar ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-lg">
+                    {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'Y'}
+                  </div>
+                )}
               </div>
               <span className="text-xs font-bold mt-1 text-white/70">You</span>
             </div>
@@ -143,13 +149,19 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
 
             {/* Target Member */}
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#F0DC00] shadow-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={member.avatar}
-                  alt={member.name}
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#F0DC00] shadow-lg flex items-center justify-center bg-black/40">
+                {member.avatar ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={member.avatar}
+                    alt={member.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-lg">
+                    {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
+                  </div>
+                )}
               </div>
               <span className="text-xs font-bold mt-1 text-white">{member.name}</span>
             </div>

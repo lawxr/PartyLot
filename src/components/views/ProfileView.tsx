@@ -9,12 +9,14 @@ import { SharedExperienceConnection } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
+import { EditProfileModal } from '@/components/ui/EditProfileModal';
 
 export const ProfileView: React.FC = () => {
   const { currentUser, resetToDefaults } = usePartyStore();
   const { logout: privyLogout } = usePrivySync();
   const { t, language } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const demoMode = isExplicitDevelopmentDemoMode();
 
   const activeAddress = currentUser.walletAddress;
@@ -102,13 +104,19 @@ export const ProfileView: React.FC = () => {
       {/* Profile Header */}
       <header className="flex flex-col items-center text-center my-6 sm:my-8 border-b border-white/10 pb-6">
         <div className="relative mb-3">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#F0DC00]/60 p-1 liquid-glass-card shadow-2xl">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
-              className="w-full h-full object-cover rounded-full"
-            />
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#F0DC00]/60 p-1 liquid-glass-card shadow-2xl flex items-center justify-center">
+            {currentUser.avatar ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.name}
+                className="w-full h-full object-cover rounded-full"
+              />
+            ) : (
+              <div className="w-full h-full rounded-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-3xl">
+                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'G'}
+              </div>
+            )}
           </div>
           {/* Real online green indicator dot */}
           <span
@@ -132,7 +140,10 @@ export const ProfileView: React.FC = () => {
             Amante de las rooftop parties y las buenas playlists. Siempre organizando el próximo golden hour.
           </p>
         )}
-        <button className="mt-3.5 px-6 py-2 rounded-full pill-outline font-display font-bold text-xs uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 cursor-pointer">
+        <button
+          onClick={() => setIsEditProfileOpen(true)}
+          className="mt-3.5 px-6 py-2 rounded-full pill-outline font-display font-bold text-xs uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 cursor-pointer"
+        >
           Editar perfil
         </button>
       </header>
@@ -211,9 +222,15 @@ export const ProfileView: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full overflow-hidden border border-white/20 shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={c.targetUserAvatar} alt={c.targetUserName} className="w-full h-full object-cover" />
+                        <div className="w-11 h-11 rounded-full overflow-hidden border border-white/20 shrink-0 flex items-center justify-center bg-black/40">
+                          {c.targetUserAvatar ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={c.targetUserAvatar} alt={c.targetUserName} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-sm">
+                              {c.targetUserName ? c.targetUserName.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                          )}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -464,6 +481,11 @@ export const ProfileView: React.FC = () => {
           </section>
         </div>
       </div>
+
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+      />
     </div>
   );
 };

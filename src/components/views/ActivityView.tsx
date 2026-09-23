@@ -82,13 +82,19 @@ export const ActivityView: React.FC = () => {
                   onClick={() => act.partyId && selectParty(act.partyId)}
                   className="p-4 flex items-center gap-3.5 hover:bg-white/10 transition-colors cursor-pointer border border-white/10"
                 >
-                  <div className="relative w-11 h-11 rounded-full overflow-hidden shrink-0 border border-white/20">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={act.avatar}
-                      alt="User"
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="relative w-11 h-11 rounded-full overflow-hidden shrink-0 border border-white/20 flex items-center justify-center bg-black/40">
+                    {act.avatar ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={act.avatar}
+                        alt="User"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-sm">
+                        A
+                      </div>
+                    )}
                     <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-black/80 flex items-center justify-center border border-white/20 shadow-md">
                       {getIcon(act.type)}
                     </div>

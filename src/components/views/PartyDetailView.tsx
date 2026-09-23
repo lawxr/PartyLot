@@ -297,13 +297,19 @@ export const PartyDetailView: React.FC = () => {
                     className="p-3 rounded-2xl liquid-glass-card flex flex-col items-center text-center border border-white/10 hover:border-[#F0DC00]/50 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
                     title={`View shared experience with ${member.name}`}
                   >
-                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-white/20 p-0.5 shadow-md mb-1.5 group-hover:border-[#F0DC00]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={member.avatar}
-                        alt={member.name}
-                        className="w-full h-full object-cover rounded-full"
-                      />
+                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-white/20 p-0.5 shadow-md mb-1.5 group-hover:border-[#F0DC00] flex items-center justify-center bg-black/40">
+                      {member.avatar ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={member.avatar}
+                          alt={member.name}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        <div className="w-full h-full rounded-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-sm">
+                          {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
+                        </div>
+                      )}
                       {member.role === 'host' && (
                         <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full bg-[#F0DC00] text-black text-[9px] font-black uppercase">
                           HOST
@@ -389,13 +395,19 @@ export const PartyDetailView: React.FC = () => {
                       level={2}
                       className="p-3.5 flex items-center gap-3 border border-white/10 hover:border-white/20 transition-colors"
                     >
-                      <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-white/20">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={act.avatar}
-                          alt="User"
-                          className="w-full h-full object-cover"
-                        />
+                      <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-white/20 flex items-center justify-center bg-black/40">
+                        {act.avatar ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={act.avatar}
+                            alt="User"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-bold text-xs">
+                            P
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs sm:text-sm font-medium text-white/90 leading-tight">

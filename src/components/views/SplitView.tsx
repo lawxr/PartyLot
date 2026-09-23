@@ -220,9 +220,15 @@ export const SplitView: React.FC = () => {
                       className="p-3.5 flex flex-col justify-between border border-white/10"
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-7 h-7 rounded-full overflow-hidden border border-white/20 shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={b.avatar} alt={b.memberName} className="w-full h-full object-cover" />
+                        <div className="w-7 h-7 rounded-full overflow-hidden border border-white/20 shrink-0 flex items-center justify-center bg-black/40">
+                          {b.avatar ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={b.avatar} alt={b.memberName} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-bold text-white/70">
+                              {b.memberName ? b.memberName.charAt(0).toUpperCase() : 'U'}
+                            </span>
+                          )}
                         </div>
                         <span className="text-xs font-bold text-white truncate">
                           {b.memberName}
@@ -468,8 +474,14 @@ export const SplitView: React.FC = () => {
                       : 'liquid-glass-card text-white/70'
                   }`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={member.avatar} alt={member.name} className="w-4 h-4 rounded-full object-cover" />
+                  {member.avatar ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={member.avatar} alt={member.name} className="w-4 h-4 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-bold text-white">
+                      {member.name ? member.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
                   <span>{member.name}</span>
                 </button>
               ))}
@@ -495,8 +507,14 @@ export const SplitView: React.FC = () => {
                         : 'border-white/10 opacity-50 text-white/50'
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={member.avatar} alt={member.name} className="w-5 h-5 rounded-full object-cover" />
+                    {member.avatar ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={member.avatar} alt={member.name} className="w-5 h-5 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold text-white">
+                        {member.name ? member.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
                     <span className="truncate">{member.name}</span>
                   </button>
                 );

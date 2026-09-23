@@ -206,12 +206,18 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
                     <span>{task.createdAt}</span>
                     {task.claimedByName && (
                       <span className="flex items-center gap-1.5 text-white/70">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={task.claimedByAvatar || currentUser.avatar}
-                          alt={task.claimedByName}
-                          className="w-4 h-4 rounded-full object-cover"
-                        />
+                        {(task.claimedByAvatar || currentUser.avatar) ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={task.claimedByAvatar || currentUser.avatar}
+                            alt={task.claimedByName}
+                            className="w-4 h-4 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-bold text-white">
+                            {task.claimedByName ? task.claimedByName.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                        )}
                         <span>{task.claimedByName}</span>
                       </span>
                     )}

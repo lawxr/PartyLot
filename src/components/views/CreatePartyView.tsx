@@ -259,9 +259,15 @@ export const CreatePartyView: React.FC = () => {
 
                     <div className="pt-3 border-t border-white/15 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full overflow-hidden border border-white/30">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={currentUser.avatar} alt="host" className="w-full h-full object-cover" />
+                        <div className="w-6 h-6 rounded-full overflow-hidden border border-white/30 flex items-center justify-center">
+                          {currentUser.avatar ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={currentUser.avatar} alt="host" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-bold text-[10px]">
+                              {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'H'}
+                            </div>
+                          )}
                         </div>
                         <span className="text-xs text-white/60">Hosted by you</span>
                       </div>

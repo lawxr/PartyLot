@@ -50,13 +50,19 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
             style={{ zIndex: maxDisplay - index }}
             title={member.name}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={member.avatar}
-              alt={member.name}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
+            {member.avatar ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={member.avatar}
+                alt={member.name}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-bold text-[10px]">
+                {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
+              </div>
+            )}
           </div>
         ))}
 

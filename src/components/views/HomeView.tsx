@@ -75,15 +75,21 @@ export const HomeView: React.FC = () => {
           {/* User Avatar */}
           <button
             onClick={() => setCurrentView('profile')}
-            className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white/20 p-0.5 liquid-glass-card shadow-lg active:scale-95 transition-transform"
+            className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white/20 p-0.5 liquid-glass-card shadow-lg active:scale-95 transition-transform flex items-center justify-center"
             aria-label="Profile"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
-              className="w-full h-full object-cover rounded-full"
-            />
+            {currentUser.avatar ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.name}
+                className="w-full h-full object-cover rounded-full"
+              />
+            ) : (
+              <div className="w-full h-full rounded-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-sm">
+                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'G'}
+              </div>
+            )}
           </button>
         </div>
       </header>

@@ -18,7 +18,7 @@ import {
 import { Member, SharedExperienceConnection } from '@/types';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
-import confetti from 'canvas-confetti';
+import { FINANCIAL_ACTIONS_AVAILABLE, getFinancialActionsUnavailableMessage } from '@/services/treasury';
 
 interface SharedExperienceModalProps {
   member: Member | null;
@@ -31,7 +31,7 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { currentUser, getSharedConnection, addToPot, currentPartyId } = usePartyStore();
+  const { currentUser, getSharedConnection, language } = usePartyStore();
 
   if (!isOpen || !member) return null;
 
@@ -77,17 +77,6 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
   }[connection.sparkLevel];
 
   const SparkIcon = sparkTheme.icon;
-
-  const handleSendTip = () => {
-    addToPot(currentPartyId, 5, `Tip/Shoutout to ${member.name}`);
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.6 },
-      colors: ['#F0DC00', '#EC4899', '#A855F7'],
-    });
-    onClose();
-  };
 
   return (
     <AnimatePresence>
@@ -250,15 +239,19 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
             </div>
           </div>
 
+          <p role="status" className="mb-3 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-xs text-amber-100">
+            {getFinancialActionsUnavailableMessage(language)}
+          </p>
+
           {/* Bottom Action */}
           <GlassButton
             variant="accent"
             size="md"
             fullWidth
-            onClick={handleSendTip}
+            disabled={!FINANCIAL_ACTIONS_AVAILABLE}
             icon={<Send className="w-4 h-4 text-black stroke-[2.5]" />}
           >
-            Send $5 Pot Bounty / Tip to {member.name}
+            {language === 'es' ? 'Propina no disponible' : `Send $5 tip to ${member.name} (unavailable)`}
           </GlassButton>
 
           <div className="mt-3 text-center">

@@ -119,23 +119,38 @@ begin
     );
   end if;
 
-  -- 5. Upsert the user profile in users table
-  insert into users (
-    id, name, handle, avatar, wallet_address, updated_at
-  ) values (
-    p_user_id,
-    coalesce(nullif(p_user_name, ''), 'PartyMember'),
-    coalesce(nullif(p_user_handle, ''), '@partymember'),
-    p_user_avatar,
-    p_user_wallet,
-    now()
-  )
-  on conflict (id) do update set
-    name = coalesce(nullif(excluded.name, ''), users.name),
-    handle = coalesce(nullif(excluded.handle, ''), users.handle),
-    avatar = coalesce(excluded.avatar, users.avatar),
-    wallet_address = coalesce(excluded.wallet_address, users.wallet_address),
-    updated_at = now();
+  -- 5. Upsert the user profile in users table with guaranteed unique handle
+  declare
+    v_effective_handle text;
+  begin
+    v_effective_handle := trim(coalesce(p_user_handle, ''));
+    if v_effective_handle = '' or v_effective_handle = '@partymember' then
+      v_effective_handle := '@user_' || substr(md5(p_user_id), 1, 6);
+    end if;
+    if not v_effective_handle like '@%' then
+      v_effective_handle := '@' || v_effective_handle;
+    end if;
+    if exists (select 1 from users where lower(handle) = lower(v_effective_handle) and id != p_user_id) then
+      v_effective_handle := v_effective_handle || '_' || substr(md5(p_user_id), 1, 4);
+    end if;
+
+    insert into users (
+      id, name, handle, avatar, wallet_address, updated_at
+    ) values (
+      p_user_id,
+      coalesce(nullif(p_user_name, ''), 'PartyMember'),
+      v_effective_handle,
+      p_user_avatar,
+      p_user_wallet,
+      now()
+    )
+    on conflict (id) do update set
+      name = coalesce(nullif(excluded.name, ''), users.name),
+      handle = coalesce(nullif(excluded.handle, ''), users.handle),
+      avatar = coalesce(excluded.avatar, users.avatar),
+      wallet_address = coalesce(excluded.wallet_address, users.wallet_address),
+      updated_at = now();
+  end;
 
   -- 6. Add user to party_members (idempotent)
   select * into v_member

@@ -43,9 +43,13 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     setIsSaving(true);
     setError(null);
 
-    const formattedHandle = handle.trim()
-      ? `@${handle.trim().replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_.]/g, '')}`
-      : `@${name.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
+    const handleRaw = handle.trim().replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (handleRaw.length < 3 || handleRaw.length > 24) {
+      setError('El @handle debe tener entre 3 y 24 caracteres (letras, números o guión bajo).');
+      setIsSaving(false);
+      return;
+    }
+    const formattedHandle = `@${handleRaw}`;
 
     try {
       let token: string | null = null;
@@ -57,7 +61,7 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         }
       }
 
-      updateUser(
+      await updateUser(
         {
           name: name.trim(),
           handle: formattedHandle,
@@ -67,9 +71,10 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       );
 
       onClose();
-    } catch (saveErr) {
+    } catch (saveErr: unknown) {
       console.error('Failed to save profile:', saveErr);
-      setError('No se pudo actualizar el perfil. Intenta de nuevo.');
+      const errMsg = saveErr instanceof Error ? saveErr.message : 'No se pudo actualizar el perfil.';
+      setError(errMsg);
     } finally {
       setIsSaving(false);
     }

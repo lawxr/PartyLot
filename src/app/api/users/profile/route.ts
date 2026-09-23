@@ -71,6 +71,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (data && data.success === false) {
+      const statusCode = data.error === 'HANDLE_ALREADY_EXISTS' ? 409 : 400;
+      return NextResponse.json(data, { status: statusCode });
+    }
+
     return NextResponse.json(data, { status: 200 });
   } catch (err) {
     console.error('Unexpected error updating user profile:', err);

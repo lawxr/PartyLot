@@ -192,7 +192,7 @@ interface PartyStoreState {
   getSharedConnection: (targetMember: Member) => SharedExperienceConnection;
 
   // User & Auth Actions
-  updateUser: (updates: Partial<User>, authToken?: string | null) => void;
+  updateUser: (updates: Partial<User>, authToken?: string | null) => Promise<void>;
   resetUserSession: () => void;
 
   // Realtime Supabase Persistence & Hydration
@@ -279,17 +279,37 @@ export const usePartyStore = create<PartyStoreState>()(
 
       goBack: () => {
         set((state) => {
+          const isAuthed = Boolean(state.currentUser?.isPrivyAuthenticated || demoMode);
+
+          // If coming from splash (e.g. into join-party), always return to splash
+          if (state.previousView === 'splash') {
+            return {
+              currentView: 'splash',
+              previousView: null,
+            };
+          }
+
+          // If the user is unauthenticated, they can never be sent to home
+          if (!isAuthed) {
+            return {
+              currentView: 'splash',
+              previousView: null,
+            };
+          }
+
+          // For authenticated users, return to the previous view if valid
           if (
             state.previousView &&
+            state.previousView !== state.currentView &&
             state.previousView !== 'join-party' &&
-            state.previousView !== 'create-party' &&
-            state.previousView !== 'splash'
+            state.previousView !== 'create-party'
           ) {
             return {
               currentView: state.previousView,
               previousView: null,
             };
           }
+
           return { currentView: 'home', previousView: null };
         });
       },
@@ -893,19 +913,22 @@ export const usePartyStore = create<PartyStoreState>()(
         };
       },
 
-      updateUser: (updates, authToken) => {
-        set((state) => {
-          const updated = {
-            ...state.currentUser,
-            ...updates,
-          };
-          if (!demoMode && updated.id) {
-            void syncUserDataToDb(updated, authToken).catch((error) =>
-              console.warn('User profile changes are not persisted:', error)
-            );
-          }
-          return { currentUser: updated };
-        });
+      updateUser: async (updates, authToken) => {
+        const state = get();
+        const updated = {
+          ...state.currentUser,
+          ...updates,
+        };
+
+        if (authToken && updated.id) {
+          await syncUserDataToDb(updated, authToken);
+        } else if (!demoMode && updated.id) {
+          await syncUserDataToDb(updated, null).catch((error) =>
+            console.warn('User profile changes are not persisted:', error)
+          );
+        }
+
+        set({ currentUser: updated });
       },
 
       resetUserSession: () => {

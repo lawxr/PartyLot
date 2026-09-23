@@ -569,6 +569,34 @@ export async function syncUserDataToDb(user: User, authToken?: string | null): P
 }
 
 /**
+ * Fetches persisted user profile from Supabase
+ */
+export async function fetchUserProfileFromDb(userId: string): Promise<{
+  id: string;
+  name: string;
+  handle: string;
+  avatar: string | null;
+  walletAddress?: string;
+} | null> {
+  const supabase = getSupabase();
+  if (!supabase || !userId) return null;
+
+  try {
+    const { data, error } = await supabase.rpc('get_user_profile', {
+      p_user_id: userId,
+    });
+    if (error) {
+      console.warn('Could not fetch user profile from Supabase:', error);
+      return null;
+    }
+    return data || null;
+  } catch (err) {
+    console.warn('Error fetching user profile:', err);
+    return null;
+  }
+}
+
+/**
  * Fetches all parties from Supabase with their associated members
  */
 export async function fetchPartiesFromDb(): Promise<Party[]> {

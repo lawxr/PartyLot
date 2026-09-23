@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ShieldCheck, Mail, Apple, CheckCircle2 } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { GlassButton } from '@/components/ui/GlassButton';
 import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 import confetti from 'canvas-confetti';
 
@@ -26,7 +25,7 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
     setLoadingMethod(method);
 
     // Simulate instant silent embedded wallet creation
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 750));
 
     const session = getOrCreateSmartAccount(
       method,
@@ -46,12 +45,12 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
     setTimeout(() => {
       onClose();
       if (onSuccess) onSuccess();
-    }, 900);
+    }, 800);
   };
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Welcome to Partylot">
-      <div className="space-y-4 text-center select-none">
+      <div className="space-y-4 text-center select-none py-1">
         <AnimatePresence mode="wait">
           {successAccount ? (
             <motion.div
@@ -80,10 +79,10 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
               <button
                 onClick={() => handleSocialAuth('apple')}
                 disabled={loadingMethod !== null}
-                className="w-full py-3.5 px-4 rounded-2xl bg-white text-black font-semibold text-sm flex items-center justify-center gap-2 hover:bg-white/90 active:scale-95 transition-all shadow-lg"
+                className="w-full min-h-[48px] py-3 px-4 rounded-2xl bg-white text-black font-semibold text-sm flex items-center justify-center gap-2.5 hover:bg-white/90 active:scale-[0.98] transition-all shadow-lg"
               >
-                <Apple className="w-4 h-4 fill-black" />
-                <span>
+                <Apple className="w-4 h-4 fill-black shrink-0" />
+                <span className="truncate">
                   {loadingMethod === 'apple' ? 'Creating Passkey...' : 'Continue with Apple'}
                 </span>
               </button>
@@ -92,10 +91,10 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
               <button
                 onClick={() => handleSocialAuth('google')}
                 disabled={loadingMethod !== null}
-                className="w-full py-3.5 px-4 rounded-2xl liquid-glass-card text-white font-semibold text-sm flex items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition-all border border-white/20"
+                className="w-full min-h-[48px] py-3 px-4 rounded-2xl liquid-glass-card text-white font-semibold text-sm flex items-center justify-center gap-2.5 hover:bg-white/10 active:scale-[0.98] transition-all border border-white/20"
               >
-                <span className="font-bold text-[#E9FF32]">G</span>
-                <span>
+                <span className="font-black text-[#E9FF32] shrink-0">G</span>
+                <span className="truncate">
                   {loadingMethod === 'google' ? 'Creating Passkey...' : 'Continue with Google'}
                 </span>
               </button>
@@ -104,14 +103,14 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
               <button
                 onClick={() => handleSocialAuth('email')}
                 disabled={loadingMethod !== null}
-                className="w-full py-3.5 px-4 rounded-2xl liquid-glass-card text-white/80 font-medium text-xs flex items-center justify-center gap-2 hover:text-white transition-colors"
+                className="w-full min-h-[44px] py-2.5 px-4 rounded-2xl liquid-glass-card text-white/80 font-medium text-xs flex items-center justify-center gap-2 hover:text-white transition-colors"
               >
-                <Mail className="w-3.5 h-3.5 text-white/60" />
-                <span>Continue with Email or Phone</span>
+                <Mail className="w-3.5 h-3.5 text-white/60 shrink-0" />
+                <span className="truncate">Continue with Email or Phone</span>
               </button>
 
-              <div className="pt-3 flex items-center justify-center gap-1.5 text-[10px] text-white/40 font-mono">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#E9FF32]" />
+              <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-white/40 font-mono text-center">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#E9FF32] shrink-0" />
                 <span>PRIVY EMBEDDED SMART WALLET · MONAD TESTNET</span>
               </div>
             </motion.div>

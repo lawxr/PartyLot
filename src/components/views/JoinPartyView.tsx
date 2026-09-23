@@ -19,7 +19,6 @@ export const JoinPartyView: React.FC = () => {
   const [matchedParty, setMatchedParty] = useState<Party | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
-  const [hasPermit, setHasPermit] = useState(false);
 
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -34,19 +33,13 @@ export const JoinPartyView: React.FC = () => {
 
         // Resolve EIP-712 permit offchain (protecting code from brute force)
         const account = getOrCreateSmartAccount();
-        resolveInviteCodeToPermit(fullCode, account.address).then((res) => {
-          if (res.success) {
-            setHasPermit(true);
-          }
-        });
+        resolveInviteCodeToPermit(fullCode, account.address);
       } else {
         setMatchedParty(null);
-        setHasPermit(false);
         setErrorMsg('No party found with this code. Double-check with your host!');
       }
     } else {
       setMatchedParty(null);
-      setHasPermit(false);
       setErrorMsg(null);
     }
   }, [digits, parties]);
@@ -100,9 +93,9 @@ export const JoinPartyView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col justify-between p-4 sm:p-6 max-w-lg mx-auto safe-top safe-bottom select-none">
+    <div className="min-h-[100dvh] bg-[#050505] text-white flex flex-col justify-between p-4 sm:p-6 max-w-lg mx-auto safe-top safe-bottom select-none overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 shrink-0">
         <button
           onClick={goBack}
           className="w-10 h-10 rounded-full liquid-glass-button flex items-center justify-center text-white/80 hover:text-white"
@@ -116,23 +109,23 @@ export const JoinPartyView: React.FC = () => {
       </div>
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
-        <span className="text-xs font-extrabold uppercase tracking-widest text-[#E9FF32] mb-2">
+      <div className="flex-1 flex flex-col items-center justify-center text-center py-4 sm:py-6">
+        <span className="text-xs font-extrabold uppercase tracking-widest text-[#E9FF32] mb-1.5 sm:mb-2">
           JOIN PRIVATE CIRCLE
         </span>
-        <h2 className="font-display font-black text-4xl sm:text-5xl text-white tracking-tight mb-3">
+        <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight mb-2 sm:mb-3">
           GOT A CODE?
         </h2>
-        <p className="text-sm text-white/60 max-w-xs mb-8">
+        <p className="text-xs sm:text-sm text-white/60 max-w-xs mb-6 sm:mb-8">
           Enter the 4-character invite code provided by the party host.
         </p>
 
-        {/* 4-Capsule Code Input */}
-        <div className="flex items-center justify-center gap-3 sm:gap-4 mb-6">
+        {/* 4-Capsule Code Input (Fully responsive) */}
+        <div className="flex items-center justify-center gap-2.5 sm:gap-4 mb-4 sm:mb-6 w-full max-w-xs">
           {digits.map((digit, idx) => (
             <div
               key={idx}
-              className={`w-14 h-18 sm:w-16 sm:h-20 rounded-2xl liquid-glass-card flex items-center justify-center text-3xl font-display font-black transition-all ${
+              className={`flex-1 aspect-[3.5/4.5] max-w-[68px] rounded-2xl liquid-glass-card flex items-center justify-center text-2xl sm:text-3xl font-display font-black transition-all ${
                 digit
                   ? 'border-[#E9FF32] text-[#E9FF32] shadow-[0_0_20px_rgba(233,255,50,0.25)]'
                   : 'border-white/20 text-white/40'
@@ -160,16 +153,16 @@ export const JoinPartyView: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-1.5 text-xs text-rose-400 font-medium mb-6 px-4 py-2 rounded-full bg-rose-500/10 border border-rose-500/20"
+            className="flex items-center gap-1.5 text-xs text-rose-400 font-medium mb-4 px-4 py-2 rounded-full bg-rose-500/10 border border-rose-500/20 max-w-xs"
           >
-            <AlertCircle className="w-4 h-4" />
-            <span>{errorMsg}</span>
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span className="truncate">{errorMsg}</span>
           </motion.div>
         )}
 
         {/* Quick hint for tester */}
         {!matchedParty && !errorMsg && (
-          <div className="mt-2 text-xs text-white/40">
+          <div className="text-xs text-white/40 mb-2">
             Hint: try sample code <span className="font-mono text-[#E9FF32] font-bold cursor-pointer" onClick={() => setDigits(['8','F','4','K'])}>8F4K</span> or <span className="font-mono text-[#E9FF32] font-bold cursor-pointer" onClick={() => setDigits(['9','X','2','M'])}>9X2M</span>
           </div>
         )}
@@ -182,10 +175,10 @@ export const JoinPartyView: React.FC = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="w-full max-w-sm mt-4"
+              className="w-full max-w-sm mt-3"
             >
-              <GlassPanel level={3} className="p-5 overflow-hidden relative text-left border border-white/25">
-                <div className="h-32 -mx-5 -mt-5 mb-4 relative overflow-hidden">
+              <GlassPanel level={3} className="p-4 sm:p-5 overflow-hidden relative text-left border border-white/25">
+                <div className="h-28 sm:h-32 -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 mb-3 sm:mb-4 relative overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={matchedParty.coverImage}
@@ -199,7 +192,7 @@ export const JoinPartyView: React.FC = () => {
                   </div>
                 </div>
 
-                <h3 className="font-display font-black text-2xl text-white tracking-tight">
+                <h3 className="font-display font-black text-xl sm:text-2xl text-white tracking-tight truncate">
                   {matchedParty.title}
                 </h3>
 
@@ -207,17 +200,17 @@ export const JoinPartyView: React.FC = () => {
                   {matchedParty.date} · {matchedParty.time}
                 </p>
 
-                <p className="text-xs text-white/60 mt-1 mb-4 truncate">
+                <p className="text-xs text-white/60 mt-1 mb-3 truncate">
                   {matchedParty.location}
                 </p>
 
-                <div className="flex items-center justify-between pt-3 border-t border-white/10">
+                <div className="flex items-center justify-between pt-2.5 border-t border-white/10">
                   <AvatarStack members={matchedParty.members} size="sm" countLabel="people" />
                 </div>
               </GlassPanel>
 
               {/* Confirm Join Button */}
-              <div className="mt-5 w-full">
+              <div className="mt-4 w-full">
                 <GlassButton
                   variant="accent"
                   size="lg"

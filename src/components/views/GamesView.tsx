@@ -19,7 +19,7 @@ export const GamesView: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-32">
+    <div className="min-h-screen bg-[#15140f] text-white pb-32">
       <TopNav title={`${party.title} · GAMES`} />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
@@ -33,7 +33,7 @@ export const GamesView: React.FC = () => {
                 onClick={() => setActiveGame(g.id)}
                 className={`py-2 px-3.5 sm:px-5 rounded-full text-xs sm:text-sm font-display font-bold shrink-0 transition-all ${
                   isActive
-                    ? 'bg-[#E9FF32] text-black shadow-md'
+                    ? 'bg-[#F0DC00] text-black shadow-md'
                     : 'text-white/60 hover:text-white'
                 }`}
               >

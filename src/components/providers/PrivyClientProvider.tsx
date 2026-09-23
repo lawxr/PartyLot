@@ -22,7 +22,7 @@ export const PrivyClientProvider: React.FC<PrivyClientProviderProps> = ({ childr
       config={{
         appearance: {
           theme: 'dark',
-          accentColor: '#E9FF32',
+          accentColor: '#F0DC00',
           showWalletLoginFirst: false,
           walletChainType: 'ethereum-only',
           walletList: [

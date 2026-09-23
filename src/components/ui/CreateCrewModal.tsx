@@ -84,7 +84,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-[#E9FF32]/20 border border-[#E9FF32] flex items-center justify-center text-[#E9FF32]">
+              <div className="w-9 h-9 rounded-2xl bg-[#F0DC00]/20 border border-[#F0DC00] flex items-center justify-center text-[#F0DC00]">
                 <Users className="w-4 h-4 stroke-[2.5]" />
               </div>
               <div>
@@ -112,7 +112,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                 placeholder="e.g. 404 House, Monad Hackers, Roomies"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 focus:border-[#E9FF32] focus:ring-1 focus:ring-[#E9FF32] text-white placeholder-white/30 text-sm outline-none transition-all"
+                className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 focus:border-[#F0DC00] focus:ring-1 focus:ring-[#F0DC00] text-white placeholder-white/30 text-sm outline-none transition-all"
               />
             </div>
 
@@ -126,7 +126,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                 placeholder="e.g. Secret rooftop sessions, late night builds & afters"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 focus:border-[#E9FF32] focus:ring-1 focus:ring-[#E9FF32] text-white placeholder-white/30 text-sm outline-none transition-all"
+                className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 focus:border-[#F0DC00] focus:ring-1 focus:ring-[#F0DC00] text-white placeholder-white/30 text-sm outline-none transition-all"
               />
             </div>
 
@@ -139,7 +139,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                 <button
                   type="button"
                   onClick={() => setUseCustomCover(!useCustomCover)}
-                  className="text-[11px] text-[#E9FF32] hover:underline flex items-center gap-1 font-mono"
+                  className="text-[11px] text-[#F0DC00] hover:underline flex items-center gap-1 font-mono"
                 >
                   <ImageIcon className="w-3 h-3" />
                   {useCustomCover ? 'Select Preset' : 'Paste URL'}
@@ -152,7 +152,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                   placeholder="https://images.unsplash.com/..."
                   value={customCover}
                   onChange={(e) => setCustomCover(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 focus:border-[#E9FF32] text-white placeholder-white/30 text-xs outline-none"
+                  className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 focus:border-[#F0DC00] text-white placeholder-white/30 text-xs outline-none"
                 />
               ) : (
                 <div className="grid grid-cols-5 gap-2">
@@ -163,7 +163,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                       onClick={() => setSelectedCover(preset.url)}
                       className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all group ${
                         selectedCover === preset.url
-                          ? 'border-[#E9FF32] scale-105 shadow-md shadow-[#E9FF32]/20'
+                          ? 'border-[#F0DC00] scale-105 shadow-md shadow-[#F0DC00]/20'
                           : 'border-white/10 opacity-60 hover:opacity-100 hover:border-white/30'
                       }`}
                     >
@@ -180,8 +180,8 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
             </div>
 
             {/* Trust Network Notice */}
-            <div className="p-3 rounded-2xl bg-[#E9FF32]/5 border border-[#E9FF32]/20 flex items-start gap-2.5">
-              <ShieldCheck className="w-4 h-4 text-[#E9FF32] shrink-0 mt-0.5" />
+            <div className="p-3 rounded-2xl bg-[#F0DC00]/5 border border-[#F0DC00]/20 flex items-start gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-[#F0DC00] shrink-0 mt-0.5" />
               <p className="text-[11px] text-white/70 leading-relaxed">
                 You will be the <strong className="text-white">Owner</strong> of this Crew. Your members will share collective stats, memories, and access to private gatherings.
               </p>

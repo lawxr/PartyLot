@@ -1,17 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Modak&family=Fredoka:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #050505;
-  --foreground: #F5F5F7;
-  --accent-lime: #E9FF32;
-  --font-display: 'Fredoka', 'Syne', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-ui: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --background: #15140f;
+  --background-darker: #0c0b0a;
+  --foreground: #fcfaf7;
+  --yellow: #f0dc00;
+  --yellow-glow: rgba(240, 220, 0, 0.45);
+  --ink: #0c0b0a;
+  --font-bubble: 'Modak', cursive;
+  --font-ui: 'Fredoka', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 body {
-  background-color: #050505;
-  color: #F5F5F7;
+  background-color: #15140f;
+  color: #fcfaf7;
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -20,9 +23,27 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ----------------------------------------------------
+   BUBBLE & RETRO-WARM EDITORIAL TYPOGRAPHY
+   ---------------------------------------------------- */
+.bubble {
+  font-family: 'Modak', cursive;
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  color: #ffffff;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.font-bubble {
+  font-family: 'Modak', cursive;
+  font-weight: 400;
+}
+
 .font-display {
-  font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  font-family: 'Fredoka', sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .font-ui {
@@ -30,40 +51,32 @@ body {
 }
 
 /* ----------------------------------------------------
-   LIQUID GLASS SYSTEM (Apple iOS 27 / visionOS Inspired)
+   LIQUID GLASS SYSTEM (Warm Amber & Espresso Undertones)
    ---------------------------------------------------- */
 
 /* Level 1: Floating Navigation & Tab Bars */
 .liquid-glass-nav {
-  background: linear-gradient(
-    180deg,
-    rgba(22, 22, 28, 0.70) 0%,
-    rgba(12, 12, 16, 0.82) 100%
-  );
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  background: rgba(20, 18, 14, 0.65);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-    0 16px 48px rgba(0, 0, 0, 0.55);
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 16px 48px rgba(0, 0, 0, 0.6);
 }
 
 /* Level 2: Interactive Cards & Action Pills */
 .liquid-glass-card {
   position: relative;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.11) 0%,
-    rgba(255, 255, 255, 0.025) 100%
-  );
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(24px) saturate(175%);
   -webkit-backdrop-filter: blur(24px) saturate(175%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
-    0 16px 40px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 14px 36px rgba(0, 0, 0, 0.45);
   overflow: hidden;
 }
 
@@ -87,62 +100,72 @@ body {
 .liquid-glass-modal {
   background: linear-gradient(
     180deg,
-    rgba(20, 20, 27, 0.94) 0%,
-    rgba(10, 10, 14, 0.98) 100%
+    rgba(24, 21, 16, 0.96) 0%,
+    rgba(12, 11, 10, 0.99) 100%
   );
-  backdrop-filter: blur(36px) saturate(200%);
-  -webkit-backdrop-filter: blur(36px) saturate(200%);
-  border-top: 1px solid rgba(255, 255, 255, 0.24);
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(36px) saturate(190%);
+  -webkit-backdrop-filter: blur(36px) saturate(190%);
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 -24px 60px rgba(0, 0, 0, 0.75);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 -24px 60px rgba(0, 0, 0, 0.8);
 }
 
-/* Tactile Pill Button */
+/* Tactile Glass Button */
 .liquid-glass-button {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.06) 100%
-  );
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(20, 18, 14, 0.55);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 8px 24px rgba(0, 0, 0, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 6px 18px rgba(0, 0, 0, 0.35);
   transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .liquid-glass-button:active {
   transform: scale(0.96);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.28) 0%,
-    rgba(255, 255, 255, 0.12) 100%
-  );
+  background: rgba(30, 26, 20, 0.75);
 }
 
-/* Primary Accent Lime Pill */
+/* Primary Accent Warm Golden Yellow Button */
 .accent-button {
-  background: #E9FF32;
-  color: #050505;
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--font-ui);
   font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: none;
   box-shadow:
-    0 8px 30px rgba(233, 255, 50, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s ease;
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 6px 20px rgba(240, 220, 0, 0.35);
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.accent-button:hover {
+  filter: brightness(1.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 8px 24px rgba(240, 220, 0, 0.45);
 }
 
 .accent-button:active {
   transform: scale(0.96);
-  box-shadow: 0 4px 16px rgba(233, 255, 50, 0.25);
+  box-shadow: 0 4px 14px rgba(240, 220, 0, 0.25);
 }
 
-/* Hide default scrollbars while preserving touch smooth scroll */
+/* Outline Pill Button with Warm Yellow */
+.pill-outline {
+  background: rgba(240, 220, 0, 0.10);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 1.5px var(--yellow);
+  color: var(--yellow);
+}
+
+/* Hide default scrollbars */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -151,7 +174,7 @@ body {
   scrollbar-width: none;
 }
 
-/* Safe areas for iOS */
+/* Safe areas for mobile */
 .safe-top {
   padding-top: max(env(safe-area-inset-top), 16px);
 }
@@ -159,8 +182,32 @@ body {
   padding-bottom: max(env(safe-area-inset-bottom), 24px);
 }
 
-/* Subtle Film Grain Overlay */
-.film-grain {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
-  background-size: 24px 24px;
+/* Film Grain Texture */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+
+/* Warm Bokeh & Bulbs */
+.warm-bokeh {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(24px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.bulb {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffe08a;
+  box-shadow: 0 0 10px 3px rgba(255, 214, 92, 0.65);
+  pointer-events: none;
 }

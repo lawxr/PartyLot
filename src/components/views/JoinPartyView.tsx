@@ -43,7 +43,7 @@ export const JoinPartyView: React.FC = () => {
           particleCount: 60,
           spread: 60,
           origin: { y: 0.6 },
-          colors: ['#E9FF32', '#FFFFFF'],
+          colors: ['#F0DC00', '#FFFFFF'],
         });
         setTimeout(() => {
           selectParty(party.id);
@@ -131,7 +131,7 @@ export const JoinPartyView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#050505] text-white flex flex-col justify-between p-4 sm:p-6 md:p-10 safe-top safe-bottom select-none overflow-y-auto">
+    <div className="min-h-[100dvh] w-full bg-[#15140f] text-white flex flex-col justify-between p-4 sm:p-6 md:p-10 safe-top safe-bottom select-none overflow-y-auto">
       {/* Top Header Bar */}
       <div className="w-full max-w-4xl mx-auto flex items-center justify-between mb-4 sm:mb-8 shrink-0">
         <button
@@ -143,7 +143,7 @@ export const JoinPartyView: React.FC = () => {
         </button>
 
         <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-card border border-white/15">
-          <span className="w-2 h-2 rounded-full bg-[#E9FF32] animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
           <span className="text-[11px] sm:text-xs uppercase tracking-wider text-white/80 font-mono font-semibold">
             PRIVATE ACCESS · EIP-712
           </span>
@@ -167,7 +167,7 @@ export const JoinPartyView: React.FC = () => {
           >
             {/* Left Column: Code Input & Instructions */}
             <div className={matchedParty ? 'text-left' : 'text-center w-full'}>
-              <span className="text-xs font-extrabold uppercase tracking-widest text-[#E9FF32] mb-2 block">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-[#F0DC00] mb-2 block">
                 JOIN PRIVATE CIRCLE
               </span>
 
@@ -190,7 +190,7 @@ export const JoinPartyView: React.FC = () => {
                     key={idx}
                     className={`w-14 h-18 sm:w-18 sm:h-22 md:w-20 md:h-24 rounded-2xl liquid-glass-card flex items-center justify-center text-2xl sm:text-3xl md:text-4xl font-display font-black transition-all ${
                       digit
-                        ? 'border-[#E9FF32] text-[#E9FF32] shadow-[0_0_24px_rgba(233,255,50,0.28)] bg-[#E9FF32]/10 scale-105'
+                        ? 'border-[#F0DC00] text-[#F0DC00] shadow-[0_0_24px_rgba(240, 220, 0,0.28)] bg-[#F0DC00]/10 scale-105'
                         : 'border-white/20 text-white/40 hover:border-white/40'
                     }`}
                   >
@@ -204,7 +204,7 @@ export const JoinPartyView: React.FC = () => {
                       onChange={(e) => handleChange(idx, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(idx, e)}
                       onPaste={handlePaste}
-                      className="w-full h-full bg-transparent text-center font-display font-black outline-none uppercase text-white caret-[#E9FF32]"
+                      className="w-full h-full bg-transparent text-center font-display font-black outline-none uppercase text-white caret-[#F0DC00]"
                       autoFocus={idx === 0}
                     />
                   </div>
@@ -228,14 +228,14 @@ export const JoinPartyView: React.FC = () => {
                 <div className="text-xs text-white/50 mt-3">
                   Try test codes:{' '}
                   <span
-                    className="font-mono text-[#E9FF32] font-bold cursor-pointer hover:underline underline-offset-4"
+                    className="font-mono text-[#F0DC00] font-bold cursor-pointer hover:underline underline-offset-4"
                     onClick={() => setDigits(['8', 'F', '4', 'K'])}
                   >
                     8F4K
                   </span>{' '}
                   or{' '}
                   <span
-                    className="font-mono text-[#E9FF32] font-bold cursor-pointer hover:underline underline-offset-4"
+                    className="font-mono text-[#F0DC00] font-bold cursor-pointer hover:underline underline-offset-4"
                     onClick={() => setDigits(['9', 'X', '2', 'M'])}
                   >
                     9X2M
@@ -265,8 +265,8 @@ export const JoinPartyView: React.FC = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0C0C10] via-black/30 to-transparent" />
 
-                      <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-bold text-[#E9FF32] border border-white/15 flex items-center gap-1.5 shadow-lg">
-                        <ShieldCheck className="w-3.5 h-3.5 text-[#E9FF32]" />
+                      <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-bold text-[#F0DC00] border border-white/15 flex items-center gap-1.5 shadow-lg">
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#F0DC00]" />
                         <span>EIP-712 VERIFIED</span>
                       </div>
                     </div>
@@ -278,7 +278,7 @@ export const JoinPartyView: React.FC = () => {
                       </h3>
 
                       <div className="flex flex-wrap items-center gap-3 text-xs text-white/80 font-semibold mt-1 mb-2">
-                        <span className="flex items-center gap-1 text-[#E9FF32]">
+                        <span className="flex items-center gap-1 text-[#F0DC00]">
                           <Clock className="w-3.5 h-3.5" />
                           {matchedParty.date} · {matchedParty.time}
                         </span>

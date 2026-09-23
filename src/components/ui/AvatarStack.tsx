@@ -44,7 +44,7 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
           <div
             key={member.id || index}
             onClick={() => onMemberClick?.(member)}
-            className={`relative rounded-full overflow-hidden border-[#050505] bg-neutral-800 shrink-0 shadow-md ${avatarSize} ${
+            className={`relative rounded-full overflow-hidden border-[#15140f] bg-neutral-800 shrink-0 shadow-md ${avatarSize} ${
               onMemberClick ? 'cursor-pointer hover:scale-110 hover:z-20 transition-transform' : ''
             }`}
             style={{ zIndex: maxDisplay - index }}
@@ -62,7 +62,7 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
 
         {remaining > 0 && (
           <div
-            className={`relative rounded-full overflow-hidden border-[#050505] bg-neutral-900/90 text-white/90 font-semibold flex items-center justify-center shrink-0 backdrop-blur-md shadow-md ${avatarSize}`}
+            className={`relative rounded-full overflow-hidden border-[#15140f] bg-neutral-900/90 text-white/90 font-semibold flex items-center justify-center shrink-0 backdrop-blur-md shadow-md ${avatarSize}`}
             style={{ zIndex: 0 }}
           >
             +{remaining}

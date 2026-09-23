@@ -52,7 +52,7 @@ export const LiquidBlob: React.FC<LiquidBlobProps> = ({ balance, className = '' 
       ctx.closePath();
 
       // Outer Glow
-      ctx.shadowColor = 'rgba(233, 255, 50, 0.35)';
+      ctx.shadowColor = 'rgba(240, 220, 0, 0.35)';
       ctx.shadowBlur = 40;
 
       // Base Gradient: Deep liquid glass with acid lime & incandescent party hues
@@ -65,7 +65,7 @@ export const LiquidBlob: React.FC<LiquidBlobProps> = ({ balance, className = '' 
         baseRadius * 1.2
       );
       grad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
-      grad.addColorStop(0.25, 'rgba(233, 255, 50, 0.55)'); // Accent Lime
+      grad.addColorStop(0.25, 'rgba(240, 220, 0, 0.55)'); // Accent Lime
       grad.addColorStop(0.6, 'rgba(120, 60, 255, 0.25)'); // Ultraviolet party refraction
       grad.addColorStop(0.9, 'rgba(20, 20, 30, 0.85)');
       grad.addColorStop(1, 'rgba(5, 5, 10, 0.95)');

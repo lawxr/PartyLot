@@ -66,10 +66,10 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
       desc: 'Frequent co-attendees. Building sustained crew trust.',
     },
     Kindling: {
-      color: 'text-[#E9FF32]',
-      bg: 'bg-[#E9FF32]/10',
-      border: 'border-[#E9FF32]/30',
-      glow: 'shadow-[0_0_25px_rgba(233,255,50,0.2)]',
+      color: 'text-[#F0DC00]',
+      bg: 'bg-[#F0DC00]/10',
+      border: 'border-[#F0DC00]/30',
+      glow: 'shadow-[0_0_25px_rgba(240, 220, 0,0.2)]',
       icon: Flame,
       tag: 'LEVEL 1 · KINDLING',
       desc: 'Early connection. First shared gatherings and votes.',
@@ -84,7 +84,7 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
       particleCount: 50,
       spread: 60,
       origin: { y: 0.6 },
-      colors: ['#E9FF32', '#EC4899', '#A855F7'],
+      colors: ['#F0DC00', '#EC4899', '#A855F7'],
     });
     onClose();
   };
@@ -110,7 +110,7 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
           className="relative w-full max-w-md rounded-[32px] liquid-glass-card border border-white/20 p-6 shadow-2xl text-white z-10 overflow-hidden"
         >
           {/* Ambient Glow */}
-          <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#E9FF32]/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#F0DC00]/15 rounded-full blur-3xl pointer-events-none" />
 
           {/* Close Button */}
           <button
@@ -145,16 +145,16 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
 
             {/* Spark Connector */}
             <div className="flex flex-col items-center">
-              <div className="flex items-center gap-1 text-[#E9FF32] font-black font-mono text-sm px-2.5 py-1 rounded-full bg-white/5 border border-white/10">
-                <Heart className="w-3.5 h-3.5 fill-[#E9FF32]" />
+              <div className="flex items-center gap-1 text-[#F0DC00] font-black font-mono text-sm px-2.5 py-1 rounded-full bg-white/5 border border-white/10">
+                <Heart className="w-3.5 h-3.5 fill-[#F0DC00]" />
                 <span>SYNC</span>
               </div>
-              <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-[#E9FF32] to-transparent mt-1" />
+              <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-[#F0DC00] to-transparent mt-1" />
             </div>
 
             {/* Target Member */}
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#E9FF32] shadow-lg">
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#F0DC00] shadow-lg">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={member.avatar}
@@ -190,7 +190,7 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
                 Gatherings Together
               </span>
               <div className="flex items-center justify-center gap-1.5">
-                <Users className="w-4 h-4 text-[#E9FF32]" />
+                <Users className="w-4 h-4 text-[#F0DC00]" />
                 <span className="font-display font-black text-2xl text-white">
                   {connection.gatheringsTogether}
                 </span>
@@ -238,7 +238,7 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
           <div className="p-3 rounded-2xl bg-black/40 border border-white/10 mb-5 text-xs text-white/70 space-y-1.5">
             <div className="flex items-center justify-between font-mono text-[11px]">
               <span className="text-white/40">HANDLE</span>
-              <span className="text-[#E9FF32] font-bold">{connection.targetUserHandle}</span>
+              <span className="text-[#F0DC00] font-bold">{connection.targetUserHandle}</span>
             </div>
             <div className="flex items-center justify-between font-mono text-[11px]">
               <span className="text-white/40">SETTLEMENT REPUTATION</span>

@@ -35,7 +35,7 @@ export const HomeView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
+    <div className="min-h-screen bg-[#15140f] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
       {/* Responsive Header */}
       <header className="flex items-center justify-between py-4 mb-6 sm:mb-8 border-b border-white/10 pb-5">
         <div>
@@ -43,7 +43,7 @@ export const HomeView: React.FC = () => {
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
           </span>
           <h2 className="font-display font-extrabold text-2xl sm:text-4xl text-white tracking-tight">
-            Good evening, <span className="text-[#E9FF32]">{currentUser.name}</span>
+            Good evening, <span className="text-[#F0DC00]">{currentUser.name}</span>
           </h2>
         </div>
 
@@ -116,8 +116,8 @@ export const HomeView: React.FC = () => {
 
               {/* Top Pill Tags */}
               <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full liquid-glass-nav text-xs font-bold text-[#E9FF32]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#E9FF32] animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full liquid-glass-nav text-xs font-bold text-[#F0DC00]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#F0DC00] animate-pulse" />
                   {party.date}
                 </span>
 
@@ -128,25 +128,25 @@ export const HomeView: React.FC = () => {
 
               {/* Bottom Details Content */}
               <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 lg:p-7 flex flex-col justify-end z-10">
-                <h4 className="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-none mb-2 drop-shadow-lg">
+                <h4 className="bubble text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-none mb-2 drop-shadow-lg">
                   {party.title}
                 </h4>
 
                 <div className="flex items-center gap-3 text-xs sm:text-sm text-white/80 font-medium mb-3">
                   <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-[#E9FF32]" />
+                    <Clock className="w-3.5 h-3.5 text-[#F0DC00]" />
                     {party.time}
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1 truncate max-w-[180px]">
-                    <MapPin className="w-3.5 h-3.5 text-[#E9FF32]" />
+                    <MapPin className="w-3.5 h-3.5 text-[#F0DC00]" />
                     {party.location.split('·')[0]}
                   </span>
                 </div>
 
                 <div className="pt-3 border-t border-white/15 flex items-center justify-between">
                   <AvatarStack members={party.members} size="sm" countLabel="going" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#E9FF32] group-hover:translate-x-1 transition-transform">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#F0DC00] group-hover:translate-x-1 transition-transform">
                     Enter →
                   </span>
                 </div>
@@ -190,7 +190,7 @@ export const HomeView: React.FC = () => {
                 <p className="text-xs text-white/60 flex items-center gap-2 mt-1">
                   <span>{crew.membersCount} members</span>
                   <span>•</span>
-                  <span className="text-[#E9FF32]/90">{crew.lastActivity}</span>
+                  <span className="text-[#F0DC00]/90">{crew.lastActivity}</span>
                 </p>
               </div>
             </GlassPanel>

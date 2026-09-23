@@ -37,20 +37,26 @@ export default function App() {
 
   if (!mounted) {
     // Avoid hydration mismatch on initial render
-    return <div className="min-h-screen bg-[#050505]" />;
+    return <div className="min-h-screen bg-[#15140f]" />;
   }
 
   const activeParty = parties.find((p) => p.id === currentPartyId) || parties[0];
 
   return (
-    <div className="relative min-h-screen bg-[#050505] text-[#F5F5F7] overflow-x-hidden flex flex-col justify-start">
-      {/* Ambient Desktop Backdrop Photography (Blurred) */}
+    <div className="relative min-h-screen bg-[#15140f] text-[#FCFAF7] overflow-x-hidden flex flex-col justify-start">
+      {/* Ambient Desktop Backdrop Photography (Warm Blurred) */}
       <div
-        className="fixed inset-0 hidden md:block opacity-20 bg-cover bg-center filter blur-3xl pointer-events-none scale-110"
+        className="fixed inset-0 hidden md:block opacity-25 bg-cover bg-center filter blur-3xl pointer-events-none scale-110"
         style={{
-          backgroundImage: `url("${activeParty?.coverImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=80'}")`,
+          backgroundImage: `url("${activeParty?.coverImage || 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1600&q=80'}")`,
         }}
       />
+      {/* Warm Ambient Radial Gradients */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute -top-[10%] left-[15%] w-[450px] h-[450px] rounded-full bg-[#f0dc00]/10 filter blur-[90px]" />
+        <div className="absolute top-[40%] -right-[10%] w-[500px] h-[500px] rounded-full bg-[#ff8f9e]/8 filter blur-[100px]" />
+        <div className="absolute bottom-[5%] left-[20%] w-[400px] h-[400px] rounded-full bg-[#ffd65c]/10 filter blur-[80px]" />
+      </div>
 
       {/* Main Responsive View Container */}
       <div className="relative z-10 w-full min-h-screen flex flex-col justify-start">

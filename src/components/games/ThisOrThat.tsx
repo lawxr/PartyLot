@@ -22,7 +22,7 @@ export const ThisOrThat: React.FC = () => {
       particleCount: 35,
       spread: 45,
       origin: { y: 0.6 },
-      colors: ['#E9FF32', '#FFFFFF'],
+      colors: ['#F0DC00', '#FFFFFF'],
     });
   };
 
@@ -33,7 +33,7 @@ export const ThisOrThat: React.FC = () => {
   return (
     <div className="flex flex-col items-center w-full">
       <div className="text-center mb-5">
-        <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#E9FF32]">
+        <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
           GAME 02 · FAST DILEMMA
         </span>
         <h3 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight mt-1">
@@ -50,14 +50,14 @@ export const ThisOrThat: React.FC = () => {
           onClick={() => handleVote('A')}
           className={`relative h-48 sm:h-56 rounded-3xl p-5 overflow-hidden flex flex-col justify-between cursor-pointer border transition-all ${
             currentQ.userVote === 'A'
-              ? 'border-[#E9FF32] shadow-[0_0_30px_rgba(233,255,50,0.3)] bg-gradient-to-b from-[#E9FF32]/20 to-black/60'
+              ? 'border-[#F0DC00] shadow-[0_0_30px_rgba(240, 220, 0,0.3)] bg-gradient-to-b from-[#F0DC00]/20 to-black/60'
               : 'liquid-glass-card hover:border-white/40'
           }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-white/60">OPTION A</span>
             {currentQ.userVote === 'A' && (
-              <span className="px-2 py-0.5 rounded-full bg-[#E9FF32] text-black text-[10px] font-extrabold">
+              <span className="px-2 py-0.5 rounded-full bg-[#F0DC00] text-black text-[10px] font-extrabold">
                 YOU CHOSE
               </span>
             )}
@@ -73,13 +73,13 @@ export const ThisOrThat: React.FC = () => {
           <div>
             <div className="flex items-center justify-between text-xs font-extrabold mb-1.5">
               <span className="text-white/70">{currentQ.votesA} votes</span>
-              <span className="text-[#E9FF32] text-base">{percentA}%</span>
+              <span className="text-[#F0DC00] text-base">{percentA}%</span>
             </div>
             <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${percentA}%` }}
-                className="h-full bg-[#E9FF32] rounded-full"
+                className="h-full bg-[#F0DC00] rounded-full"
               />
             </div>
           </div>
@@ -91,14 +91,14 @@ export const ThisOrThat: React.FC = () => {
           onClick={() => handleVote('B')}
           className={`relative h-48 sm:h-56 rounded-3xl p-5 overflow-hidden flex flex-col justify-between cursor-pointer border transition-all ${
             currentQ.userVote === 'B'
-              ? 'border-[#E9FF32] shadow-[0_0_30px_rgba(233,255,50,0.3)] bg-gradient-to-b from-[#E9FF32]/20 to-black/60'
+              ? 'border-[#F0DC00] shadow-[0_0_30px_rgba(240, 220, 0,0.3)] bg-gradient-to-b from-[#F0DC00]/20 to-black/60'
               : 'liquid-glass-card hover:border-white/40'
           }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-white/60">OPTION B</span>
             {currentQ.userVote === 'B' && (
-              <span className="px-2 py-0.5 rounded-full bg-[#E9FF32] text-black text-[10px] font-extrabold">
+              <span className="px-2 py-0.5 rounded-full bg-[#F0DC00] text-black text-[10px] font-extrabold">
                 YOU CHOSE
               </span>
             )}
@@ -132,7 +132,7 @@ export const ThisOrThat: React.FC = () => {
         variant="glass"
         size="md"
         onClick={handleNext}
-        icon={<RefreshCw className="w-4 h-4 text-[#E9FF32]" />}
+        icon={<RefreshCw className="w-4 h-4 text-[#F0DC00]" />}
       >
         Next Question
       </GlassButton>

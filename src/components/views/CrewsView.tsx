@@ -12,7 +12,7 @@ export const CrewsView: React.FC = () => {
   const [isCreateCrewOpen, setIsCreateCrewOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
+    <div className="min-h-screen bg-[#15140f] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
       {/* Header */}
       <header className="flex items-center justify-between py-4 mb-6 sm:mb-8 border-b border-white/10 pb-5">
         <div>
@@ -29,7 +29,7 @@ export const CrewsView: React.FC = () => {
             variant="glass"
             size="md"
             onClick={() => setIsCreateCrewOpen(true)}
-            icon={<UserPlus className="w-4 h-4 text-[#E9FF32]" />}
+            icon={<UserPlus className="w-4 h-4 text-[#F0DC00]" />}
           >
             Create Crew
           </GlassButton>
@@ -66,14 +66,14 @@ export const CrewsView: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/30" />
 
             <div className="relative z-10 flex items-center justify-between">
-              <span className="px-2.5 py-1 rounded-full liquid-glass-nav text-[10px] font-mono font-bold text-[#E9FF32]">
+              <span className="px-2.5 py-1 rounded-full liquid-glass-nav text-[10px] font-mono font-bold text-[#F0DC00]">
                 {crew.membersCount} MEMBERS
               </span>
               <span className="text-[11px] text-white/50">{crew.lastActivity}</span>
             </div>
 
             <div className="relative z-10">
-              <h3 className="font-display font-black text-2xl text-white mb-1 group-hover:text-[#E9FF32] transition-colors">
+              <h3 className="font-display font-black text-2xl text-white mb-1 group-hover:text-[#F0DC00] transition-colors">
                 {crew.name}
               </h3>
               <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">
@@ -84,7 +84,7 @@ export const CrewsView: React.FC = () => {
                 <span className="text-[11px] font-mono text-white/70">
                   {activePartiesCount} active {activePartiesCount === 1 ? 'gathering' : 'gatherings'}
                 </span>
-                <span className="text-xs font-bold text-[#E9FF32] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                <span className="text-xs font-bold text-[#F0DC00] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                   Enter Crew <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               </div>
@@ -97,7 +97,7 @@ export const CrewsView: React.FC = () => {
       {/* Metropolis Security Badge Banner */}
       <div className="p-5 rounded-3xl liquid-glass-card border border-white/15 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3 text-center sm:text-left">
-          <div className="w-10 h-10 rounded-2xl bg-[#E9FF32]/20 border border-[#E9FF32] flex items-center justify-center shrink-0 text-[#E9FF32]">
+          <div className="w-10 h-10 rounded-2xl bg-[#F0DC00]/20 border border-[#F0DC00] flex items-center justify-center shrink-0 text-[#F0DC00]">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>

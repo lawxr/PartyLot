@@ -25,7 +25,7 @@ export const PollsView: React.FC = () => {
       particleCount: 25,
       spread: 45,
       origin: { y: 0.6 },
-      colors: ['#E9FF32', '#60A5FA'],
+      colors: ['#F0DC00', '#60A5FA'],
     });
   };
 
@@ -51,14 +51,14 @@ export const PollsView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-32 select-none">
+    <div className="min-h-screen bg-[#15140f] text-white pb-32 select-none">
       <TopNav title="GROUP POLLS" />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
         {/* Responsive Header */}
         <div className="flex items-end justify-between mb-8 border-b border-white/10 pb-5">
           <div>
-            <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#E9FF32]">
+            <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
               REAL-TIME DECISIONS
             </span>
             <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight leading-none mt-1">
@@ -113,7 +113,7 @@ export const PollsView: React.FC = () => {
                       onClick={() => handleVote(poll.id, opt.id)}
                       className={`relative p-3.5 sm:p-4 rounded-2xl overflow-hidden cursor-pointer border transition-all ${
                         isSelected
-                          ? 'border-[#E9FF32] shadow-[0_0_15px_rgba(233,255,50,0.2)]'
+                          ? 'border-[#F0DC00] shadow-[0_0_15px_rgba(240, 220, 0,0.2)]'
                           : 'border-white/10 hover:border-white/25'
                       }`}
                     >
@@ -123,7 +123,7 @@ export const PollsView: React.FC = () => {
                         animate={{ width: `${percentage}%` }}
                         transition={{ duration: 0.45, ease: 'easeOut' }}
                         className={`absolute inset-y-0 left-0 ${
-                          isSelected ? 'bg-[#E9FF32]/25' : 'bg-white/10'
+                          isSelected ? 'bg-[#F0DC00]/25' : 'bg-white/10'
                         }`}
                       />
 
@@ -131,7 +131,7 @@ export const PollsView: React.FC = () => {
                       <div className="relative z-10 flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                           {isSelected && (
-                            <span className="w-5 h-5 rounded-full bg-[#E9FF32] text-black flex items-center justify-center shrink-0">
+                            <span className="w-5 h-5 rounded-full bg-[#F0DC00] text-black flex items-center justify-center shrink-0">
                               <Check className="w-3.5 h-3.5 stroke-[3]" />
                             </span>
                           )}
@@ -146,7 +146,7 @@ export const PollsView: React.FC = () => {
                           </span>
                           <span
                             className={`font-display font-black text-sm sm:text-base ${
-                              isSelected ? 'text-[#E9FF32]' : 'text-white/80'
+                              isSelected ? 'text-[#F0DC00]' : 'text-white/80'
                             }`}
                           >
                             {percentage}%
@@ -179,7 +179,7 @@ export const PollsView: React.FC = () => {
               placeholder="e.g. What should we play next?"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white text-base font-bold outline-none border border-white/20 focus:border-[#E9FF32]"
+              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white text-base font-bold outline-none border border-white/20 focus:border-[#F0DC00]"
             />
           </div>
 
@@ -195,7 +195,7 @@ export const PollsView: React.FC = () => {
                   placeholder={`Option ${idx + 1}`}
                   value={opt}
                   onChange={(e) => updateOptionText(idx, e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl liquid-glass-card text-white text-sm outline-none border border-white/10 focus:border-[#E9FF32]"
+                  className="w-full px-4 py-2.5 rounded-xl liquid-glass-card text-white text-sm outline-none border border-white/10 focus:border-[#F0DC00]"
                 />
               ))}
             </div>

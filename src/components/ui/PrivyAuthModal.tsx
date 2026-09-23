@@ -57,7 +57,7 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
       particleCount: 50,
       spread: 60,
       origin: { y: 0.6 },
-      colors: ['#E9FF32', '#FFFFFF'],
+      colors: ['#F0DC00', '#FFFFFF'],
     });
 
     setTimeout(() => {
@@ -77,7 +77,7 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="py-4"
             >
-              <div className="w-14 h-14 rounded-full bg-[#E9FF32]/20 border border-[#E9FF32] text-[#E9FF32] flex items-center justify-center mx-auto mb-3">
+              <div className="w-14 h-14 rounded-full bg-[#F0DC00]/20 border border-[#F0DC00] text-[#F0DC00] flex items-center justify-center mx-auto mb-3">
                 <CheckCircle2 className="w-7 h-7" />
               </div>
               <h4 className="font-display font-black text-xl text-white">
@@ -111,7 +111,7 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
                 disabled={loadingMethod !== null}
                 className="w-full min-h-[48px] py-3 px-4 rounded-2xl liquid-glass-card text-white font-semibold text-sm flex items-center justify-center gap-2.5 hover:bg-white/10 active:scale-[0.98] transition-all border border-white/20"
               >
-                <span className="font-black text-[#E9FF32] shrink-0">G</span>
+                <span className="font-black text-[#F0DC00] shrink-0">G</span>
                 <span className="truncate">
                   {loadingMethod === 'google' ? 'Creating Passkey...' : 'Continue with Google'}
                 </span>
@@ -134,14 +134,14 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
                   login();
                 }}
                 disabled={loadingMethod !== null}
-                className="w-full min-h-[44px] py-2.5 px-4 rounded-2xl liquid-glass-card text-white/80 font-medium text-xs flex items-center justify-center gap-2 hover:text-[#E9FF32] hover:border-[#E9FF32]/40 transition-all border border-white/10"
+                className="w-full min-h-[44px] py-2.5 px-4 rounded-2xl liquid-glass-card text-white/80 font-medium text-xs flex items-center justify-center gap-2 hover:text-[#F0DC00] hover:border-[#F0DC00]/40 transition-all border border-white/10"
               >
-                <Wallet className="w-3.5 h-3.5 text-[#E9FF32] shrink-0" />
+                <Wallet className="w-3.5 h-3.5 text-[#F0DC00] shrink-0" />
                 <span className="truncate">Connect with WalletConnect / Web3</span>
               </button>
 
               <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-white/40 font-mono text-center">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#E9FF32] shrink-0" />
+                <ShieldCheck className="w-3.5 h-3.5 text-[#F0DC00] shrink-0" />
                 <span>PRIVY EMBEDDED SMART WALLET · MONAD TESTNET</span>
               </div>
             </motion.div>

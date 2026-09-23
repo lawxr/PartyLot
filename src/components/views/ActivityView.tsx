@@ -12,7 +12,7 @@ export const ActivityView: React.FC = () => {
   const getIcon = (type: string) => {
     switch (type) {
       case 'join':
-        return <UserPlus className="w-4 h-4 text-[#E9FF32]" />;
+        return <UserPlus className="w-4 h-4 text-[#F0DC00]" />;
       case 'pot':
         return <DollarSign className="w-4 h-4 text-emerald-400" />;
       case 'poll':
@@ -37,7 +37,7 @@ export const ActivityView: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
+    <div className="min-h-screen bg-[#15140f] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
       {/* Header */}
       <header className="flex flex-wrap items-end justify-between gap-4 py-4 mb-6 border-b border-white/10 pb-5">
         <div>
@@ -57,7 +57,7 @@ export const ActivityView: React.FC = () => {
               onClick={() => setFilterType(f.id)}
               className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
                 filterType === f.id
-                  ? 'bg-[#E9FF32] text-black shadow-md'
+                  ? 'bg-[#F0DC00] text-black shadow-md'
                   : 'liquid-glass-card text-white/70 hover:text-white border border-white/10'
               }`}
             >
@@ -100,7 +100,7 @@ export const ActivityView: React.FC = () => {
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       {party && (
-                        <span className="text-[11px] font-bold text-[#E9FF32] truncate max-w-[160px]">
+                        <span className="text-[11px] font-bold text-[#F0DC00] truncate max-w-[160px]">
                           {party.title}
                         </span>
                       )}
@@ -122,7 +122,7 @@ export const ActivityView: React.FC = () => {
         <div className="lg:col-span-4 space-y-6 hidden lg:block">
           <GlassPanel level={2} className="p-5 border border-white/15">
             <div className="flex items-center gap-2 mb-3">
-              <Flame className="w-4 h-4 text-[#E9FF32]" />
+              <Flame className="w-4 h-4 text-[#F0DC00]" />
               <span className="text-xs uppercase font-extrabold tracking-wider text-white">
                 ACTIVE CREW CIRCLES
               </span>
@@ -141,13 +141,13 @@ export const ActivityView: React.FC = () => {
                       <span className="text-[10px] text-white/50">{c.membersCount} members</span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono text-[#E9FF32] font-semibold">{c.lastActivity}</span>
+                  <span className="text-[10px] font-mono text-[#F0DC00] font-semibold">{c.lastActivity}</span>
                 </div>
               ))}
             </div>
           </GlassPanel>
 
-          <div className="p-4 rounded-2xl bg-[#E9FF32]/10 border border-[#E9FF32]/25 text-xs text-white/80 leading-relaxed">
+          <div className="p-4 rounded-2xl bg-[#F0DC00]/10 border border-[#F0DC00]/25 text-xs text-white/80 leading-relaxed">
             ⚡ <span className="font-bold text-white">Instant Event Relay:</span> All member interactions and game results are broadcasted in real time across the private graph.
           </div>
         </div>

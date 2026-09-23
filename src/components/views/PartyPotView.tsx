@@ -73,7 +73,7 @@ export const PartyPotView: React.FC = () => {
         particleCount: 65,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#E9FF32', '#FFFFFF', '#60A5FA'],
+        colors: ['#F0DC00', '#FFFFFF', '#60A5FA'],
       });
     } catch (err) {
       console.error('Error adding funds to pot:', err);
@@ -119,7 +119,7 @@ export const PartyPotView: React.FC = () => {
         particleCount: 80,
         spread: 80,
         origin: { y: 0.5 },
-        colors: ['#E9FF32', '#F59E0B', '#10B981'],
+        colors: ['#F0DC00', '#F59E0B', '#10B981'],
       });
     } catch (err) {
       console.error('Error distributing reward:', err);
@@ -148,7 +148,7 @@ export const PartyPotView: React.FC = () => {
         particleCount: 100,
         spread: 90,
         origin: { y: 0.5 },
-        colors: ['#E9FF32', '#10B981', '#3B82F6'],
+        colors: ['#F0DC00', '#10B981', '#3B82F6'],
       });
     } catch (err) {
       console.error('Error rolling over pot:', err);
@@ -160,7 +160,7 @@ export const PartyPotView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-32 select-none">
+    <div className="min-h-screen bg-[#15140f] text-white pb-32 select-none">
       <TopNav title="SHARED TREASURY" />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
@@ -168,7 +168,7 @@ export const PartyPotView: React.FC = () => {
         <div className="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-5">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#E9FF32]">
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
                 CREW TREASURY · ERC-4337
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -195,7 +195,7 @@ export const PartyPotView: React.FC = () => {
               variant="glass"
               size="md"
               onClick={() => setIsRewardOpen(true)}
-              icon={<Award className="w-4 h-4 text-[#E9FF32]" />}
+              icon={<Award className="w-4 h-4 text-[#F0DC00]" />}
             >
               Reward
             </GlassButton>
@@ -215,7 +215,7 @@ export const PartyPotView: React.FC = () => {
                 size="md"
                 disabled={party.potBalance <= 0}
                 onClick={() => setIsRolloverOpen(true)}
-                icon={<Landmark className="w-4 h-4 text-[#E9FF32]" />}
+                icon={<Landmark className="w-4 h-4 text-[#F0DC00]" />}
               >
                 Rollover to Crew
               </GlassButton>
@@ -239,8 +239,8 @@ export const PartyPotView: React.FC = () => {
                 <span className="text-xs font-bold text-white/80 mt-1 drop-shadow-md">
                   Controlled by {party.members.length} members
                 </span>
-                <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-mono text-[#E9FF32] border border-white/10">
-                  <ShieldCheck className="w-3 h-3 text-[#E9FF32]" />
+                <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-mono text-[#F0DC00] border border-white/10">
+                  <ShieldCheck className="w-3 h-3 text-[#F0DC00]" />
                   PIMLICO SPONSORED · 0 GAS
                 </span>
               </div>
@@ -261,7 +261,7 @@ export const PartyPotView: React.FC = () => {
                 variant="glass"
                 size="md"
                 onClick={() => setIsRewardOpen(true)}
-                icon={<Award className="w-4 h-4 text-[#E9FF32]" />}
+                icon={<Award className="w-4 h-4 text-[#F0DC00]" />}
               >
                 Reward
               </GlassButton>
@@ -285,7 +285,7 @@ export const PartyPotView: React.FC = () => {
                   fullWidth
                   disabled={party.potBalance <= 0}
                   onClick={() => setIsRolloverOpen(true)}
-                  icon={<Landmark className="w-4 h-4 text-[#E9FF32]" />}
+                  icon={<Landmark className="w-4 h-4 text-[#F0DC00]" />}
                 >
                   Rollover to {associatedCrew.name}
                 </GlassButton>
@@ -296,7 +296,7 @@ export const PartyPotView: React.FC = () => {
             {associatedCrew && (
               <div className="w-full p-4 rounded-3xl liquid-glass-card mt-2 sm:mt-4 text-left border border-white/15">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] uppercase font-bold text-[#E9FF32] tracking-wider flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-bold text-[#F0DC00] tracking-wider flex items-center gap-1.5">
                     <Landmark className="w-3.5 h-3.5" />
                     PERSISTENT CREW TREASURY
                   </span>
@@ -311,7 +311,7 @@ export const PartyPotView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsRolloverOpen(true)}
-                    className="mt-3 w-full py-2.5 px-3 rounded-2xl bg-white/10 hover:bg-white/15 text-[#E9FF32] text-xs font-bold flex items-center justify-center gap-2 border border-[#E9FF32]/30 transition-all"
+                    className="mt-3 w-full py-2.5 px-3 rounded-2xl bg-white/10 hover:bg-white/15 text-[#F0DC00] text-xs font-bold flex items-center justify-center gap-2 border border-[#F0DC00]/30 transition-all"
                   >
                     <ArrowRightLeft className="w-3.5 h-3.5" />
                     Rollover ${party.potBalance.toFixed(2)} to {associatedCrew.name}
@@ -322,14 +322,14 @@ export const PartyPotView: React.FC = () => {
 
             {/* Social Stake Banner */}
             <div className="w-full p-4 rounded-3xl liquid-glass-card mt-3 text-left border border-white/10">
-              <span className="text-[10px] uppercase font-bold text-[#E9FF32] tracking-wider block">
+              <span className="text-[10px] uppercase font-bold text-[#F0DC00] tracking-wider block">
                 SOCIAL PARTICIPATION → ECONOMIC STAKE
               </span>
               <p className="text-xs text-white/80 mt-1 leading-relaxed">
                 Leftover pot automatically rolls over to the next gathering. Contributor prizes are audited on Monad.
               </p>
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10 text-[11px] text-white/60">
-                <span className="w-2 h-2 rounded-full bg-[#E9FF32] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
                 <span>Simulated via Tenderly Pro & Monad Testnet</span>
               </div>
             </div>
@@ -352,7 +352,7 @@ export const PartyPotView: React.FC = () => {
                   onClick={() => setTxFilter(tab.id as typeof txFilter)}
                   className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
                     txFilter === tab.id
-                      ? 'bg-[#E9FF32] text-black shadow-md'
+                      ? 'bg-[#F0DC00] text-black shadow-md'
                       : 'liquid-glass-card text-white/60 hover:text-white'
                   }`}
                 >
@@ -368,7 +368,7 @@ export const PartyPotView: React.FC = () => {
                 </span>
                 <span className="text-xs text-white/40">Real-time pot activity</span>
               </div>
-              <span className="text-xs text-[#E9FF32] font-mono font-semibold">
+              <span className="text-xs text-[#F0DC00] font-mono font-semibold">
                 {filteredTransactions.length} records
               </span>
             </div>
@@ -427,7 +427,7 @@ export const PartyPotView: React.FC = () => {
                         <span
                           className={`font-display font-black text-lg sm:text-xl ${
                             isAdd
-                              ? 'text-[#E9FF32]'
+                              ? 'text-[#F0DC00]'
                               : isRollover
                               ? 'text-purple-300'
                               : 'text-rose-400'
@@ -481,7 +481,7 @@ export const PartyPotView: React.FC = () => {
                   onClick={() => setAddAmount(preset)}
                   className={`py-3 rounded-2xl font-display font-black text-base transition-all ${
                     addAmount === preset
-                      ? 'bg-[#E9FF32] text-black shadow-lg scale-105'
+                      ? 'bg-[#F0DC00] text-black shadow-lg scale-105'
                       : 'liquid-glass-card text-white/80'
                   }`}
                 >
@@ -500,7 +500,7 @@ export const PartyPotView: React.FC = () => {
               step="0.01"
               value={addAmount}
               onChange={(e) => setAddAmount(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white font-display font-black text-2xl outline-none border border-white/20 focus:border-[#E9FF32]"
+              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white font-display font-black text-2xl outline-none border border-white/20 focus:border-[#F0DC00]"
             />
           </div>
 
@@ -541,7 +541,7 @@ export const PartyPotView: React.FC = () => {
                   onClick={() => setRewardRecipient(m.name)}
                   className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all ${
                     rewardRecipient === m.name
-                      ? 'bg-[#E9FF32] text-black shadow-md'
+                      ? 'bg-[#F0DC00] text-black shadow-md'
                       : 'liquid-glass-card text-white/60'
                   }`}
                 >
@@ -586,7 +586,7 @@ export const PartyPotView: React.FC = () => {
               step="0.01"
               value={rewardAmount}
               onChange={(e) => setRewardAmount(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white font-display font-black text-2xl outline-none border border-white/20 focus:border-[#E9FF32]"
+              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white font-display font-black text-2xl outline-none border border-white/20 focus:border-[#F0DC00]"
             />
           </div>
 
@@ -621,7 +621,7 @@ export const PartyPotView: React.FC = () => {
               placeholder="e.g. Extra Ice & Lime, Midnight tacos..."
               value={spendDesc}
               onChange={(e) => setSpendDesc(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white text-base font-semibold outline-none border border-white/20 focus:border-[#E9FF32]"
+              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white text-base font-semibold outline-none border border-white/20 focus:border-[#F0DC00]"
             />
           </div>
 
@@ -635,7 +635,7 @@ export const PartyPotView: React.FC = () => {
               required
               value={spendAmount}
               onChange={(e) => setSpendAmount(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white font-display font-black text-2xl outline-none border border-white/20 focus:border-[#E9FF32]"
+              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white font-display font-black text-2xl outline-none border border-white/20 focus:border-[#F0DC00]"
             />
           </div>
 
@@ -667,7 +667,7 @@ export const PartyPotView: React.FC = () => {
                 <Landmark className="w-4 h-4 text-purple-400" />
                 <span className="text-xs font-bold text-white">Target Treasury</span>
               </div>
-              <span className="text-xs font-black text-[#E9FF32]">
+              <span className="text-xs font-black text-[#F0DC00]">
                 {associatedCrew.name}
               </span>
             </div>
@@ -688,8 +688,8 @@ export const PartyPotView: React.FC = () => {
                 </span>
               </div>
               <div className="pt-2 border-t border-white/10 flex justify-between items-center text-sm font-bold">
-                <span className="text-[#E9FF32]">New Crew Treasury</span>
-                <span className="font-mono text-base text-[#E9FF32]">
+                <span className="text-[#F0DC00]">New Crew Treasury</span>
+                <span className="font-mono text-base text-[#F0DC00]">
                   ${((associatedCrew.treasuryBalance ?? 0) + party.potBalance).toFixed(2)}
                 </span>
               </div>

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { PrivyAuthModal } from '@/components/ui/PrivyAuthModal';
 import { usePartyStore } from '@/store/usePartyStore';
-import { Sparkles, KeyRound, ShieldCheck } from 'lucide-react';
+import { KeyRound, ShieldCheck, Sparkles, MapPin, Clock } from 'lucide-react';
 import { usePrivySync } from '@/hooks/usePrivySync';
 
 export const SplashView: React.FC = () => {
@@ -31,22 +31,29 @@ export const SplashView: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full min-h-[100dvh] overflow-y-auto overflow-x-hidden flex flex-col justify-between bg-black text-white select-none">
-      {/* Background cinematic party photography */}
+    <div className="relative w-full min-h-[100dvh] overflow-y-auto overflow-x-hidden flex flex-col justify-between bg-[#15140f] text-[#FCFAF7] select-none">
+      {/* Background warm golden hour party photography */}
       <motion.div
         initial={{ scale: 1.05 }}
         animate={{ scale: 1 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className="fixed inset-0 z-0 bg-cover bg-center"
         style={{
           backgroundImage:
-            'url("https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=85")',
+            'url("https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1600&q=85")',
         }}
       >
-        {/* Soft vignette and atmospheric gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/45 to-black/35" />
-        <div className="absolute inset-0 bg-radial-at-c from-transparent via-black/30 to-black/80" />
+        {/* Soft warm amber gradient vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#15140f] via-[#15140f]/70 to-[#0c0b0a]/40" />
+        <div className="absolute inset-0 bg-radial-at-c from-transparent via-[#15140f]/40 to-[#0c0b0a]/80" />
       </motion.div>
+
+      {/* Warm fairy light bulbs */}
+      <div className="bulb" style={{ left: '10%', top: '90px' }} />
+      <div className="bulb" style={{ left: '28%', top: '115px' }} />
+      <div className="bulb" style={{ left: '48%', top: '88px' }} />
+      <div className="bulb" style={{ left: '68%', top: '110px' }} />
+      <div className="bulb" style={{ left: '88%', top: '94px' }} />
 
       {/* Top Bar / Badge */}
       <div className="relative z-10 px-5 sm:px-6 pt-5 safe-top flex items-center justify-between max-w-lg mx-auto w-full">
@@ -54,47 +61,109 @@ export const SplashView: React.FC = () => {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full liquid-glass-card text-[11px] sm:text-xs font-semibold text-white/80"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-card text-xs font-semibold text-white/90"
         >
-          <span className="w-2 h-2 rounded-full bg-[#E9FF32] animate-pulse" />
-          <span>MONAD METROPOLIS · PRIVATE ALPHA</span>
+          <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
+          <span>GOLDEN HOUR EDITION</span>
         </motion.div>
       </div>
 
-      {/* Main Content & Actions Area */}
-      <div className="relative z-10 px-5 sm:px-6 pt-8 pb-8 sm:pb-10 safe-bottom flex flex-col items-start max-w-lg mx-auto w-full my-auto">
-        {/* Giant Editorial Logo & Tagline */}
+      {/* Main Content Area */}
+      <div className="relative z-10 px-5 sm:px-6 pt-4 pb-8 sm:pb-10 safe-bottom flex flex-col items-center text-center max-w-md mx-auto w-full my-auto">
+        {/* Mini Stack of Preview Event Cards with Warm Glow */}
         <motion.div
-          initial={{ opacity: 0, filter: 'blur(8px)', y: 20 }}
-          animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-          className="mb-6 sm:mb-8"
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="w-full relative h-[180px] mb-6 flex items-center justify-center"
         >
-          <h1 className="font-display font-black text-5xl sm:text-6xl md:text-7xl tracking-tight leading-[0.9] text-white drop-shadow-2xl">
-            PARTY
-            <br />
-            <span className="text-[#E9FF32]">LOT</span>
+          {/* Left card */}
+          <div
+            className="absolute left-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform -rotate-6 shadow-xl border border-white/20"
+            style={{
+              background: 'radial-gradient(120% 90% at 30% 6%, #8a6a3a 0%, #3a2a17 45%, #0c0b0a 100%)',
+            }}
+          >
+            <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 text-[9px] font-bold text-[#F0DC00]">
+              48d
+            </span>
+            <b className="font-display text-xs text-white uppercase tracking-tight">New York Jam</b>
+            <small className="text-[10px] text-white/70 flex items-center gap-1 mt-0.5">
+              <MapPin className="w-2.5 h-2.5 text-[#F0DC00]" /> Miami
+            </small>
+          </div>
+
+          {/* Right card */}
+          <div
+            className="absolute right-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform rotate-6 shadow-xl border border-white/20"
+            style={{
+              background: 'radial-gradient(120% 90% at 70% 0%, #3a2a4a 0%, #211830 40%, #100c14 100%)',
+            }}
+          >
+            <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 text-[9px] font-bold text-[#F0DC00]">
+              27d
+            </span>
+            <b className="font-display text-xs text-white uppercase tracking-tight">Rooftop Party</b>
+            <small className="text-[10px] text-white/70 flex items-center gap-1 mt-0.5">
+              <MapPin className="w-2.5 h-2.5 text-[#F0DC00]" /> Jersey
+            </small>
+          </div>
+
+          {/* Center card */}
+          <div
+            className="relative z-10 w-[190px] h-[160px] rounded-2xl liquid-glass-card p-3.5 flex flex-col justify-end shadow-2xl border border-white/30 transform hover:scale-105 transition-transform"
+            style={{
+              background: 'radial-gradient(120% 90% at 50% 10%, #f0c27a 0%, #8a5a2a 45%, #241a12 90%)',
+            }}
+          >
+            <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/70 text-[9px] font-bold text-[#F0DC00] flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5" /> 2d
+            </span>
+            <b className="font-display text-sm text-white uppercase tracking-tight">Cocktails Night</b>
+            <small className="text-[10px] text-white/80 flex items-center gap-1 mt-1">
+              <Clock className="w-2.5 h-2.5 text-[#F0DC00]" /> 3 jul · New York
+            </small>
+            <div className="flex -space-x-1.5 mt-2">
+              <span className="w-4 h-4 rounded-full bg-[#f0dc00] border border-black/40" />
+              <span className="w-4 h-4 rounded-full bg-[#ff8fb1] border border-black/40" />
+              <span className="w-4 h-4 rounded-full bg-[#8fd1ff] border border-black/40" />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Wordmark & Description */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.25 }}
+          className="mb-6"
+        >
+          <div className="text-xs uppercase tracking-[3px] text-[#F0DC00] font-semibold mb-1">
+            BIENVENIDO A
+          </div>
+          <h1 className="bubble text-6xl sm:text-7xl tracking-tight text-white mb-2 drop-shadow-2xl">
+            PartyLot
           </h1>
-          <p className="mt-3 sm:mt-4 font-display font-semibold text-sm sm:text-base md:text-lg text-white/90 tracking-wide max-w-[280px] leading-snug">
-            THE NIGHT BELONGS TO THE GROUP.
+          <p className="font-display font-medium text-sm sm:text-base text-white/80 max-w-[270px] leading-relaxed mx-auto">
+            Crea invitaciones con estilo y compártelas para cualquier evento
           </p>
         </motion.div>
 
         {/* Action Buttons */}
         <motion.div
-          initial={{ opacity: 0, y: 25 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut', delay: 0.3 }}
-          className="w-full flex flex-col gap-2.5 sm:gap-3"
+          transition={{ duration: 0.5, delay: 0.35 }}
+          className="w-full flex flex-col gap-2.5"
         >
           <GlassButton
             variant="accent"
             size="lg"
             fullWidth
             onClick={handleGetStarted}
-            icon={<Sparkles className="w-5 h-5 text-black" />}
+            className="shadow-[0_8px_24px_rgba(240,220,0,0.35)]"
           >
-            Get started
+            Crear un evento
           </GlassButton>
 
           <GlassButton
@@ -102,9 +171,9 @@ export const SplashView: React.FC = () => {
             size="lg"
             fullWidth
             onClick={() => setCurrentView('join-party')}
-            icon={<KeyRound className="w-5 h-5 text-white/80" />}
+            icon={<KeyRound className="w-4 h-4 text-white/80" />}
           >
-            Join with code
+            Tengo un código de invitación
           </GlassButton>
         </motion.div>
 
@@ -113,10 +182,10 @@ export const SplashView: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.7 }}
           transition={{ delay: 0.5 }}
-          className="mt-5 sm:mt-6 flex items-center justify-center gap-1.5 w-full text-[10px] sm:text-[11px] text-white/50 tracking-wider font-mono text-center"
+          className="mt-6 flex items-center justify-center gap-1.5 w-full text-[11px] text-white/50 tracking-wide font-medium"
         >
-          <ShieldCheck className="w-3.5 h-3.5 text-[#E9FF32] shrink-0" />
-          <span>PRIVY SMART WALLET · PIMLICO SPONSORED GAS</span>
+          <ShieldCheck className="w-3.5 h-3.5 text-[#F0DC00] shrink-0" />
+          <span>Acceso privado · Sin comisiones ni anuncios</span>
         </motion.div>
       </div>
 

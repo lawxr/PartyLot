@@ -3,7 +3,7 @@ import "./globals.css";
 import { PrivyClientProvider } from "@/components/providers/PrivyClientProvider";
 
 export const metadata: Metadata = {
-  title: "PARTYLOT — The Night Belongs to the Group",
+  title: "PARTYLOT — Plan Your Party",
   description: "Private group social party app. RSVP, party pot, minigames, split damage, and recap memories.",
   icons: {
     icon: "/favicon.ico",
@@ -21,7 +21,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#050505",
+  themeColor: "#15140f",
 };
 
 export default function RootLayout({
@@ -30,8 +30,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark bg-[#050505] text-white">
-      <body className="min-h-screen bg-[#050505] text-[#F5F5F7] font-ui antialiased selection:bg-[#E9FF32] selection:text-black">
+    <html lang="es" className="dark bg-[#15140f] text-[#FCFAF7]">
+      <body className="min-h-screen bg-[#15140f] text-[#FCFAF7] font-ui antialiased selection:bg-[#F0DC00] selection:text-[#0C0B0A] relative">
+        <div className="grain" aria-hidden="true" />
         <PrivyClientProvider>
           {children}
         </PrivyClientProvider>
@@ -39,4 +40,3 @@ export default function RootLayout({
     </html>
   );
 }
-

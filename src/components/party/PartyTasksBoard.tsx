@@ -68,7 +68,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
       particleCount: 40,
       spread: 60,
       origin: { y: 0.6 },
-      colors: ['#E9FF32', '#FFFFFF', '#60A5FA'],
+      colors: ['#F0DC00', '#FFFFFF', '#60A5FA'],
     });
   };
 
@@ -78,7 +78,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
       particleCount: 30,
       spread: 50,
       origin: { y: 0.7 },
-      colors: ['#E9FF32', '#10B981'],
+      colors: ['#F0DC00', '#10B981'],
     });
   };
 
@@ -88,7 +88,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
       particleCount: 45,
       spread: 55,
       origin: { y: 0.7 },
-      colors: ['#E9FF32', '#A855F7'],
+      colors: ['#F0DC00', '#A855F7'],
     });
   };
 
@@ -100,7 +100,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
         particleCount: 80,
         spread: 75,
         origin: { y: 0.5 },
-        colors: ['#E9FF32', '#10B981', '#F59E0B'],
+        colors: ['#F0DC00', '#10B981', '#F59E0B'],
       });
     } finally {
       setIsPayingId(null);
@@ -113,7 +113,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#E9FF32]">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
               CONTRIBUTION REWARDS
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -153,7 +153,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
             onClick={() => setFilter(tab.id as typeof filter)}
             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
               filter === tab.id
-                ? 'bg-[#E9FF32] text-black shadow-md'
+                ? 'bg-[#F0DC00] text-black shadow-md'
                 : 'liquid-glass-card text-white/60 hover:text-white'
             }`}
           >
@@ -229,7 +229,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
 
                 <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
                   <div className="text-left sm:text-right">
-                    <span className="font-display font-black text-xl text-[#E9FF32] block leading-none">
+                    <span className="font-display font-black text-xl text-[#F0DC00] block leading-none">
                       +${task.rewardAmount.toFixed(2)}
                     </span>
                     <span className="text-[9px] uppercase font-bold text-white/40">
@@ -243,7 +243,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
                       variant="glass"
                       size="sm"
                       onClick={() => handleClaim(task.id)}
-                      icon={<UserCheck className="w-3.5 h-3.5 text-[#E9FF32]" />}
+                      icon={<UserCheck className="w-3.5 h-3.5 text-[#F0DC00]" />}
                     >
                       Claim
                     </GlassButton>
@@ -320,7 +320,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
               placeholder="e.g. Bring 2 bags of ice & lime, Aux cord setup..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white placeholder-white/30 text-base font-semibold outline-none border border-white/20 focus:border-[#E9FF32]"
+              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white placeholder-white/30 text-base font-semibold outline-none border border-white/20 focus:border-[#F0DC00]"
             />
           </div>
 
@@ -336,7 +336,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
                   onClick={() => setRewardAmount(preset)}
                   className={`py-2.5 rounded-xl font-display font-black text-sm transition-all ${
                     rewardAmount === preset
-                      ? 'bg-[#E9FF32] text-black shadow-md'
+                      ? 'bg-[#F0DC00] text-black shadow-md'
                       : 'liquid-glass-card text-white/70'
                   }`}
                 >
@@ -356,7 +356,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
               required
               value={rewardAmount}
               onChange={(e) => setRewardAmount(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white font-display font-black text-2xl outline-none border border-white/20 focus:border-[#E9FF32]"
+              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white font-display font-black text-2xl outline-none border border-white/20 focus:border-[#F0DC00]"
             />
           </div>
 

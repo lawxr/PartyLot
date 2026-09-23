@@ -96,25 +96,25 @@ export const ProfileView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
+    <div className="min-h-screen bg-[#15140f] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
       {/* Profile Header */}
       <header className="flex flex-col items-center text-center my-6 sm:my-8 border-b border-white/10 pb-6">
-        <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-white/20 p-1 liquid-glass-card shadow-2xl mb-3">
+        <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#F0DC00]/50 p-1 liquid-glass-card shadow-2xl mb-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={currentUser.avatar}
             alt={currentUser.name}
             className="w-full h-full object-cover rounded-full"
           />
-          <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#E9FF32] text-black flex items-center justify-center shadow-lg border border-black">
+          <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#F0DC00] text-black flex items-center justify-center shadow-lg border border-black">
             <Sparkles className="w-4 h-4 stroke-[2.5]" />
           </div>
         </div>
 
-        <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight">
+        <h2 className="bubble text-4xl sm:text-6xl text-white tracking-tight drop-shadow-lg">
           {currentUser.name}
         </h2>
-        <span className="text-xs sm:text-sm font-mono text-[#E9FF32] font-semibold mt-1">
+        <span className="text-xs sm:text-sm font-mono text-[#F0DC00] font-semibold mt-1">
           {currentUser.handle} · {currentUser.email || 'MEDELLÍN'} · {currentUser.isPrivyAuthenticated ? 'PRIVY EMBEDDED' : 'LOCAL PASSKEY'}
         </span>
       </header>
@@ -131,7 +131,7 @@ export const ProfileView: React.FC = () => {
         </GlassPanel>
 
         <GlassPanel level={2} className="p-4 border border-white/10">
-          <span className="font-display font-black text-2xl sm:text-4xl text-[#E9FF32] block leading-none">
+          <span className="font-display font-black text-2xl sm:text-4xl text-[#F0DC00] block leading-none">
             {currentUser.gamesCount}
           </span>
           <span className="text-[10px] sm:text-xs uppercase font-bold text-white/50 tracking-wider mt-1.5 block">
@@ -170,7 +170,7 @@ export const ProfileView: React.FC = () => {
                 </h3>
                 <p className="text-[11px] text-white/50">Verified co-presence · No vanity followers</p>
               </div>
-              <span className="text-xs text-[#E9FF32] font-semibold bg-[#E9FF32]/10 border border-[#E9FF32]/20 px-2 py-0.5 rounded-full">
+              <span className="text-xs text-[#F0DC00] font-semibold bg-[#F0DC00]/10 border border-[#F0DC00]/20 px-2 py-0.5 rounded-full">
                 Onchain Matrix
               </span>
             </div>
@@ -179,7 +179,7 @@ export const ProfileView: React.FC = () => {
               {sharedConnections.map((c) => {
                 const sparkColors: Record<string, { bg: string; text: string; border: string }> = {
                   'Soul Crew': { bg: 'bg-purple-500/15', text: 'text-purple-300', border: 'border-purple-500/30' },
-                  'Ride or Die': { bg: 'bg-[#E9FF32]/15', text: 'text-[#E9FF32]', border: 'border-[#E9FF32]/30' },
+                  'Ride or Die': { bg: 'bg-[#F0DC00]/15', text: 'text-[#F0DC00]', border: 'border-[#F0DC00]/30' },
                   'Ignited': { bg: 'bg-orange-500/15', text: 'text-orange-300', border: 'border-orange-500/30' },
                   'Kindling': { bg: 'bg-cyan-500/15', text: 'text-cyan-300', border: 'border-cyan-500/30' },
                 };
@@ -227,7 +227,7 @@ export const ProfileView: React.FC = () => {
                       </div>
                       <div className="p-1.5 rounded-lg bg-white/[0.02]">
                         <span className="text-[10px] text-white/40 block">Games</span>
-                        <span className="font-display font-black text-xs sm:text-sm text-[#E9FF32]">
+                        <span className="font-display font-black text-xs sm:text-sm text-[#F0DC00]">
                           {c.gamesPlayedTogether}
                         </span>
                       </div>
@@ -322,7 +322,7 @@ export const ProfileView: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
                   <div className="relative z-10">
-                    <span className="text-[10px] font-bold text-[#E9FF32] uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-[#F0DC00] uppercase tracking-wider">
                       {night.date} · {night.people} people
                     </span>
                     <h4 className="font-display font-bold text-sm sm:text-base text-white truncate">
@@ -339,12 +339,12 @@ export const ProfileView: React.FC = () => {
             <GlassPanel level={2} className="p-5 border border-white/15 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-5 h-5 text-[#E9FF32]" />
+                  <ShieldCheck className="w-5 h-5 text-[#F0DC00]" />
                   <span className="font-display font-bold text-base text-white">
                     Onchain Identity & Metropolis Stack
                   </span>
                 </div>
-                <span className="text-xs font-mono text-[#E9FF32] font-semibold">
+                <span className="text-xs font-mono text-[#F0DC00] font-semibold">
                   ACTIVE
                 </span>
               </div>
@@ -354,7 +354,7 @@ export const ProfileView: React.FC = () => {
                   COUNTERFACTUAL SMART ACCOUNT
                 </span>
                 <div className="flex items-center justify-between mt-1.5 p-3 rounded-2xl bg-black/60 border border-white/10 font-mono text-xs">
-                  <span className="text-[#E9FF32] truncate max-w-[340px]">
+                  <span className="text-[#F0DC00] truncate max-w-[340px]">
                     {activeAddress}
                   </span>
                   <button
@@ -362,7 +362,7 @@ export const ProfileView: React.FC = () => {
                     className="text-white/60 hover:text-white p-1 ml-2 shrink-0"
                     aria-label="Copy Address"
                   >
-                    {copied ? <Check className="w-4 h-4 text-[#E9FF32]" /> : <Copy className="w-4 h-4" />}
+                    {copied ? <Check className="w-4 h-4 text-[#F0DC00]" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -370,7 +370,7 @@ export const ProfileView: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/10 text-xs">
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
                   <span className="text-white/40 block text-[10px] uppercase font-bold">Gas Sponsorship</span>
-                  <span className="font-bold text-[#E9FF32]">Pimlico Paymaster (100%)</span>
+                  <span className="font-bold text-[#F0DC00]">Pimlico Paymaster (100%)</span>
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
                   <span className="text-white/40 block text-[10px] uppercase font-bold">RPC Provider</span>

@@ -35,7 +35,7 @@ export const CrewTrivia: React.FC = () => {
         particleCount: 40,
         spread: 50,
         origin: { y: 0.7 },
-        colors: ['#E9FF32', '#34D399'],
+        colors: ['#F0DC00', '#34D399'],
       });
     }
   };
@@ -51,7 +51,7 @@ export const CrewTrivia: React.FC = () => {
         particleCount: 100,
         spread: 80,
         origin: { y: 0.5 },
-        colors: ['#E9FF32', '#FFFFFF', '#F59E0B'],
+        colors: ['#F0DC00', '#FFFFFF', '#F59E0B'],
       });
     }
   };
@@ -80,7 +80,7 @@ export const CrewTrivia: React.FC = () => {
         particleCount: 80,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#E9FF32', '#10B981', '#FFFFFF'],
+        colors: ['#F0DC00', '#10B981', '#FFFFFF'],
       });
     } finally {
       setIsClaiming(false);
@@ -91,11 +91,11 @@ export const CrewTrivia: React.FC = () => {
     return (
       <div className="flex flex-col items-center text-center w-full py-4">
         <GlassPanel level={3} className="p-8 w-full max-w-sm border border-white/20">
-          <div className="w-16 h-16 rounded-full bg-[#E9FF32]/20 border border-[#E9FF32] text-[#E9FF32] flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-full bg-[#F0DC00]/20 border border-[#F0DC00] text-[#F0DC00] flex items-center justify-center mx-auto mb-4">
             <Trophy className="w-8 h-8" />
           </div>
 
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#E9FF32]">
+          <span className="text-xs uppercase font-extrabold tracking-widest text-[#F0DC00]">
             FINAL PODIUM
           </span>
           <h3 className="font-display font-black text-3xl text-white tracking-tight mt-1 mb-2">
@@ -109,7 +109,7 @@ export const CrewTrivia: React.FC = () => {
             <span className="text-[11px] uppercase font-bold text-white/50 tracking-wider">
               YOUR SCORE
             </span>
-            <div className="font-display font-black text-4xl text-[#E9FF32] mt-1">
+            <div className="font-display font-black text-4xl text-[#F0DC00] mt-1">
               {score} PTS
             </div>
             <span className="text-xs text-white/70 block mt-1">
@@ -125,7 +125,7 @@ export const CrewTrivia: React.FC = () => {
                 className={`w-full py-3 px-4 rounded-2xl text-xs font-bold font-display flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg ${
                   hasClaimedBounty
                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                    : 'bg-[#E9FF32] text-black hover:brightness-105 shadow-[#E9FF32]/20'
+                    : 'bg-[#F0DC00] text-black hover:brightness-105 shadow-[#F0DC00]/20'
                 }`}
               >
                 {hasClaimedBounty ? (
@@ -161,7 +161,7 @@ export const CrewTrivia: React.FC = () => {
     <div className="flex flex-col items-center w-full">
       {/* Round & Score Header */}
       <div className="w-full flex items-center justify-between mb-4 px-1">
-        <span className="text-xs font-extrabold uppercase tracking-wider text-[#E9FF32] flex items-center gap-1.5">
+        <span className="text-xs font-extrabold uppercase tracking-wider text-[#F0DC00] flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5" />
           Round {currentRound + 1} / {totalRounds}
         </span>
@@ -175,7 +175,7 @@ export const CrewTrivia: React.FC = () => {
       <div className="w-full bg-white/10 rounded-full h-1.5 mb-6 overflow-hidden">
         <motion.div
           animate={{ width: `${((currentRound + 1) / totalRounds) * 100}%` }}
-          className="h-full bg-[#E9FF32] rounded-full"
+          className="h-full bg-[#F0DC00] rounded-full"
         />
       </div>
 

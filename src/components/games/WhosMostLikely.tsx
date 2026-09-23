@@ -38,7 +38,7 @@ export const WhosMostLikely: React.FC = () => {
         particleCount: 50,
         spread: 60,
         origin: { y: 0.7 },
-        colors: ['#E9FF32', '#FFFFFF', '#A855F7'],
+        colors: ['#F0DC00', '#FFFFFF', '#A855F7'],
       });
     }, 600);
   };
@@ -64,7 +64,7 @@ export const WhosMostLikely: React.FC = () => {
         particleCount: 70,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#E9FF32', '#10B981', '#FFFFFF'],
+        colors: ['#F0DC00', '#10B981', '#FFFFFF'],
       });
     } finally {
       setIsRewarding(false);
@@ -75,7 +75,7 @@ export const WhosMostLikely: React.FC = () => {
     <div className="flex flex-col items-center">
       {/* Question Card */}
       <GlassPanel level={3} className="p-6 mb-6 text-center w-full border border-white/20">
-        <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#E9FF32]">
+        <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
           WHO&apos;S MOST LIKELY
         </span>
         <h3 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight mt-2 mb-1 leading-snug">
@@ -101,7 +101,7 @@ export const WhosMostLikely: React.FC = () => {
               onClick={() => handleVote(member.id)}
               className={`p-3.5 rounded-2xl liquid-glass-card flex flex-col items-center cursor-pointer transition-all ${
                 isSelected
-                  ? 'border-[#E9FF32] bg-[#E9FF32]/10 shadow-[0_0_20px_rgba(233,255,50,0.25)]'
+                  ? 'border-[#F0DC00] bg-[#F0DC00]/10 shadow-[0_0_20px_rgba(240, 220, 0,0.25)]'
                   : 'hover:border-white/30'
               }`}
             >
@@ -113,7 +113,7 @@ export const WhosMostLikely: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
                 {isWinner && (
-                  <div className="absolute top-0 right-0 w-6 h-6 rounded-full bg-[#E9FF32] text-black flex items-center justify-center shadow-lg">
+                  <div className="absolute top-0 right-0 w-6 h-6 rounded-full bg-[#F0DC00] text-black flex items-center justify-center shadow-lg">
                     <Crown className="w-3.5 h-3.5 stroke-[2.5]" />
                   </div>
                 )}
@@ -135,12 +135,12 @@ export const WhosMostLikely: React.FC = () => {
                       initial={{ width: 0 }}
                       animate={{ width: `${percentage}%` }}
                       transition={{ duration: 0.5, ease: 'easeOut' }}
-                      className={`h-full rounded-full ${isWinner ? 'bg-[#E9FF32]' : 'bg-white/60'}`}
+                      className={`h-full rounded-full ${isWinner ? 'bg-[#F0DC00]' : 'bg-white/60'}`}
                     />
                   </div>
                   <div className="flex items-center justify-between text-[10px] font-bold text-white/70">
                     <span>{votesCount} votes</span>
-                    <span className={isWinner ? 'text-[#E9FF32]' : ''}>{percentage}%</span>
+                    <span className={isWinner ? 'text-[#F0DC00]' : ''}>{percentage}%</span>
                   </div>
                 </motion.div>
               )}
@@ -155,10 +155,10 @@ export const WhosMostLikely: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full p-4 rounded-2xl bg-[#E9FF32]/10 border border-[#E9FF32]/30 flex flex-col sm:flex-row items-center justify-between gap-3 mb-4"
+            className="w-full p-4 rounded-2xl bg-[#F0DC00]/10 border border-[#F0DC00]/30 flex flex-col sm:flex-row items-center justify-between gap-3 mb-4"
           >
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#E9FF32] shrink-0">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#F0DC00] shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={winnerMember.avatar}
@@ -167,7 +167,7 @@ export const WhosMostLikely: React.FC = () => {
                 />
               </div>
               <div>
-                <span className="text-[10px] uppercase font-bold text-[#E9FF32] tracking-wider block">
+                <span className="text-[10px] uppercase font-bold text-[#F0DC00] tracking-wider block">
                   CREW CONSENSUS · ROUND WINNER
                 </span>
                 <p className="font-display font-black text-base text-white">
@@ -189,7 +189,7 @@ export const WhosMostLikely: React.FC = () => {
                   className={`px-3.5 py-2 rounded-xl text-xs font-bold font-display flex items-center gap-1.5 transition-all active:scale-95 ${
                     rewardedWinnerId === winnerMember.id
                       ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-[#E9FF32] text-black hover:brightness-105 shadow-md'
+                      : 'bg-[#F0DC00] text-black hover:brightness-105 shadow-md'
                   }`}
                 >
                   {rewardedWinnerId === winnerMember.id ? (

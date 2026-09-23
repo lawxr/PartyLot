@@ -97,7 +97,7 @@ export const SplitView: React.FC = () => {
       particleCount: 40,
       spread: 50,
       origin: { y: 0.6 },
-      colors: ['#E9FF32', '#FFFFFF'],
+      colors: ['#F0DC00', '#FFFFFF'],
     });
   };
 
@@ -119,7 +119,7 @@ export const SplitView: React.FC = () => {
         particleCount: 90,
         spread: 80,
         origin: { y: 0.5 },
-        colors: ['#E9FF32', '#FFFFFF', '#10B981'],
+        colors: ['#F0DC00', '#FFFFFF', '#10B981'],
       });
     } catch (err) {
       console.error('Failed onchain settlement, applying local settlement:', err);
@@ -153,7 +153,7 @@ export const SplitView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-32 select-none">
+    <div className="min-h-screen bg-[#15140f] text-white pb-32 select-none">
       <TopNav title="EXPENSE ENGINE" />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
@@ -161,7 +161,7 @@ export const SplitView: React.FC = () => {
         <div className="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-5">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#E9FF32]">
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
                 AUTOMATIC LIQUIDATION
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -179,7 +179,7 @@ export const SplitView: React.FC = () => {
               <span className="text-[10px] uppercase font-bold text-white/50 block">
                 TOTAL SPENT
               </span>
-              <span className="font-display font-black text-2xl sm:text-3xl text-[#E9FF32]">
+              <span className="font-display font-black text-2xl sm:text-3xl text-[#F0DC00]">
                 ${totalAmount.toFixed(2)}
               </span>
             </div>
@@ -201,7 +201,7 @@ export const SplitView: React.FC = () => {
                   setSettlementSuccessTx(null);
                   setIsSettleOpen(true);
                 }}
-                icon={<CheckCircle2 className="w-4 h-4 text-[#E9FF32]" />}
+                icon={<CheckCircle2 className="w-4 h-4 text-[#F0DC00]" />}
               >
                 SETTLE UP
               </GlassButton>
@@ -229,7 +229,7 @@ export const SplitView: React.FC = () => {
               setSettlementSuccessTx(null);
               setIsSettleOpen(true);
             }}
-            icon={<CheckCircle2 className="w-4 h-4 text-[#E9FF32]" />}
+            icon={<CheckCircle2 className="w-4 h-4 text-[#F0DC00]" />}
           >
             SETTLE UP
           </GlassButton>
@@ -273,7 +273,7 @@ export const SplitView: React.FC = () => {
                         <span
                           className={`font-display font-black text-base ${
                             isPositive
-                              ? 'text-[#E9FF32]'
+                              ? 'text-[#F0DC00]'
                               : isNegative
                               ? 'text-rose-400'
                               : 'text-white/40'
@@ -294,7 +294,7 @@ export const SplitView: React.FC = () => {
             {/* Desktop Quick Settlement Summary */}
             <div className="p-5 rounded-3xl liquid-glass-card border border-white/15">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#E9FF32]">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
                   SETTLEMENT ENGINE
                 </span>
                 <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
@@ -315,7 +315,7 @@ export const SplitView: React.FC = () => {
                   setSettlementSuccessTx(null);
                   setIsSettleOpen(true);
                 }}
-                icon={<CheckCircle2 className="w-4 h-4 text-[#E9FF32]" />}
+                icon={<CheckCircle2 className="w-4 h-4 text-[#F0DC00]" />}
               >
                 Review & Settle Up
               </GlassButton>
@@ -331,7 +331,7 @@ export const SplitView: React.FC = () => {
                 onClick={() => setSelectedFilter('all')}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
                   selectedFilter === 'all'
-                    ? 'bg-[#E9FF32] text-black shadow-md'
+                    ? 'bg-[#F0DC00] text-black shadow-md'
                     : 'liquid-glass-card text-white/60 hover:text-white'
                 }`}
               >
@@ -406,7 +406,7 @@ export const SplitView: React.FC = () => {
                         <span className="font-display font-black text-lg sm:text-xl text-white">
                           ${exp.amount.toFixed(2)}
                         </span>
-                        <span className="block text-xs text-[#E9FF32] font-semibold">
+                        <span className="block text-xs text-[#F0DC00] font-semibold">
                           ${perPerson.toFixed(2)} / ea
                         </span>
                       </div>
@@ -446,11 +446,11 @@ export const SplitView: React.FC = () => {
                     onClick={() => setCategory(cat.id)}
                     className={`flex items-center gap-1.5 p-2 rounded-xl text-xs font-bold border transition-all ${
                       isSelected
-                        ? 'border-[#E9FF32] bg-[#E9FF32]/10 text-white'
+                        ? 'border-[#F0DC00] bg-[#F0DC00]/10 text-white'
                         : 'border-white/10 opacity-60 text-white/60 hover:opacity-100'
                     }`}
                   >
-                    <IconComponent className="w-3.5 h-3.5 text-[#E9FF32]" />
+                    <IconComponent className="w-3.5 h-3.5 text-[#F0DC00]" />
                     <span className="truncate">{cat.label}</span>
                   </button>
                 );
@@ -468,7 +468,7 @@ export const SplitView: React.FC = () => {
               placeholder="e.g. Sourdough Pizza, Drinks, Ice, Venue Deposit..."
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white placeholder-white/30 text-base font-semibold outline-none border border-white/20 focus:border-[#E9FF32]"
+              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white placeholder-white/30 text-base font-semibold outline-none border border-white/20 focus:border-[#F0DC00]"
             />
           </div>
 
@@ -487,7 +487,7 @@ export const SplitView: React.FC = () => {
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-9 pr-4 py-3 rounded-2xl liquid-glass-card text-white font-display font-black text-2xl outline-none border border-white/20 focus:border-[#E9FF32]"
+                className="w-full pl-9 pr-4 py-3 rounded-2xl liquid-glass-card text-white font-display font-black text-2xl outline-none border border-white/20 focus:border-[#F0DC00]"
               />
             </div>
           </div>
@@ -504,7 +504,7 @@ export const SplitView: React.FC = () => {
                   onClick={() => setPaidById(member.id)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${
                     paidById === member.id
-                      ? 'bg-[#E9FF32] text-black shadow-md'
+                      ? 'bg-[#F0DC00] text-black shadow-md'
                       : 'liquid-glass-card text-white/70'
                   }`}
                 >
@@ -519,7 +519,7 @@ export const SplitView: React.FC = () => {
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-1.5 flex justify-between">
               <span>Split Between</span>
-              <span className="text-[#E9FF32]">{splitBetween.length} selected</span>
+              <span className="text-[#F0DC00]">{splitBetween.length} selected</span>
             </label>
             <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
               {party.members.map((member) => {
@@ -531,7 +531,7 @@ export const SplitView: React.FC = () => {
                     onClick={() => toggleSplitMember(member.id)}
                     className={`flex items-center gap-2 p-2.5 rounded-xl text-xs font-bold border transition-all ${
                       isSelected
-                        ? 'border-[#E9FF32] bg-[#E9FF32]/10 text-white'
+                        ? 'border-[#F0DC00] bg-[#F0DC00]/10 text-white'
                         : 'border-white/10 opacity-50 text-white/50'
                     }`}
                   >
@@ -575,7 +575,7 @@ export const SplitView: React.FC = () => {
                 <ShieldCheck className="w-8 h-8" />
               </div>
               <div>
-                <span className="text-[11px] font-black uppercase tracking-widest text-[#E9FF32] block mb-1">
+                <span className="text-[11px] font-black uppercase tracking-widest text-[#F0DC00] block mb-1">
                   SETTLEMENT COMPLETE
                 </span>
                 <h3 className="font-display font-black text-2xl text-white">
@@ -592,7 +592,7 @@ export const SplitView: React.FC = () => {
                   Monad Transaction Hash
                 </span>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs text-[#E9FF32] truncate">
+                  <span className="font-mono text-xs text-[#F0DC00] truncate">
                     {settlementSuccessTx}
                   </span>
                   <button
@@ -645,7 +645,7 @@ export const SplitView: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-xs text-rose-300">{s.fromName}</span>
                         <ArrowRight className="w-3.5 h-3.5 text-white/40" />
-                        <span className="font-bold text-xs text-[#E9FF32]">{s.toName}</span>
+                        <span className="font-bold text-xs text-[#F0DC00]">{s.toName}</span>
                       </div>
 
                       <span className="font-display font-black text-base text-white">
@@ -654,7 +654,7 @@ export const SplitView: React.FC = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-[#E9FF32] font-semibold text-center py-4">
+                  <p className="text-xs text-[#F0DC00] font-semibold text-center py-4">
                     ✨ Everyone is completely squared up! No debts pending.
                   </p>
                 )}

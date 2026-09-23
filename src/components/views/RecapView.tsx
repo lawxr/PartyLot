@@ -58,7 +58,7 @@ export const RecapView: React.FC = () => {
         particleCount: 80,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#E9FF32', '#10B981', '#60A5FA'],
+        colors: ['#F0DC00', '#10B981', '#60A5FA'],
       });
     } catch (err) {
       console.error('Failed to attest gathering onchain:', err);
@@ -97,7 +97,7 @@ export const RecapView: React.FC = () => {
       particleCount: 70,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#E9FF32', '#FFFFFF', '#EC4899'],
+      colors: ['#F0DC00', '#FFFFFF', '#EC4899'],
     });
 
     const shareText = `PARTYLOT RECAP — ${party.title} 🔥\n` +
@@ -144,19 +144,19 @@ export const RecapView: React.FC = () => {
       if (!ctx) return;
 
       // Dark background
-      ctx.fillStyle = '#050505';
+      ctx.fillStyle = '#15140f';
       ctx.fillRect(0, 0, 1080, 1920);
 
       // Gradient accent glow
       const grad = ctx.createRadialGradient(540, 400, 50, 540, 400, 600);
-      grad.addColorStop(0, 'rgba(233, 255, 50, 0.15)');
+      grad.addColorStop(0, 'rgba(240, 220, 0, 0.15)');
       grad.addColorStop(0.5, 'rgba(168, 85, 247, 0.1)');
       grad.addColorStop(1, 'rgba(5, 5, 5, 0)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 1080, 1920);
 
       // Brand Title
-      ctx.fillStyle = '#E9FF32';
+      ctx.fillStyle = '#F0DC00';
       ctx.font = '900 48px sans-serif';
       ctx.fillText('PARTYLOT', 80, 120);
 
@@ -177,7 +177,7 @@ export const RecapView: React.FC = () => {
       ctx.font = '900 84px sans-serif';
       ctx.fillText(party.title.toUpperCase(), 80, 310);
 
-      ctx.fillStyle = '#E9FF32';
+      ctx.fillStyle = '#F0DC00';
       ctx.font = '700 32px sans-serif';
       ctx.fillText(`${party.date.toUpperCase()} · ${party.location.toUpperCase()}`, 80, 370);
 
@@ -200,7 +200,7 @@ export const RecapView: React.FC = () => {
       };
 
       drawMetricBox(80, 440, 440, 170, `${attendeesCount}`, 'PEOPLE ATTENDED', '#FFFFFF');
-      drawMetricBox(560, 440, 440, 170, `$${totalSharedDamage.toFixed(0)}`, 'SHARED DAMAGE', '#E9FF32');
+      drawMetricBox(560, 440, 440, 170, `$${totalSharedDamage.toFixed(0)}`, 'SHARED DAMAGE', '#F0DC00');
       drawMetricBox(80, 640, 440, 170, `${minigamesCount}`, 'MINIGAMES PLAYED', '#FFFFFF');
       drawMetricBox(560, 640, 440, 170, `${totalVotesCast}`, 'CONSENSUS VOTES', '#FFFFFF');
 
@@ -209,10 +209,10 @@ export const RecapView: React.FC = () => {
       ctx.beginPath();
       ctx.roundRect(80, 850, 920, 360, 32);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(233, 255, 50, 0.3)';
+      ctx.strokeStyle = 'rgba(240, 220, 0, 0.3)';
       ctx.stroke();
 
-      ctx.fillStyle = '#E9FF32';
+      ctx.fillStyle = '#F0DC00';
       ctx.font = '800 24px sans-serif';
       ctx.fillText('NIGHT AWARDS & HALL OF FAME', 120, 915);
 
@@ -232,18 +232,18 @@ export const RecapView: React.FC = () => {
 
       // Rollover Banner
       if (rolloverAmount > 0) {
-        ctx.fillStyle = 'rgba(233, 255, 50, 0.12)';
+        ctx.fillStyle = 'rgba(240, 220, 0, 0.12)';
         ctx.beginPath();
         ctx.roundRect(80, 1250, 920, 120, 24);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(233, 255, 50, 0.4)';
+        ctx.strokeStyle = 'rgba(240, 220, 0, 0.4)';
         ctx.stroke();
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
         ctx.font = '700 26px sans-serif';
         ctx.fillText(`ROLLED INTO ${associatedCrew?.name?.toUpperCase() || 'CREW'} TREASURY`, 120, 1320);
 
-        ctx.fillStyle = '#E9FF32';
+        ctx.fillStyle = '#F0DC00';
         ctx.font = '900 36px sans-serif';
         ctx.fillText(`+$${rolloverAmount.toFixed(2)}`, 820, 1322);
       }
@@ -264,7 +264,7 @@ export const RecapView: React.FC = () => {
         particleCount: 60,
         spread: 60,
         origin: { y: 0.6 },
-        colors: ['#E9FF32', '#10B981', '#FFFFFF'],
+        colors: ['#F0DC00', '#10B981', '#FFFFFF'],
       });
     } finally {
       setDownloading(false);
@@ -272,7 +272,7 @@ export const RecapView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-32 select-none">
+    <div className="min-h-screen bg-[#15140f] text-white pb-32 select-none">
       <TopNav title="EDITORIAL RECAP" />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
@@ -290,7 +290,7 @@ export const RecapView: React.FC = () => {
             >
               {/* Top Brand Banner */}
               <div className="flex items-center justify-between border-b border-white/20 pb-3 mb-6">
-                <span className="font-display font-black text-lg text-[#E9FF32] tracking-tighter">
+                <span className="bubble text-xl text-[#F0DC00] tracking-tight">
                   PARTYLOT
                 </span>
                 <span className="text-[11px] font-mono tracking-widest text-white/70 uppercase">
@@ -300,10 +300,10 @@ export const RecapView: React.FC = () => {
 
               {/* Headline Title */}
               <div className="mb-6">
-                <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[0.9] drop-shadow-lg">
+                <h1 className="bubble text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[0.9] drop-shadow-lg">
                   {party.title}
                 </h1>
-                <p className="font-display font-extrabold text-xs sm:text-sm text-[#E9FF32] tracking-widest uppercase mt-2">
+                <p className="font-display font-extrabold text-xs sm:text-sm text-[#F0DC00] tracking-widest uppercase mt-2">
                   {party.date} · {party.location}
                 </p>
               </div>
@@ -320,7 +320,7 @@ export const RecapView: React.FC = () => {
                 </div>
 
                 <div className="p-3.5 rounded-2xl liquid-glass-card border border-white/15">
-                  <span className="font-display font-black text-3xl sm:text-4xl text-[#E9FF32] block leading-none">
+                  <span className="font-display font-black text-3xl sm:text-4xl text-[#F0DC00] block leading-none">
                     ${totalSharedDamage.toFixed(0)}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-white/50">
@@ -349,13 +349,13 @@ export const RecapView: React.FC = () => {
 
               {/* Hall of Fame Awards */}
               <div className="p-4 rounded-2xl liquid-glass-modal border border-white/20 mb-6 space-y-2.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#E9FF32] block">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F0DC00] block">
                   NIGHT AWARDS
                 </span>
 
                 <div className="flex items-center justify-between text-xs font-bold border-b border-white/10 pb-2">
                   <span className="text-white/60 flex items-center gap-1.5">
-                    <Award className="w-3.5 h-3.5 text-[#E9FF32]" />
+                    <Award className="w-3.5 h-3.5 text-[#F0DC00]" />
                     MVP OF THE NIGHT
                   </span>
                   <span className="text-white font-display font-black">{mvpMember?.name || 'Ana'}</span>
@@ -380,11 +380,11 @@ export const RecapView: React.FC = () => {
 
               {/* Rollover Balance Card */}
               {rolloverAmount > 0 && (
-                <div className="p-3.5 rounded-2xl bg-[#E9FF32]/10 border border-[#E9FF32]/30 flex items-center justify-between">
+                <div className="p-3.5 rounded-2xl bg-[#F0DC00]/10 border border-[#F0DC00]/30 flex items-center justify-between">
                   <span className="text-xs font-bold text-white/80">
                     ROLLED INTO {associatedCrew?.name?.toUpperCase() || 'NEXT PARTY'}
                   </span>
-                  <span className="font-display font-black text-lg text-[#E9FF32]">
+                  <span className="font-display font-black text-lg text-[#F0DC00]">
                     +${rolloverAmount.toFixed(2)}
                   </span>
                 </div>
@@ -421,7 +421,7 @@ export const RecapView: React.FC = () => {
             <GlassPanel level={2} className="p-6 border border-white/15 shadow-xl">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-[#E9FF32]" />
+                  <ShieldCheck className="w-5 h-5 text-[#F0DC00]" />
                   <span className="text-xs uppercase font-extrabold tracking-wider text-white">
                     VERIFIED SOCIAL GRAPH
                   </span>
@@ -440,7 +440,7 @@ export const RecapView: React.FC = () => {
 
               <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-white/10 text-center mb-4">
                 <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                  <Users className="w-4 h-4 text-[#E9FF32] mx-auto mb-1" />
+                  <Users className="w-4 h-4 text-[#F0DC00] mx-auto mb-1" />
                   <span className="font-display font-black text-base text-white block">{attendeesCount}</span>
                   <span className="text-[9px] uppercase text-white/50">Attested</span>
                 </div>
@@ -472,7 +472,7 @@ export const RecapView: React.FC = () => {
                 <button
                   onClick={handleAttestGathering}
                   disabled={isAttesting}
-                  className="w-full py-2.5 px-3 rounded-xl bg-[#E9FF32] hover:brightness-105 active:scale-95 text-black text-xs font-display font-bold flex items-center justify-center gap-2 transition-all shadow-md"
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#F0DC00] hover:brightness-105 active:scale-95 text-black text-xs font-display font-bold flex items-center justify-center gap-2 transition-all shadow-md"
                 >
                   <ShieldCheck className="w-4 h-4 text-black stroke-[2.5]" />
                   <span>{isAttesting ? 'Attesting on Monad...' : '⚡ Attest Co-Presence on Monad SocialGraph'}</span>
@@ -486,7 +486,7 @@ export const RecapView: React.FC = () => {
                 <span className="text-xs font-extrabold uppercase tracking-wider text-white/60">
                   VERIFIED ATTENDEES ({party.members.length})
                 </span>
-                <span className="text-[11px] text-[#E9FF32] font-semibold">Social badges minted</span>
+                <span className="text-[11px] text-[#F0DC00] font-semibold">Social badges minted</span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -503,7 +503,7 @@ export const RecapView: React.FC = () => {
                       <span className="text-xs font-bold text-white truncate block">
                         {member.name}
                       </span>
-                      <span className="text-[9px] text-[#E9FF32] font-mono">
+                      <span className="text-[9px] text-[#F0DC00] font-mono">
                         {member.role === 'host' ? 'Host' : 'Verified'}
                       </span>
                     </div>

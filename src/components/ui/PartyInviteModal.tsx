@@ -67,13 +67,13 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
       const y = offsetY + startY * cellSize;
       const outerSize = 7 * cellSize;
 
-      ctx.fillStyle = '#E9FF32';
+      ctx.fillStyle = '#F0DC00';
       ctx.fillRect(x, y, outerSize, outerSize);
 
       ctx.fillStyle = '#0F0F0F';
       ctx.fillRect(x + cellSize, y + cellSize, 5 * cellSize, 5 * cellSize);
 
-      ctx.fillStyle = '#E9FF32';
+      ctx.fillStyle = '#F0DC00';
       ctx.fillRect(x + 2 * cellSize, y + 2 * cellSize, 3 * cellSize, 3 * cellSize);
     };
 
@@ -113,12 +113,12 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
     const badgeX = offsetX + 10 * cellSize;
     const badgeY = offsetY + 10 * cellSize;
 
-    ctx.fillStyle = '#050505';
+    ctx.fillStyle = '#15140f';
     ctx.beginPath();
     ctx.roundRect(badgeX - 2, badgeY - 2, badgeSize + 4, badgeSize + 4, 8);
     ctx.fill();
 
-    ctx.fillStyle = '#E9FF32';
+    ctx.fillStyle = '#F0DC00';
     ctx.beginPath();
     ctx.roundRect(badgeX, badgeY, badgeSize, badgeSize, 6);
     ctx.fill();
@@ -139,7 +139,7 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
       particleCount: 25,
       spread: 45,
       origin: { y: 0.6 },
-      colors: ['#E9FF32', '#FFFFFF'],
+      colors: ['#F0DC00', '#FFFFFF'],
     });
     setTimeout(() => setCopiedCode(false), 2000);
   };
@@ -151,7 +151,7 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
       particleCount: 35,
       spread: 55,
       origin: { y: 0.6 },
-      colors: ['#E9FF32', '#10B981'],
+      colors: ['#F0DC00', '#10B981'],
     });
     setTimeout(() => setCopiedLink(false), 2000);
   };
@@ -201,7 +201,7 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
           className="relative w-full max-w-md rounded-[32px] liquid-glass-card border border-white/20 p-6 shadow-2xl text-white z-10 overflow-hidden"
         >
           {/* Ambient Glow */}
-          <div className="absolute -top-20 -right-20 w-44 h-44 bg-[#E9FF32]/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-20 -right-20 w-44 h-44 bg-[#F0DC00]/15 rounded-full blur-3xl pointer-events-none" />
 
           {/* Close Button */}
           <button
@@ -214,7 +214,7 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
 
           {/* Header */}
           <div className="text-center mb-5">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9FF32]/10 border border-[#E9FF32]/30 text-[#E9FF32] text-[11px] font-extrabold uppercase tracking-widest mb-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F0DC00]/10 border border-[#F0DC00]/30 text-[#F0DC00] text-[11px] font-extrabold uppercase tracking-widest mb-2">
               <Sparkles className="w-3.5 h-3.5" />
               PRIVATE PARTY INVITATION
             </span>
@@ -245,7 +245,7 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
               <span className="text-[10px] uppercase font-bold text-white/40 block">
                 Verbal Passkey
               </span>
-              <span className="font-mono font-black text-3xl text-[#E9FF32] tracking-widest block">
+              <span className="font-mono font-black text-3xl text-[#F0DC00] tracking-widest block">
                 {party.code}
               </span>
             </div>

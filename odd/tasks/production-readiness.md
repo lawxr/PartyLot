@@ -29,7 +29,7 @@ Audit complete: synthetic transaction receipts, permissive RLS, insecure invite 
 
 PR-01 implementation is present but remains unchecked pending required verification. Financial action UI entry points are disabled and explain that payments are unavailable; store mutations for contributions, spending, rollover, settlement, and payouts are inert; treasury service calls now fail with a typed unavailable error instead of fabricating receipts. Settlement, game/task rewards, and the shared-experience tip control no longer report payments as successful. The tip control is disabled and no longer closes the modal or triggers confetti.
 
-Implementation commits: `d1b7267` (`fix(finance): disable unconfirmed payment actions`), `8d33b69` (`refactor(finance): retain pot total helpers`), and `0b9f91b` (`fix(finance): return typed unavailable action results`).
+Implementation commits: `d1b7267` (`fix(finance): disable unconfirmed payment actions`), `8d33b69` (`refactor(finance): retain pot total helpers`), `0b9f91b` (`fix(finance): return typed unavailable action results`), and `9755905` (`fix(finance): disable shared experience tip`).
 
 Checks observed:
 - `pnpm lint` — passed.

@@ -263,7 +263,7 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
 
           <div className="mt-3 text-center">
             <span className="text-[10px] font-mono text-white/40">
-              Audited via Monad Experience Graph · Zero Platform Follows
+              Conexión directa entre amigos · Privacidad garantizada
             </span>
           </div>
         </motion.div>

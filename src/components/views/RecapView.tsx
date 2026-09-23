@@ -162,7 +162,7 @@ export const RecapView: React.FC = () => {
 
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.font = '700 24px monospace';
-      ctx.fillText('OFFICIAL EVENT DOSSIER · MONAD TESTNET', 80, 165);
+      ctx.fillText('OFFICIAL EVENT DOSSIER', 80, 165);
 
       // Border line
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
@@ -251,7 +251,7 @@ export const RecapView: React.FC = () => {
       // Footer
       ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       ctx.font = '600 22px monospace';
-      ctx.fillText('PIMLICO ERC-4337 SPONSORED · 0 GAS · PARTYLOT.APP', 80, 1800);
+      ctx.fillText('THE NIGHT BELONGS TO THE GROUP · PARTYLOT', 80, 1800);
 
       // Trigger download
       const dataUrl = canvas.toDataURL('image/png');
@@ -432,27 +432,27 @@ export const RecapView: React.FC = () => {
               </div>
 
               <h3 className="font-display font-black text-2xl text-white tracking-tight mb-2">
-                Night Dossier & Proof of Presence
+                Dossier de la Noche y Recuerdos
               </h3>
               <p className="text-xs sm:text-sm text-white/70 leading-relaxed mb-4">
-                Attendance and shared treasury liquidation for <span className="text-white font-semibold">{party.title}</span> were signed via EIP-712 permits and attested on Monad.
+                La asistencia, minijuegos y liquidación de gastos de <span className="text-white font-semibold">{party.title}</span> quedaron certificados permanentemente para todo el grupo.
               </p>
 
               <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-white/10 text-center mb-4">
                 <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
                   <Users className="w-4 h-4 text-[#F0DC00] mx-auto mb-1" />
                   <span className="font-display font-black text-base text-white block">{attendeesCount}</span>
-                  <span className="text-[9px] uppercase text-white/50">Attested</span>
+                  <span className="text-[9px] uppercase text-white/50">Asistentes</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
                   <Receipt className="w-4 h-4 text-rose-400 mx-auto mb-1" />
                   <span className="font-display font-black text-base text-white block">${totalSharedDamage.toFixed(0)}</span>
-                  <span className="text-[9px] uppercase text-white/50">Settled</span>
+                  <span className="text-[9px] uppercase text-white/50">Saldado</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
                   <Gamepad2 className="w-4 h-4 text-purple-400 mx-auto mb-1" />
                   <span className="font-display font-black text-base text-white block">{minigamesCount}</span>
-                  <span className="text-[9px] uppercase text-white/50">Games</span>
+                  <span className="text-[9px] uppercase text-white/50">Juegos</span>
                 </div>
               </div>
 
@@ -465,17 +465,17 @@ export const RecapView: React.FC = () => {
                   className="w-full py-2.5 px-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-bold flex items-center justify-center gap-2 hover:bg-emerald-500/25 transition-all"
                 >
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>Attested on SocialGraph [Tx: {attestationTxHash.slice(0, 8)}...]</span>
+                  <span>Certificado en el Historial [Verificado]</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               ) : (
                 <button
                   onClick={handleAttestGathering}
                   disabled={isAttesting}
-                  className="w-full py-2.5 px-3 rounded-xl bg-[#F0DC00] hover:brightness-105 active:scale-95 text-black text-xs font-display font-bold flex items-center justify-center gap-2 transition-all shadow-md"
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#F0DC00] hover:brightness-105 active:scale-95 text-black text-xs font-display font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
                 >
                   <ShieldCheck className="w-4 h-4 text-black stroke-[2.5]" />
-                  <span>{isAttesting ? 'Attesting on Monad...' : '⚡ Attest Co-Presence on Monad SocialGraph'}</span>
+                  <span>{isAttesting ? 'Certificando noche...' : '⚡ Certificar Noche en el Historial del Grupo'}</span>
                 </button>
               )}
             </GlassPanel>

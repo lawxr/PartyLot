@@ -162,14 +162,14 @@ export const SplitView: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
-                AUTOMATIC LIQUIDATION
+                LIQUIDACIÓN DE CUENTAS
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <ShieldCheck className="w-3 h-3" />
-                Monad 0-Gas
+                Cálculo Exacto
               </span>
             </div>
-            <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight leading-none">
+            <h2 className="bubble text-4xl sm:text-6xl text-white tracking-tight leading-none">
               SPLIT THE DAMAGE
             </h2>
           </div>
@@ -298,14 +298,14 @@ export const SplitView: React.FC = () => {
                   SETTLEMENT ENGINE
                 </span>
                 <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  ERC-4337 Sponsored
+                  Sin Comisiones
                 </span>
               </div>
               <h4 className="font-display font-black text-xl text-white mb-2">
                 Optimal Debt Routing
               </h4>
               <p className="text-xs text-white/70 leading-relaxed mb-4">
-                Reduces total transfers to the mathematical minimum and settles natively on Monad with 0 gas via Pimlico Paymaster.
+                Reduce las transferencias entre amigos al mínimo matemático para que nadie pague de más.
               </p>
               <GlassButton
                 variant="glass"
@@ -579,17 +579,17 @@ export const SplitView: React.FC = () => {
                   SETTLEMENT COMPLETE
                 </span>
                 <h3 className="font-display font-black text-2xl text-white">
-                  Debts Liquidated Onchain
+                  Cuentas Liquidadas
                 </h3>
                 <p className="text-xs text-white/70 max-w-sm mx-auto mt-1">
-                  Settled via Monad Testnet with sponsored zero gas via Pimlico Paymaster.
+                  Todos los balances entre los miembros del grupo han quedado saldados.
                 </p>
               </div>
 
               {/* TX Card */}
               <div className="p-3.5 rounded-2xl liquid-glass-card border border-white/15 text-left space-y-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/50 block">
-                  Monad Transaction Hash
+                  Comprobante de Liquidación
                 </span>
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-xs text-[#F0DC00] truncate">
@@ -615,7 +615,7 @@ export const SplitView: React.FC = () => {
                     setSettlementSuccessTx(null);
                   }}
                 >
-                  Done
+                  Listo
                 </GlassButton>
               </div>
             </div>
@@ -624,15 +624,15 @@ export const SplitView: React.FC = () => {
               <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-bold text-white">Sponsored Gas Active</span>
+                  <span className="text-xs font-bold text-white">Liquidación Inteligente</span>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
-                  Pimlico · 0 Gas Cost
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                  Sin Comisiones
                 </span>
               </div>
 
               <p className="text-xs text-white/70">
-                Based on all party bills, here is the minimum set of transactions calculated by our greedy algorithm:
+                Basado en todos los gastos de la fiesta, este es el número mínimo de pagos para cuadrar cuentas:
               </p>
 
               <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
@@ -655,7 +655,7 @@ export const SplitView: React.FC = () => {
                   ))
                 ) : (
                   <p className="text-xs text-[#F0DC00] font-semibold text-center py-4">
-                    ✨ Everyone is completely squared up! No debts pending.
+                    ✨ ¡Todos están a mano! No hay deudas pendientes.
                   </p>
                 )}
               </div>
@@ -669,7 +669,7 @@ export const SplitView: React.FC = () => {
                   onClick={handleSettleConfirm}
                   icon={isSettling ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Sparkles className="w-4 h-4 text-black" />}
                 >
-                  {isSettling ? 'Settling on Monad...' : 'Execute 0-Gas Settlement'}
+                  {isSettling ? 'Liquidando cuentas...' : 'Saldar todas las cuentas'}
                 </GlassButton>
               </div>
             </>

@@ -84,13 +84,13 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
                 Account Ready
               </h4>
               <p className="text-xs text-white/60 mt-1">
-                Embedded passkey created silently. Gas is sponsored by Pimlico.
+                Tu perfil está listo para la fiesta.
               </p>
             </motion.div>
           ) : (
             <motion.div key="options" className="space-y-3">
               <p className="text-xs text-white/70">
-                Continue seamlessly. No seed phrases, no gas tokens, no crypto popups.
+                Entra al instante con tu cuenta preferida. Sin contraseñas ni configuraciones difíciles.
               </p>
 
               {/* Apple Login */}
@@ -101,7 +101,7 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
               >
                 <Apple className="w-4 h-4 fill-black shrink-0" />
                 <span className="truncate">
-                  {loadingMethod === 'apple' ? 'Creating Passkey...' : 'Continue with Apple'}
+                  {loadingMethod === 'apple' ? 'Accediendo...' : 'Continuar con Apple'}
                 </span>
               </button>
 
@@ -113,7 +113,7 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
               >
                 <span className="font-black text-[#F0DC00] shrink-0">G</span>
                 <span className="truncate">
-                  {loadingMethod === 'google' ? 'Creating Passkey...' : 'Continue with Google'}
+                  {loadingMethod === 'google' ? 'Accediendo...' : 'Continuar con Google'}
                 </span>
               </button>
 
@@ -124,7 +124,7 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
                 className="w-full min-h-[44px] py-2.5 px-4 rounded-2xl liquid-glass-card text-white/80 font-medium text-xs flex items-center justify-center gap-2 hover:text-white transition-colors"
               >
                 <Mail className="w-3.5 h-3.5 text-white/60 shrink-0" />
-                <span className="truncate">Continue with Email or Phone</span>
+                <span className="truncate">Continuar con Email o Celular</span>
               </button>
 
               {/* WalletConnect / External Wallet */}
@@ -137,12 +137,12 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
                 className="w-full min-h-[44px] py-2.5 px-4 rounded-2xl liquid-glass-card text-white/80 font-medium text-xs flex items-center justify-center gap-2 hover:text-[#F0DC00] hover:border-[#F0DC00]/40 transition-all border border-white/10"
               >
                 <Wallet className="w-3.5 h-3.5 text-[#F0DC00] shrink-0" />
-                <span className="truncate">Connect with WalletConnect / Web3</span>
+                <span className="truncate">Conectar billetera externa / Web3</span>
               </button>
 
               <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-white/40 font-mono text-center">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#F0DC00] shrink-0" />
-                <span>PRIVY EMBEDDED SMART WALLET · MONAD TESTNET</span>
+                <span>ACCESO SEGURO Y PRIVADO · PARTYLOT</span>
               </div>
             </motion.div>
           )}

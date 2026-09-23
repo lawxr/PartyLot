@@ -330,8 +330,8 @@ export const JoinPartyView: React.FC = () => {
 
       {/* Bottom Security Assurance */}
       <div className="w-full max-w-4xl mx-auto pt-4 text-center shrink-0">
-        <p className="text-[11px] font-mono text-white/40">
-          SPONSORED BY PIMLICO PAYMASTER · ZERO GAS REQUIRED
+        <p className="text-[11px] font-medium text-white/50">
+          ACCESO PRIVADO MEDIANTE CÓDIGO DE INVITACIÓN
         </p>
       </div>
 

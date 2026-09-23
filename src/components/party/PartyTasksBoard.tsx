@@ -206,7 +206,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
                     {isVerified && (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
                         <ShieldCheck className="w-2.5 h-2.5" />
-                        Paid via Monad (0-Gas)
+                        Recompensa Pagada
                       </span>
                     )}
                   </div>

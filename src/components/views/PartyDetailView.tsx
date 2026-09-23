@@ -143,7 +143,7 @@ export const PartyDetailView: React.FC = () => {
               </button>
               <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-mono text-white/70 border border-white/10">
                 <ShieldCheck className="w-3 h-3 text-[#F0DC00]" />
-                MONAD VERIFIED
+                EVENTO PRIVADO
               </span>
             </div>
 

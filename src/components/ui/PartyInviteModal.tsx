@@ -315,7 +315,7 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
           {/* Security & Verification note */}
           <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-center gap-1.5 text-[11px] font-mono text-white/40">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Server-side permit mapping · Monad Testnet</span>
+            <span>ENLACE PRIVADO Y CIFRADO · ACCESO EXCLUSIVO</span>
           </div>
         </motion.div>
       </div>

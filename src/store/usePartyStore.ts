@@ -543,7 +543,7 @@ export const usePartyStore = create<PartyStoreState>()(
             id: `act-${Date.now()}`,
             partyId,
             type: 'expense',
-            text: `All expenses settled on Monad for ${party?.title || 'the party'}! (0 Gas via Pimlico Paymaster) 🎉${txHash ? ` [tx: ${txHash.slice(0, 10)}...]` : ''}`,
+            text: `¡Todos los gastos saldados para ${party?.title || 'la fiesta'}! 🎉${txHash ? ` [ref: ${txHash.slice(0, 10)}...]` : ''}`,
             time: 'Just now',
             avatar: state.currentUser.avatar,
           };
@@ -841,7 +841,7 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId: party.id,
           type: 'pot',
-          text: `Bounty paid: $${reward.toFixed(2)} to ${payeeName} for "${task.title}" (Sponsored 0-Gas) 💰✨`,
+          text: `Recompensa enviada: $${reward.toFixed(2)} a ${payeeName} por "${task.title}" 💰✨`,
           time: 'Just now',
           avatar: payeeAvatar,
         };

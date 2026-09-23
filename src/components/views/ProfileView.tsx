@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RotateCcw, ShieldCheck, Copy, Check, LogOut, Sparkles } from 'lucide-react';
+import { RotateCcw, ShieldCheck, Copy, Check, LogOut } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
-import { getEnvioSyncStatus } from '@/lib/web3/metropolis';
 import { usePrivySync } from '@/hooks/usePrivySync';
 import { SharedExperienceConnection } from '@/types';
 
@@ -16,7 +15,6 @@ export const ProfileView: React.FC = () => {
 
   const smartAccount = getOrCreateSmartAccount();
   const activeAddress = currentUser.walletAddress || smartAccount.address;
-  const envioStatus = getEnvioSyncStatus();
 
   const sharedConnections: SharedExperienceConnection[] = [
     {
@@ -99,24 +97,38 @@ export const ProfileView: React.FC = () => {
     <div className="min-h-screen bg-[#15140f] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
       {/* Profile Header */}
       <header className="flex flex-col items-center text-center my-6 sm:my-8 border-b border-white/10 pb-6">
-        <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#F0DC00]/50 p-1 liquid-glass-card shadow-2xl mb-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={currentUser.avatar}
-            alt={currentUser.name}
-            className="w-full h-full object-cover rounded-full"
-          />
-          <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#F0DC00] text-black flex items-center justify-center shadow-lg border border-black">
-            <Sparkles className="w-4 h-4 stroke-[2.5]" />
+        <div className="relative mb-3">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#F0DC00]/60 p-1 liquid-glass-card shadow-2xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={currentUser.avatar}
+              alt={currentUser.name}
+              className="w-full h-full object-cover rounded-full"
+            />
           </div>
+          {/* Real online green indicator dot */}
+          <span
+            className="absolute bottom-1 right-1 flex items-center justify-center pointer-events-none"
+            title="En línea"
+            aria-label="En línea"
+          >
+            <span className="animate-ping absolute inline-flex h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-full bg-emerald-400 opacity-70" />
+            <span className="relative inline-flex w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-emerald-400 border-[2.5px] border-[#15140f] shadow-md ring-1 ring-emerald-400/40" />
+          </span>
         </div>
 
         <h2 className="bubble text-4xl sm:text-6xl text-white tracking-tight drop-shadow-lg">
           {currentUser.name}
         </h2>
-        <span className="text-xs sm:text-sm font-mono text-[#F0DC00] font-semibold mt-1">
-          {currentUser.handle} · {currentUser.email || 'MEDELLÍN'} · {currentUser.isPrivyAuthenticated ? 'PRIVY EMBEDDED' : 'LOCAL PASSKEY'}
+        <span className="text-xs sm:text-sm font-semibold text-white/70 mt-1">
+          @{currentUser.handle} · Miami, FL
         </span>
+        <p className="text-xs sm:text-sm text-white/75 max-w-sm mt-2 leading-relaxed">
+          Amante de las rooftop parties y las buenas playlists. Siempre organizando el próximo golden hour.
+        </p>
+        <button className="mt-3.5 px-6 py-2 rounded-full pill-outline font-display font-bold text-xs uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 cursor-pointer">
+          Editar perfil
+        </button>
       </header>
 
       {/* 4 Social Metrics (Shared-Experience Graph, No follower counts) */}
@@ -166,12 +178,12 @@ export const ProfileView: React.FC = () => {
             <div className="flex items-center justify-between mb-3 px-1">
               <div>
                 <h3 className="font-display font-extrabold text-base sm:text-lg tracking-wide uppercase text-white/90">
-                  SHARED-EXPERIENCE GRAPH
+                  AMIGOS DE FIESTA
                 </h3>
-                <p className="text-[11px] text-white/50">Verified co-presence · No vanity followers</p>
+                <p className="text-[11px] text-white/50">Conexiones reales en persona</p>
               </div>
               <span className="text-xs text-[#F0DC00] font-semibold bg-[#F0DC00]/10 border border-[#F0DC00]/20 px-2 py-0.5 rounded-full">
-                Onchain Matrix
+                Círculo cercano
               </span>
             </div>
 
@@ -334,24 +346,24 @@ export const ProfileView: React.FC = () => {
             </div>
           </section>
 
-          {/* Advanced: Monad Verification & Metropolis Stack Diagnostics */}
+          {/* Account & Security Card */}
           <section>
             <GlassPanel level={2} className="p-5 border border-white/15 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <ShieldCheck className="w-5 h-5 text-[#F0DC00]" />
                   <span className="font-display font-bold text-base text-white">
-                    Onchain Identity & Metropolis Stack
+                    Cuenta y Seguridad
                   </span>
                 </div>
-                <span className="text-xs font-mono text-[#F0DC00] font-semibold">
-                  ACTIVE
+                <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-0.5 rounded-full">
+                  Verificado
                 </span>
               </div>
 
               <div>
                 <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">
-                  COUNTERFACTUAL SMART ACCOUNT
+                  ID PRIVADO DE CUENTA
                 </span>
                 <div className="flex items-center justify-between mt-1.5 p-3 rounded-2xl bg-black/60 border border-white/10 font-mono text-xs">
                   <span className="text-[#F0DC00] truncate max-w-[340px]">
@@ -359,7 +371,7 @@ export const ProfileView: React.FC = () => {
                   </span>
                   <button
                     onClick={handleCopyAddress}
-                    className="text-white/60 hover:text-white p-1 ml-2 shrink-0"
+                    className="text-white/60 hover:text-white p-1 ml-2 shrink-0 cursor-pointer"
                     aria-label="Copy Address"
                   >
                     {copied ? <Check className="w-4 h-4 text-[#F0DC00]" /> : <Copy className="w-4 h-4" />}
@@ -369,20 +381,20 @@ export const ProfileView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/10 text-xs">
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">Gas Sponsorship</span>
-                  <span className="font-bold text-[#F0DC00]">Pimlico Paymaster (100%)</span>
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">Privacidad</span>
+                  <span className="font-bold text-white">Círculo cerrado</span>
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">RPC Provider</span>
-                  <span className="font-bold text-white">QuickNode Build Plan</span>
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">Pagos del Bote</span>
+                  <span className="font-bold text-[#F0DC00]">Automáticos</span>
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">Simulation Engine</span>
-                  <span className="font-bold text-white">Tenderly Pro</span>
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">Acceso</span>
+                  <span className="font-bold text-white">Sin contraseñas</span>
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">Indexer Pipeline</span>
-                  <span className="font-bold text-white">Envio HyperIndex ({envioStatus.indexerStatus})</span>
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">Sincronización</span>
+                  <span className="font-bold text-white">En vivo</span>
                 </div>
               </div>
             </GlassPanel>

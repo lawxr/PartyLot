@@ -169,14 +169,14 @@ export const PartyPotView: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
-                CREW TREASURY · ERC-4337
+                BOTE DEL GRUPO
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <ShieldCheck className="w-3 h-3" />
-                Monad 0-Gas
+                Activo
               </span>
             </div>
-            <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight leading-none">
+            <h2 className="bubble text-4xl sm:text-6xl text-white tracking-tight leading-none">
               PARTY POT
             </h2>
           </div>
@@ -233,15 +233,15 @@ export const PartyPotView: React.FC = () => {
 
               {/* Balance Overlay over sphere */}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="font-display font-black text-5xl sm:text-6xl text-white tracking-tight drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
+                <span className="bubble text-5xl sm:text-6xl text-white tracking-tight drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
                   ${party.potBalance.toFixed(2)}
                 </span>
                 <span className="text-xs font-bold text-white/80 mt-1 drop-shadow-md">
-                  Controlled by {party.members.length} members
+                  Controlado por {party.members.length} miembros
                 </span>
-                <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-mono text-[#F0DC00] border border-white/10">
+                <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-medium text-white/90 border border-white/10">
                   <ShieldCheck className="w-3 h-3 text-[#F0DC00]" />
-                  PIMLICO SPONSORED · 0 GAS
+                  BOTE SEGURO E INSTANTÁNEO
                 </span>
               </div>
             </div>
@@ -323,14 +323,14 @@ export const PartyPotView: React.FC = () => {
             {/* Social Stake Banner */}
             <div className="w-full p-4 rounded-3xl liquid-glass-card mt-3 text-left border border-white/10">
               <span className="text-[10px] uppercase font-bold text-[#F0DC00] tracking-wider block">
-                SOCIAL PARTICIPATION → ECONOMIC STAKE
+                BOTE COMPARTIDO DE FIESTA
               </span>
               <p className="text-xs text-white/80 mt-1 leading-relaxed">
-                Leftover pot automatically rolls over to the next gathering. Contributor prizes are audited on Monad.
+                El saldo no gastado se guarda para la próxima reunión o fiesta del grupo. Todos los movimientos quedan registrados transparentemente.
               </p>
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10 text-[11px] text-white/60">
                 <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
-                <span>Simulated via Tenderly Pro & Monad Testnet</span>
+                <span>Transparente · Sin comisiones ocultas</span>
               </div>
             </div>
           </div>
@@ -466,7 +466,7 @@ export const PartyPotView: React.FC = () => {
       >
         <form onSubmit={handleAddFunds} className="space-y-4">
           <p className="text-xs text-white/70">
-            Pool funds instantly for midnight food, drinks, and rides. All gas is 100% sponsored via Pimlico Paymaster.
+            Reúne fondos para bebidas, snacks, hielo y transporte del grupo. Pagos instantáneos y seguros.
           </p>
 
           <div>
@@ -512,7 +512,7 @@ export const PartyPotView: React.FC = () => {
               type="submit"
               disabled={isProcessing}
             >
-              {isProcessing ? 'Executing 0-Gas Deposit...' : `Contribute $${addAmount}`}
+              {isProcessing ? 'Añadiendo fondos...' : `Aportar $${addAmount}`}
             </GlassButton>
           </div>
         </form>

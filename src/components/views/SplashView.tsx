@@ -55,22 +55,9 @@ export const SplashView: React.FC = () => {
       <div className="bulb" style={{ left: '68%', top: '110px' }} />
       <div className="bulb" style={{ left: '88%', top: '94px' }} />
 
-      {/* Top Bar / Badge */}
-      <div className="relative z-10 px-5 sm:px-6 pt-5 safe-top flex items-center justify-between max-w-lg mx-auto w-full">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-card text-xs font-semibold text-white/90"
-        >
-          <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
-          <span>GOLDEN HOUR EDITION</span>
-        </motion.div>
-      </div>
-
       {/* Main Content Area */}
-      <div className="relative z-10 px-5 sm:px-6 pt-4 pb-8 sm:pb-10 safe-bottom flex flex-col items-center text-center max-w-md mx-auto w-full my-auto">
-        {/* Mini Stack of Preview Event Cards with Warm Glow */}
+      <div className="relative z-10 px-5 sm:px-6 pt-12 pb-8 sm:pb-10 safe-bottom flex flex-col items-center text-center max-w-md mx-auto w-full my-auto">
+        {/* Mini Stack of Preview Event Cards with Warm Photography */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -79,51 +66,63 @@ export const SplashView: React.FC = () => {
         >
           {/* Left card */}
           <div
-            className="absolute left-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform -rotate-6 shadow-xl border border-white/20"
-            style={{
-              background: 'radial-gradient(120% 90% at 30% 6%, #8a6a3a 0%, #3a2a17 45%, #0c0b0a 100%)',
-            }}
+            className="absolute left-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform -rotate-6 shadow-xl border border-white/20 overflow-hidden"
           >
-            <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 text-[9px] font-bold text-[#F0DC00]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=400&q=80"
+              alt="New York Jam"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0c0b0a] via-[#0c0b0a]/50 to-transparent" />
+            <span className="relative z-10 self-end px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] mb-auto">
               48d
             </span>
-            <b className="font-display text-xs text-white uppercase tracking-tight">New York Jam</b>
-            <small className="text-[10px] text-white/70 flex items-center gap-1 mt-0.5">
+            <b className="relative z-10 font-display text-xs text-white uppercase tracking-tight drop-shadow">New York Jam</b>
+            <small className="relative z-10 text-[10px] text-white/80 flex items-center gap-1 mt-0.5">
               <MapPin className="w-2.5 h-2.5 text-[#F0DC00]" /> Miami
             </small>
           </div>
 
           {/* Right card */}
           <div
-            className="absolute right-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform rotate-6 shadow-xl border border-white/20"
-            style={{
-              background: 'radial-gradient(120% 90% at 70% 0%, #3a2a4a 0%, #211830 40%, #100c14 100%)',
-            }}
+            className="absolute right-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform rotate-6 shadow-xl border border-white/20 overflow-hidden"
           >
-            <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 text-[9px] font-bold text-[#F0DC00]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=400&q=80"
+              alt="Rooftop Party"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0c0b0a] via-[#0c0b0a]/50 to-transparent" />
+            <span className="relative z-10 self-end px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] mb-auto">
               27d
             </span>
-            <b className="font-display text-xs text-white uppercase tracking-tight">Rooftop Party</b>
-            <small className="text-[10px] text-white/70 flex items-center gap-1 mt-0.5">
+            <b className="relative z-10 font-display text-xs text-white uppercase tracking-tight drop-shadow">Rooftop Party</b>
+            <small className="relative z-10 text-[10px] text-white/80 flex items-center gap-1 mt-0.5">
               <MapPin className="w-2.5 h-2.5 text-[#F0DC00]" /> Jersey
             </small>
           </div>
 
           {/* Center card */}
           <div
-            className="relative z-10 w-[190px] h-[160px] rounded-2xl liquid-glass-card p-3.5 flex flex-col justify-end shadow-2xl border border-white/30 transform hover:scale-105 transition-transform"
-            style={{
-              background: 'radial-gradient(120% 90% at 50% 10%, #f0c27a 0%, #8a5a2a 45%, #241a12 90%)',
-            }}
+            className="relative z-10 w-[190px] h-[160px] rounded-2xl liquid-glass-card p-3.5 flex flex-col justify-end shadow-2xl border border-white/30 transform hover:scale-105 transition-transform overflow-hidden"
           >
-            <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/70 text-[9px] font-bold text-[#F0DC00] flex items-center gap-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=600&q=80"
+              alt="Cocktails Night"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0c0b0a] via-[#0c0b0a]/40 to-transparent" />
+            <span className="relative z-10 self-end px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] flex items-center gap-1 mb-auto">
               <Sparkles className="w-2.5 h-2.5" /> 2d
             </span>
-            <b className="font-display text-sm text-white uppercase tracking-tight">Cocktails Night</b>
-            <small className="text-[10px] text-white/80 flex items-center gap-1 mt-1">
+            <b className="relative z-10 font-display text-sm text-white uppercase tracking-tight drop-shadow">Cocktails Night</b>
+            <small className="relative z-10 text-[10px] text-white/90 flex items-center gap-1 mt-1">
               <Clock className="w-2.5 h-2.5 text-[#F0DC00]" /> 3 jul · New York
             </small>
-            <div className="flex -space-x-1.5 mt-2">
+            <div className="relative z-10 flex -space-x-1.5 mt-2">
               <span className="w-4 h-4 rounded-full bg-[#f0dc00] border border-black/40" />
               <span className="w-4 h-4 rounded-full bg-[#ff8fb1] border border-black/40" />
               <span className="w-4 h-4 rounded-full bg-[#8fd1ff] border border-black/40" />

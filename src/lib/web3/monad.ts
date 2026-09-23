@@ -107,6 +107,7 @@ export async function commitSettlementBatch(
   partyId: string,
   settlementsCount: number
 ): Promise<{ success: boolean; batchId: string; txHash: string; explorerUrl: string }> {
+  void settlementsCount;
   await new Promise(resolve => setTimeout(resolve, 350));
 
   const txHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;

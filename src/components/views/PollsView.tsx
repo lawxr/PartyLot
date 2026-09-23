@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, BarChart2, Check, Sparkles } from 'lucide-react';
+import { Plus, Check } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { TopNav } from '@/components/navigation/TopNav';
 import { GlassPanel } from '@/components/ui/GlassPanel';

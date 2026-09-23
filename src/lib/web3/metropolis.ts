@@ -35,6 +35,7 @@ export async function simulateTreasuryCall(
   methodName: string,
   params: Record<string, unknown>
 ): Promise<TenderlySimulationResult> {
+  void params;
   // Simulate Tenderly RPC call latency (~150ms)
   await new Promise((resolve) => setTimeout(resolve, 150));
 

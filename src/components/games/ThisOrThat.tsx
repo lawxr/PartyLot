@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
 import confetti from 'canvas-confetti';

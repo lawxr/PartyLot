@@ -51,6 +51,8 @@ export async function executeSponsoredUserOp(
   accountAddress: string,
   calls: { to: string; value: bigint | number; data?: string; label?: string }[]
 ): Promise<UserOperationReceipt> {
+  void accountAddress;
+  void calls;
   // Simulate Monad high-speed consensus (~400ms)
   await new Promise((resolve) => setTimeout(resolve, 450));
 

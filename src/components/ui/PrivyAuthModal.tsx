@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ShieldCheck, Mail, Apple, CheckCircle2, Wallet } from 'lucide-react';
+import { ShieldCheck, Mail, Apple, CheckCircle2, Wallet } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 import { usePrivy } from '@privy-io/react-auth';

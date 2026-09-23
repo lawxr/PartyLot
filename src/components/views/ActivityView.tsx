@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { usePartyStore } from '@/store/usePartyStore';
-import { Bell, Sparkles, DollarSign, Vote, Gamepad2, UserPlus, Filter, Flame } from 'lucide-react';
+import { Bell, Sparkles, DollarSign, Vote, Gamepad2, UserPlus, Flame } from 'lucide-react';
 
 export const ActivityView: React.FC = () => {
   const { activities, parties, selectParty, crews } = usePartyStore();

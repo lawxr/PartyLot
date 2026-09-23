@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Plus, MapPin, Calendar, Clock, Sparkles } from 'lucide-react';
+import { Plus, MapPin, Clock } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { AvatarStack } from '@/components/ui/AvatarStack';
 import { GlassPanel } from '@/components/ui/GlassPanel';

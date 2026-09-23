@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, Share2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Share2 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { formatPartyInviteText } from '@/services/party';
 

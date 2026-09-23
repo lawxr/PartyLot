@@ -1,4 +1,4 @@
-import { Party, Member } from '@/types';
+import { Party } from '@/types';
 
 /**
  * Generates an uppercase 4-character invite code (e.g. 8F4K)

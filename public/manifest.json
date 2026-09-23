@@ -1,0 +1,17 @@
+{
+  "name": "Partylot",
+  "short_name": "Partylot",
+  "description": "Private social gatherings, games, shared party pot, and split bills on Monad.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#15140f",
+  "theme_color": "#15140f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

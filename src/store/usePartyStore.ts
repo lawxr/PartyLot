@@ -233,15 +233,31 @@ export const usePartyStore = create<PartyStoreState>()(
         }));
       },
 
+      selectParty: (partyId) => {
+        set((state) => ({
+          currentPartyId: partyId,
+          previousView:
+            state.currentView === 'join-party' || state.currentView === 'create-party'
+              ? 'home'
+              : state.currentView,
+          currentView: 'party-detail',
+        }));
+      },
+
       goBack: () => {
         set((state) => {
-          if (state.previousView) {
+          if (
+            state.previousView &&
+            state.previousView !== 'join-party' &&
+            state.previousView !== 'create-party' &&
+            state.previousView !== 'splash'
+          ) {
             return {
               currentView: state.previousView,
               previousView: null,
             };
           }
-          return { currentView: 'home' };
+          return { currentView: 'home', previousView: null };
         });
       },
 
@@ -250,14 +266,6 @@ export const usePartyStore = create<PartyStoreState>()(
           activeTab: tab,
           currentView: 'home',
         });
-      },
-
-      selectParty: (partyId) => {
-        set((state) => ({
-          currentPartyId: partyId,
-          previousView: state.currentView,
-          currentView: 'party-detail',
-        }));
       },
 
       selectCrew: (crewId) => {

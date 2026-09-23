@@ -31,6 +31,12 @@ export const JoinPartyView: React.FC = () => {
     hydrateFromSupabase().catch(() => {});
   }, [hydrateFromSupabase]);
 
+  useEffect(() => {
+    return () => {
+      setDigits(['', '', '', '']);
+    };
+  }, []);
+
   const fullCode = digits.join('').toUpperCase();
   const matchedParty = fullCode.length === 4 ? parties.find((p) => p.code.toUpperCase() === fullCode) || null : null;
 
@@ -51,9 +57,6 @@ export const JoinPartyView: React.FC = () => {
     async (party: Party) => {
       setIsJoining(true);
 
-      // Simulate smart account sponsored UserOp execution of joinPartyWithPermit()
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
       const res = joinPartyByCode(party.code);
       if (res.success) {
         confetti({
@@ -62,9 +65,8 @@ export const JoinPartyView: React.FC = () => {
           origin: { y: 0.6 },
           colors: ['#F0DC00', '#FFFFFF'],
         });
-        setTimeout(() => {
-          selectParty(party.id);
-        }, 500);
+        setDigits(['', '', '', '']);
+        selectParty(party.id);
       }
       setIsJoining(false);
     },

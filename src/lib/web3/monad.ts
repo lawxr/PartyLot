@@ -4,6 +4,35 @@
  * smart contract integration capabilities for Monad testnet / devnet.
  */
 
+import { defineChain } from 'viem';
+
+export const monadTestnet = defineChain({
+  id: 10143,
+  name: 'Monad Testnet',
+  nativeCurrency: {
+    name: 'Monad',
+    symbol: 'MON',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: [
+        process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz',
+      ],
+      webSocket: process.env.NEXT_PUBLIC_MONAD_WSS_URL
+        ? [process.env.NEXT_PUBLIC_MONAD_WSS_URL]
+        : undefined,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Monad Vision / Explorer',
+      url: 'https://testnet.monadexplorer.com',
+    },
+  },
+  testnet: true,
+});
+
 export interface MonadNetworkConfig {
   chainId: number;
   name: string;
@@ -15,7 +44,7 @@ export interface MonadNetworkConfig {
 export const MONAD_TESTNET_CONFIG: MonadNetworkConfig = {
   chainId: 10143,
   name: 'Monad Testnet',
-  rpcUrl: 'https://testnet-rpc.monad.xyz',
+  rpcUrl: process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz',
   currencySymbol: 'MON',
   blockExplorerUrl: 'https://testnet.monadexplorer.com',
 };

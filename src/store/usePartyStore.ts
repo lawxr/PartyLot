@@ -101,6 +101,10 @@ interface PartyStoreState {
   voteWhosMostLikely: (questionId: string, memberId: string) => void;
   voteThisOrThat: (questionId: string, choice: 'A' | 'B') => void;
 
+  // User & Auth Actions
+  updateUser: (updates: Partial<User>) => void;
+  resetUserSession: () => void;
+
   // Reset
   resetToDefaults: () => void;
 }
@@ -514,6 +518,22 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
+      updateUser: (updates) => {
+        set((state) => ({
+          currentUser: {
+            ...state.currentUser,
+            ...updates,
+          },
+        }));
+      },
+
+      resetUserSession: () => {
+        set({
+          currentUser: CURRENT_USER,
+          currentView: 'splash',
+        });
+      },
+
       resetToDefaults: () => {
         set({
           currentUser: CURRENT_USER,
@@ -532,6 +552,7 @@ export const usePartyStore = create<PartyStoreState>()(
     {
       name: 'partylot-storage-v1',
       partialize: (state) => ({
+        currentUser: state.currentUser,
         parties: state.parties,
         expenses: state.expenses,
         transactions: state.transactions,

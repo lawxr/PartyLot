@@ -2,19 +2,22 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Calendar, Gamepad2, Users, Receipt, RotateCcw, Award, ShieldCheck, Copy, Check, ChevronDown, ChevronUp, Server } from 'lucide-react';
+import { Sparkles, Calendar, Gamepad2, Users, Receipt, RotateCcw, Award, ShieldCheck, Copy, Check, ChevronDown, ChevronUp, Server, LogOut } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 import { METROPOLIS_CONFIG, getEnvioSyncStatus } from '@/lib/web3/metropolis';
+import { usePrivySync } from '@/hooks/usePrivySync';
 
 export const ProfileView: React.FC = () => {
   const { currentUser, resetToDefaults } = usePartyStore();
+  const { logout: privyLogout, authenticated } = usePrivySync();
   const [showWeb3Details, setShowWeb3Details] = useState(true);
   const [copied, setCopied] = useState(false);
 
   const smartAccount = getOrCreateSmartAccount();
+  const activeAddress = currentUser.walletAddress || smartAccount.address;
   const envioStatus = getEnvioSyncStatus();
 
   const closeCrew = [
@@ -45,7 +48,7 @@ export const ProfileView: React.FC = () => {
   ];
 
   const handleCopyAddress = async () => {
-    await navigator.clipboard.writeText(smartAccount.address);
+    await navigator.clipboard.writeText(activeAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -70,7 +73,7 @@ export const ProfileView: React.FC = () => {
           {currentUser.name}
         </h2>
         <span className="text-xs sm:text-sm font-mono text-[#E9FF32] font-semibold mt-1">
-          {currentUser.handle} · MEDELLÍN · PRIVY VERIFIED
+          {currentUser.handle} · {currentUser.email || 'MEDELLÍN'} · {currentUser.isPrivyAuthenticated ? 'PRIVY EMBEDDED' : 'LOCAL PASSKEY'}
         </span>
       </header>
 
@@ -156,8 +159,8 @@ export const ProfileView: React.FC = () => {
             </div>
           </section>
 
-          {/* Reset Demo Data Button */}
-          <div className="pt-2">
+          {/* Action Buttons: Reset Demo & Log Out */}
+          <div className="pt-2 space-y-2.5">
             <button
               onClick={() => {
                 resetToDefaults();
@@ -167,6 +170,14 @@ export const ProfileView: React.FC = () => {
             >
               <RotateCcw className="w-4 h-4" />
               <span>Reset Local Demo Data</span>
+            </button>
+
+            <button
+              onClick={privyLogout}
+              className="w-full text-xs text-red-400 hover:text-red-300 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl liquid-glass-card border border-red-500/20 hover:border-red-500/40 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Log out</span>
             </button>
           </div>
         </div>
@@ -253,7 +264,7 @@ export const ProfileView: React.FC = () => {
                 </span>
                 <div className="flex items-center justify-between mt-1.5 p-3 rounded-2xl bg-black/60 border border-white/10 font-mono text-xs">
                   <span className="text-[#E9FF32] truncate max-w-[340px]">
-                    {smartAccount.address}
+                    {activeAddress}
                   </span>
                   <button
                     onClick={handleCopyAddress}

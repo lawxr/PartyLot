@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { PrivyClientProvider } from "@/components/providers/PrivyClientProvider";
 
 export const metadata: Metadata = {
   title: "PARTYLOT — The Night Belongs to the Group",
@@ -31,8 +32,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark bg-[#050505] text-white">
       <body className="min-h-screen bg-[#050505] text-[#F5F5F7] font-ui antialiased selection:bg-[#E9FF32] selection:text-black">
-        {children}
+        <PrivyClientProvider>
+          {children}
+        </PrivyClientProvider>
       </body>
     </html>
   );
 }
+

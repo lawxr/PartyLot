@@ -8,6 +8,10 @@ export interface User {
   peopleCount: number;
   settlementsCount: number;
   balance: number;
+  walletAddress?: string;
+  email?: string;
+  authMethod?: string;
+  isPrivyAuthenticated?: boolean;
 }
 
 export interface Member {

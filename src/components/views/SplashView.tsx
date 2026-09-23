@@ -6,10 +6,29 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { PrivyAuthModal } from '@/components/ui/PrivyAuthModal';
 import { usePartyStore } from '@/store/usePartyStore';
 import { Sparkles, KeyRound, ShieldCheck } from 'lucide-react';
+import { usePrivySync } from '@/hooks/usePrivySync';
 
 export const SplashView: React.FC = () => {
   const { setCurrentView } = usePartyStore();
+  const { login, ready } = usePrivySync();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  const handleGetStarted = () => {
+    const isLivePrivy =
+      Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID) &&
+      !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('demo') &&
+      !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('placeholder');
+
+    if (isLivePrivy && ready) {
+      try {
+        login();
+      } catch {
+        setIsAuthOpen(true);
+      }
+    } else {
+      setIsAuthOpen(true);
+    }
+  };
 
   return (
     <div className="relative w-full min-h-[100dvh] overflow-y-auto overflow-x-hidden flex flex-col justify-between bg-black text-white select-none">
@@ -72,7 +91,7 @@ export const SplashView: React.FC = () => {
             variant="accent"
             size="lg"
             fullWidth
-            onClick={() => setIsAuthOpen(true)}
+            onClick={handleGetStarted}
             icon={<Sparkles className="w-5 h-5 text-black" />}
           >
             Get started

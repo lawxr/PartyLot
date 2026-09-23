@@ -16,33 +16,21 @@ export const JoinPartyView: React.FC = () => {
   const { parties, joinPartyByCode, selectParty, goBack } = usePartyStore();
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '']);
-  const [matchedParty, setMatchedParty] = useState<Party | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
 
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Check code whenever digits change
-  useEffect(() => {
-    const fullCode = digits.join('').toUpperCase();
-    if (fullCode.length === 4) {
-      const found = parties.find((p) => p.code.toUpperCase() === fullCode);
-      if (found) {
-        setMatchedParty(found);
-        setErrorMsg(null);
+  const fullCode = digits.join('').toUpperCase();
+  const matchedParty = fullCode.length === 4 ? parties.find((p) => p.code.toUpperCase() === fullCode) || null : null;
+  const errorMsg = fullCode.length === 4 && !matchedParty ? 'No party found with this code. Double-check with your host!' : null;
 
-        // Resolve EIP-712 permit offchain (protecting code from brute force)
-        const account = getOrCreateSmartAccount();
-        resolveInviteCodeToPermit(fullCode, account.address);
-      } else {
-        setMatchedParty(null);
-        setErrorMsg('No party found with this code. Double-check with your host!');
-      }
-    } else {
-      setMatchedParty(null);
-      setErrorMsg(null);
+  // Resolve EIP-712 permit offchain whenever a valid 4-digit code is found
+  useEffect(() => {
+    if (fullCode.length === 4 && matchedParty) {
+      const account = getOrCreateSmartAccount();
+      resolveInviteCodeToPermit(fullCode, account.address);
     }
-  }, [digits, parties]);
+  }, [fullCode, matchedParty]);
 
   const handleChange = (index: number, value: string) => {
     const val = value.slice(-1).toUpperCase();

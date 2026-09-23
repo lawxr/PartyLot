@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useSyncExternalStore } from 'react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { SplashView } from '@/components/views/SplashView';
 import { HomeView } from '@/components/views/HomeView';
@@ -14,14 +14,18 @@ import { PollsView } from '@/components/views/PollsView';
 import { RecapView } from '@/components/views/RecapView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { TabBar } from '@/components/navigation/TabBar';
+import { usePrivySync } from '@/hooks/usePrivySync';
+
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export default function App() {
   const { currentView, parties, currentPartyId } = usePartyStore();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Synchronize Privy auth & embedded wallet state across views
+  usePrivySync();
 
   if (!mounted) {
     // Avoid hydration mismatch on initial render

@@ -1,6 +1,10 @@
 allowBuilds:
+  '@reown/appkit': true
+  bufferutil: true
+  keccak: true
   sharp: false
   unrs-resolver: false
+  utf-8-validate: true
 minimumReleaseAgeExclude:
   - '@next/env@16.3.6'
   - '@next/eslint-plugin-next@16.3.6'

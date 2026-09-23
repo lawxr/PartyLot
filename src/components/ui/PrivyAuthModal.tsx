@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ShieldCheck, Mail, Apple, CheckCircle2 } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
+import { usePrivy } from '@privy-io/react-auth';
 import confetti from 'canvas-confetti';
 
 interface PrivyAuthModalProps {
@@ -18,14 +19,31 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { login, ready } = usePrivy();
   const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
   const [successAccount, setSuccessAccount] = useState<string | null>(null);
 
   const handleSocialAuth = async (method: 'apple' | 'google' | 'email') => {
     setLoadingMethod(method);
 
+    const isLivePrivy =
+      Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID) &&
+      !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('demo') &&
+      !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('placeholder');
+
+    if (isLivePrivy && ready) {
+      try {
+        onClose();
+        login();
+        setLoadingMethod(null);
+        return;
+      } catch (e) {
+        console.warn('Privy native modal fallback:', e);
+      }
+    }
+
     // Simulate instant silent embedded wallet creation
-    await new Promise((resolve) => setTimeout(resolve, 750));
+    await new Promise((resolve) => setTimeout(resolve, 600));
 
     const session = getOrCreateSmartAccount(
       method,

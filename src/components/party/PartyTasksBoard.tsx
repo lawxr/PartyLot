@@ -16,6 +16,7 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import confetti from 'canvas-confetti';
 
 interface PartyTasksBoardProps {
@@ -32,6 +33,8 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
     completePartyTask,
     verifyAndPayPartyTask,
   } = usePartyStore();
+  const { language } = useTranslation();
+  const isEs = language === 'es';
 
   const party = parties.find((p) => p.id === partyId) || parties[0];
   const partyTasks = tasks.filter((t) => t.partyId === party.id);
@@ -114,18 +117,20 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
-              CONTRIBUTION REWARDS
+              {isEs ? 'RECOMPENSAS POR COLABORAR' : 'CONTRIBUTION REWARDS'}
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <ShieldCheck className="w-2.5 h-2.5" />
-              Party Pot Backed
+              {isEs ? 'Respaldado por el Pozo' : 'Party Pot Backed'}
             </span>
           </div>
           <h3 className="font-display font-black text-2xl text-white tracking-tight">
-            BOUNTIES & TASKS
+            {isEs ? 'MISIONES Y TAREAS' : 'BOUNTIES & TASKS'}
           </h3>
           <p className="text-xs text-white/60">
-            Claim social chores to earn instant rewards from the shared Party Pot.
+            {isEs
+              ? 'Toma tareas de la fiesta para ganar recompensas instantáneas del fondo común.'
+              : 'Claim social chores to earn instant rewards from the shared Party Pot.'}
           </p>
         </div>
 
@@ -135,17 +140,17 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
           onClick={() => setIsCreateOpen(true)}
           icon={<Plus className="w-3.5 h-3.5 text-black stroke-[3]" />}
         >
-          Add Bounty
+          {isEs ? 'Nueva Misión' : 'Add Bounty'}
         </GlassButton>
       </div>
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
         {[
-          { id: 'all', label: `All (${partyTasks.length})` },
-          { id: 'open', label: `Open (${partyTasks.filter((t) => t.status === 'open').length})` },
-          { id: 'claimed', label: `In Progress (${partyTasks.filter((t) => t.status === 'claimed' || t.status === 'completed').length})` },
-          { id: 'verified', label: `Paid (${partyTasks.filter((t) => t.status === 'verified').length})` },
+          { id: 'all', label: `${isEs ? 'Todas' : 'All'} (${partyTasks.length})` },
+          { id: 'open', label: `${isEs ? 'Abiertas' : 'Open'} (${partyTasks.filter((t) => t.status === 'open').length})` },
+          { id: 'claimed', label: `${isEs ? 'En Progreso' : 'In Progress'} (${partyTasks.filter((t) => t.status === 'claimed' || t.status === 'completed').length})` },
+          { id: 'verified', label: `${isEs ? 'Pagadas' : 'Paid'} (${partyTasks.filter((t) => t.status === 'verified').length})` },
         ].map((tab) => (
           <button
             key={tab.id}

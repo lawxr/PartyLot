@@ -7,10 +7,13 @@ import { PrivyAuthModal } from '@/components/ui/PrivyAuthModal';
 import { usePartyStore } from '@/store/usePartyStore';
 import { KeyRound, ShieldCheck, Sparkles, MapPin, Clock } from 'lucide-react';
 import { usePrivySync } from '@/hooks/usePrivySync';
+import { useTranslation } from '@/lib/i18n/useTranslation';
+import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 
 export const SplashView: React.FC = () => {
   const { setCurrentView } = usePartyStore();
   const { login, ready } = usePrivySync();
+  const { t } = useTranslation();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const handleGetStarted = () => {
@@ -55,8 +58,13 @@ export const SplashView: React.FC = () => {
       <div className="bulb" style={{ left: '68%', top: '110px' }} />
       <div className="bulb" style={{ left: '88%', top: '94px' }} />
 
+      {/* Top Floating Language Switch Bar */}
+      <div className="relative z-20 w-full max-w-md mx-auto px-5 pt-4 flex items-center justify-end">
+        <LanguageSwitch compact />
+      </div>
+
       {/* Main Content Area */}
-      <div className="relative z-10 px-5 sm:px-6 pt-12 pb-8 sm:pb-10 safe-bottom flex flex-col items-center text-center max-w-md mx-auto w-full my-auto">
+      <div className="relative z-10 px-5 sm:px-6 pt-4 pb-8 sm:pb-10 safe-bottom flex flex-col items-center text-center max-w-md mx-auto w-full my-auto">
         {/* Mini Stack of Preview Event Cards with Warm Photography */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -76,9 +84,9 @@ export const SplashView: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0c0b0a] via-[#0c0b0a]/50 to-transparent" />
             <span className="relative z-10 self-end px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] mb-auto">
-              48d
+              48{t.splash.days}
             </span>
-            <b className="relative z-10 font-display text-xs text-white uppercase tracking-tight drop-shadow">New York Jam</b>
+            <b className="relative z-10 font-display text-xs text-white uppercase tracking-tight drop-shadow">{t.splash.newYorkJam}</b>
             <div className="relative z-10 flex items-center justify-between mt-0.5">
               <small className="text-[10px] text-white/80 flex items-center gap-1">
                 <MapPin className="w-2.5 h-2.5 text-[#F0DC00]" /> Miami
@@ -118,9 +126,9 @@ export const SplashView: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0c0b0a] via-[#0c0b0a]/50 to-transparent" />
             <span className="relative z-10 self-end px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] mb-auto">
-              27d
+              27{t.splash.days}
             </span>
-            <b className="relative z-10 font-display text-xs text-white uppercase tracking-tight drop-shadow">Rooftop Party</b>
+            <b className="relative z-10 font-display text-xs text-white uppercase tracking-tight drop-shadow">{t.splash.rooftopParty}</b>
             <div className="relative z-10 flex items-center justify-between mt-0.5">
               <small className="text-[10px] text-white/80 flex items-center gap-1">
                 <MapPin className="w-2.5 h-2.5 text-[#F0DC00]" /> Jersey
@@ -160,9 +168,9 @@ export const SplashView: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0c0b0a] via-[#0c0b0a]/40 to-transparent" />
             <span className="relative z-10 self-end px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] flex items-center gap-1 mb-auto">
-              <Sparkles className="w-2.5 h-2.5" /> 2d
+              <Sparkles className="w-2.5 h-2.5" /> 2{t.splash.days}
             </span>
-            <b className="relative z-10 font-display text-sm text-white uppercase tracking-tight drop-shadow">Cocktails Night</b>
+            <b className="relative z-10 font-display text-sm text-white uppercase tracking-tight drop-shadow">{t.splash.cocktailsNight}</b>
             <small className="relative z-10 text-[10px] text-white/90 flex items-center gap-1 mt-1">
               <Clock className="w-2.5 h-2.5 text-[#F0DC00]" /> 3 jul · New York
             </small>
@@ -198,13 +206,13 @@ export const SplashView: React.FC = () => {
           className="mb-6"
         >
           <div className="text-xs uppercase tracking-[3px] text-[#F0DC00] font-semibold mb-1">
-            BIENVENIDO A
+            {t.splash.welcomeTo}
           </div>
           <h1 className="bubble text-6xl sm:text-7xl tracking-tight text-white mb-2 drop-shadow-2xl">
             PartyLot
           </h1>
           <p className="font-display font-medium text-sm sm:text-base text-white/80 max-w-[270px] leading-relaxed mx-auto">
-            Crea invitaciones con estilo y compártelas para cualquier evento
+            {t.splash.tagline}
           </p>
         </motion.div>
 
@@ -222,7 +230,7 @@ export const SplashView: React.FC = () => {
             onClick={handleGetStarted}
             className="shadow-[0_8px_24px_rgba(240,220,0,0.35)]"
           >
-            Crear un evento
+            {t.splash.createEvent}
           </GlassButton>
 
           <GlassButton
@@ -232,7 +240,7 @@ export const SplashView: React.FC = () => {
             onClick={() => setCurrentView('join-party')}
             icon={<KeyRound className="w-4 h-4 text-white/80" />}
           >
-            Tengo un código de invitación
+            {t.splash.haveInviteCode}
           </GlassButton>
         </motion.div>
 
@@ -244,7 +252,7 @@ export const SplashView: React.FC = () => {
           className="mt-6 flex items-center justify-center gap-1.5 w-full text-[11px] text-white/50 tracking-wide font-medium"
         >
           <ShieldCheck className="w-3.5 h-3.5 text-[#F0DC00] shrink-0" />
-          <span>Acceso privado · Sin comisiones ni anuncios</span>
+          <span>{t.splash.privateAccess}</span>
         </motion.div>
       </div>
 

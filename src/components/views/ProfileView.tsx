@@ -1,16 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RotateCcw, ShieldCheck, Copy, Check, LogOut } from 'lucide-react';
+import { RotateCcw, ShieldCheck, Copy, Check, LogOut, Globe } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 import { usePrivySync } from '@/hooks/usePrivySync';
 import { SharedExperienceConnection } from '@/types';
+import { useTranslation } from '@/lib/i18n/useTranslation';
+import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 
 export const ProfileView: React.FC = () => {
   const { currentUser, resetToDefaults } = usePartyStore();
   const { logout: privyLogout } = usePrivySync();
+  const { t, language } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const smartAccount = getOrCreateSmartAccount();
@@ -346,6 +349,26 @@ export const ProfileView: React.FC = () => {
             </div>
           </section>
 
+          {/* Platform Language Selection Card */}
+          <section>
+            <GlassPanel level={2} className="p-5 border border-white/15 shadow-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#F0DC00]/15 border border-[#F0DC00]/40 flex items-center justify-center shrink-0">
+                  <Globe className="w-5 h-5 text-[#F0DC00]" />
+                </div>
+                <div>
+                  <span className="font-display font-bold text-base text-white block">
+                    {t.profile.languageSection}
+                  </span>
+                  <span className="text-xs text-white/50">
+                    {language === 'es' ? 'Español (Autodetectado)' : 'English (Autodetected)'}
+                  </span>
+                </div>
+              </div>
+              <LanguageSwitch />
+            </GlassPanel>
+          </section>
+
           {/* Account & Security Card */}
           <section>
             <GlassPanel level={2} className="p-5 border border-white/15 shadow-xl space-y-4">
@@ -353,17 +376,17 @@ export const ProfileView: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <ShieldCheck className="w-5 h-5 text-[#F0DC00]" />
                   <span className="font-display font-bold text-base text-white">
-                    Cuenta y Seguridad
+                    {language === 'es' ? 'Cuenta y Seguridad' : 'Account & Security'}
                   </span>
                 </div>
                 <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-0.5 rounded-full">
-                  Verificado
+                  {language === 'es' ? 'Verificado' : 'Verified'}
                 </span>
               </div>
 
               <div>
                 <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">
-                  ID PRIVADO DE CUENTA
+                  {t.profile.walletAddressLabel}
                 </span>
                 <div className="flex items-center justify-between mt-1.5 p-3 rounded-2xl bg-black/60 border border-white/10 font-mono text-xs">
                   <span className="text-[#F0DC00] truncate max-w-[340px]">
@@ -381,21 +404,55 @@ export const ProfileView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/10 text-xs">
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">Privacidad</span>
-                  <span className="font-bold text-white">Círculo cerrado</span>
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">
+                    {language === 'es' ? 'Privacidad' : 'Privacy'}
+                  </span>
+                  <span className="font-bold text-white">
+                    {language === 'es' ? 'Círculo cerrado' : 'Closed circle'}
+                  </span>
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">Pagos del Bote</span>
-                  <span className="font-bold text-[#F0DC00]">Automáticos</span>
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">
+                    {language === 'es' ? 'Pagos del Bote' : 'Pot Payouts'}
+                  </span>
+                  <span className="font-bold text-[#F0DC00]">
+                    {language === 'es' ? 'Automáticos' : 'Automated'}
+                  </span>
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">Acceso</span>
-                  <span className="font-bold text-white">Sin contraseñas</span>
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">
+                    {language === 'es' ? 'Acceso' : 'Access'}
+                  </span>
+                  <span className="font-bold text-white">
+                    {language === 'es' ? 'Sin contraseñas' : 'Passwordless'}
+                  </span>
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">Sincronización</span>
-                  <span className="font-bold text-white">En vivo</span>
+                  <span className="text-white/40 block text-[10px] uppercase font-bold">
+                    {language === 'es' ? 'Sincronización' : 'Sync'}
+                  </span>
+                  <span className="font-bold text-white">
+                    {language === 'es' ? 'En vivo' : 'Realtime'}
+                  </span>
                 </div>
+              </div>
+
+              {/* Reset & Logout Actions */}
+              <div className="flex items-center gap-3 pt-3 border-t border-white/10">
+                <button
+                  onClick={() => resetToDefaults()}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 border border-white/10 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>{t.profile.resetData}</span>
+                </button>
+                <button
+                  onClick={() => privyLogout()}
+                  className="py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-500/20 transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>{t.profile.logout}</span>
+                </button>
               </div>
             </GlassPanel>
           </section>

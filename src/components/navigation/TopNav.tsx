@@ -4,11 +4,14 @@ import React from 'react';
 import { ArrowLeft, Share2 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { formatPartyInviteText } from '@/services/party';
+import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface TopNavProps {
   title?: string;
   showBack?: boolean;
   showShare?: boolean;
+  showLanguageSwitch?: boolean;
   onBack?: () => void;
   rightAction?: React.ReactNode;
 }
@@ -17,10 +20,12 @@ export const TopNav: React.FC<TopNavProps> = ({
   title,
   showBack = true,
   showShare = false,
+  showLanguageSwitch = false,
   onBack,
   rightAction,
 }) => {
   const { goBack, parties, currentPartyId } = usePartyStore();
+  const { t } = useTranslation();
 
   const currentParty = parties.find((p) => p.id === currentPartyId);
 
@@ -47,7 +52,7 @@ export const TopNav: React.FC<TopNavProps> = ({
       }
     } else {
       await navigator.clipboard.writeText(text);
-      alert('Invite link copied to clipboard!');
+      alert(t.common.copied);
     }
   };
 
@@ -75,6 +80,7 @@ export const TopNav: React.FC<TopNavProps> = ({
         )}
 
         <div className="flex items-center gap-2 pointer-events-auto">
+          {showLanguageSwitch && <LanguageSwitch compact />}
           {showShare && (
             <button
               onClick={handleShare}

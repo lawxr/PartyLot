@@ -19,10 +19,14 @@ import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { SAMPLE_PARTY_COVERS } from '@/data/mockData';
 import { Party } from '@/types';
+import { useTranslation } from '@/lib/i18n/useTranslation';
+import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 import confetti from 'canvas-confetti';
 
 export const CreatePartyView: React.FC = () => {
   const { createParty, selectParty, goBack, currentUser, crews, currentCrewId } = usePartyStore();
+  const { t, language } = useTranslation();
+  const isEs = language === 'es';
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [partyName, setPartyName] = useState('');
@@ -98,11 +102,11 @@ export const CreatePartyView: React.FC = () => {
         {!createdParty && (
           <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-card text-xs font-semibold text-white/80 border border-white/15">
             <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
-            <span>Step {step} of 4</span>
+            <span>{t.createParty.stepCount(step, 4)}</span>
           </div>
         )}
 
-        <div className="w-10 sm:w-11" />
+        <LanguageSwitch compact />
       </div>
 
       {/* Main Content Area */}
@@ -150,22 +154,22 @@ export const CreatePartyView: React.FC = () => {
                 </div>
 
                 <span className="text-xs uppercase font-extrabold tracking-widest text-[#F0DC00]">
-                  CONGRATS · LIVE ONCHAIN
+                  CONGRATS · LIVE ON MONAD
                 </span>
                 <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight mt-1 mb-2">
-                  YOUR PARTY IS LIVE
+                  {t.createParty.partyCreatedTitle}
                 </h2>
                 <p className="text-sm text-white/70 max-w-md mb-6 leading-relaxed">
-                  Share this private code with your group. The smart contract validates attendance using zero-friction EIP-712 permits.
+                  {t.createParty.partyCreatedSubtitle}
                 </p>
 
                 {/* Giant Code Box */}
                 <GlassPanel level={3} className="p-6 mb-6 w-full max-w-md border border-white/20">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[11px] uppercase font-bold text-white/50 tracking-wider">
-                      PRIVATE ACCESS CODE
+                      {t.createParty.partyCodeLabel}
                     </span>
-                    <span className="text-[11px] font-mono text-[#F0DC00] font-semibold">4-DIGIT PERMIT</span>
+                    <span className="text-[11px] font-mono text-[#F0DC00] font-semibold">EIP-712 PERMIT</span>
                   </div>
                   <div className="font-display font-black text-5xl sm:text-6xl tracking-widest text-[#F0DC00] my-2 text-center">
                     {createdParty.code}
@@ -184,7 +188,7 @@ export const CreatePartyView: React.FC = () => {
                     onClick={handleCopyCode}
                     icon={copied ? <Check className="w-5 h-5 text-black" /> : <Copy className="w-5 h-5 text-black" />}
                   >
-                    {copied ? 'Code Copied!' : 'Copy Code'}
+                    {copied ? t.common.copied : t.createParty.copyCodeButton}
                   </GlassButton>
 
                   <GlassButton
@@ -194,7 +198,7 @@ export const CreatePartyView: React.FC = () => {
                     onClick={handleShare}
                     icon={<Share2 className="w-5 h-5 text-white" />}
                   >
-                    Share Invite
+                    {t.createParty.shareInviteButton}
                   </GlassButton>
                 </div>
 
@@ -202,7 +206,7 @@ export const CreatePartyView: React.FC = () => {
                   onClick={() => selectParty(createdParty.id)}
                   className="mt-5 text-sm font-bold text-[#F0DC00] hover:underline underline-offset-4 cursor-pointer"
                 >
-                  Enter Party Room →
+                  {t.createParty.goToPartyButton} →
                 </button>
               </div>
             </motion.div>
@@ -281,19 +285,19 @@ export const CreatePartyView: React.FC = () => {
                   {step === 1 && (
                     <div>
                       <span className="text-xs font-bold uppercase tracking-widest text-[#F0DC00]">
-                        STEP 01 OF 04
+                        {t.createParty.stepCount(1, 4).toUpperCase()}
                       </span>
                       <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight mt-1 mb-6">
-                        What&apos;s the plan?
+                        {t.createParty.step1Title}
                       </h2>
 
                       <div className="mb-6">
                         <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
-                          Party Name
+                          {t.createParty.partyNameLabel}
                         </label>
                         <input
                           type="text"
-                          placeholder="e.g. 404 HOUSE, Penthouse DJ Set..."
+                          placeholder={t.createParty.partyNamePlaceholder}
                           value={partyName}
                           onChange={(e) => setPartyName(e.target.value)}
                           autoFocus
@@ -304,7 +308,7 @@ export const CreatePartyView: React.FC = () => {
                       {/* Crew Selector */}
                       <div className="mb-6">
                         <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2 flex items-center justify-between">
-                          <span>Host for which Crew?</span>
+                          <span>{t.createParty.crewLabel}</span>
                           <span className="text-[11px] text-[#F0DC00] font-mono">Durable Social Circle</span>
                         </label>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -320,7 +324,7 @@ export const CreatePartyView: React.FC = () => {
                               }`}
                             >
                               <span className="block truncate">{c.name}</span>
-                              <span className="text-[10px] text-white/40 font-mono block">{c.membersCount} members</span>
+                              <span className="text-[10px] text-white/40 font-mono block">{t.home.membersCount(c.membersCount)}</span>
                             </button>
                           ))}
                           <button
@@ -332,15 +336,15 @@ export const CreatePartyView: React.FC = () => {
                                 : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:border-white/20'
                             }`}
                           >
-                            <span className="block truncate">Standalone</span>
-                            <span className="text-[10px] text-white/40 font-mono block">No crew</span>
+                            <span className="block truncate">{t.createParty.noCrewOption}</span>
+                            <span className="text-[10px] text-white/40 font-mono block">Solo</span>
                           </button>
                         </div>
                       </div>
 
                       <div>
                         <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2.5 flex items-center justify-between">
-                          <span>Choose Atmosphere Cover</span>
+                          <span>{t.createParty.chooseCoverLabel}</span>
                           <span className="text-[11px] text-[#F0DC00] font-mono">{SAMPLE_PARTY_COVERS.length} presets</span>
                         </label>
                         <div className="grid grid-cols-5 gap-2 sm:gap-3">
@@ -370,16 +374,16 @@ export const CreatePartyView: React.FC = () => {
                   {step === 2 && (
                     <div>
                       <span className="text-xs font-bold uppercase tracking-widest text-[#F0DC00]">
-                        STEP 02 OF 04
+                        {t.createParty.stepCount(2, 4).toUpperCase()}
                       </span>
                       <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight mt-1 mb-6">
-                        When is it?
+                        {t.createParty.step2Title}
                       </h2>
 
                       <div className="space-y-5">
                         <div>
                           <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
-                            Date Preset
+                            {t.createParty.dateLabel}
                           </label>
                           <div className="grid grid-cols-3 gap-2.5">
                             {['TONIGHT', 'TOMORROW', 'FRIDAY'].map((d) => (
@@ -393,7 +397,7 @@ export const CreatePartyView: React.FC = () => {
                                     : 'liquid-glass-card text-white/80 hover:text-white border border-white/10'
                                 }`}
                               >
-                                {d}
+                                {d === 'TONIGHT' ? (isEs ? 'ESTA NOCHE' : 'TONIGHT') : d === 'TOMORROW' ? (isEs ? 'MAÑANA' : 'TOMORROW') : (isEs ? 'VIERNES' : 'FRIDAY')}
                               </button>
                             ))}
                           </div>
@@ -401,7 +405,7 @@ export const CreatePartyView: React.FC = () => {
 
                         <div>
                           <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
-                            Starting Time
+                            {t.createParty.timeLabel}
                           </label>
                           <input
                             type="text"
@@ -418,38 +422,40 @@ export const CreatePartyView: React.FC = () => {
                   {step === 3 && (
                     <div>
                       <span className="text-xs font-bold uppercase tracking-widest text-[#F0DC00]">
-                        STEP 03 OF 04
+                        {t.createParty.stepCount(3, 4).toUpperCase()}
                       </span>
                       <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight mt-1 mb-6">
-                        Where is it?
+                        {t.createParty.step3Title}
                       </h2>
 
                       <div className="space-y-5">
                         <div>
                           <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
-                            Location / Secret Address
+                            {t.createParty.locationLabel}
                           </label>
                           <input
                             type="text"
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
-                            placeholder="e.g. El Poblado · Secret Rooftop"
+                            placeholder={t.createParty.locationPlaceholder}
                             className="w-full px-5 py-4 rounded-2xl liquid-glass-card text-white font-medium text-base outline-none border border-white/20 focus:border-[#F0DC00]"
                           />
                           <p className="mt-2 text-xs text-white/50">
-                            Exact address is encrypted offchain and only revealed to confirmed members.
+                            {isEs
+                              ? 'La dirección exacta está cifrada offchain y solo se revela a miembros confirmados.'
+                              : 'Exact address is encrypted offchain and only revealed to confirmed members.'}
                           </p>
                         </div>
 
                         <div>
                           <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
-                            Vibe & Instructions
+                            {t.createParty.descriptionLabel}
                           </label>
                           <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             rows={3}
-                            placeholder="Tell the group what to bring, dress code, buzzer instructions..."
+                            placeholder={t.createParty.descriptionPlaceholder}
                             className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white text-sm outline-none border border-white/20 focus:border-[#F0DC00] resize-none"
                           />
                         </div>
@@ -460,13 +466,13 @@ export const CreatePartyView: React.FC = () => {
                   {step === 4 && (
                     <div>
                       <span className="text-xs font-bold uppercase tracking-widest text-[#F0DC00]">
-                        STEP 04 OF 04
+                        {t.createParty.stepCount(4, 4).toUpperCase()}
                       </span>
                       <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight mt-1 mb-2">
-                        Ready to launch?
+                        {t.createParty.step4Title}
                       </h2>
                       <p className="text-sm text-white/70 mb-6">
-                        A unique 4-character encrypted private code will be minted for your inner circle.
+                        {t.createParty.step4Subtitle}
                       </p>
 
                       {/* Summary Card Preview */}
@@ -482,7 +488,7 @@ export const CreatePartyView: React.FC = () => {
                           </div>
                           <div>
                             <h4 className="font-display font-black text-xl text-white">
-                              {partyName.trim() || 'Untitled Gathering'}
+                              {partyName.trim() || (isEs ? 'Encuentro sin título' : 'Untitled Gathering')}
                             </h4>
                             <p className="text-xs text-[#F0DC00] font-semibold mt-0.5">
                               {date} · {time}
@@ -494,7 +500,11 @@ export const CreatePartyView: React.FC = () => {
 
                       <div className="p-4 rounded-2xl bg-[#F0DC00]/10 border border-[#F0DC00]/25 text-xs text-white/80 leading-relaxed flex items-center gap-2.5">
                         <ShieldCheck className="w-5 h-5 text-[#F0DC00] shrink-0" />
-                        <span>Ready to launch. Your smart contract treasury will be automatically initialized.</span>
+                        <span>
+                          {isEs
+                            ? 'Listo para desplegar. La tesorería de tu smart contract en Monad se inicializará automáticamente.'
+                            : 'Ready to launch. Your Monad smart contract treasury will be automatically initialized.'}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -514,7 +524,7 @@ export const CreatePartyView: React.FC = () => {
               size="md"
               onClick={() => setStep((prev) => (prev - 1) as 1 | 2 | 3 | 4)}
             >
-              Back
+              {t.common.back}
             </GlassButton>
           ) : (
             <div />
@@ -528,7 +538,7 @@ export const CreatePartyView: React.FC = () => {
             onClick={handleNext}
             icon={step === 4 ? <Sparkles className="w-4 h-4 text-black" /> : <ArrowRight className="w-4 h-4 text-black" />}
           >
-            {step === 4 ? 'Create Party' : 'Continue'}
+            {step === 4 ? t.createParty.createPartyButton : t.createParty.nextStep}
           </GlassButton>
         </div>
       )}

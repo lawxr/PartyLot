@@ -20,7 +20,7 @@ export const GamesView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#15140f] text-white pb-32">
-      <TopNav title={`${party.title} · GAMES`} />
+      <TopNav title={`${party.title} · GAMES`} showLanguageSwitch />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
         {/* Game Switcher Pills (Centered on desktop) */}

@@ -10,6 +10,8 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { ActivityView } from '@/components/views/ActivityView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { CrewsView } from '@/components/views/CrewsView';
+import { useTranslation } from '@/lib/i18n/useTranslation';
+import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 
 export const HomeView: React.FC = () => {
   const {
@@ -20,6 +22,7 @@ export const HomeView: React.FC = () => {
     setCurrentView,
     activeTab,
   } = usePartyStore();
+  const { t, language } = useTranslation();
 
   // Handle active bottom tab views
   if (activeTab === 'crews') {
@@ -34,21 +37,29 @@ export const HomeView: React.FC = () => {
     return <ProfileView />;
   }
 
+  const formattedDate = new Date().toLocaleDateString(
+    language === 'es' ? 'es-ES' : 'en-US',
+    { weekday: 'long', month: 'short', day: 'numeric' }
+  );
+
   return (
     <div className="min-h-screen bg-[#15140f] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
       {/* Responsive Header */}
       <header className="flex items-center justify-between py-4 mb-6 sm:mb-8 border-b border-white/10 pb-5">
         <div>
-          <span className="text-xs uppercase tracking-wider text-white/50 font-semibold block mb-0.5">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          <span className="text-xs uppercase tracking-wider text-white/50 font-semibold block mb-0.5 capitalize">
+            {formattedDate}
           </span>
           <h2 className="font-display font-extrabold text-2xl sm:text-4xl text-white tracking-tight">
-            Good evening, <span className="text-[#F0DC00]">{currentUser.name}</span>
+            {t.home.greeting(currentUser.name)}
           </h2>
         </div>
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-3">
+          {/* Language Switch */}
+          <LanguageSwitch compact />
+
           {/* Desktop Create Button */}
           <div className="hidden sm:block">
             <GlassButton
@@ -57,7 +68,7 @@ export const HomeView: React.FC = () => {
               onClick={() => setCurrentView('create-party')}
               icon={<Plus className="w-4 h-4 text-black stroke-[3]" />}
             >
-              Create Party
+              {t.home.createParty}
             </GlassButton>
           </div>
 
@@ -82,13 +93,13 @@ export const HomeView: React.FC = () => {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h3 className="font-display font-extrabold text-lg sm:text-xl tracking-wide uppercase text-white/90">
-              YOUR PARTIES
+              {t.home.yourParties}
             </h3>
-            <span className="text-xs text-white/50">Active private gatherings</span>
+            <span className="text-xs text-white/50">{t.home.activeGatherings}</span>
           </div>
 
           <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/10 text-white/80 border border-white/10">
-            {parties.length} upcoming
+            {t.home.upcomingCount(parties.length)}
           </span>
         </div>
 
@@ -145,9 +156,9 @@ export const HomeView: React.FC = () => {
                 </div>
 
                 <div className="pt-3 border-t border-white/15 flex items-center justify-between">
-                  <AvatarStack members={party.members} size="sm" countLabel="going" />
+                  <AvatarStack members={party.members} size="sm" countLabel={t.home.going} />
                   <span className="text-xs font-bold uppercase tracking-wider text-[#F0DC00] group-hover:translate-x-1 transition-transform">
-                    Enter →
+                    {t.home.hostedBy(party.hostName)} →
                   </span>
                 </div>
               </div>
@@ -161,9 +172,9 @@ export const HomeView: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="font-display font-extrabold text-lg sm:text-xl tracking-wide uppercase text-white/90">
-              YOUR CREWS
+              {t.home.yourCrews}
             </h3>
-            <span className="text-xs text-white/50">Private circles</span>
+            <span className="text-xs text-white/50">{t.home.permanentCircles}</span>
           </div>
         </div>
 
@@ -188,7 +199,7 @@ export const HomeView: React.FC = () => {
                   {crew.name}
                 </h4>
                 <p className="text-xs text-white/60 flex items-center gap-2 mt-1">
-                  <span>{crew.membersCount} members</span>
+                  <span>{t.home.membersCount(crew.membersCount)}</span>
                   <span>•</span>
                   <span className="text-[#F0DC00]/90">{crew.lastActivity}</span>
                 </p>
@@ -207,7 +218,7 @@ export const HomeView: React.FC = () => {
           className="accent-button flex items-center gap-2 px-5 py-3.5 rounded-full shadow-2xl font-display font-bold text-sm tracking-tight text-black cursor-pointer"
         >
           <Plus className="w-5 h-5 stroke-[2.5]" />
-          <span>Create Party</span>
+          <span>{t.home.createParty}</span>
         </motion.button>
       </div>
     </div>

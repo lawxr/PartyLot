@@ -60,8 +60,11 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             dragConstraints={{ top: 0 }}
             dragElastic={0.2}
             onDragEnd={handleDragEnd}
-            className={`relative z-10 w-full max-w-lg sm:max-w-md liquid-glass-modal rounded-t-[32px] sm:rounded-[32px] overflow-hidden flex flex-col ${maxHeight} safe-bottom border border-white/20 shadow-2xl`}
+            className={`relative z-10 w-full max-w-lg sm:max-w-md liquid-glass-privy-sheet rounded-t-[32px] sm:rounded-[32px] overflow-hidden flex flex-col ${maxHeight} safe-bottom border border-white/20 shadow-2xl`}
           >
+            {/* Top Specular Rim Highlight */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent pointer-events-none" />
+
             {/* Grab handle (visible on mobile) */}
             <div className="w-full flex flex-col items-center pt-3 pb-1 cursor-grab active:cursor-grabbing select-none shrink-0 sm:hidden">
               <div className="w-10 h-1.5 rounded-full bg-white/30 hover:bg-white/50 transition-colors" />

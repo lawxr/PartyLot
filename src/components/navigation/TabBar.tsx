@@ -4,9 +4,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Home, Users, Bell, User } from 'lucide-react';
 import { usePartyStore, MainTab } from '@/store/usePartyStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const TabBar: React.FC = () => {
   const { activeTab, setActiveTab, currentView } = usePartyStore();
+  const { t } = useTranslation();
 
   // TabBar belongs strictly to the root dashboard/tabs view
   if (currentView !== 'home') {
@@ -14,10 +16,10 @@ export const TabBar: React.FC = () => {
   }
 
   const tabs: { id: MainTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'crews', label: 'Crews', icon: Users },
-    { id: 'activity', label: 'Activity', icon: Bell },
-    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'home', label: t.nav.home, icon: Home },
+    { id: 'crews', label: t.nav.crews, icon: Users },
+    { id: 'activity', label: t.nav.activity, icon: Bell },
+    { id: 'profile', label: t.nav.profile, icon: User },
   ];
 
   return (

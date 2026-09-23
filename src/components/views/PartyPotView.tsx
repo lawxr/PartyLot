@@ -24,11 +24,14 @@ import {
   rolloverFundsOnchain,
 } from '@/services/treasury';
 import { PartyTasksBoard } from '@/components/party/PartyTasksBoard';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import confetti from 'canvas-confetti';
 
 export const PartyPotView: React.FC = () => {
   const { parties, currentPartyId, crews, transactions, addToPot, spendFromPot, rolloverPotToCrew } =
     usePartyStore();
+  const { language } = useTranslation();
+  const isEs = language === 'es';
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const partyTransactions = transactions.filter((t) => t.partyId === party.id);
 
@@ -161,7 +164,7 @@ export const PartyPotView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#15140f] text-white pb-32 select-none">
-      <TopNav title="SHARED TREASURY" />
+      <TopNav title={isEs ? 'TESORERÍA COMPARTIDA' : 'SHARED TREASURY'} showLanguageSwitch />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
         {/* Editorial Header */}
@@ -169,7 +172,7 @@ export const PartyPotView: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
-                BOTE DEL GRUPO
+                {isEs ? 'POZO DEL GRUPO' : 'PARTY POT'}
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <ShieldCheck className="w-3 h-3" />

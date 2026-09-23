@@ -22,6 +22,8 @@ import { PartyTasksBoard } from '@/components/party/PartyTasksBoard';
 import { PartyInviteModal } from '@/components/ui/PartyInviteModal';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
 import { Member } from '@/types';
+import { useTranslation } from '@/lib/i18n/useTranslation';
+import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 
 export const PartyDetailView: React.FC = () => {
   const {
@@ -35,6 +37,7 @@ export const PartyDetailView: React.FC = () => {
     listenToActivePartyRealtime,
     loadPartyFromSupabase,
   } = usePartyStore();
+  const { t } = useTranslation();
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const partyActivities = activities.filter((a) => a.partyId === party?.id);
@@ -58,34 +61,34 @@ export const PartyDetailView: React.FC = () => {
   const quickActions = [
     {
       id: 'games',
-      label: 'PLAY',
+      label: t.partyDetail.quickActions.play,
       icon: Gamepad2,
       color: 'text-[#F0DC00]',
-      sub: '3 minigames',
+      sub: t.partyDetail.quickActions.playSub,
       onClick: () => setCurrentView('games'),
     },
     {
       id: 'split',
-      label: 'SPLIT',
+      label: t.partyDetail.quickActions.split,
       icon: Receipt,
       color: 'text-rose-400',
-      sub: 'Damage calculator',
+      sub: t.partyDetail.quickActions.splitSub,
       onClick: () => setCurrentView('split'),
     },
     {
       id: 'pot',
-      label: 'POT',
+      label: t.partyDetail.quickActions.pot,
       icon: Coins,
       color: 'text-amber-300',
-      sub: `$${party.potBalance.toFixed(2)} active`,
+      sub: t.partyDetail.quickActions.potSub(party.potBalance.toFixed(2)),
       onClick: () => setCurrentView('party-pot'),
     },
     {
       id: 'polls',
-      label: 'POLL',
+      label: t.partyDetail.quickActions.poll,
       icon: BarChart2,
       color: 'text-sky-400',
-      sub: 'Live voting',
+      sub: t.partyDetail.quickActions.pollSub,
       onClick: () => setCurrentView('polls'),
     },
   ];
@@ -103,12 +106,14 @@ export const PartyDetailView: React.FC = () => {
         </button>
 
         <div className="flex items-center gap-2 pointer-events-auto">
+          <LanguageSwitch compact />
+
           <button
             onClick={() => setCurrentView('recap')}
             className="px-3.5 py-1.5 sm:py-2 rounded-full liquid-glass-button text-xs font-bold flex items-center gap-1.5 text-white/90 shadow-lg"
           >
             <FileText className="w-3.5 h-3.5 text-[#F0DC00]" />
-            <span>Recap</span>
+            <span>{t.partyDetail.recap}</span>
           </button>
 
           <button
@@ -149,11 +154,11 @@ export const PartyDetailView: React.FC = () => {
                 title="Tap to show QR and invite crew"
               >
                 <QrCode className="w-3.5 h-3.5 text-[#F0DC00]" />
-                <span>CODE: {party.code}</span>
+                <span>{t.partyDetail.codeLabel(party.code)}</span>
               </button>
               <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-mono text-white/70 border border-white/10">
                 <ShieldCheck className="w-3 h-3 text-[#F0DC00]" />
-                EVENTO PRIVADO
+                {t.partyDetail.privateEvent}
               </span>
             </div>
 
@@ -167,14 +172,14 @@ export const PartyDetailView: React.FC = () => {
                 {party.location}
               </span>
               <span>•</span>
-              <span className="text-white/60">Hosted by {party.hostName}</span>
+              <span className="text-white/60">{t.partyDetail.hostedBy(party.hostName)}</span>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-white/15">
               <AvatarStack
                 members={party.members}
                 size="md"
-                countLabel="going"
+                countLabel={t.home.going}
                 onMemberClick={(m) => setSelectedMember(m)}
               />
 
@@ -188,7 +193,7 @@ export const PartyDetailView: React.FC = () => {
                       : 'text-white/70 hover:text-white'
                   }`}
                 >
-                  Voy
+                  {t.partyDetail.rsvpGoing}
                 </button>
                 <button
                   onClick={() => { if (isGoing) toggleRsvp(party.id); }}
@@ -198,13 +203,13 @@ export const PartyDetailView: React.FC = () => {
                       : 'text-white/70 hover:text-white'
                   }`}
                 >
-                  No voy
+                  {t.partyDetail.rsvpNotGoing}
                 </button>
                 <button
                   onClick={() => { if (!isGoing) toggleRsvp(party.id); }}
                   className="px-3.5 py-1.5 rounded-full text-xs font-bold text-white/70 hover:text-white transition-all cursor-pointer"
                 >
-                  Tal vez
+                  {t.partyDetail.rsvpMaybe}
                 </button>
               </div>
             </div>
@@ -218,10 +223,10 @@ export const PartyDetailView: React.FC = () => {
             {/* Host & Description */}
             <GlassPanel level={2} className="p-5 sm:p-6 border border-white/15">
               <span className="text-[11px] uppercase font-bold tracking-wider text-white/40 block mb-1">
-                ABOUT THE NIGHT
+                {t.partyDetail.aboutTheNight}
               </span>
               <h3 className="font-display font-black text-xl text-white mb-2">
-                Curated by {party.hostName}
+                {t.partyDetail.curatedBy(party.hostName)}
               </h3>
               <p className="text-sm text-white/80 leading-relaxed font-normal mb-4">
                 {party.description}
@@ -236,7 +241,7 @@ export const PartyDetailView: React.FC = () => {
                   <span className="text-xs">✨</span> Golden Hour
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-white/70">
-                  <span>🚫</span> Sin tenis
+                  <span>🚫</span> Casual
                 </span>
               </div>
             </GlassPanel>
@@ -245,9 +250,9 @@ export const PartyDetailView: React.FC = () => {
             <GlassPanel level={2} className="p-5 sm:p-6 border border-white/15">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-white/80 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[#F0DC00]" /> Álbum compartido
+                  <Sparkles className="w-3.5 h-3.5 text-[#F0DC00]" /> {t.partyDetail.sharedAlbum}
                 </span>
-                <span className="text-[11px] text-[#F0DC00] font-semibold">6 fotos</span>
+                <span className="text-[11px] text-[#F0DC00] font-semibold">{t.partyDetail.photosCount(6)}</span>
               </div>
               <div className="grid grid-cols-3 gap-2.5">
                 {[

@@ -52,6 +52,16 @@ import {
   subscribeToTasksRealtime,
 } from '@/services/supabaseService';
 import { distributeBountyOnchain } from '@/services/treasury';
+import { Language } from '@/lib/i18n/translations';
+
+export const detectInitialLanguage = (): Language => {
+  if (typeof window === 'undefined') return 'es';
+  const navLang =
+    window.navigator.languages?.[0] ||
+    window.navigator.language ||
+    '';
+  return navLang.toLowerCase().startsWith('es') ? 'es' : 'en';
+};
 
 export type AppView =
   | 'splash'
@@ -86,6 +96,8 @@ interface PartyStoreState {
   thisOrThat: ThisOrThatQuestion[];
   trivia: TriviaQuestion[];
   activeGameId: GameId;
+  language: Language;
+  setLanguage: (lang: Language) => void;
 
   // Navigation
   setCurrentView: (view: AppView) => void;
@@ -180,6 +192,8 @@ export const usePartyStore = create<PartyStoreState>()(
       currentView: 'splash',
       previousView: null,
       activeTab: 'home',
+      language: detectInitialLanguage(),
+      setLanguage: (lang) => set({ language: lang }),
       parties: INITIAL_PARTIES,
       currentPartyId: 'p-404',
       crews: INITIAL_CREWS,
@@ -1225,6 +1239,7 @@ export const usePartyStore = create<PartyStoreState>()(
         tasks: state.tasks,
         polls: state.polls,
         currentPartyId: state.currentPartyId,
+        language: state.language,
       }),
     }
   )

@@ -14,11 +14,14 @@ import { usePrivySync } from '@/hooks/usePrivySync';
 import { useLogin } from '@privy-io/react-auth';
 import { PrivyAuthModal } from '@/components/ui/PrivyAuthModal';
 import { validateServerInviteCode } from '@/services/supabaseService';
+import { useTranslation } from '@/lib/i18n/useTranslation';
+import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 import confetti from 'canvas-confetti';
 
 export const JoinPartyView: React.FC = () => {
   const { parties, joinPartyByCode, selectParty, goBack, hydrateFromSupabase } = usePartyStore();
   const { authenticated, ready } = usePrivySync();
+  const { t } = useTranslation();
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '']);
   const [isJoining, setIsJoining] = useState(false);
@@ -164,11 +167,11 @@ export const JoinPartyView: React.FC = () => {
         <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-card border border-white/15">
           <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
           <span className="text-[11px] sm:text-xs uppercase tracking-wider text-white/80 font-mono font-semibold">
-            PRIVATE ACCESS · EIP-712
+            {t.joinParty.privateAccessBadge}
           </span>
         </div>
 
-        <div className="w-10 sm:w-12" />
+        <LanguageSwitch compact />
       </div>
 
       {/* Responsive Main Shell: Single column on mobile, 2-column card layout on desktop when matched */}
@@ -187,15 +190,15 @@ export const JoinPartyView: React.FC = () => {
             {/* Left Column: Code Input & Instructions */}
             <div className={matchedParty ? 'text-left' : 'text-center w-full'}>
               <span className="text-xs font-extrabold uppercase tracking-widest text-[#F0DC00] mb-2 block">
-                JOIN PRIVATE CIRCLE
+                {t.joinParty.joinCircle}
               </span>
 
               <h2 className="font-display font-black text-3xl sm:text-5xl md:text-6xl text-white tracking-tight leading-none mb-3">
-                GOT A CODE?
+                {t.joinParty.gotACode}
               </h2>
 
               <p className="text-xs sm:text-sm text-white/60 mb-6 sm:mb-8 leading-relaxed max-w-sm">
-                Enter the 4-character invite code provided by your host. The code resolves directly to an encrypted permit.
+                {t.joinParty.codeDescription}
               </p>
 
               {/* 4-Capsule Code Input (Fully responsive from mobile to desktop) */}
@@ -238,14 +241,14 @@ export const JoinPartyView: React.FC = () => {
                   className="flex items-center gap-2 text-xs text-rose-300 font-medium mb-4 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 max-w-sm"
                 >
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-                  <span>{errorMsg}</span>
+                  <span>{t.joinParty.errorNotFound}</span>
                 </motion.div>
               )}
 
               {/* Quick Preset Hints */}
               {!matchedParty && !errorMsg && (
                 <div className="text-xs text-white/50 mt-3">
-                  Try test codes:{' '}
+                  {t.joinParty.testCodesHint}{' '}
                   <span
                     className="font-mono text-[#F0DC00] font-bold cursor-pointer hover:underline underline-offset-4"
                     onClick={() => setDigits(['8', 'F', '4', 'K'])}
@@ -286,7 +289,7 @@ export const JoinPartyView: React.FC = () => {
 
                       <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-bold text-[#F0DC00] border border-white/15 flex items-center gap-1.5 shadow-lg">
                         <ShieldCheck className="w-3.5 h-3.5 text-[#F0DC00]" />
-                        <span>EIP-712 VERIFIED</span>
+                        <span>{t.joinParty.verifiedBadge}</span>
                       </div>
                     </div>
 
@@ -313,7 +316,7 @@ export const JoinPartyView: React.FC = () => {
                       </p>
 
                       <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                        <AvatarStack members={matchedParty.members} size="sm" countLabel="going" />
+                        <AvatarStack members={matchedParty.members} size="sm" countLabel={t.home.going} />
                       </div>
 
                       {/* Confirm Join Button */}
@@ -332,10 +335,10 @@ export const JoinPartyView: React.FC = () => {
                           }
                         >
                           {isJoining
-                            ? 'Signing Permit...'
+                            ? t.joinParty.enteringButton
                             : !authenticated
-                            ? 'Sign in to join party'
-                            : 'Join party'}
+                            ? t.joinParty.connectToJoin
+                            : t.joinParty.enterPartyButton}
                         </GlassButton>
                       </div>
                     </div>
@@ -350,7 +353,7 @@ export const JoinPartyView: React.FC = () => {
       {/* Bottom Security Assurance */}
       <div className="w-full max-w-4xl mx-auto pt-4 text-center shrink-0">
         <p className="text-[11px] font-medium text-white/50">
-          ACCESO PRIVADO MEDIANTE CÓDIGO DE INVITACIÓN
+          {t.splash.privateAccess}
         </p>
       </div>
 

@@ -1,6 +1,18 @@
-import { DebtSettlement } from '@/types';
+import type { DebtSettlement, PotTransaction } from '@/types';
 
 export const FINANCIAL_ACTIONS_AVAILABLE = false as const;
+
+export function calculateTotalContributed(transactions: PotTransaction[]): number {
+  return transactions
+    .filter((transaction) => transaction.type === 'add')
+    .reduce((total, transaction) => total + transaction.amount, 0);
+}
+
+export function calculateTotalSpent(transactions: PotTransaction[]): number {
+  return transactions
+    .filter((transaction) => transaction.type === 'spend')
+    .reduce((total, transaction) => total + transaction.amount, 0);
+}
 
 export function getFinancialActionsUnavailableMessage(language: 'en' | 'es'): string {
   return language === 'es'

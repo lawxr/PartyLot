@@ -2,23 +2,22 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, CheckCircle2, XCircle, Sparkles, RotateCcw, ArrowRight, Coins, Check } from 'lucide-react';
+import { Trophy, CheckCircle2, XCircle, Sparkles, RotateCcw, ArrowRight } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import confetti from 'canvas-confetti';
+import { getFinancialActionsUnavailableMessage } from '@/services/treasury';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const CrewTrivia: React.FC = () => {
-  const { trivia, parties, currentPartyId, currentUser, rewardGameWinner } = usePartyStore();
-
-  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
+  const { trivia } = usePartyStore();
+  const { language } = useTranslation();
   const [currentRound, setCurrentRound] = useState(0); // 0 to 4 (5 rounds)
   const [score, setScore] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
-  const [isClaiming, setIsClaiming] = useState(false);
-  const [hasClaimedBounty, setHasClaimedBounty] = useState(false);
 
   const totalRounds = trivia.length;
   const currentQ = trivia[currentRound];
@@ -62,29 +61,6 @@ export const CrewTrivia: React.FC = () => {
     setSelectedOption(null);
     setIsAnswered(false);
     setIsGameOver(false);
-    setHasClaimedBounty(false);
-  };
-
-  const handleClaimBounty = async () => {
-    if (isClaiming || hasClaimedBounty || party.potBalance < 5) return;
-    setIsClaiming(true);
-    try {
-      await rewardGameWinner({
-        partyId: party.id,
-        memberId: currentUser.id,
-        amount: 5,
-        gameTitle: 'Crew Lore Trivia',
-      });
-      setHasClaimedBounty(true);
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#F0DC00', '#10B981', '#FFFFFF'],
-      });
-    } finally {
-      setIsClaiming(false);
-    }
   };
 
   if (isGameOver) {
@@ -117,31 +93,9 @@ export const CrewTrivia: React.FC = () => {
             </span>
           </div>
 
-          {score >= 300 && party.potBalance >= 5 && (
-            <div className="mb-4">
-              <button
-                onClick={handleClaimBounty}
-                disabled={isClaiming || hasClaimedBounty}
-                className={`w-full py-3 px-4 rounded-2xl text-xs font-bold font-display flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg ${
-                  hasClaimedBounty
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                    : 'bg-[#F0DC00] text-black hover:brightness-105 shadow-[#F0DC00]/20'
-                }`}
-              >
-                {hasClaimedBounty ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>$5 Trivia Bounty Claimed</span>
-                  </>
-                ) : (
-                  <>
-                    <Coins className="w-4 h-4" />
-                    <span>{isClaiming ? 'Transferring...' : 'Claim $5 Bounty from Party Pot'}</span>
-                  </>
-                )}
-              </button>
-            </div>
-          )}
+          <p role="status" className="mb-4 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-xs text-amber-100">
+            {getFinancialActionsUnavailableMessage(language)}
+          </p>
 
           <GlassButton
             variant="glass"

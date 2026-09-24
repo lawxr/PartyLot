@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import {
   User,
   Party,
@@ -34,14 +34,11 @@ import {
 import { generatePartyCode } from '@/services/party';
 import {
   persistPartyToSupabase,
-  persistMemberJoinToSupabase,
+  joinPartyWithInviteCode,
   persistExpenseToSupabase,
-  persistPotTransactionToSupabase,
   persistActivityToSupabase,
   persistCrewToSupabase,
   addMemberToCrewInDb,
-  persistSettlementToSupabase,
-  persistPotRolloverToSupabase,
   persistTaskToSupabase,
   updateTaskInSupabase,
   fetchPartiesFromDb,
@@ -51,8 +48,27 @@ import {
   subscribeToPartyRealtime,
   subscribeToTasksRealtime,
 } from '@/services/supabaseService';
-import { distributeBountyOnchain } from '@/services/treasury';
 import { Language } from '@/lib/i18n/translations';
+import { FinancialActionResult, getFinancialActionUnavailableResult } from '@/services/treasury';
+import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
+
+const demoMode = isExplicitDevelopmentDemoMode();
+const signedOutUser: User = {
+  id: '',
+  name: 'Guest',
+  handle: '@guest',
+  avatar: '',
+  gatheringsCount: 0,
+  gamesCount: 0,
+  peopleCount: 0,
+  settlementsCount: 0,
+  balance: 0,
+};
+const volatileStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined,
+};
 
 export const detectInitialLanguage = (): Language => {
   if (typeof window === 'undefined') return 'es';
@@ -128,7 +144,10 @@ interface PartyStoreState {
     coverImage: string;
     crewId?: string;
   }) => Party;
-  joinPartyByCode: (code: string) => { success: boolean; party?: Party; message?: string };
+  joinPartyByCode: (
+    code: string,
+    authToken?: string | null
+  ) => Promise<{ success: boolean; party?: Party; message?: string }>;
   toggleRsvp: (partyId: string) => void;
 
   // Expense & Split Actions
@@ -140,19 +159,19 @@ interface PartyStoreState {
     splitBetweenIds: string[];
     category?: ExpenseCategory;
   }) => void;
-  settleAllDebts: (partyId: string, txHash?: string) => void;
+  settleAllDebts: () => FinancialActionResult;
 
   // Party Pot Actions
-  addToPot: (partyId: string, amount: number, description?: string) => void;
-  spendFromPot: (partyId: string, amount: number, description: string) => void;
-  rolloverPotToCrew: (partyId: string, crewId: string) => void;
+  addToPot: (partyId: string, amount: number, description?: string) => FinancialActionResult;
+  spendFromPot: (partyId: string, amount: number, description: string) => FinancialActionResult;
+  rolloverPotToCrew: (partyId: string, crewId: string) => FinancialActionResult;
 
   // Party Tasks & Bounties
   tasks: PartyTask[];
   createPartyTask: (params: { partyId: string; title: string; rewardAmount: number }) => void;
   claimPartyTask: (taskId: string, memberId: string) => void;
   completePartyTask: (taskId: string) => void;
-  verifyAndPayPartyTask: (taskId: string) => Promise<void>;
+  verifyAndPayPartyTask: (taskId: string) => Promise<FinancialActionResult>;
 
   // Polls Actions
   votePoll: (pollId: string, optionId: string) => void;
@@ -167,13 +186,13 @@ interface PartyStoreState {
     memberId: string;
     amount: number;
     gameTitle: string;
-  }) => Promise<void>;
+  }) => Promise<FinancialActionResult>;
 
   // Shared-Experience Graph
   getSharedConnection: (targetMember: Member) => SharedExperienceConnection;
 
   // User & Auth Actions
-  updateUser: (updates: Partial<User>) => void;
+  updateUser: (updates: Partial<User>, authToken?: string | null) => Promise<void>;
   resetUserSession: () => void;
 
   // Realtime Supabase Persistence & Hydration
@@ -188,19 +207,19 @@ interface PartyStoreState {
 export const usePartyStore = create<PartyStoreState>()(
   persist(
     (set, get) => ({
-      currentUser: CURRENT_USER,
+      currentUser: demoMode ? CURRENT_USER : signedOutUser,
       currentView: 'splash',
       previousView: null,
       activeTab: 'home',
       language: detectInitialLanguage(),
       setLanguage: (lang) => set({ language: lang }),
-      parties: INITIAL_PARTIES,
-      currentPartyId: 'p-404',
-      crews: INITIAL_CREWS,
-      currentCrewId: 'c-404',
-      expenses: INITIAL_EXPENSES,
-      transactions: INITIAL_TRANSACTIONS,
-      tasks: [
+      parties: demoMode ? INITIAL_PARTIES : [],
+      currentPartyId: demoMode ? 'p-404' : '',
+      crews: demoMode ? INITIAL_CREWS : [],
+      currentCrewId: demoMode ? 'c-404' : null,
+      expenses: demoMode ? INITIAL_EXPENSES : [],
+      transactions: demoMode ? INITIAL_TRANSACTIONS : [],
+      tasks: demoMode ? [
         {
           id: 'task-1',
           partyId: 'p-404',
@@ -232,12 +251,12 @@ export const usePartyStore = create<PartyStoreState>()(
           completedAt: 'Just now',
           createdAt: '45m ago',
         },
-      ],
-      polls: INITIAL_POLLS,
-      activities: INITIAL_ACTIVITIES,
-      whosMostLikely: WHOS_MOST_LIKELY_QUESTIONS,
-      thisOrThat: THIS_OR_THAT_QUESTIONS,
-      trivia: TRIVIA_QUESTIONS,
+      ] : [],
+      polls: demoMode ? INITIAL_POLLS : [],
+      activities: demoMode ? INITIAL_ACTIVITIES : [],
+      whosMostLikely: demoMode ? WHOS_MOST_LIKELY_QUESTIONS : [],
+      thisOrThat: demoMode ? THIS_OR_THAT_QUESTIONS : [],
+      trivia: demoMode ? TRIVIA_QUESTIONS : [],
       activeGameId: 'whos-most-likely',
 
       setCurrentView: (view) => {
@@ -260,17 +279,37 @@ export const usePartyStore = create<PartyStoreState>()(
 
       goBack: () => {
         set((state) => {
+          const isAuthed = Boolean(state.currentUser?.isPrivyAuthenticated || demoMode);
+
+          // If coming from splash (e.g. into join-party), always return to splash
+          if (state.previousView === 'splash') {
+            return {
+              currentView: 'splash',
+              previousView: null,
+            };
+          }
+
+          // If the user is unauthenticated, they can never be sent to home
+          if (!isAuthed) {
+            return {
+              currentView: 'splash',
+              previousView: null,
+            };
+          }
+
+          // For authenticated users, return to the previous view if valid
           if (
             state.previousView &&
+            state.previousView !== state.currentView &&
             state.previousView !== 'join-party' &&
-            state.previousView !== 'create-party' &&
-            state.previousView !== 'splash'
+            state.previousView !== 'create-party'
           ) {
             return {
               currentView: state.previousView,
               previousView: null,
             };
           }
+
           return { currentView: 'home', previousView: null };
         });
       },
@@ -445,9 +484,43 @@ export const usePartyStore = create<PartyStoreState>()(
         return newParty;
       },
 
-      joinPartyByCode: (code) => {
+      joinPartyByCode: async (code, authToken) => {
         const state = get();
         const normalized = code.trim().toUpperCase();
+
+        if (!demoMode) {
+          const result = await joinPartyWithInviteCode(normalized, authToken || null);
+          if (!result.success || !result.party) {
+            return {
+              success: false,
+              message: result.error || 'The server could not confirm this invite join.',
+            };
+          }
+
+          const confirmedParty = result.party;
+          const partyExists = state.parties.some((p) => p.id === confirmedParty.id);
+          const updatedParties = partyExists
+            ? state.parties.map((p) => (p.id === confirmedParty.id ? confirmedParty : p))
+            : [...state.parties, confirmedParty];
+
+          const newActivity: ActivityItem = {
+            id: `act-${Date.now()}`,
+            partyId: confirmedParty.id,
+            type: 'join',
+            text: `${state.currentUser.name} joined via code ${confirmedParty.code}`,
+            time: 'Just now',
+            avatar: state.currentUser.avatar,
+          };
+
+          set({
+            parties: updatedParties,
+            currentPartyId: confirmedParty.id,
+            activities: [newActivity, ...state.activities],
+          });
+
+          return { success: true, party: confirmedParty };
+        }
+
         const matched = state.parties.find((p) => p.code.toUpperCase() === normalized);
 
         if (!matched) {
@@ -486,7 +559,6 @@ export const usePartyStore = create<PartyStoreState>()(
             activities: [newActivity, ...state.activities],
           });
 
-          persistMemberJoinToSupabase(matched.id, newMember);
           persistActivityToSupabase(newActivity);
         } else {
           set({ currentPartyId: matched.id });
@@ -565,166 +637,14 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      settleAllDebts: (partyId, txHash) => {
-        set((state) => {
-          const party = state.parties.find((p) => p.id === partyId);
-          const resolvedTxHash =
-            txHash ||
-            `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+      // Payment actions stay inert until a real financial provider can confirm them.
+      settleAllDebts: () => getFinancialActionUnavailableResult(),
 
-          const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
-            partyId,
-            type: 'expense',
-            text: `¡Todos los gastos saldados para ${party?.title || 'la fiesta'}! 🎉${txHash ? ` [ref: ${txHash.slice(0, 10)}...]` : ''}`,
-            time: 'Just now',
-            avatar: state.currentUser.avatar,
-          };
+      addToPot: () => getFinancialActionUnavailableResult(),
 
-          const updatedExpenses = state.expenses.map((e) =>
-            e.partyId === partyId ? { ...e, isSettled: true, txHash: resolvedTxHash } : e
-          );
+      spendFromPot: () => getFinancialActionUnavailableResult(),
 
-          const updatedUser = {
-            ...state.currentUser,
-            settlementsCount: (state.currentUser.settlementsCount ?? 0) + 1,
-          };
-
-          persistSettlementToSupabase(partyId, resolvedTxHash);
-          persistActivityToSupabase(newActivity);
-
-          return {
-            expenses: updatedExpenses,
-            currentUser: updatedUser,
-            activities: [newActivity, ...state.activities],
-          };
-        });
-      },
-
-      addToPot: (partyId, amount, description = 'Pot contribution') => {
-        set((state) => {
-          const newTx: PotTransaction = {
-            id: `tx-${Date.now()}`,
-            partyId,
-            type: 'add',
-            amount,
-            description,
-            userName: state.currentUser.name,
-            userAvatar: state.currentUser.avatar,
-            timestamp: 'Just now',
-          };
-
-          const updatedParties = state.parties.map((p) =>
-            p.id === partyId ? { ...p, potBalance: p.potBalance + amount } : p
-          );
-
-          const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
-            partyId,
-            type: 'pot',
-            text: `${state.currentUser.name} added $${amount.toFixed(2)} to the pot`,
-            time: 'Just now',
-            avatar: state.currentUser.avatar,
-          };
-
-          const targetParty = state.parties.find((p) => p.id === partyId);
-          const newBal = (targetParty?.potBalance || 0) + amount;
-          persistPotTransactionToSupabase(newTx, newBal);
-          persistActivityToSupabase(newActivity);
-
-          return {
-            parties: updatedParties,
-            transactions: [newTx, ...state.transactions],
-            activities: [newActivity, ...state.activities],
-          };
-        });
-      },
-
-      spendFromPot: (partyId, amount, description) => {
-        set((state) => {
-          const newTx: PotTransaction = {
-            id: `tx-${Date.now()}`,
-            partyId,
-            type: 'spend',
-            amount,
-            description,
-            userName: state.currentUser.name,
-            userAvatar: state.currentUser.avatar,
-            timestamp: 'Just now',
-          };
-
-          const updatedParties = state.parties.map((p) =>
-            p.id === partyId ? { ...p, potBalance: Math.max(0, p.potBalance - amount) } : p
-          );
-
-          const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
-            partyId,
-            type: 'pot',
-            text: `Spent $${amount.toFixed(2)} from pot for "${description}"`,
-            time: 'Just now',
-            avatar: state.currentUser.avatar,
-          };
-
-          const targetParty = state.parties.find((p) => p.id === partyId);
-          const newBal = Math.max(0, (targetParty?.potBalance || 0) - amount);
-          persistPotTransactionToSupabase(newTx, newBal);
-          persistActivityToSupabase(newActivity);
-
-          return {
-            parties: updatedParties,
-            transactions: [newTx, ...state.transactions],
-            activities: [newActivity, ...state.activities],
-          };
-        });
-      },
-
-      rolloverPotToCrew: (partyId, crewId) => {
-        set((state) => {
-          const party = state.parties.find((p) => p.id === partyId);
-          const crew = state.crews.find((c) => c.id === crewId);
-          if (!party || !crew || party.potBalance <= 0) return state;
-
-          const amount = party.potBalance;
-          const rolloverTx: PotTransaction = {
-            id: `tx-roll-${Date.now()}`,
-            partyId,
-            crewId,
-            type: 'rollover',
-            amount,
-            description: `Rollover to ${crew.name} Treasury`,
-            userName: state.currentUser.name,
-            userAvatar: state.currentUser.avatar,
-            timestamp: 'Just now',
-          };
-
-          const updatedParty = { ...party, potBalance: 0 };
-          const updatedCrew = {
-            ...crew,
-            treasuryBalance: (crew.treasuryBalance ?? 0) + amount,
-          };
-
-          const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
-            partyId,
-            type: 'pot',
-            text: `${state.currentUser.name} rolled over $${amount.toFixed(2)} from party pot to ${crew.name} Treasury! 🏦✨`,
-            time: 'Just now',
-            avatar: state.currentUser.avatar,
-          };
-
-          persistPotRolloverToSupabase(rolloverTx, partyId);
-          persistCrewToSupabase(updatedCrew);
-          persistActivityToSupabase(newActivity);
-
-          return {
-            parties: state.parties.map((p) => (p.id === partyId ? updatedParty : p)),
-            crews: state.crews.map((c) => (c.id === crewId ? updatedCrew : c)),
-            transactions: [rolloverTx, ...state.transactions],
-            activities: [newActivity, ...state.activities],
-          };
-        });
-      },
+      rolloverPotToCrew: () => getFinancialActionUnavailableResult(),
 
       createPartyTask: ({ partyId, title, rewardAmount }) => {
         set((state) => {
@@ -823,73 +743,7 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      verifyAndPayPartyTask: async (taskId) => {
-        const state = get();
-        const task = state.tasks.find((t) => t.id === taskId);
-        if (!task || task.status === 'verified') return;
-
-        const party = state.parties.find((p) => p.id === task.partyId);
-        if (!party) return;
-
-        const reward = task.rewardAmount;
-        const payeeName = task.claimedByName || 'Contributor';
-        const payeeAvatar = task.claimedByAvatar || state.currentUser.avatar;
-
-        let onchainTxHash = '';
-        try {
-          const receipt = await distributeBountyOnchain(
-            party.id,
-            payeeName,
-            reward,
-            `Bounty: ${task.title}`
-          );
-          onchainTxHash = receipt.txHash;
-        } catch (err) {
-          console.warn('Onchain bounty payout warning:', err);
-        }
-
-        const rewardTx: PotTransaction = {
-          id: `tx-bounty-${Date.now()}`,
-          partyId: party.id,
-          type: 'reward',
-          amount: reward,
-          description: `Bounty: ${task.title}`,
-          userName: payeeName,
-          userAvatar: payeeAvatar,
-          timestamp: 'Just now',
-          txHash: onchainTxHash || undefined,
-        };
-
-        const updatedTask: PartyTask = {
-          ...task,
-          status: 'verified',
-        };
-
-        const updatedParty = {
-          ...party,
-          potBalance: Math.max(0, party.potBalance - reward),
-        };
-
-        const newActivity: ActivityItem = {
-          id: `act-${Date.now()}`,
-          partyId: party.id,
-          type: 'pot',
-          text: `Recompensa enviada: $${reward.toFixed(2)} a ${payeeName} por "${task.title}" 💰✨`,
-          time: 'Just now',
-          avatar: payeeAvatar,
-        };
-
-        persistPotTransactionToSupabase(rewardTx, updatedParty.potBalance);
-        updateTaskInSupabase(updatedTask);
-        persistActivityToSupabase(newActivity);
-
-        set({
-          parties: state.parties.map((p) => (p.id === party.id ? updatedParty : p)),
-          tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
-          transactions: [rewardTx, ...state.transactions],
-          activities: [newActivity, ...state.activities],
-        });
-      },
+      verifyAndPayPartyTask: async () => getFinancialActionUnavailableResult(),
 
       votePoll: (pollId, optionId) => {
         set((state) => {
@@ -1002,63 +856,7 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      rewardGameWinner: async ({ partyId, memberId, amount, gameTitle }) => {
-        const state = get();
-        const party = state.parties.find((p) => p.id === partyId);
-        if (!party) return;
-
-        const winner = party.members.find((m) => m.id === memberId);
-        const winnerName = winner ? winner.name : 'Player';
-        const winnerAvatar = winner ? winner.avatar : state.currentUser.avatar;
-
-        let onchainTxHash = '';
-        try {
-          const receipt = await distributeBountyOnchain(
-            party.id,
-            winnerName,
-            amount,
-            `Game Winner: ${gameTitle}`
-          );
-          onchainTxHash = receipt.txHash;
-        } catch (err) {
-          console.warn('Game reward onchain warning:', err);
-        }
-
-        const rewardTx: PotTransaction = {
-          id: `tx-reward-${Date.now()}`,
-          partyId: party.id,
-          type: 'reward',
-          amount,
-          description: `Winner: ${gameTitle} (${winnerName})`,
-          userName: winnerName,
-          userAvatar: winnerAvatar,
-          timestamp: 'Just now',
-          txHash: onchainTxHash || undefined,
-        };
-
-        const updatedParty = {
-          ...party,
-          potBalance: Math.max(0, party.potBalance - amount),
-        };
-
-        const newActivity: ActivityItem = {
-          id: `act-${Date.now()}`,
-          partyId: party.id,
-          type: 'game',
-          text: `👑 ${winnerName} won ${gameTitle} and took home a $${amount.toFixed(2)} bounty from the Pot!`,
-          time: 'Just now',
-          avatar: winnerAvatar,
-        };
-
-        persistPotTransactionToSupabase(rewardTx, updatedParty.potBalance);
-        persistActivityToSupabase(newActivity);
-
-        set({
-          parties: state.parties.map((p) => (p.id === party.id ? updatedParty : p)),
-          transactions: [rewardTx, ...state.transactions],
-          activities: [newActivity, ...state.activities],
-        });
-      },
+      rewardGameWinner: async () => getFinancialActionUnavailableResult(),
 
       getSharedConnection: (targetMember) => {
         const state = get();
@@ -1115,20 +913,27 @@ export const usePartyStore = create<PartyStoreState>()(
         };
       },
 
-      updateUser: (updates) => {
-        set((state) => {
-          const updated = {
-            ...state.currentUser,
-            ...updates,
-          };
-          syncUserDataToDb(updated);
-          return { currentUser: updated };
-        });
+      updateUser: async (updates, authToken) => {
+        const state = get();
+        const updated = {
+          ...state.currentUser,
+          ...updates,
+        };
+
+        if (authToken && updated.id) {
+          await syncUserDataToDb(updated, authToken);
+        } else if (!demoMode && updated.id) {
+          await syncUserDataToDb(updated, null).catch((error) =>
+            console.warn('User profile changes are not persisted:', error)
+          );
+        }
+
+        set({ currentUser: updated });
       },
 
       resetUserSession: () => {
         set({
-          currentUser: CURRENT_USER,
+          currentUser: demoMode ? CURRENT_USER : signedOutUser,
           currentView: 'splash',
         });
       },
@@ -1193,12 +998,12 @@ export const usePartyStore = create<PartyStoreState>()(
 
       resetToDefaults: () => {
         set({
-          currentUser: CURRENT_USER,
-          parties: INITIAL_PARTIES,
-          crews: INITIAL_CREWS,
-          expenses: INITIAL_EXPENSES,
-          transactions: INITIAL_TRANSACTIONS,
-          tasks: [
+          currentUser: demoMode ? CURRENT_USER : signedOutUser,
+          parties: demoMode ? INITIAL_PARTIES : [],
+          crews: demoMode ? INITIAL_CREWS : [],
+          expenses: demoMode ? INITIAL_EXPENSES : [],
+          transactions: demoMode ? INITIAL_TRANSACTIONS : [],
+          tasks: demoMode ? [
             {
               id: 'task-1',
               partyId: 'p-404',
@@ -1218,17 +1023,20 @@ export const usePartyStore = create<PartyStoreState>()(
               claimedByAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
               createdAt: '30m ago',
             },
-          ],
-          polls: INITIAL_POLLS,
-          activities: INITIAL_ACTIVITIES,
-          whosMostLikely: WHOS_MOST_LIKELY_QUESTIONS,
-          thisOrThat: THIS_OR_THAT_QUESTIONS,
-          trivia: TRIVIA_QUESTIONS,
+          ] : [],
+          polls: demoMode ? INITIAL_POLLS : [],
+          activities: demoMode ? INITIAL_ACTIVITIES : [],
+          whosMostLikely: demoMode ? WHOS_MOST_LIKELY_QUESTIONS : [],
+          thisOrThat: demoMode ? THIS_OR_THAT_QUESTIONS : [],
+          trivia: demoMode ? TRIVIA_QUESTIONS : [],
         });
       },
     }),
     {
       name: 'partylot-storage-v1',
+      storage: createJSONStorage(() =>
+        demoMode && typeof window !== 'undefined' ? window.localStorage : volatileStorage
+      ),
       partialize: (state) => ({
         currentUser: state.currentUser,
         parties: state.parties,

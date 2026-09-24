@@ -1,167 +1,93 @@
-import { PotTransaction, DebtSettlement } from '@/types';
-import { executeSponsoredUserOp, getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
-import { simulateTreasuryCall } from '@/lib/web3/metropolis';
-import { MONAD_CONTRACT_ADDRESSES } from '@/contracts';
-import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
+import type { DebtSettlement, PotTransaction } from '@/types';
+
+export const FINANCIAL_ACTIONS_AVAILABLE = false as const;
+
+export type FinancialActionResult = {
+  status: 'unavailable';
+  code: 'financial-provider-not-configured';
+  message: string;
+};
 
 export function calculateTotalContributed(transactions: PotTransaction[]): number {
   return transactions
-    .filter((t) => t.type === 'add')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter((transaction) => transaction.type === 'add')
+    .reduce((total, transaction) => total + transaction.amount, 0);
 }
 
 export function calculateTotalSpent(transactions: PotTransaction[]): number {
   return transactions
-    .filter((t) => t.type === 'spend')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter((transaction) => transaction.type === 'spend')
+    .reduce((total, transaction) => total + transaction.amount, 0);
 }
 
-export interface TreasuryExecutionReceipt {
-  success: boolean;
-  txHash: string;
-  blockNumber: number;
-  explorerUrl: string;
-  amount: number;
-  method: string;
+export function getFinancialActionsUnavailableMessage(language: 'en' | 'es'): string {
+  return language === 'es'
+    ? 'Los pagos, retiros, recompensas y liquidaciones no están disponibles. No se ha movido dinero ni cambiado ningún saldo.'
+    : 'Payments, spending, rewards, and settlements are unavailable. No money has moved and no balances have changed.';
 }
 
-/**
- * Deposits funds into the PartyTreasury smart contract on Monad Testnet.
- * Uses Pimlico sponsored ERC-4337 UserOp for 0-gas execution.
- */
+export function getFinancialActionUnavailableResult(
+  language: 'en' | 'es' = 'en'
+): FinancialActionResult {
+  return {
+    status: 'unavailable',
+    code: 'financial-provider-not-configured',
+    message: getFinancialActionsUnavailableMessage(language),
+  };
+}
+
+export class TreasuryUnavailableError extends Error {
+  constructor() {
+    super('Financial actions are unavailable until a real payment service is configured.');
+    this.name = 'TreasuryUnavailableError';
+  }
+}
+
+function rejectUnavailable(): never {
+  throw new TreasuryUnavailableError();
+}
+
+/** Financial integrations are intentionally unavailable until a real provider exists. */
 export async function depositToPartyPotOnchain(
-  partyId: string,
-  amount: number,
-  userAddress?: string
-): Promise<TreasuryExecutionReceipt> {
-  const account = getOrCreateSmartAccount();
-  const sender = userAddress || account.address;
-
-  // 1. Simulate on Tenderly Pro for instant pre-flight validation
-  await simulateTreasuryCall(
-    MONAD_CONTRACT_ADDRESSES.partyTreasury,
-    'deposit',
-    { partyId, sender, amount }
-  );
-
-  // 2. Execute via Pimlico ERC-4337 Sponsored Account Abstraction
-  const userOpReceipt = await executeSponsoredUserOp(sender, [
-    {
-      to: MONAD_CONTRACT_ADDRESSES.partyTreasury,
-      value: amount,
-      label: `PartyPot.deposit(${partyId}, $${amount})`,
-    },
-  ]);
-
-  return {
-    success: userOpReceipt.success,
-    txHash: userOpReceipt.transactionHash,
-    blockNumber: userOpReceipt.blockNumber,
-    explorerUrl: getMonadExplorerTxUrl(userOpReceipt.transactionHash),
-    amount,
-    method: 'deposit',
-  };
+  _partyId: string,
+  _amount: number,
+  _userAddress?: string
+): Promise<never> {
+  void _partyId;
+  void _amount;
+  void _userAddress;
+  return rejectUnavailable();
 }
 
-/**
- * Distributes an economic reward / bounty directly from the Party Pot to a member.
- */
 export async function distributeBountyOnchain(
-  partyId: string,
-  recipientAddress: string,
-  amount: number,
-  role: string
-): Promise<TreasuryExecutionReceipt> {
-  const account = getOrCreateSmartAccount();
-
-  await simulateTreasuryCall(
-    MONAD_CONTRACT_ADDRESSES.partyTreasury,
-    'distributeReward',
-    { partyId, recipient: recipientAddress, amount, role }
-  );
-
-  const userOpReceipt = await executeSponsoredUserOp(account.address, [
-    {
-      to: MONAD_CONTRACT_ADDRESSES.partyTreasury,
-      value: 0,
-      label: `PartyTreasury.distributeReward(${recipientAddress}, $${amount}, "${role}")`,
-    },
-  ]);
-
-  return {
-    success: userOpReceipt.success,
-    txHash: userOpReceipt.transactionHash,
-    blockNumber: userOpReceipt.blockNumber,
-    explorerUrl: getMonadExplorerTxUrl(userOpReceipt.transactionHash),
-    amount,
-    method: 'distributeReward',
-  };
+  _partyId: string,
+  _recipientAddress: string,
+  _amount: number,
+  _role: string
+): Promise<never> {
+  void _partyId;
+  void _recipientAddress;
+  void _amount;
+  void _role;
+  return rejectUnavailable();
 }
 
-/**
- * Settles debts among gathering participants in a single batch on Monad.
- */
 export async function settleDamageOnchain(
-  partyId: string,
-  settlements: DebtSettlement[]
-): Promise<TreasuryExecutionReceipt> {
-  const account = getOrCreateSmartAccount();
-  const totalAmount = settlements.reduce((sum, s) => sum + s.amount, 0);
-
-  await simulateTreasuryCall(
-    MONAD_CONTRACT_ADDRESSES.partyTreasury,
-    'settleDebts',
-    { partyId, settlementsCount: settlements.length, totalAmount }
-  );
-
-  const userOpReceipt = await executeSponsoredUserOp(account.address, [
-    {
-      to: MONAD_CONTRACT_ADDRESSES.partyTreasury,
-      value: 0,
-      label: `SettlementEngine.settleDebts(${partyId}, ${settlements.length} transfers)`,
-    },
-  ]);
-
-  return {
-    success: userOpReceipt.success,
-    txHash: userOpReceipt.transactionHash,
-    blockNumber: userOpReceipt.blockNumber,
-    explorerUrl: getMonadExplorerTxUrl(userOpReceipt.transactionHash),
-    amount: totalAmount,
-    method: 'settleDebts',
-  };
+  _partyId: string,
+  _settlements: DebtSettlement[]
+): Promise<never> {
+  void _partyId;
+  void _settlements;
+  return rejectUnavailable();
 }
 
-/**
- * Rolls over remaining Party Pot funds to the Crew Treasury contract for future gatherings.
- */
 export async function rolloverFundsOnchain(
-  fromTreasury: string,
-  nextPartyId: string,
-  amount: number
-): Promise<TreasuryExecutionReceipt> {
-  const account = getOrCreateSmartAccount();
-
-  await simulateTreasuryCall(
-    MONAD_CONTRACT_ADDRESSES.partyTreasury,
-    'rolloverToNextParty',
-    { fromTreasury, nextPartyId, amount }
-  );
-
-  const userOpReceipt = await executeSponsoredUserOp(account.address, [
-    {
-      to: MONAD_CONTRACT_ADDRESSES.partyTreasury,
-      value: 0,
-      label: `PartyTreasury.rolloverToNextParty(${nextPartyId}, $${amount})`,
-    },
-  ]);
-
-  return {
-    success: userOpReceipt.success,
-    txHash: userOpReceipt.transactionHash,
-    blockNumber: userOpReceipt.blockNumber,
-    explorerUrl: getMonadExplorerTxUrl(userOpReceipt.transactionHash),
-    amount,
-    method: 'rolloverToNextParty',
-  };
+  _fromTreasury: string,
+  _nextPartyId: string,
+  _amount: number
+): Promise<never> {
+  void _fromTreasury;
+  void _nextPartyId;
+  void _amount;
+  return rejectUnavailable();
 }

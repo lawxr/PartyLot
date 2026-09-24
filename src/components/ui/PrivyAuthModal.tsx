@@ -2,71 +2,44 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, Mail, Apple, CheckCircle2, Wallet, Sparkles } from 'lucide-react';
+import { ShieldCheck, Mail, Apple, Wallet, Sparkles } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 import { usePrivy } from '@privy-io/react-auth';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
-import confetti from 'canvas-confetti';
+import { isPrivyConfigured } from '@/lib/runtimeMode';
 
 interface PrivyAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
 }
 
 export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
   isOpen,
   onClose,
-  onSuccess,
 }) => {
   const { login, ready } = usePrivy();
   const { t } = useTranslation();
   const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
-  const [successAccount, setSuccessAccount] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const authConfigured = isPrivyConfigured();
 
   const handleSocialAuth = async (method: 'apple' | 'google' | 'email') => {
-    setLoadingMethod(method);
-
-    const isLivePrivy =
-      Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID) &&
-      !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('demo') &&
-      !process.env.NEXT_PUBLIC_PRIVY_APP_ID?.includes('placeholder');
-
-    if (isLivePrivy && ready) {
-      try {
-        onClose();
-        login();
-        setLoadingMethod(null);
-        return;
-      } catch (e) {
-        console.warn('Privy native modal fallback:', e);
-      }
+    if (!authConfigured || !ready) {
+      setAuthError('Sign-in is unavailable because the authentication provider is not configured.');
+      return;
     }
 
-    // Simulate instant silent embedded smart wallet creation
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    const session = getOrCreateSmartAccount(
-      method,
-      method === 'apple' ? 'law.party@icloud.com' : 'law@gmail.com'
-    );
-
-    setLoadingMethod(null);
-    setSuccessAccount(session.address);
-
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.6 },
-      colors: ['#F0DC00', '#FFFFFF'],
-    });
-
-    setTimeout(() => {
-      onClose();
-      if (onSuccess) onSuccess();
-    }, 800);
+    setLoadingMethod(method);
+    setAuthError(null);
+    try {
+      await login();
+      setLoadingMethod(null);
+    } catch (error) {
+      console.warn('Privy sign-in could not start:', error);
+      setAuthError('Sign-in could not be started. Please try again later.');
+      setLoadingMethod(null);
+    }
   };
 
   return (
@@ -85,36 +58,23 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
         </div>
 
         <AnimatePresence mode="wait">
-          {successAccount ? (
-            <motion.div
-              key="success"
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="py-5"
-            >
-              <div className="w-16 h-16 rounded-full bg-[#F0DC00]/20 border border-[#F0DC00] text-[#F0DC00] flex items-center justify-center mx-auto mb-3.5 shadow-[0_0_24px_rgba(240,220,0,0.35)]">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-              <h4 className="font-display font-black text-2xl text-white tracking-tight">
-                {t.privy.accountReadyTitle}
-              </h4>
-              <p className="text-xs text-white/70 mt-1 max-w-xs mx-auto">
-                {t.privy.accountReadySubtitle}
-              </p>
-            </motion.div>
-          ) : (
             <motion.div key="options" className="space-y-3 relative z-10">
               <p className="text-xs text-white/70 max-w-sm mx-auto leading-relaxed">
                 {t.privy.welcomeSubtitle}
               </p>
+
+              {(!authConfigured || authError) && (
+                <p role="alert" className="text-xs text-amber-200 rounded-xl border border-amber-300/20 bg-amber-300/10 p-3">
+                  {authError || 'Sign-in is unavailable because the authentication provider is not configured.'}
+                </p>
+              )}
 
               {/* Apple Login - VisionOS Tactile Specular Button */}
               <motion.button
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleSocialAuth('apple')}
-                disabled={loadingMethod !== null}
+                disabled={loadingMethod !== null || !authConfigured || !ready}
                 className="w-full min-h-[50px] py-3 px-4 rounded-2xl liquid-glass-auth-apple font-semibold text-sm flex items-center justify-center gap-3 cursor-pointer"
               >
                 <Apple className="w-4 h-4 fill-black shrink-0" />
@@ -128,7 +88,7 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleSocialAuth('google')}
-                disabled={loadingMethod !== null}
+                disabled={loadingMethod !== null || !authConfigured || !ready}
                 className="w-full min-h-[50px] py-3 px-4 rounded-2xl liquid-glass-auth-glass text-white font-semibold text-sm flex items-center justify-center gap-3 cursor-pointer"
               >
                 <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0">
@@ -144,22 +104,19 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleSocialAuth('email')}
-                disabled={loadingMethod !== null}
+                disabled={loadingMethod !== null || !authConfigured || !ready}
                 className="w-full min-h-[46px] py-2.5 px-4 rounded-2xl liquid-glass-auth-glass text-white/90 font-medium text-xs flex items-center justify-center gap-2.5 cursor-pointer"
               >
                 <Mail className="w-4 h-4 text-white/60 shrink-0" />
                 <span className="truncate">{t.privy.continueEmail}</span>
               </motion.button>
 
-              {/* Monad / External Web3 Wallet - Radiant Amber Glass */}
+              {/* Wallet sign-in uses the configured authentication provider. */}
               <motion.button
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  onClose();
-                  login();
-                }}
-                disabled={loadingMethod !== null}
+                onClick={() => handleSocialAuth('email')}
+                disabled={loadingMethod !== null || !authConfigured || !ready}
                 className="w-full min-h-[46px] py-2.5 px-4 rounded-2xl liquid-glass-auth-web3 text-white font-medium text-xs flex items-center justify-center gap-2.5 cursor-pointer"
               >
                 <Wallet className="w-4 h-4 text-[#F0DC00] shrink-0" />
@@ -172,7 +129,6 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
                 <span>{t.privy.secureAccessBadge}</span>
               </div>
             </motion.div>
-          )}
         </AnimatePresence>
       </div>
     </BottomSheet>

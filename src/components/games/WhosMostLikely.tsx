@@ -2,22 +2,23 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, RefreshCw, Coins, Check } from 'lucide-react';
+import { Crown, RefreshCw } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import confetti from 'canvas-confetti';
+import { getFinancialActionsUnavailableMessage } from '@/services/treasury';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const WhosMostLikely: React.FC = () => {
-  const { parties, currentPartyId, whosMostLikely, voteWhosMostLikely, rewardGameWinner } =
+  const { parties, currentPartyId, whosMostLikely, voteWhosMostLikely } =
     usePartyStore();
+  const { language } = useTranslation();
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const [questionIndex, setQuestionIndex] = useState(0);
   const [votedMemberId, setVotedMemberId] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
-  const [isRewarding, setIsRewarding] = useState(false);
-  const [rewardedWinnerId, setRewardedWinnerId] = useState<string | null>(null);
 
   const currentQ = whosMostLikely[questionIndex % whosMostLikely.length];
 
@@ -47,28 +48,6 @@ export const WhosMostLikely: React.FC = () => {
     setVotedMemberId(null);
     setShowResults(false);
     setQuestionIndex((prev) => prev + 1);
-  };
-
-  const handleRewardWinner = async () => {
-    if (!winnerMember || isRewarding || rewardedWinnerId === winnerMember.id) return;
-    setIsRewarding(true);
-    try {
-      await rewardGameWinner({
-        partyId: party.id,
-        memberId: winnerMember.id,
-        amount: 3,
-        gameTitle: "Who's Most Likely",
-      });
-      setRewardedWinnerId(winnerMember.id);
-      confetti({
-        particleCount: 70,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#F0DC00', '#10B981', '#FFFFFF'],
-      });
-    } finally {
-      setIsRewarding(false);
-    }
   };
 
   return (
@@ -105,13 +84,19 @@ export const WhosMostLikely: React.FC = () => {
                   : 'hover:border-white/30'
               }`}
             >
-              <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white/20 mb-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={member.avatar}
-                  alt={member.name}
-                  className="w-full h-full object-cover"
-                />
+              <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white/20 mb-2 flex items-center justify-center bg-black/40">
+                {member.avatar ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={member.avatar}
+                    alt={member.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-xl">
+                    {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
+                  </div>
+                )}
                 {isWinner && (
                   <div className="absolute top-0 right-0 w-6 h-6 rounded-full bg-[#F0DC00] text-black flex items-center justify-center shadow-lg">
                     <Crown className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -158,13 +143,19 @@ export const WhosMostLikely: React.FC = () => {
             className="w-full p-4 rounded-2xl bg-[#F0DC00]/10 border border-[#F0DC00]/30 flex flex-col sm:flex-row items-center justify-between gap-3 mb-4"
           >
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#F0DC00] shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={winnerMember.avatar}
-                  alt={winnerMember.name}
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#F0DC00] shrink-0 flex items-center justify-center bg-black/40">
+                {winnerMember.avatar ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={winnerMember.avatar}
+                    alt={winnerMember.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-lg">
+                    {winnerMember.name ? winnerMember.name.charAt(0).toUpperCase() : 'W'}
+                  </div>
+                )}
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-[#F0DC00] tracking-wider block">
@@ -174,37 +165,15 @@ export const WhosMostLikely: React.FC = () => {
                   {winnerMember.name} takes the crown! 👑
                 </p>
                 <span className="text-[11px] text-white/60">
-                  {party.potBalance > 0
-                    ? `Party Pot: $${party.potBalance.toFixed(2)} available`
-                    : 'Party Pot empty'}
+                  {language === 'es' ? 'No hay pagos disponibles' : 'No payments are available'}
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              {party.potBalance >= 3 && (
-                <button
-                  onClick={handleRewardWinner}
-                  disabled={isRewarding || rewardedWinnerId === winnerMember.id}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold font-display flex items-center gap-1.5 transition-all active:scale-95 ${
-                    rewardedWinnerId === winnerMember.id
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-[#F0DC00] text-black hover:brightness-105 shadow-md'
-                  }`}
-                >
-                  {rewardedWinnerId === winnerMember.id ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>$3 Bounty Paid</span>
-                    </>
-                  ) : (
-                    <>
-                      <Coins className="w-3.5 h-3.5" />
-                      <span>{isRewarding ? 'Paying...' : 'Reward $3 from Pot'}</span>
-                    </>
-                  )}
-                </button>
-              )}
+              <p role="status" className="text-xs text-amber-100">
+                {getFinancialActionsUnavailableMessage(language)}
+              </p>
 
               <GlassButton
                 variant="glass"

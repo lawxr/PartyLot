@@ -81,3 +81,8 @@ Thumbs.db
 PRODUCT.md
 product.md
 
+# Agent & Tool Cache
+.atl/
+.codegraph/
+
+

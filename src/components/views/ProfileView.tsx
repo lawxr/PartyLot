@@ -4,22 +4,24 @@ import React, { useState } from 'react';
 import { RotateCcw, ShieldCheck, Copy, Check, LogOut, Globe } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
-import { getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
 import { usePrivySync } from '@/hooks/usePrivySync';
 import { SharedExperienceConnection } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
+import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
+import { EditProfileModal } from '@/components/ui/EditProfileModal';
 
 export const ProfileView: React.FC = () => {
   const { currentUser, resetToDefaults } = usePartyStore();
   const { logout: privyLogout } = usePrivySync();
   const { t, language } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const demoMode = isExplicitDevelopmentDemoMode();
 
-  const smartAccount = getOrCreateSmartAccount();
-  const activeAddress = currentUser.walletAddress || smartAccount.address;
+  const activeAddress = currentUser.walletAddress;
 
-  const sharedConnections: SharedExperienceConnection[] = [
+  const sharedConnections: SharedExperienceConnection[] = demoMode ? [
     {
       targetUserId: 'u-ana',
       targetUserName: 'Ana',
@@ -67,9 +69,9 @@ export const ProfileView: React.FC = () => {
       recurringCrewsShared: 1,
       sparkLevel: 'Kindling',
     },
-  ];
+  ] : [];
 
-  const pastNights = [
+  const pastNights = demoMode ? [
     {
       title: 'Neon Rooftop Sunset',
       date: 'Aug 14',
@@ -82,15 +84,16 @@ export const ProfileView: React.FC = () => {
       people: 26,
       cover: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=600&q=80',
     },
-  ];
+  ] : [];
 
-  const badges = [
+  const badges = demoMode ? [
     { name: 'Aux Cord Royalty', desc: 'Played 40+ tracks without a single skip', icon: '🎧' },
     { name: 'Late Night Survivor', desc: 'Present at 5+ sunrises in 2026', icon: '🌅' },
     { name: 'Instant Settler', desc: '100% on-time damage settlements', icon: '⚡' },
-  ];
+  ] : [];
 
   const handleCopyAddress = async () => {
+    if (!activeAddress) return;
     await navigator.clipboard.writeText(activeAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -101,13 +104,19 @@ export const ProfileView: React.FC = () => {
       {/* Profile Header */}
       <header className="flex flex-col items-center text-center my-6 sm:my-8 border-b border-white/10 pb-6">
         <div className="relative mb-3">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#F0DC00]/60 p-1 liquid-glass-card shadow-2xl">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
-              className="w-full h-full object-cover rounded-full"
-            />
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#F0DC00]/60 p-1 liquid-glass-card shadow-2xl flex items-center justify-center">
+            {currentUser.avatar ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.name}
+                className="w-full h-full object-cover rounded-full"
+              />
+            ) : (
+              <div className="w-full h-full rounded-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-3xl">
+                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'G'}
+              </div>
+            )}
           </div>
           {/* Real online green indicator dot */}
           <span
@@ -123,13 +132,13 @@ export const ProfileView: React.FC = () => {
         <h2 className="bubble text-4xl sm:text-6xl text-white tracking-tight drop-shadow-lg">
           {currentUser.name}
         </h2>
-        <span className="text-xs sm:text-sm font-semibold text-white/70 mt-1">
-          @{currentUser.handle} · Miami, FL
+        <span className="text-xs sm:text-sm font-semibold text-white/70 mt-1 font-mono">
+          {currentUser.handle?.startsWith('@') ? currentUser.handle : `@${currentUser.handle || 'partymember'}`}
         </span>
-        <p className="text-xs sm:text-sm text-white/75 max-w-sm mt-2 leading-relaxed">
-          Amante de las rooftop parties y las buenas playlists. Siempre organizando el próximo golden hour.
-        </p>
-        <button className="mt-3.5 px-6 py-2 rounded-full pill-outline font-display font-bold text-xs uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 cursor-pointer">
+        <button
+          onClick={() => setIsEditProfileOpen(true)}
+          className="mt-3.5 px-6 py-2 rounded-full pill-outline font-display font-bold text-xs uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 cursor-pointer"
+        >
           Editar perfil
         </button>
       </header>
@@ -208,9 +217,15 @@ export const ProfileView: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full overflow-hidden border border-white/20 shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={c.targetUserAvatar} alt={c.targetUserName} className="w-full h-full object-cover" />
+                        <div className="w-11 h-11 rounded-full overflow-hidden border border-white/20 shrink-0 flex items-center justify-center bg-black/40">
+                          {c.targetUserAvatar ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={c.targetUserAvatar} alt={c.targetUserName} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-sm">
+                              {c.targetUserName ? c.targetUserName.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                          )}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -265,27 +280,6 @@ export const ProfileView: React.FC = () => {
             </div>
           </section>
 
-          {/* Action Buttons: Reset Demo & Log Out */}
-          <div className="pt-2 space-y-2.5">
-            <button
-              onClick={() => {
-                resetToDefaults();
-                alert('App state restored to fresh demo data!');
-              }}
-              className="w-full text-xs text-white/50 hover:text-white flex items-center justify-center gap-2 py-3 px-4 rounded-2xl liquid-glass-card border border-white/10 transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>Reset Local Demo Data</span>
-            </button>
-
-            <button
-              onClick={privyLogout}
-              className="w-full text-xs text-red-400 hover:text-red-300 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl liquid-glass-card border border-red-500/20 hover:border-red-500/40 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Log out</span>
-            </button>
-          </div>
         </div>
 
         {/* Right Column: Badges, Past Nights, Metropolis Diagnostics (7 cols on desktop) */}
@@ -379,8 +373,10 @@ export const ProfileView: React.FC = () => {
                     {language === 'es' ? 'Cuenta y Seguridad' : 'Account & Security'}
                   </span>
                 </div>
-                <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-0.5 rounded-full">
-                  {language === 'es' ? 'Verificado' : 'Verified'}
+                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${currentUser.isPrivyAuthenticated ? 'text-emerald-400 bg-emerald-400/10 border border-emerald-400/20' : 'text-amber-200 bg-amber-300/10 border border-amber-300/20'}`}>
+                  {currentUser.isPrivyAuthenticated
+                    ? language === 'es' ? 'Autenticado' : 'Authenticated'
+                    : language === 'es' ? 'Sin autenticar' : 'Not authenticated'}
                 </span>
               </div>
 
@@ -390,10 +386,11 @@ export const ProfileView: React.FC = () => {
                 </span>
                 <div className="flex items-center justify-between mt-1.5 p-3 rounded-2xl bg-black/60 border border-white/10 font-mono text-xs">
                   <span className="text-[#F0DC00] truncate max-w-[340px]">
-                    {activeAddress}
+                    {activeAddress || (language === 'es' ? 'Sin cartera autenticada' : 'No authenticated wallet connected')}
                   </span>
                   <button
                     onClick={handleCopyAddress}
+                    disabled={!activeAddress}
                     className="text-white/60 hover:text-white p-1 ml-2 shrink-0 cursor-pointer"
                     aria-label="Copy Address"
                   >
@@ -458,6 +455,11 @@ export const ProfileView: React.FC = () => {
           </section>
         </div>
       </div>
+
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+      />
     </div>
   );
 };

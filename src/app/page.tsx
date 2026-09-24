@@ -16,13 +16,15 @@ import { ProfileView } from '@/components/views/ProfileView';
 import { CrewDetailView } from '@/components/views/CrewDetailView';
 import { TabBar } from '@/components/navigation/TabBar';
 import { usePrivySync } from '@/hooks/usePrivySync';
+import { isPrivyConfigured, isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 const subscribe = () => () => {};
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
 export default function App() {
-  const { currentView, parties, currentPartyId } = usePartyStore();
+  const { currentView, parties, currentPartyId, currentUser, setCurrentView } = usePartyStore();
   const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
 
   // Synchronize Privy auth & embedded wallet state across views
@@ -34,6 +36,15 @@ export default function App() {
       (window as any).__partyStore = usePartyStore;
     }
   }, []);
+
+  // Route gate: unauthenticated users (without Privy or demo mode) can only access splash or join-party
+  useEffect(() => {
+    if (!mounted) return;
+    const isAuthed = Boolean(currentUser?.isPrivyAuthenticated || isExplicitDevelopmentDemoMode());
+    if (!isAuthed && currentView !== 'splash' && currentView !== 'join-party') {
+      setCurrentView('splash');
+    }
+  }, [mounted, currentUser?.isPrivyAuthenticated, currentView, setCurrentView]);
 
   if (!mounted) {
     // Avoid hydration mismatch on initial render
@@ -60,6 +71,15 @@ export default function App() {
 
       {/* Main Responsive View Container */}
       <div className="relative z-10 w-full min-h-screen flex flex-col justify-start">
+        {(isExplicitDevelopmentDemoMode() || !isPrivyConfigured() || !isSupabaseConfigured()) && (
+          <div role="status" className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-4xl rounded-xl border border-amber-300/25 bg-amber-300/10 px-4 py-2 text-center text-xs text-amber-100">
+            {isExplicitDevelopmentDemoMode()
+              ? 'Development demo mode — sample data and local changes are not real or persisted to a production database.'
+              : !isPrivyConfigured()
+              ? 'Sign-in is unavailable: configure the authentication provider. Demo fixtures are disabled.'
+              : 'Database access is unavailable. Invite joins need server-side authentication and an atomic invite-join service.'}
+          </div>
+        )}
         {currentView === 'splash' && <SplashView />}
         {currentView === 'home' && <HomeView />}
         {currentView === 'create-party' && <CreatePartyView />}

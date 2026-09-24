@@ -495,9 +495,15 @@ export const RecapView: React.FC = () => {
                     key={member.id}
                     className="p-2.5 rounded-xl liquid-glass-card flex items-center gap-2.5 border border-white/10"
                   >
-                    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/20">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
+                    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/20 flex items-center justify-center bg-black/40">
+                      {member.avatar ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-bold text-xs">
+                          {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
+                        </div>
+                      )}
                     </div>
                     <div className="min-w-0">
                       <span className="text-xs font-bold text-white truncate block">

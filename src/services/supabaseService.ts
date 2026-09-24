@@ -19,55 +19,120 @@ import {
 export interface InviteValidationResult {
   valid: boolean;
   partyId?: string;
+  partyTitle?: string;
+  partyLocation?: string;
   error?: string;
 }
 
 /**
- * Validates a 4-character invite code against server-side invitation records.
+ * Validates an invite code against server-side invitation records via the API route.
  * Verifies revocation, expiration, and usage limits.
  */
 export async function validateServerInviteCode(code: string): Promise<InviteValidationResult> {
-  const supabase = getSupabase();
-  if (!supabase) {
-    return { valid: true }; // Local demo mode
+  const normalized = code.trim().toUpperCase();
+  if (!normalized) {
+    return { valid: false, error: 'Invite code cannot be empty.' };
+  }
+
+  try {
+    const res = await fetch(`/api/invites/validate?code=${encodeURIComponent(normalized)}`);
+    const data = await res.json();
+
+    if (!res.ok || !data.valid) {
+      return {
+        valid: false,
+        error: data.error || 'Invite code could not be verified. Check with the host.',
+      };
+    }
+
+    return {
+      valid: true,
+      partyId: data.party_id,
+      partyTitle: data.party_title,
+      partyLocation: data.party_location,
+    };
+  } catch (err) {
+    console.warn('Invite validation fetch failed:', err);
+    return { valid: false, error: 'Invite validation service is unreachable. Please try again later.' };
+  }
+}
+
+/**
+ * Atomically validates the invite code and enrolls the authenticated Privy user
+ * into the party via the server-side API route.
+ */
+export async function joinPartyWithInviteCode(
+  code: string,
+  authToken: string | null
+): Promise<{ success: boolean; partyId?: string; party?: Party; error?: string }> {
+  if (!authToken) {
+    return {
+      success: false,
+      error: 'Authentication is required to join a party. Please sign in first.',
+    };
   }
 
   const normalized = code.trim().toUpperCase();
 
   try {
-    const { data: invite, error } = await supabase
-      .from('invitations')
-      .select('*, parties(*)')
-      .eq('code', normalized)
-      .eq('is_revoked', false)
-      .single();
+    const res = await fetch('/api/parties/join', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ inviteCode: normalized }),
+    });
 
-    if (error || !invite) {
-      // Fallback: check if party exists with this code
-      const { data: party } = await supabase
-        .from('parties')
-        .select('id')
-        .eq('code', normalized)
-        .single();
+    const data = await res.json();
 
-      if (party) {
-        return { valid: true, partyId: party.id };
-      }
-      return { valid: false, error: 'Code not found or revoked' };
+    if (!res.ok || !data.success) {
+      return {
+        success: false,
+        error: data.message || data.error || 'The server could not confirm this invite join.',
+      };
     }
 
-    if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
-      return { valid: false, error: 'This invitation has expired' };
-    }
+    // Format the returned database party record to match the frontend Party interface
+    const rawParty = data.party;
+    const formattedParty: Party = {
+      id: rawParty.id,
+      crewId: rawParty.crew_id || undefined,
+      code: rawParty.code,
+      title: rawParty.title,
+      date: rawParty.date,
+      time: rawParty.time,
+      location: rawParty.location,
+      description: rawParty.description || '',
+      coverImage:
+        rawParty.cover_image ||
+        'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80',
+      hostId: rawParty.host_id || 'host',
+      hostName: rawParty.host_name || 'Host',
+      members: (rawParty.members || []).map((m: Record<string, unknown>) => ({
+        id: (m.user_id as string) || (m.id as string),
+        name: (m.name as string) || 'Member',
+        avatar:
+          (m.avatar as string) ||
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        role: (m.role as 'host' | 'guest') || 'guest',
+        status: (m.status as 'going' | 'maybe' | 'invited') || 'going',
+        nightsTogether: Number(m.nights_together) || 1,
+        walletAddress: (m.wallet_address as string) || undefined,
+      })),
+      potBalance: Number(rawParty.pot_balance) || 0,
+      createdAt: rawParty.created_at || new Date().toISOString(),
+      status: (rawParty.status as 'upcoming' | 'live' | 'past') || 'upcoming',
+    };
 
-    if (invite.max_uses && invite.used_count >= invite.max_uses) {
-      return { valid: false, error: 'Invitation code has reached maximum uses' };
-    }
-
-    return { valid: true, partyId: invite.party_id };
+    return {
+      success: true,
+      partyId: data.party_id,
+      party: formattedParty,
+    };
   } catch (err) {
-    console.warn('Supabase invite validation fallback:', err);
-    return { valid: true };
+    console.warn('Authenticated invite join failed:', err);
+    return { success: false, error: 'Joining is unavailable. Please try again later.' };
   }
 }
 
@@ -115,35 +180,6 @@ export async function persistPartyToSupabase(party: Party, hostUser: { id: strin
     });
   } catch (err) {
     console.warn('Failed to persist party to Supabase:', err);
-  }
-}
-
-/**
- * Persists a new attendee joining via invite code
- */
-export async function persistMemberJoinToSupabase(partyId: string, member: Member): Promise<void> {
-  const supabase = getSupabase();
-  if (!supabase) return;
-
-  try {
-    await supabase.from('party_members').upsert({
-      party_id: partyId,
-      user_id: member.id,
-      name: member.name,
-      avatar: member.avatar,
-      role: member.role || 'guest',
-      status: member.status || 'going',
-      wallet_address: member.walletAddress || null,
-    });
-
-    // Increment invitation usage
-    try {
-      await supabase.rpc('increment_invite_usage', { p_party_id: partyId });
-    } catch {
-      // Optional RPC in case not installed
-    }
-  } catch (err) {
-    console.warn('Failed to persist member join:', err);
   }
 }
 
@@ -487,27 +523,76 @@ export function subscribeToTasksRealtime(partyId: string, onTaskChange: () => vo
 /**
  * Persists or updates user profile in Supabase
  */
-export async function syncUserDataToDb(user: User): Promise<void> {
+export async function syncUserDataToDb(user: User, authToken?: string | null): Promise<void> {
+  if (authToken) {
+    try {
+      const res = await fetch('/api/users/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          name: user.name,
+          handle: user.handle,
+          avatar: user.avatar,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to sync user profile via API.');
+      }
+      return;
+    } catch (apiErr) {
+      console.warn('API profile sync error:', apiErr);
+      throw apiErr;
+    }
+  }
+
   const supabase = getSupabase();
-  if (!supabase) return;
+  if (!supabase) {
+    throw new Error('User profile persistence is unavailable because the database is not configured.');
+  }
 
   try {
-    await supabase.from('users').upsert({
-      id: user.id,
-      name: user.name,
-      handle: user.handle,
-      avatar: user.avatar,
-      wallet_address: user.walletAddress || null,
-      email: user.email || null,
-      gatherings_count: user.gatheringsCount || 0,
-      games_count: user.gamesCount || 0,
-      people_count: user.peopleCount || 0,
-      settlements_count: user.settlementsCount || 0,
-      balance: user.balance || 0,
-      updated_at: new Date().toISOString(),
+    const { error } = await supabase.rpc('update_user_profile', {
+      p_user_id: user.id,
+      p_name: user.name,
+      p_handle: user.handle,
+      p_avatar: user.avatar || null,
     });
+    if (error) throw error;
   } catch (err) {
     console.warn('Failed to sync user to Supabase:', err);
+    throw err;
+  }
+}
+
+/**
+ * Fetches persisted user profile from Supabase
+ */
+export async function fetchUserProfileFromDb(userId: string): Promise<{
+  id: string;
+  name: string;
+  handle: string;
+  avatar: string | null;
+  walletAddress?: string;
+} | null> {
+  const supabase = getSupabase();
+  if (!supabase || !userId) return null;
+
+  try {
+    const { data, error } = await supabase.rpc('get_user_profile', {
+      p_user_id: userId,
+    });
+    if (error) {
+      console.warn('Could not fetch user profile from Supabase:', error);
+      return null;
+    }
+    return data || null;
+  } catch (err) {
+    console.warn('Error fetching user profile:', err);
+    return null;
   }
 }
 
@@ -739,4 +824,3 @@ export async function fetchCrewsFromDb(): Promise<Crew[]> {
     return [];
   }
 }
-

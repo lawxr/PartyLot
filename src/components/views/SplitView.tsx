@@ -8,7 +8,6 @@ import {
   ArrowRight,
   Sparkles,
   ShieldCheck,
-  Loader2,
   Wine,
   Pizza,
   Car,
@@ -16,8 +15,6 @@ import {
   Home,
   Package,
   Tag,
-  Copy,
-  Check,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { TopNav } from '@/components/navigation/TopNav';
@@ -25,7 +22,7 @@ import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
-import { settleDamageOnchain } from '@/services/treasury';
+import { FINANCIAL_ACTIONS_AVAILABLE, getFinancialActionsUnavailableMessage } from '@/services/treasury';
 import { ExpenseCategory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import confetti from 'canvas-confetti';
@@ -46,7 +43,7 @@ const CATEGORIES: {
 ];
 
 export const SplitView: React.FC = () => {
-  const { parties, currentPartyId, expenses, addExpense, settleAllDebts } = usePartyStore();
+  const { parties, currentPartyId, expenses, addExpense } = usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
@@ -54,9 +51,6 @@ export const SplitView: React.FC = () => {
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSettleOpen, setIsSettleOpen] = useState(false);
-  const [isSettling, setIsSettling] = useState(false);
-  const [settlementSuccessTx, setSettlementSuccessTx] = useState<string | null>(null);
-  const [copiedTx, setCopiedTx] = useState(false);
 
   // Form states
   const [desc, setDesc] = useState('');
@@ -67,6 +61,7 @@ export const SplitView: React.FC = () => {
 
   // Category filter state
   const [selectedFilter, setSelectedFilter] = useState<'all' | ExpenseCategory>('all');
+  const financialActionsMessage = getFinancialActionsUnavailableMessage(language);
 
   // Calculations
   const netBalances = calculateNetBalances(partyExpenses, party.members);
@@ -104,43 +99,6 @@ export const SplitView: React.FC = () => {
     });
   };
 
-  const handleSettleConfirm = async () => {
-    if (settlements.length === 0) {
-      setIsSettleOpen(false);
-      return;
-    }
-
-    setIsSettling(true);
-    try {
-      // Execute sponsored 0-gas debt settlement on Monad Testnet
-      const receipt = await settleDamageOnchain(party.id, settlements);
-
-      settleAllDebts(party.id, receipt.txHash);
-      setSettlementSuccessTx(receipt.txHash);
-
-      confetti({
-        particleCount: 90,
-        spread: 80,
-        origin: { y: 0.5 },
-        colors: ['#F0DC00', '#FFFFFF', '#10B981'],
-      });
-    } catch (err) {
-      console.error('Failed onchain settlement, applying local settlement:', err);
-      settleAllDebts(party.id);
-      setIsSettleOpen(false);
-    } finally {
-      setIsSettling(false);
-    }
-  };
-
-  const handleCopyTx = (tx: string) => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(tx);
-      setCopiedTx(true);
-      setTimeout(() => setCopiedTx(false), 2000);
-    }
-  };
-
   const toggleSplitMember = (memberId: string) => {
     if (splitBetween.includes(memberId)) {
       if (splitBetween.length > 1) {
@@ -160,6 +118,9 @@ export const SplitView: React.FC = () => {
       <TopNav title={isEs ? 'DIVISIÓN DE GASTOS' : 'EXPENSE ENGINE'} showLanguageSwitch />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
+        <p role="status" className="mb-5 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+          {financialActionsMessage}
+        </p>
         {/* Editorial Header */}
         <div className="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-5">
           <div>
@@ -167,9 +128,9 @@ export const SplitView: React.FC = () => {
               <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
                 {isEs ? 'LIQUIDACIÓN DE CUENTAS' : 'DAMAGE CALCULATOR'}
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-200 border border-amber-500/20">
                 <ShieldCheck className="w-3 h-3" />
-                {isEs ? 'Cálculo Exacto' : 'Exact Settlement'}
+                {isEs ? 'Sugerencia de división' : 'Suggested split'}
               </span>
             </div>
             <h2 className="bubble text-4xl sm:text-6xl text-white tracking-tight leading-none">
@@ -201,7 +162,7 @@ export const SplitView: React.FC = () => {
                 variant="glass"
                 size="md"
                 onClick={() => setIsSettleOpen(true)}
-                disabled={settlements.length === 0}
+                disabled={!FINANCIAL_ACTIONS_AVAILABLE || settlements.length === 0}
                 icon={<Sparkles className="w-4 h-4 text-[#F0DC00]" />}
               >
                 {isEs ? 'Saldar cuentas' : 'Settle debts'}
@@ -226,13 +187,11 @@ export const SplitView: React.FC = () => {
             variant="glass"
             size="md"
             fullWidth
-            onClick={() => {
-              setSettlementSuccessTx(null);
-              setIsSettleOpen(true);
-            }}
+            disabled={!FINANCIAL_ACTIONS_AVAILABLE}
+            onClick={() => setIsSettleOpen(true)}
             icon={<CheckCircle2 className="w-4 h-4 text-[#F0DC00]" />}
           >
-            SETTLE UP
+            {isEs ? 'Liquidación no disponible' : 'Settlement unavailable'}
           </GlassButton>
         </div>
 
@@ -246,7 +205,7 @@ export const SplitView: React.FC = () => {
                 <span className="text-xs font-bold uppercase tracking-wider text-white/60">
                   WHO OWES WHO
                 </span>
-                <span className="text-[11px] text-white/40">Real-time ledger</span>
+                <span className="text-[11px] text-white/40">{isEs ? 'Cálculo orientativo' : 'Suggested calculation'}</span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5">
@@ -261,9 +220,15 @@ export const SplitView: React.FC = () => {
                       className="p-3.5 flex flex-col justify-between border border-white/10"
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-7 h-7 rounded-full overflow-hidden border border-white/20 shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={b.avatar} alt={b.memberName} className="w-full h-full object-cover" />
+                        <div className="w-7 h-7 rounded-full overflow-hidden border border-white/20 shrink-0 flex items-center justify-center bg-black/40">
+                          {b.avatar ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={b.avatar} alt={b.memberName} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-bold text-white/70">
+                              {b.memberName ? b.memberName.charAt(0).toUpperCase() : 'U'}
+                            </span>
+                          )}
                         </div>
                         <span className="text-xs font-bold text-white truncate">
                           {b.memberName}
@@ -283,7 +248,7 @@ export const SplitView: React.FC = () => {
                           {isPositive ? `+$${b.netAmount.toFixed(2)}` : isNegative ? `-$${Math.abs(b.netAmount).toFixed(2)}` : '$0.00'}
                         </span>
                         <span className="block text-[9px] uppercase font-bold text-white/40 tracking-wider">
-                          {isPositive ? 'gets back' : isNegative ? 'owes' : 'settled'}
+                          {isPositive ? (isEs ? 'recibe' : 'gets back') : isNegative ? (isEs ? 'debe' : 'owes') : (isEs ? 'en equilibrio' : 'balanced')}
                         </span>
                       </div>
                     </GlassPanel>
@@ -296,14 +261,14 @@ export const SplitView: React.FC = () => {
             <div className="p-5 rounded-3xl liquid-glass-card border border-white/15">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
-                  SETTLEMENT ENGINE
+                  {isEs ? 'DIVISIÓN SUGERIDA' : 'SUGGESTED SPLIT'}
                 </span>
                 <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  Sin Comisiones
+                  {isEs ? 'Sin pagos' : 'No payments'}
                 </span>
               </div>
               <h4 className="font-display font-black text-xl text-white mb-2">
-                Optimal Debt Routing
+                {isEs ? 'Resumen de saldos' : 'Balance summary'}
               </h4>
               <p className="text-xs text-white/70 leading-relaxed mb-4">
                 Reduce las transferencias entre amigos al mínimo matemático para que nadie pague de más.
@@ -312,13 +277,13 @@ export const SplitView: React.FC = () => {
                 variant="glass"
                 size="md"
                 fullWidth
+                disabled={!FINANCIAL_ACTIONS_AVAILABLE}
                 onClick={() => {
-                  setSettlementSuccessTx(null);
                   setIsSettleOpen(true);
                 }}
                 icon={<CheckCircle2 className="w-4 h-4 text-[#F0DC00]" />}
               >
-                Review & Settle Up
+                {isEs ? 'Ver resumen (pagos no disponibles)' : 'Review summary (payments unavailable)'}
               </GlassButton>
             </div>
           </div>
@@ -393,7 +358,7 @@ export const SplitView: React.FC = () => {
                             {exp.isSettled && (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                                 <ShieldCheck className="w-2.5 h-2.5" />
-                                Settled
+                                {isEs ? 'Marcado como saldado' : 'Previously marked settled'}
                               </span>
                             )}
                           </div>
@@ -509,8 +474,14 @@ export const SplitView: React.FC = () => {
                       : 'liquid-glass-card text-white/70'
                   }`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={member.avatar} alt={member.name} className="w-4 h-4 rounded-full object-cover" />
+                  {member.avatar ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={member.avatar} alt={member.name} className="w-4 h-4 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-bold text-white">
+                      {member.name ? member.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
                   <span>{member.name}</span>
                 </button>
               ))}
@@ -536,8 +507,14 @@ export const SplitView: React.FC = () => {
                         : 'border-white/10 opacity-50 text-white/50'
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={member.avatar} alt={member.name} className="w-5 h-5 rounded-full object-cover" />
+                    {member.avatar ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={member.avatar} alt={member.name} className="w-5 h-5 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold text-white">
+                        {member.name ? member.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
                     <span className="truncate">{member.name}</span>
                   </button>
                 );
@@ -561,120 +538,28 @@ export const SplitView: React.FC = () => {
       {/* BottomSheet: SETTLE UP Confirmation */}
       <BottomSheet
         isOpen={isSettleOpen}
-        onClose={() => {
-          if (!isSettling) {
-            setIsSettleOpen(false);
-            setSettlementSuccessTx(null);
-          }
-        }}
-        title="Optimal Debt Settlement"
+        onClose={() => setIsSettleOpen(false)}
+        title={isEs ? 'Resumen de saldos' : 'Balance summary'}
       >
         <div className="space-y-4">
-          {settlementSuccessTx ? (
-            <div className="text-center py-6 space-y-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto">
-                <ShieldCheck className="w-8 h-8" />
-              </div>
-              <div>
-                <span className="text-[11px] font-black uppercase tracking-widest text-[#F0DC00] block mb-1">
-                  SETTLEMENT COMPLETE
-                </span>
-                <h3 className="font-display font-black text-2xl text-white">
-                  Cuentas Liquidadas
-                </h3>
-                <p className="text-xs text-white/70 max-w-sm mx-auto mt-1">
-                  Todos los balances entre los miembros del grupo han quedado saldados.
-                </p>
-              </div>
-
-              {/* TX Card */}
-              <div className="p-3.5 rounded-2xl liquid-glass-card border border-white/15 text-left space-y-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50 block">
-                  Comprobante de Liquidación
-                </span>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs text-[#F0DC00] truncate">
-                    {settlementSuccessTx}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleCopyTx(settlementSuccessTx)}
-                    className="p-1.5 rounded-lg liquid-glass-card hover:bg-white/10 text-white/70 hover:text-white"
-                  >
-                    {copiedTx ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <GlassButton
-                  variant="accent"
-                  size="lg"
-                  fullWidth
-                  onClick={() => {
-                    setIsSettleOpen(false);
-                    setSettlementSuccessTx(null);
-                  }}
-                >
-                  Listo
-                </GlassButton>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+          <p className="text-xs text-white/70">{financialActionsMessage}</p>
+          <p className="text-xs text-white/70">
+            {isEs
+              ? 'Este resumen sugiere cómo podrían repartirse los gastos. No confirma pagos ni cambia saldos.'
+              : 'This summary suggests how expenses could be split. It does not confirm payments or change balances.'}
+          </p>
+          <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+            {settlements.map((settlement, index) => (
+              <div key={`${settlement.fromId}-${settlement.toId}-${index}`} className="p-3.5 rounded-2xl liquid-glass-card flex items-center justify-between border border-white/15">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-bold text-white">Liquidación Inteligente</span>
+                  <span className="font-bold text-xs text-rose-300">{settlement.fromName}</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-white/40" />
+                  <span className="font-bold text-xs text-[#F0DC00]">{settlement.toName}</span>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                  Sin Comisiones
-                </span>
+                <span className="font-display font-black text-base text-white">${settlement.amount.toFixed(2)}</span>
               </div>
-
-              <p className="text-xs text-white/70">
-                Basado en todos los gastos de la fiesta, este es el número mínimo de pagos para cuadrar cuentas:
-              </p>
-
-              <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                {settlements.length > 0 ? (
-                  settlements.map((s, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3.5 rounded-2xl liquid-glass-card flex items-center justify-between border border-white/15"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-rose-300">{s.fromName}</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-white/40" />
-                        <span className="font-bold text-xs text-[#F0DC00]">{s.toName}</span>
-                      </div>
-
-                      <span className="font-display font-black text-base text-white">
-                        ${s.amount.toFixed(2)}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-[#F0DC00] font-semibold text-center py-4">
-                    ✨ ¡Todos están a mano! No hay deudas pendientes.
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-2">
-                <GlassButton
-                  variant="accent"
-                  size="lg"
-                  fullWidth
-                  disabled={isSettling || settlements.length === 0}
-                  onClick={handleSettleConfirm}
-                  icon={isSettling ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Sparkles className="w-4 h-4 text-black" />}
-                >
-                  {isSettling ? 'Liquidando cuentas...' : 'Saldar todas las cuentas'}
-                </GlassButton>
-              </div>
-            </>
-          )}
+            ))}
+          </div>
         </div>
       </BottomSheet>
     </div>

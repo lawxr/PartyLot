@@ -10,7 +10,6 @@ import {
   Award,
   Landmark,
   ArrowRightLeft,
-  Loader2,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { TopNav } from '@/components/navigation/TopNav';
@@ -18,17 +17,12 @@ import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { LiquidBlob } from '@/components/ui/LiquidBlob';
-import {
-  depositToPartyPotOnchain,
-  distributeBountyOnchain,
-  rolloverFundsOnchain,
-} from '@/services/treasury';
+import { FINANCIAL_ACTIONS_AVAILABLE, getFinancialActionsUnavailableMessage } from '@/services/treasury';
 import { PartyTasksBoard } from '@/components/party/PartyTasksBoard';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import confetti from 'canvas-confetti';
 
 export const PartyPotView: React.FC = () => {
-  const { parties, currentPartyId, crews, transactions, addToPot, spendFromPot, rolloverPotToCrew } =
+  const { parties, currentPartyId, crews, transactions } =
     usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
@@ -48,7 +42,7 @@ export const PartyPotView: React.FC = () => {
   const [rewardRecipient, setRewardRecipient] = useState(party.members[1]?.name || 'Ana');
   const [rewardRole, setRewardRole] = useState('OFFICIAL_DJ');
   const [rewardAmount, setRewardAmount] = useState('10');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const isProcessing = false;
 
   // Filter state for transactions
   const [txFilter, setTxFilter] = useState<'all' | 'add' | 'spend' | 'reward' | 'rollover'>('all');
@@ -58,108 +52,25 @@ export const PartyPotView: React.FC = () => {
       ? partyTransactions
       : partyTransactions.filter((t) => t.type === txFilter);
 
+  const financialActionsMessage = getFinancialActionsUnavailableMessage(language);
+
   const handleAddFunds = async (e: React.FormEvent) => {
     e.preventDefault();
-    const val = parseFloat(addAmount);
-    if (isNaN(val) || val <= 0) return;
-
-    setIsProcessing(true);
-
-    try {
-      // Execute 0-gas deposit into PartyTreasury on Monad Testnet
-      const receipt = await depositToPartyPotOnchain(party.id, val);
-
-      addToPot(party.id, val, `Deposit [tx: ${receipt.txHash.slice(0, 8)}...]`);
-      setIsAddOpen(false);
-
-      confetti({
-        particleCount: 65,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#F0DC00', '#FFFFFF', '#60A5FA'],
-      });
-    } catch (err) {
-      console.error('Error adding funds to pot:', err);
-      addToPot(party.id, val, 'Treasury Pot Deposit');
-      setIsAddOpen(false);
-    } finally {
-      setIsProcessing(false);
-    }
+    return;
   };
 
   const handleSpend = async (e: React.FormEvent) => {
     e.preventDefault();
-    const val = parseFloat(spendAmount);
-    if (!spendDesc.trim() || isNaN(val) || val <= 0) return;
-
-    spendFromPot(party.id, val, spendDesc.trim());
-    setSpendDesc('');
-    setIsSpendOpen(false);
+    return;
   };
 
   const handleDistributeReward = async (e: React.FormEvent) => {
     e.preventDefault();
-    const val = parseFloat(rewardAmount);
-    if (isNaN(val) || val <= 0) return;
-
-    setIsProcessing(true);
-    try {
-      const receipt = await distributeBountyOnchain(
-        party.id,
-        rewardRecipient,
-        val,
-        rewardRole
-      );
-
-      spendFromPot(
-        party.id,
-        val,
-        `Reward for ${rewardRecipient} [tx: ${receipt.txHash.slice(0, 8)}...]`
-      );
-      setIsRewardOpen(false);
-
-      confetti({
-        particleCount: 80,
-        spread: 80,
-        origin: { y: 0.5 },
-        colors: ['#F0DC00', '#F59E0B', '#10B981'],
-      });
-    } catch (err) {
-      console.error('Error distributing reward:', err);
-      spendFromPot(party.id, val, `Reward for ${rewardRecipient} (${rewardRole})`);
-      setIsRewardOpen(false);
-    } finally {
-      setIsProcessing(false);
-    }
+    return;
   };
 
   const handleRolloverConfirm = async () => {
-    if (!associatedCrew || party.potBalance <= 0) return;
-
-    setIsProcessing(true);
-    try {
-      await rolloverFundsOnchain(
-        party.id,
-        associatedCrew.id,
-        party.potBalance
-      );
-
-      rolloverPotToCrew(party.id, associatedCrew.id);
-      setIsRolloverOpen(false);
-
-      confetti({
-        particleCount: 100,
-        spread: 90,
-        origin: { y: 0.5 },
-        colors: ['#F0DC00', '#10B981', '#3B82F6'],
-      });
-    } catch (err) {
-      console.error('Error rolling over pot:', err);
-      rolloverPotToCrew(party.id, associatedCrew.id);
-      setIsRolloverOpen(false);
-    } finally {
-      setIsProcessing(false);
-    }
+    return;
   };
 
   return (
@@ -167,6 +78,9 @@ export const PartyPotView: React.FC = () => {
       <TopNav title={isEs ? 'TESORERÍA COMPARTIDA' : 'SHARED TREASURY'} showLanguageSwitch />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
+        <p role="status" className="mb-5 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+          {financialActionsMessage}
+        </p>
         {/* Editorial Header */}
         <div className="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-5">
           <div>
@@ -176,7 +90,7 @@ export const PartyPotView: React.FC = () => {
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <ShieldCheck className="w-3 h-3" />
-                Activo
+                {isEs ? 'No disponible' : 'Unavailable'}
               </span>
             </div>
             <h2 className="bubble text-4xl sm:text-6xl text-white tracking-tight leading-none">
@@ -188,39 +102,42 @@ export const PartyPotView: React.FC = () => {
             <GlassButton
               variant="accent"
               size="md"
+              disabled={!FINANCIAL_ACTIONS_AVAILABLE}
               onClick={() => setIsAddOpen(true)}
               icon={<Plus className="w-4 h-4 text-black stroke-[3]" />}
             >
-              Add money
+              {isEs ? 'Aportar (no disponible)' : 'Add money (unavailable)'}
             </GlassButton>
 
             <GlassButton
               variant="glass"
               size="md"
+              disabled={!FINANCIAL_ACTIONS_AVAILABLE}
               onClick={() => setIsRewardOpen(true)}
               icon={<Award className="w-4 h-4 text-[#F0DC00]" />}
             >
-              Reward
+              {isEs ? 'Recompensa (no disponible)' : 'Reward (unavailable)'}
             </GlassButton>
 
             <GlassButton
               variant="glass"
               size="md"
+              disabled={!FINANCIAL_ACTIONS_AVAILABLE}
               onClick={() => setIsSpendOpen(true)}
               icon={<Minus className="w-4 h-4 text-white" />}
             >
-              Spend
+              {isEs ? 'Gasto (no disponible)' : 'Spend (unavailable)'}
             </GlassButton>
 
             {associatedCrew && (
               <GlassButton
                 variant="glass"
                 size="md"
-                disabled={party.potBalance <= 0}
+                disabled={!FINANCIAL_ACTIONS_AVAILABLE || party.potBalance <= 0}
                 onClick={() => setIsRolloverOpen(true)}
                 icon={<Landmark className="w-4 h-4 text-[#F0DC00]" />}
               >
-                Rollover to Crew
+                {isEs ? 'Transferir (no disponible)' : 'Transfer (unavailable)'}
               </GlassButton>
             )}
           </div>
@@ -240,11 +157,11 @@ export const PartyPotView: React.FC = () => {
                   ${party.potBalance.toFixed(2)}
                 </span>
                 <span className="text-xs font-bold text-white/80 mt-1 drop-shadow-md">
-                  Controlado por {party.members.length} miembros
+                  {isEs ? `${party.members.length} participantes` : `${party.members.length} participants`}
                 </span>
                 <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-medium text-white/90 border border-white/10">
                   <ShieldCheck className="w-3 h-3 text-[#F0DC00]" />
-                  BOTE SEGURO E INSTANTÁNEO
+                  {isEs ? 'Saldo mostrado' : 'Displayed balance'}
                 </span>
               </div>
             </div>
@@ -254,28 +171,31 @@ export const PartyPotView: React.FC = () => {
               <GlassButton
                 variant="accent"
                 size="md"
+                disabled={!FINANCIAL_ACTIONS_AVAILABLE}
                 onClick={() => setIsAddOpen(true)}
                 icon={<Plus className="w-4 h-4 text-black stroke-[3]" />}
               >
-                Add money
+                {isEs ? 'Aportar (no disponible)' : 'Add money (unavailable)'}
               </GlassButton>
 
               <GlassButton
                 variant="glass"
                 size="md"
+                disabled={!FINANCIAL_ACTIONS_AVAILABLE}
                 onClick={() => setIsRewardOpen(true)}
                 icon={<Award className="w-4 h-4 text-[#F0DC00]" />}
               >
-                Reward
+                {isEs ? 'Recompensa (no disponible)' : 'Reward (unavailable)'}
               </GlassButton>
 
               <GlassButton
                 variant="glass"
                 size="md"
+                disabled={!FINANCIAL_ACTIONS_AVAILABLE}
                 onClick={() => setIsSpendOpen(true)}
                 icon={<Minus className="w-4 h-4 text-white" />}
               >
-                Spend
+                {isEs ? 'Gasto (no disponible)' : 'Spend (unavailable)'}
               </GlassButton>
             </div>
 
@@ -286,11 +206,11 @@ export const PartyPotView: React.FC = () => {
                   variant="glass"
                   size="md"
                   fullWidth
-                  disabled={party.potBalance <= 0}
+                  disabled={!FINANCIAL_ACTIONS_AVAILABLE || party.potBalance <= 0}
                   onClick={() => setIsRolloverOpen(true)}
                   icon={<Landmark className="w-4 h-4 text-[#F0DC00]" />}
                 >
-                  Rollover to {associatedCrew.name}
+                  {isEs ? 'Transferir al grupo (no disponible)' : `Transfer to ${associatedCrew.name} (unavailable)`}
                 </GlassButton>
               </div>
             )}
@@ -301,23 +221,24 @@ export const PartyPotView: React.FC = () => {
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[10px] uppercase font-bold text-[#F0DC00] tracking-wider flex items-center gap-1.5">
                     <Landmark className="w-3.5 h-3.5" />
-                    PERSISTENT CREW TREASURY
+                    {isEs ? 'SALDO DEL GRUPO' : 'CREW BALANCE'}
                   </span>
                   <span className="font-mono text-xs font-bold text-white">
                     ${(associatedCrew.treasuryBalance ?? 0).toFixed(2)}
                   </span>
                 </div>
                 <p className="text-xs text-white/80 leading-relaxed">
-                  Linked to <span className="text-white font-bold">{associatedCrew.name}</span>. Rollover leftover pot funds to save toward the next trip or group event!
+                  {isEs ? 'Saldo mostrado para ' : 'Displayed balance for '}<span className="text-white font-bold">{associatedCrew.name}</span>. {isEs ? 'Las transferencias no están disponibles.' : 'Transfers are unavailable.'}
                 </p>
                 {party.potBalance > 0 && (
                   <button
                     type="button"
+                    disabled={!FINANCIAL_ACTIONS_AVAILABLE}
                     onClick={() => setIsRolloverOpen(true)}
                     className="mt-3 w-full py-2.5 px-3 rounded-2xl bg-white/10 hover:bg-white/15 text-[#F0DC00] text-xs font-bold flex items-center justify-center gap-2 border border-[#F0DC00]/30 transition-all"
                   >
                     <ArrowRightLeft className="w-3.5 h-3.5" />
-                    Rollover ${party.potBalance.toFixed(2)} to {associatedCrew.name}
+                    {isEs ? 'Transferencia no disponible' : 'Transfer unavailable'}
                   </button>
                 )}
               </div>
@@ -326,14 +247,14 @@ export const PartyPotView: React.FC = () => {
             {/* Social Stake Banner */}
             <div className="w-full p-4 rounded-3xl liquid-glass-card mt-3 text-left border border-white/10">
               <span className="text-[10px] uppercase font-bold text-[#F0DC00] tracking-wider block">
-                BOTE COMPARTIDO DE FIESTA
+                {isEs ? 'BOTE DE LA FIESTA' : 'PARTY POT'}
               </span>
               <p className="text-xs text-white/80 mt-1 leading-relaxed">
-                El saldo no gastado se guarda para la próxima reunión o fiesta del grupo. Todos los movimientos quedan registrados transparentemente.
+                {isEs ? 'Las acciones de dinero están desactivadas hasta que haya un servicio real de pagos.' : 'Money actions are disabled until a real payment service is available.'}
               </p>
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10 text-[11px] text-white/60">
                 <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
-                <span>Transparente · Sin comisiones ocultas</span>
+                <span>{isEs ? 'Sin pagos procesados' : 'No payments processed'}</span>
               </div>
             </div>
           </div>
@@ -367,9 +288,9 @@ export const PartyPotView: React.FC = () => {
             <div className="flex items-center justify-between px-1">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-white/60 block">
-                  VERIFIED TREASURY LEDGER
+                  {isEs ? 'MOVIMIENTOS MOSTRADOS' : 'DISPLAYED POT ACTIVITY'}
                 </span>
-                <span className="text-xs text-white/40">Real-time pot activity</span>
+                <span className="text-xs text-white/40">{isEs ? 'No confirma pagos reales' : 'Does not confirm real payments'}</span>
               </div>
               <span className="text-xs text-[#F0DC00] font-mono font-semibold">
                 {filteredTransactions.length} records
@@ -469,7 +390,7 @@ export const PartyPotView: React.FC = () => {
       >
         <form onSubmit={handleAddFunds} className="space-y-4">
           <p className="text-xs text-white/70">
-            Reúne fondos para bebidas, snacks, hielo y transporte del grupo. Pagos instantáneos y seguros.
+            {financialActionsMessage}
           </p>
 
           <div>
@@ -513,9 +434,9 @@ export const PartyPotView: React.FC = () => {
               size="lg"
               fullWidth
               type="submit"
-              disabled={isProcessing}
+              disabled={!FINANCIAL_ACTIONS_AVAILABLE || isProcessing}
             >
-              {isProcessing ? 'Añadiendo fondos...' : `Aportar $${addAmount}`}
+              {isProcessing ? 'Processing...' : isEs ? 'Aportar no disponible' : 'Contribution unavailable'}
             </GlassButton>
           </div>
         </form>
@@ -529,7 +450,7 @@ export const PartyPotView: React.FC = () => {
       >
         <form onSubmit={handleDistributeReward} className="space-y-4">
           <p className="text-xs text-white/70">
-            Send an instant prize or reimbursement directly from the shared pot for crucial party contributions.
+            {financialActionsMessage}
           </p>
 
           <div>
@@ -599,9 +520,9 @@ export const PartyPotView: React.FC = () => {
               size="lg"
               fullWidth
               type="submit"
-              disabled={isProcessing}
+              disabled={!FINANCIAL_ACTIONS_AVAILABLE || isProcessing}
             >
-              {isProcessing ? 'Executing Onchain Payout...' : `Reward ${rewardRecipient} $${rewardAmount}`}
+              {isProcessing ? 'Processing...' : isEs ? 'Recompensa no disponible' : 'Reward unavailable'}
             </GlassButton>
           </div>
         </form>
@@ -648,8 +569,9 @@ export const PartyPotView: React.FC = () => {
               size="lg"
               fullWidth
               type="submit"
+              disabled={!FINANCIAL_ACTIONS_AVAILABLE}
             >
-              Confirm Spend
+              {isEs ? 'Gasto no disponible' : 'Spending unavailable'}
             </GlassButton>
           </div>
         </form>
@@ -676,7 +598,7 @@ export const PartyPotView: React.FC = () => {
             </div>
 
             <p className="text-xs text-white/70 leading-relaxed">
-              Transfer leftover party pot funds into the permanent crew treasury on Monad. These funds stay persistent across gatherings for your next big adventure!
+              {financialActionsMessage}
             </p>
 
             <div className="p-4 rounded-2xl liquid-glass-card border border-white/15 space-y-2">
@@ -703,13 +625,11 @@ export const PartyPotView: React.FC = () => {
                 variant="accent"
                 size="lg"
                 fullWidth
-                disabled={isProcessing || party.potBalance <= 0}
+                disabled={!FINANCIAL_ACTIONS_AVAILABLE || isProcessing || party.potBalance <= 0}
                 onClick={handleRolloverConfirm}
-                icon={isProcessing ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Landmark className="w-4 h-4 text-black" />}
+                icon={<Landmark className="w-4 h-4 text-black" />}
               >
-                {isProcessing
-                  ? 'Transferring to Crew Treasury...'
-                  : `Transfer $${party.potBalance.toFixed(2)} to ${associatedCrew.name}`}
+                {isEs ? 'Transferencia no disponible' : 'Transfer unavailable'}
               </GlassButton>
             </div>
           </div>

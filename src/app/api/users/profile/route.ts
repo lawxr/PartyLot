@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
+import { checkRateLimit } from '@/lib/security/rateLimit';
 
 export async function POST(request: NextRequest) {
+  // Rate limiting against automated profile mutation flooding
+  const clientIp =
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    'anonymous_client';
+
+  const rateLimit = checkRateLimit(`profile_update_${clientIp}`, {
+    limit: 20,
+    windowMs: 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'RATE_LIMIT_EXCEEDED', message: 'Too many profile update requests. Please wait a minute.' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
+
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json(
@@ -37,6 +56,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (name.trim().length > 50) {
+    return NextResponse.json(
+      { success: false, error: 'BAD_REQUEST', message: 'Name cannot exceed 50 characters.' },
+      { status: 400 }
+    );
+  }
+
+  if (avatar && typeof avatar === 'string' && avatar.trim().length > 600) {
+    return NextResponse.json(
+      { success: false, error: 'BAD_REQUEST', message: 'Avatar URL is too long.' },
+      { status: 400 }
+    );
+  }
+
   // 1. Verify user identity via Privy token
   let verifiedProfile;
   try {
@@ -53,6 +86,13 @@ export async function POST(request: NextRequest) {
     ? handle.trim().startsWith('@') ? handle.trim() : `@${handle.trim()}`
     : verifiedProfile.handle;
 
+  if (cleanHandle && !/^@[a-zA-Z0-9_]{3,24}$/.test(cleanHandle)) {
+    return NextResponse.json(
+      { success: false, error: 'INVALID_HANDLE_FORMAT', message: 'Handle must be between 3 and 24 alphanumeric characters.' },
+      { status: 400 }
+    );
+  }
+
   // 2. Execute update_user_profile RPC in Supabase
   try {
     const supabase = getServerSupabase();
@@ -60,7 +100,7 @@ export async function POST(request: NextRequest) {
       p_user_id: verifiedProfile.userId,
       p_name: name.trim(),
       p_handle: cleanHandle,
-      p_avatar: avatar || null,
+      p_avatar: avatar?.trim() || null,
     });
 
     if (error) {

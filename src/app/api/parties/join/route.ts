@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
+import { checkRateLimit } from '@/lib/security/rateLimit';
 
 export async function POST(request: NextRequest) {
+  // Rate limiting against automated brute-force join flooding
+  const clientIp =
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    'anonymous_client';
+
+  const rateLimit = checkRateLimit(`join_party_${clientIp}`, {
+    limit: 15,
+    windowMs: 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'RATE_LIMIT_EXCEEDED', message: 'Too many party join requests. Please wait a minute.' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
+
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json(
@@ -37,6 +56,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const cleanCode = inviteCode.trim().toUpperCase();
+  if (!/^[A-Z0-9_-]{4,10}$/.test(cleanCode)) {
+    return NextResponse.json(
+      { success: false, error: 'INVALID_INVITE_FORMAT', message: 'Invalid invite code format.' },
+      { status: 400 }
+    );
+  }
+
   // 1. Authenticate user identity via Privy cryptographic verification
   let verifiedProfile;
   try {
@@ -58,7 +85,7 @@ export async function POST(request: NextRequest) {
       p_user_handle: verifiedProfile.handle,
       p_user_avatar: verifiedProfile.avatar,
       p_user_wallet: verifiedProfile.walletAddress,
-      p_invite_code: inviteCode.trim().toUpperCase(),
+      p_invite_code: cleanCode,
     });
 
     if (error) {

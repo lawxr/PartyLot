@@ -28,7 +28,7 @@ export default function App() {
   const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
 
   // Synchronize Privy auth & embedded wallet state across views
-  usePrivySync();
+  const { ready } = usePrivySync();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -37,14 +37,14 @@ export default function App() {
     }
   }, []);
 
-  // Route gate: unauthenticated users (without Privy or demo mode) can only access splash or join-party
+  // Route gate: unauthenticated users can only access splash or join-party once auth provider is ready
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !ready) return;
     const isAuthed = Boolean(currentUser?.isPrivyAuthenticated || isExplicitDevelopmentDemoMode());
     if (!isAuthed && currentView !== 'splash' && currentView !== 'join-party') {
       setCurrentView('splash');
     }
-  }, [mounted, currentUser?.isPrivyAuthenticated, currentView, setCurrentView]);
+  }, [mounted, ready, currentUser?.isPrivyAuthenticated, currentView, setCurrentView]);
 
   if (!mounted) {
     // Avoid hydration mismatch on initial render

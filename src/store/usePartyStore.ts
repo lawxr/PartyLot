@@ -260,10 +260,13 @@ export const usePartyStore = create<PartyStoreState>()(
       activeGameId: 'whos-most-likely',
 
       setCurrentView: (view) => {
-        set((state) => ({
-          previousView: state.currentView,
-          currentView: view,
-        }));
+        set((state) => {
+          if (state.currentView === view) return state;
+          return {
+            previousView: state.currentView,
+            currentView: view,
+          };
+        });
       },
 
       selectParty: (partyId) => {

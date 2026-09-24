@@ -37,12 +37,21 @@ export default function App() {
     }
   }, []);
 
-  // Route gate: unauthenticated users can only access splash or join-party once auth provider is ready
+  // Centralized Route Gate: orchestrates view state transitions based on auth state
   useEffect(() => {
     if (!mounted || !ready) return;
     const isAuthed = Boolean(currentUser?.isPrivyAuthenticated || isExplicitDevelopmentDemoMode());
-    if (!isAuthed && currentView !== 'splash' && currentView !== 'join-party') {
-      setCurrentView('splash');
+
+    if (!isAuthed) {
+      // Unauthenticated users are confined to splash or join-party view
+      if (currentView !== 'splash' && currentView !== 'join-party') {
+        setCurrentView('splash');
+      }
+    } else {
+      // Authenticated users on splash are promoted to home
+      if (currentView === 'splash') {
+        setCurrentView('home');
+      }
     }
   }, [mounted, ready, currentUser?.isPrivyAuthenticated, currentView, setCurrentView]);
 

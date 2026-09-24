@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { usePartyStore } from '@/store/usePartyStore';
 import { fetchUserProfileFromDb } from '@/services/supabaseService';
+
+// Global signature of the last synchronized identity to avoid duplicate sync cycles across component lifecycles
+let globalSyncedKey = '';
 
 /**
  * Custom hook to reactively synchronize Privy authenticated identity
@@ -13,9 +16,6 @@ export function usePrivySync() {
   const { ready, authenticated, user, logout: privyLogout, login: privyLogin } = usePrivy();
   const { wallets } = useWallets();
 
-  // Track the last synchronized identity signature to prevent duplicate sync cycles
-  const lastSyncedKeyRef = useRef<string>('');
-
   // Primary wallet address
   const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy') || wallets[0];
   const walletAddress = embeddedWallet?.address || user?.wallet?.address;
@@ -24,15 +24,21 @@ export function usePrivySync() {
     if (!ready) return;
 
     if (!authenticated || !user) {
-      lastSyncedKeyRef.current = '';
+      if (globalSyncedKey !== '') {
+        globalSyncedKey = '';
+        const store = usePartyStore.getState();
+        if (store.currentUser.isPrivyAuthenticated) {
+          store.resetUserSession();
+        }
+      }
       return;
     }
 
     const syncKey = `${user.id}:${walletAddress || ''}`;
-    if (lastSyncedKeyRef.current === syncKey) {
+    if (globalSyncedKey === syncKey) {
       return;
     }
-    lastSyncedKeyRef.current = syncKey;
+    globalSyncedKey = syncKey;
 
     let isSubscribed = true;
 
@@ -62,31 +68,39 @@ export function usePrivySync() {
 
     const store = usePartyStore.getState();
 
-    // Check if user has an existing persisted profile in Supabase
-    void fetchUserProfileFromDb(user.id).then((persisted) => {
-      if (!isSubscribed) return;
-
-      void store.updateUser({
-        id: user.id,
-        name: persisted?.name || displayName,
-        handle: persisted?.handle || defaultUniqueHandle,
-        avatar: persisted?.avatar || undefined,
-        email: email || undefined,
-        walletAddress: walletAddress || undefined,
-        authMethod,
-        isPrivyAuthenticated: true,
-      });
+    // 1. Immediately apply authenticated state to store so downstream route gates
+    // and UI components see an active authenticated session without waiting for network I/O
+    void store.updateUser({
+      id: user.id,
+      name: displayName,
+      handle: defaultUniqueHandle,
+      email: email || undefined,
+      walletAddress: walletAddress || undefined,
+      authMethod,
+      isPrivyAuthenticated: true,
     });
 
-    // Hydrate live data from Supabase for this session
+    // 2. Enrich profile from Supabase asynchronously if existing record is found
+    void fetchUserProfileFromDb(user.id).then((persisted) => {
+      if (!isSubscribed) return;
+      if (persisted) {
+        void store.updateUser({
+          id: user.id,
+          name: persisted.name || displayName,
+          handle: persisted.handle || defaultUniqueHandle,
+          avatar: persisted.avatar || undefined,
+          email: email || undefined,
+          walletAddress: walletAddress || undefined,
+          authMethod,
+          isPrivyAuthenticated: true,
+        });
+      }
+    });
+
+    // 3. Hydrate live data from Supabase for this session
     store.hydrateFromSupabase().catch((err) =>
       console.warn('Initial Supabase hydration fallback:', err)
     );
-
-    // Automatically transition from splash to home upon authenticating
-    if (store.currentView === 'splash') {
-      store.setCurrentView('home');
-    }
 
     return () => {
       isSubscribed = false;
@@ -94,13 +108,13 @@ export function usePrivySync() {
   }, [ready, authenticated, user, walletAddress]);
 
   const handleLogout = useCallback(async () => {
+    globalSyncedKey = '';
     try {
       await privyLogout();
     } catch (e) {
       console.warn('Privy logout error/ignored:', e);
     }
     usePartyStore.getState().resetUserSession();
-    lastSyncedKeyRef.current = '';
   }, [privyLogout]);
 
   return {

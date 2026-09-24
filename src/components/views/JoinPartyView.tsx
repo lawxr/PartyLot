@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Sparkles, Check, AlertCircle, ShieldCheck, MapPin, Clock } from 'lucide-react';
+import { ArrowLeft, Sparkles, Check, AlertCircle, ShieldCheck, MapPin, Clock, RefreshCw } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassPanel } from '@/components/ui/GlassPanel';
@@ -23,6 +23,7 @@ export const JoinPartyView: React.FC = () => {
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '']);
   const [isJoining, setIsJoining] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [serverPreview, setServerPreview] = useState<{
@@ -48,11 +49,16 @@ export const JoinPartyView: React.FC = () => {
   const fullCode = digits.join('').toUpperCase();
   const matchedParty = fullCode.length === 4 ? parties.find((p) => p.code.toUpperCase() === fullCode) || null : null;
 
-  // Auto-fetch if not found locally yet
+  // Auto-fetch if not found locally yet with robust async loading state
   useEffect(() => {
     if (fullCode.length === 4 && !matchedParty) {
+      let isCurrent = true;
+      setIsValidating(true);
+      setJoinError(null);
+
       validateServerInviteCode(fullCode)
         .then((res) => {
+          if (!isCurrent) return;
           if (res.valid && res.partyId) {
             setJoinError(null);
             setServerPreview({
@@ -64,13 +70,29 @@ export const JoinPartyView: React.FC = () => {
             hydrateFromSupabase().catch(() => {});
           } else {
             setServerPreview(null);
-            setJoinError(res.error || 'Invite validation is unavailable.');
+            setJoinError(res.error || 'No party found with this code. Double-check with your host!');
           }
         })
         .catch(() => {
+          if (!isCurrent) return;
           setServerPreview(null);
           setJoinError('Invite validation is unavailable. Please try again later.');
+        })
+        .finally(() => {
+          if (isCurrent) {
+            setIsValidating(false);
+          }
         });
+
+      return () => {
+        isCurrent = false;
+      };
+    } else {
+      setIsValidating(false);
+      if (fullCode.length < 4) {
+        setServerPreview(null);
+        setJoinError(null);
+      }
     }
   }, [fullCode, matchedParty, hydrateFromSupabase]);
 
@@ -97,10 +119,11 @@ export const JoinPartyView: React.FC = () => {
       : null);
 
   const errorMsg =
-    joinError ||
-    (fullCode.length === 4 && !activeParty
-      ? 'No party found with this code. Double-check with your host!'
-      : null);
+    !isValidating &&
+    (joinError ||
+      (fullCode.length === 4 && !activeParty
+        ? 'No party found with this code. Double-check with your host!'
+        : null));
 
   const executeJoinFlow = useCallback(
     async (code: string) => {
@@ -147,6 +170,7 @@ export const JoinPartyView: React.FC = () => {
   });
 
   const handleChange = (index: number, value: string) => {
+    setJoinError(null);
     const val = value.slice(-1).toUpperCase();
     const newDigits = [...digits];
     newDigits[index] = val;
@@ -158,6 +182,7 @@ export const JoinPartyView: React.FC = () => {
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    setJoinError(null);
     if (e.key === 'Backspace' && !digits[index] && index > 0) {
       inputsRef.current[index - 1]?.focus();
     } else if (e.key === 'ArrowLeft' && index > 0) {
@@ -169,6 +194,7 @@ export const JoinPartyView: React.FC = () => {
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
+    setJoinError(null);
     const pasted = e.clipboardData.getData('text').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (pasted.length >= 4) {
       const chars = pasted.slice(0, 4).split('');
@@ -200,7 +226,7 @@ export const JoinPartyView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#15140f] text-white flex flex-col justify-between p-4 sm:p-6 md:p-10 safe-top safe-bottom select-none overflow-y-auto">
+    <div className="min-h-screen w-full bg-[#15140f] text-white flex flex-col justify-between p-4 sm:p-6 md:p-10 safe-top safe-bottom select-none">
       {/* Top Header Bar */}
       <div className="w-full max-w-4xl mx-auto flex items-center justify-between mb-4 sm:mb-8 shrink-0">
         <button
@@ -215,10 +241,10 @@ export const JoinPartyView: React.FC = () => {
       </div>
 
       {/* Responsive Main Shell: Single column on mobile, 2-column card layout on desktop when matched */}
-      <div className="w-full max-w-4xl mx-auto my-auto flex-1 flex flex-col justify-center">
+      <div className="w-full max-w-4xl mx-auto my-auto flex-1 flex flex-col justify-center py-2 sm:py-4">
         <GlassPanel
           level={2}
-          className="w-full p-6 sm:p-8 md:p-12 border border-white/15 shadow-2xl relative overflow-hidden"
+          className="w-full p-5 sm:p-8 md:p-12 border border-white/15 shadow-2xl relative overflow-hidden"
         >
           <div
             className={`w-full transition-all duration-300 ${
@@ -269,6 +295,18 @@ export const JoinPartyView: React.FC = () => {
                 ))}
               </div>
 
+              {/* Validation Spinner Indicator */}
+              {isValidating && !activeParty && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-center gap-2 text-xs text-[#F0DC00] font-semibold mb-4 p-2.5 rounded-xl bg-[#F0DC00]/10 border border-[#F0DC00]/25 max-w-sm mx-auto shadow-sm"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#F0DC00]" />
+                  <span>Checking invite code...</span>
+                </motion.div>
+              )}
+
               {/* Error Message */}
               {errorMsg && (
                 <motion.div
@@ -281,7 +319,6 @@ export const JoinPartyView: React.FC = () => {
                 </motion.div>
               )}
 
-
             </div>
 
             {/* Right Column: Resolved Party Card (Desktop & Mobile) */}
@@ -292,7 +329,7 @@ export const JoinPartyView: React.FC = () => {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.92, y: 15 }}
                   transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-                  className="w-full"
+                  className="w-full mt-6 md:mt-0"
                 >
                   <div className="liquid-glass-modal rounded-3xl overflow-hidden border border-white/20 shadow-2xl relative text-left">
                     {/* Cover image banner */}

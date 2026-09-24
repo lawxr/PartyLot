@@ -13,6 +13,8 @@ import {
   Clock,
   Eye,
   ShieldCheck,
+  Camera,
+  Upload,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
@@ -22,6 +24,7 @@ import { Party } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 import confetti from 'canvas-confetti';
+import { uploadImageFile } from '@/services/storageService';
 
 export const CreatePartyView: React.FC = () => {
   const { createParty, selectParty, goBack, currentUser, crews, currentCrewId } = usePartyStore();
@@ -30,8 +33,11 @@ export const CreatePartyView: React.FC = () => {
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [partyName, setPartyName] = useState('');
-  const [selectedCrewId, setSelectedCrewId] = useState<string>(currentCrewId || 'c-404');
+  const [selectedCrewId, setSelectedCrewId] = useState<string>(currentCrewId || '');
   const [selectedCover, setSelectedCover] = useState(SAMPLE_PARTY_COVERS[0].url);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
+  const coverInputRef = React.useRef<HTMLInputElement>(null);
   const [date, setDate] = useState('TONIGHT');
   const [time, setTime] = useState('10:00 PM');
   const [location, setLocation] = useState('Medellín · Rooftop');
@@ -40,11 +46,30 @@ export const CreatePartyView: React.FC = () => {
   const [createdParty, setCreatedParty] = useState<Party | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingCover(true);
+    setCoverUploadError(null);
+    try {
+      const url = await uploadImageFile(file, 'party-covers');
+      setSelectedCover(url);
+    } catch (err) {
+      console.error('Failed to upload party cover:', err);
+      setCoverUploadError(err instanceof Error ? err.message : 'Error al subir la imagen');
+    } finally {
+      setIsUploadingCover(false);
+      if (coverInputRef.current) coverInputRef.current.value = '';
+    }
+  };
+
   const handleNext = () => {
     if (step < 4) {
       setStep((prev) => (prev + 1) as 1 | 2 | 3 | 4);
     } else {
       // Step 4 finishes creation
+      const validCrewId = crews.some((c) => c.id === selectedCrewId) ? selectedCrewId : undefined;
       const newParty = createParty({
         title: partyName.trim() || 'SECRET BALCONY',
         date,
@@ -52,7 +77,7 @@ export const CreatePartyView: React.FC = () => {
         location,
         description,
         coverImage: selectedCover,
-        crewId: selectedCrewId || undefined,
+        crewId: validCrewId,
       });
 
       setCreatedParty(newParty);
@@ -349,11 +374,77 @@ export const CreatePartyView: React.FC = () => {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2.5 flex items-center justify-between">
-                          <span>{t.createParty.chooseCoverLabel}</span>
-                          <span className="text-[11px] text-[#F0DC00] font-mono">{SAMPLE_PARTY_COVERS.length} presets</span>
-                        </label>
-                        <div className="grid grid-cols-5 gap-2 sm:gap-3">
+                        {/* Hidden cover file input */}
+                        <input
+                          ref={coverInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          className="hidden"
+                          onChange={handleCoverUpload}
+                        />
+
+                        <div className="flex items-center justify-between mb-2.5">
+                          <label className="text-xs font-bold text-white/60 uppercase tracking-wider">
+                            {t.createParty.chooseCoverLabel}
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => coverInputRef.current?.click()}
+                            disabled={isUploadingCover}
+                            className="px-3 py-1 rounded-full bg-[#F0DC00]/15 border border-[#F0DC00]/40 text-[#F0DC00] text-xs font-bold hover:bg-[#F0DC00]/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            <span>
+                              {isUploadingCover
+                                ? isEs
+                                  ? 'Subiendo flyer...'
+                                  : 'Uploading flyer...'
+                                : isEs
+                                ? 'Subir flyer propio'
+                                : 'Upload flyer'}
+                            </span>
+                          </button>
+                        </div>
+
+                        {coverUploadError && (
+                          <div className="mb-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-xl">
+                            {coverUploadError}
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-6 gap-2 sm:gap-3">
+                          {/* Custom Upload Tile */}
+                          <div
+                            onClick={() => coverInputRef.current?.click()}
+                            className={`relative h-20 sm:h-24 rounded-2xl overflow-hidden cursor-pointer border-2 border-dashed flex flex-col items-center justify-center transition-all ${
+                              isUploadingCover
+                                ? 'border-[#F0DC00] bg-[#F0DC00]/10 animate-pulse'
+                                : !SAMPLE_PARTY_COVERS.some((c) => c.url === selectedCover)
+                                ? 'border-[#F0DC00] bg-[#F0DC00]/15 shadow-[0_0_15px_rgba(240,220,0,0.3)]'
+                                : 'border-white/20 hover:border-[#F0DC00]/60 bg-white/5 hover:bg-white/10'
+                            }`}
+                          >
+                            {isUploadingCover ? (
+                              <div className="w-5 h-5 border-2 border-[#F0DC00] border-t-transparent rounded-full animate-spin" />
+                            ) : !SAMPLE_PARTY_COVERS.some((c) => c.url === selectedCover) ? (
+                              <div className="relative w-full h-full">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={selectedCover} alt="Uploaded cover" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                  <Check className="w-5 h-5 text-[#F0DC00]" />
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <Upload className="w-5 h-5 text-[#F0DC00] mb-1" />
+                                <span className="text-[10px] font-bold text-white/70 text-center leading-tight px-1">
+                                  {isEs ? 'Tu flyer' : 'Flyer'}
+                                </span>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Presets */}
                           {SAMPLE_PARTY_COVERS.map((cover) => (
                             <div
                               key={cover.id}

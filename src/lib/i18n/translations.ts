@@ -151,6 +151,21 @@ export interface TranslationDictionary {
     resetData: string;
     logout: string;
   };
+  onboarding: {
+    welcomeBadge: string;
+    howToCallYou: string;
+    subtitle: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    usernameLabel: string;
+    usernamePlaceholder: string;
+    uploadPhoto: string;
+    choosePreset: string;
+    submitButton: string;
+    saving: string;
+    errorNameRequired: string;
+    errorHandleInvalid: string;
+  };
 }
 
 export const translations: Record<Language, TranslationDictionary> = {
@@ -305,6 +320,21 @@ export const translations: Record<Language, TranslationDictionary> = {
       resetData: 'Limpiar caché local',
       logout: 'Cerrar sesión',
     },
+    onboarding: {
+      welcomeBadge: 'NUEVO MIEMBRO · BIENVENIDO',
+      howToCallYou: '¿Cómo quieres llamarte?',
+      subtitle: 'Configura tu nombre y tu usuario único para que tus amigos te reconozcan en las fiestas.',
+      nameLabel: '¿Cómo quieres llamarte?',
+      namePlaceholder: 'Tu nombre o apodo (ej. Dani, Alex, Sofi)',
+      usernameLabel: 'Elige tu @usuario',
+      usernamePlaceholder: 'tu_usuario',
+      uploadPhoto: 'Subir foto',
+      choosePreset: 'O elige un avatar de fiesta',
+      submitButton: 'Entrar a la fiesta',
+      saving: 'Guardando tu perfil...',
+      errorNameRequired: 'Por favor ingresa cómo quieres llamarte.',
+      errorHandleInvalid: 'El @usuario debe tener entre 3 y 24 caracteres (letras, números o guión bajo).',
+    },
   },
   en: {
     common: {
@@ -456,6 +486,21 @@ export const translations: Record<Language, TranslationDictionary> = {
       pastNightsTitle: 'PAST NIGHTS',
       resetData: 'Clear local cache',
       logout: 'Log out',
+    },
+    onboarding: {
+      welcomeBadge: 'NEW MEMBER · WELCOME',
+      howToCallYou: 'What should we call you?',
+      subtitle: 'Set up your name and unique @handle so your friends can recognize you at gatherings.',
+      nameLabel: 'What should we call you?',
+      namePlaceholder: 'Your name or nickname (e.g. Alex, Sam)',
+      usernameLabel: 'Choose your @username',
+      usernamePlaceholder: 'your_username',
+      uploadPhoto: 'Upload photo',
+      choosePreset: 'Or pick a party preset avatar',
+      submitButton: 'Enter the Party',
+      saving: 'Saving your profile...',
+      errorNameRequired: 'Please enter your name or nickname.',
+      errorHandleInvalid: 'Username must be between 3 and 24 characters (letters, numbers, or underscore).',
     },
   },
 };

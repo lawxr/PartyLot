@@ -18,6 +18,7 @@ import {
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { uploadImageFile } from '@/services/storageService';
 
 export const CrewDetailView: React.FC = () => {
   const {
@@ -40,6 +41,27 @@ export const CrewDetailView: React.FC = () => {
   const [isMemoryOpen, setIsMemoryOpen] = useState(false);
   const [memoryUrl, setMemoryUrl] = useState('');
   const [memoryCaption, setMemoryCaption] = useState('');
+  const [isUploadingMemory, setIsUploadingMemory] = useState(false);
+  const [memoryUploadError, setMemoryUploadError] = useState<string | null>(null);
+  const memoryFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleMemoryFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingMemory(true);
+    setMemoryUploadError(null);
+    try {
+      const url = await uploadImageFile(file, 'crew-memories');
+      setMemoryUrl(url);
+    } catch (err) {
+      console.error('Failed to upload memory photo:', err);
+      setMemoryUploadError(err instanceof Error ? err.message : 'Error al subir la foto.');
+    } finally {
+      setIsUploadingMemory(false);
+      if (memoryFileInputRef.current) memoryFileInputRef.current.value = '';
+    }
+  };
 
   const crew = crews.find((c) => c.id === currentCrewId) || crews[0];
   const crewParties = parties.filter((p) => p.crewId === crew?.id);
@@ -490,15 +512,67 @@ export const CrewDetailView: React.FC = () => {
                 <h3 className="font-display font-bold text-xl text-white mb-2">Add Photo Memory</h3>
                 <p className="text-xs text-white/60 mb-4">Post a memory from a recent gathering.</p>
                 <form onSubmit={handleAddMemory} className="space-y-4">
+                  {/* Hidden file input */}
+                  <input
+                    ref={memoryFileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={handleMemoryFileUpload}
+                  />
+
                   <div>
-                    <label className="block text-xs uppercase font-mono text-white/70 mb-1">Photo URL</label>
+                    <label className="block text-xs uppercase font-mono text-white/70 mb-1.5 flex items-center justify-between">
+                      <span>Photo</span>
+                      <button
+                        type="button"
+                        onClick={() => memoryFileInputRef.current?.click()}
+                        disabled={isUploadingMemory}
+                        className="text-xs text-[#F0DC00] font-bold hover:underline cursor-pointer disabled:opacity-50"
+                      >
+                        {isUploadingMemory ? 'Subiendo...' : 'Subir desde dispositivo'}
+                      </button>
+                    </label>
+
+                    {memoryUrl ? (
+                      <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-white/20 mb-2 group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={memoryUrl} alt="Memory preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => memoryFileInputRef.current?.click()}
+                          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs text-white font-bold transition-opacity"
+                        >
+                          Cambiar imagen
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => memoryFileInputRef.current?.click()}
+                        className="w-full h-28 rounded-2xl border-2 border-dashed border-white/20 hover:border-[#F0DC00]/60 bg-white/5 hover:bg-white/10 flex flex-col items-center justify-center cursor-pointer transition-all mb-2"
+                      >
+                        {isUploadingMemory ? (
+                          <div className="w-6 h-6 border-2 border-[#F0DC00] border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Camera className="w-6 h-6 text-[#F0DC00] mb-1.5" />
+                            <span className="text-xs font-bold text-white/80">Seleccionar o tomar foto</span>
+                            <span className="text-[10px] text-white/40">PNG, JPG o WEBP hasta 10MB</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {memoryUploadError && (
+                      <p className="text-xs text-red-400 mb-2">{memoryUploadError}</p>
+                    )}
+
                     <input
                       type="url"
-                      required
-                      placeholder="https://images.unsplash.com/..."
+                      placeholder="o ingresa un URL (https://...)"
                       value={memoryUrl}
                       onChange={(e) => setMemoryUrl(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm outline-none focus:border-[#F0DC00]"
+                      className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs outline-none focus:border-[#F0DC00] placeholder:text-white/30"
                     />
                   </div>
                   <div>

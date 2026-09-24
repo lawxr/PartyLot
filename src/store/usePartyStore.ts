@@ -194,6 +194,8 @@ interface PartyStoreState {
   // User & Auth Actions
   updateUser: (updates: Partial<User>, authToken?: string | null) => Promise<void>;
   resetUserSession: () => void;
+  isOnboardingOpen: boolean;
+  setIsOnboardingOpen: (open: boolean) => void;
 
   // Realtime Supabase Persistence & Hydration
   hydrateFromSupabase: () => Promise<void>;
@@ -208,6 +210,8 @@ export const usePartyStore = create<PartyStoreState>()(
   persist(
     (set, get) => ({
       currentUser: demoMode ? CURRENT_USER : signedOutUser,
+      isOnboardingOpen: false,
+      setIsOnboardingOpen: (open) => set({ isOnboardingOpen: open }),
       currentView: 'splash',
       previousView: null,
       activeTab: 'home',

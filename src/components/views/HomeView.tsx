@@ -60,7 +60,7 @@ export const HomeView: React.FC = () => {
           {/* Language Switch */}
           <LanguageSwitch compact />
 
-          {/* Desktop Create Button */}
+          {/* Create Party Action (Desktop & Mobile) */}
           <div className="hidden sm:block">
             <GlassButton
               variant="accent"
@@ -71,6 +71,13 @@ export const HomeView: React.FC = () => {
               {t.home.createParty}
             </GlassButton>
           </div>
+          <button
+            onClick={() => setCurrentView('create-party')}
+            className="sm:hidden w-10 h-10 rounded-full bg-[#F0DC00] text-black flex items-center justify-center font-bold shadow-[0_4px_16px_rgba(240,220,0,0.35)] active:scale-95 transition-transform shrink-0"
+            aria-label={t.home.createParty}
+          >
+            <Plus className="w-5 h-5 stroke-[2.5]" />
+          </button>
 
           {/* User Avatar */}
           <button
@@ -214,19 +221,6 @@ export const HomeView: React.FC = () => {
           ))}
         </div>
       </section>
-
-      {/* Floating CTA: + Create (Mobile Only) */}
-      <div className="fixed bottom-20 right-6 z-40 sm:hidden">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setCurrentView('create-party')}
-          className="accent-button flex items-center gap-2 px-5 py-3.5 rounded-full shadow-2xl font-display font-bold text-sm tracking-tight text-black cursor-pointer"
-        >
-          <Plus className="w-5 h-5 stroke-[2.5]" />
-          <span>{t.home.createParty}</span>
-        </motion.button>
-      </div>
     </div>
   );
 };

@@ -95,6 +95,22 @@ export function usePrivySync() {
           isPrivyAuthenticated: true,
         });
       }
+
+      // Detect new users or accounts with default uncustomized profiles
+      const storageKey = `partylot_onboarded_${user.id}`;
+      const hasCompletedOnboardingLocal =
+        typeof window !== 'undefined' && localStorage.getItem(storageKey) === 'true';
+
+      const isDefaultOrPlaceholder =
+        !persisted ||
+        !persisted.name ||
+        persisted.name === 'PartyMember' ||
+        persisted.name === 'Guest' ||
+        persisted.handle?.startsWith('@partymember');
+
+      if (!hasCompletedOnboardingLocal && isDefaultOrPlaceholder) {
+        store.setIsOnboardingOpen(true);
+      }
     });
 
     // 3. Hydrate live data from Supabase for this session

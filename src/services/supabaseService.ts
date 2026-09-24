@@ -139,38 +139,79 @@ export async function joinPartyWithInviteCode(
 /**
  * Persists a newly created party and its secure server-side invitation
  */
-export async function persistPartyToSupabase(party: Party, hostUser: { id: string; name: string }): Promise<void> {
+export async function persistPartyToSupabase(
+  party: Party,
+  hostUser: { id: string; name: string; handle?: string; avatar?: string }
+): Promise<void> {
   const supabase = getSupabase();
-  if (!supabase) return;
+  if (!supabase || !hostUser.id) return;
 
   try {
-    // 1. Insert Party
-    await supabase.from('parties').upsert({
-      id: party.id,
-      crew_id: party.crewId || null,
-      code: party.code,
-      title: party.title,
-      date: party.date,
-      time: party.time,
-      location: party.location,
-      description: party.description,
-      cover_image: party.coverImage,
-      host_id: hostUser.id,
-      host_name: hostUser.name,
-      pot_balance: party.potBalance || 0,
-      status: party.status || 'live',
-    });
+    // 1. Ensure Host User exists in public.users to satisfy foreign key constraints
+    await supabase.from('users').upsert(
+      {
+        id: hostUser.id,
+        name: hostUser.name || 'PartyMember',
+        handle: hostUser.handle || `@user_${hostUser.id.replace(/[^a-zA-Z0-9]/g, '').slice(-4).toLowerCase()}`,
+        avatar: hostUser.avatar || null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id', ignoreDuplicates: true }
+    );
 
-    // 2. Insert Host as first member
-    await supabase.from('party_members').upsert({
-      party_id: party.id,
-      user_id: hostUser.id,
-      name: hostUser.name,
-      role: 'host',
-      status: 'going',
-    });
+    // 2. Validate crew_id if provided to avoid FK constraint violations
+    let validCrewId: string | null = null;
+    if (party.crewId) {
+      const { data: crewData } = await supabase
+        .from('crews')
+        .select('id')
+        .eq('id', party.crewId)
+        .maybeSingle();
+      if (crewData?.id) {
+        validCrewId = crewData.id;
+      }
+    }
 
-    // 3. Create server-side invitation primitive (PRODUCT.md Section 8.1 & 14)
+    // 3. Upsert Party
+    const { error: partyErr } = await supabase.from('parties').upsert(
+      {
+        id: party.id,
+        crew_id: validCrewId,
+        code: party.code,
+        title: party.title,
+        date: party.date,
+        time: party.time,
+        location: party.location,
+        description: party.description,
+        cover_image: party.coverImage,
+        host_id: hostUser.id,
+        host_name: hostUser.name,
+        pot_balance: party.potBalance || 0,
+        status: party.status || 'live',
+      },
+      { onConflict: 'id' }
+    );
+
+    if (partyErr) {
+      console.warn('Error upserting party to Supabase:', partyErr);
+      return;
+    }
+
+    // 4. Upsert Host as first member
+    await supabase.from('party_members').upsert(
+      {
+        party_id: party.id,
+        user_id: hostUser.id,
+        name: hostUser.name,
+        avatar: hostUser.avatar || null,
+        role: 'host',
+        status: 'going',
+        nights_together: 1,
+      },
+      { onConflict: 'party_id,user_id' }
+    );
+
+    // 5. Create server-side invitation primitive
     await supabase.from('invitations').insert({
       party_id: party.id,
       code: party.code,

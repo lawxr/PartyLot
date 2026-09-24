@@ -88,13 +88,49 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
   };
 
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setError(null);
+    try {
+      const { uploadImageFile } = await import('@/services/storageService');
+      const uploadedUrl = await uploadImageFile(file, 'avatars');
+      setAvatar(uploadedUrl);
+    } catch (uploadErr) {
+      console.error('Avatar upload failed:', uploadErr);
+      setError(uploadErr instanceof Error ? uploadErr.message : 'Error al subir la imagen.');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <form onSubmit={handleSave} className="space-y-6 pt-2 pb-6 px-1">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       {/* Avatar Preview & Selection */}
       <div className="flex flex-col items-center">
         <div className="relative group">
           <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#F0DC00] p-1 liquid-glass-card shadow-2xl flex items-center justify-center bg-black/40">
-            {avatar ? (
+            {isUploading ? (
+              <div className="w-full h-full rounded-full bg-black/70 flex flex-col items-center justify-center gap-1 text-[#F0DC00]">
+                <div className="w-5 h-5 border-2 border-[#F0DC00] border-t-transparent rounded-full animate-spin" />
+                <span className="text-[9px] font-mono uppercase tracking-widest text-white/80">Subiendo</span>
+              </div>
+            ) : avatar ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img src={avatar} alt="Avatar Preview" className="w-full h-full object-cover rounded-full" />
             ) : (
@@ -106,18 +142,38 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
           <button
             type="button"
-            onClick={() => setShowCustomUrlInput(!showCustomUrlInput)}
-            className="absolute bottom-0 right-0 p-2 rounded-full bg-[#F0DC00] text-black shadow-lg hover:scale-110 active:scale-95 transition-transform cursor-pointer"
-            title="Agregar URL de imagen personalizada"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="absolute bottom-0 right-0 p-2 rounded-full bg-[#F0DC00] text-black shadow-lg hover:scale-110 active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
+            title="Subir foto desde tu dispositivo o cámara"
           >
             <Camera className="w-4 h-4" />
           </button>
         </div>
 
-        <span className="text-xs text-white/50 mt-2 font-medium">Elige tu foto de fiesta</span>
+        <div className="flex items-center gap-3 mt-3">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="px-3.5 py-1.5 rounded-full bg-[#F0DC00]/15 border border-[#F0DC00]/40 text-[#F0DC00] text-xs font-bold hover:bg-[#F0DC00]/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>{isUploading ? 'Subiendo...' : 'Subir tu foto'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowCustomUrlInput(!showCustomUrlInput)}
+            className="text-xs text-white/40 hover:text-white/70 transition-colors flex items-center gap-1 cursor-pointer"
+          >
+            <LinkIcon className="w-3 h-3" />
+            <span>Pegar URL</span>
+          </button>
+        </div>
 
         {/* Preset Avatars */}
-        <div className="flex items-center gap-2.5 mt-3 overflow-x-auto max-w-full pb-1">
+        <div className="flex items-center gap-2.5 mt-3.5 overflow-x-auto max-w-full pb-1">
           {AVATAR_PRESETS.map((url, idx) => (
             <button
               key={idx}

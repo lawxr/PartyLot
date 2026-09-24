@@ -15,6 +15,7 @@ import { RecapView } from '@/components/views/RecapView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { CrewDetailView } from '@/components/views/CrewDetailView';
 import { TabBar } from '@/components/navigation/TabBar';
+import { NewUserOnboardingModal } from '@/components/ui/NewUserOnboardingModal';
 import { usePrivySync } from '@/hooks/usePrivySync';
 import { isPrivyConfigured, isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
@@ -72,7 +73,7 @@ export default function App() {
         }}
       />
       {/* Warm Ambient Radial Gradients */}
-      <div className="fixed inset-0 pointer-events-none z-0">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute -top-[10%] left-[15%] w-[450px] h-[450px] rounded-full bg-[#f0dc00]/10 filter blur-[90px]" />
         <div className="absolute top-[40%] -right-[10%] w-[500px] h-[500px] rounded-full bg-[#ff8f9e]/8 filter blur-[100px]" />
         <div className="absolute bottom-[5%] left-[20%] w-[400px] h-[400px] rounded-full bg-[#ffd65c]/10 filter blur-[80px]" />
@@ -101,6 +102,9 @@ export default function App() {
         {currentView === 'polls' && <PollsView />}
         {currentView === 'recap' && <RecapView />}
         {currentView === 'profile' && <ProfileView />}
+
+        {/* New User Onboarding Modal */}
+        <NewUserOnboardingModal />
 
         {/* Global Floating Liquid Glass TabBar */}
         <TabBar />

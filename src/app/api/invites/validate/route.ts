@@ -74,3 +74,26 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const code = body?.code;
+
+    const url = new URL(request.url);
+    if (code) {
+      url.searchParams.set('code', code);
+    }
+
+    const modifiedRequest = new NextRequest(url.toString(), {
+      headers: request.headers,
+    });
+
+    return GET(modifiedRequest);
+  } catch {
+    return NextResponse.json(
+      { valid: false, error: 'Invalid JSON body for invite validation.' },
+      { status: 400 }
+    );
+  }
+}

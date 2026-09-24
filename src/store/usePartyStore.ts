@@ -260,10 +260,13 @@ export const usePartyStore = create<PartyStoreState>()(
       activeGameId: 'whos-most-likely',
 
       setCurrentView: (view) => {
-        set((state) => ({
-          previousView: state.currentView,
-          currentView: view,
-        }));
+        set((state) => {
+          if (state.currentView === view) return state;
+          return {
+            previousView: state.currentView,
+            currentView: view,
+          };
+        });
       },
 
       selectParty: (partyId) => {
@@ -920,6 +923,9 @@ export const usePartyStore = create<PartyStoreState>()(
           ...updates,
         };
 
+        // Apply local state immediately so downstream guards and UI have instantaneous identity
+        set({ currentUser: updated });
+
         if (authToken && updated.id) {
           await syncUserDataToDb(updated, authToken);
         } else if (!demoMode && updated.id) {
@@ -927,8 +933,6 @@ export const usePartyStore = create<PartyStoreState>()(
             console.warn('User profile changes are not persisted:', error)
           );
         }
-
-        set({ currentUser: updated });
       },
 
       resetUserSession: () => {

@@ -6,14 +6,14 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { PrivyAuthModal } from '@/components/ui/PrivyAuthModal';
 import { usePartyStore } from '@/store/usePartyStore';
 import { KeyRound, ShieldCheck, Sparkles, MapPin, Clock } from 'lucide-react';
-import { usePrivySync } from '@/hooks/usePrivySync';
+import { usePrivy } from '@privy-io/react-auth';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 import { isPrivyConfigured } from '@/lib/runtimeMode';
 
 export const SplashView: React.FC = () => {
   const { setCurrentView } = usePartyStore();
-  const { login, ready } = usePrivySync();
+  const { login, ready } = usePrivy();
   const { t } = useTranslation();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 

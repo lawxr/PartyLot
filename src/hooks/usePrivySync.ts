@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { usePartyStore } from '@/store/usePartyStore';
 import { fetchUserProfileFromDb } from '@/services/supabaseService';
+
+// Global signature of the last synchronized identity to avoid duplicate sync cycles across component lifecycles
+let globalSyncedKey = '';
 
 /**
  * Custom hook to reactively synchronize Privy authenticated identity
@@ -12,82 +15,107 @@ import { fetchUserProfileFromDb } from '@/services/supabaseService';
 export function usePrivySync() {
   const { ready, authenticated, user, logout: privyLogout, login: privyLogin } = usePrivy();
   const { wallets } = useWallets();
-  const { updateUser, resetUserSession, currentView, setCurrentView, hydrateFromSupabase } = usePartyStore();
+
+  // Primary wallet address
+  const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy') || wallets[0];
+  const walletAddress = embeddedWallet?.address || user?.wallet?.address;
 
   useEffect(() => {
     if (!ready) return;
 
-    if (authenticated && user) {
-      let isSubscribed = true;
+    if (!authenticated || !user) {
+      if (globalSyncedKey !== '') {
+        globalSyncedKey = '';
+        const store = usePartyStore.getState();
+        if (store.currentUser.isPrivyAuthenticated) {
+          store.resetUserSession();
+        }
+      }
+      return;
+    }
 
-      // Find the Privy embedded EVM wallet
-      const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy') || wallets[0];
-      const address = embeddedWallet?.address || user.wallet?.address;
+    const syncKey = `${user.id}:${walletAddress || ''}`;
+    if (globalSyncedKey === syncKey) {
+      return;
+    }
+    globalSyncedKey = syncKey;
 
-      const email =
-        user.email?.address ||
-        user.google?.email ||
-        user.apple?.email ||
-        (user.phone?.number ? `sms:${user.phone.number}` : undefined);
+    let isSubscribed = true;
 
-      const authMethod = user.google
-        ? 'google'
-        : user.apple
-        ? 'apple'
-        : user.email
-        ? 'email'
-        : user.phone
-        ? 'phone'
-        : 'social';
+    const email =
+      user.email?.address ||
+      user.google?.email ||
+      user.apple?.email ||
+      (user.phone?.number ? `sms:${user.phone.number}` : undefined);
 
-      const displayName =
-        user.google?.name ||
-        (email ? email.split('@')[0] : 'PartyMember');
+    const authMethod = user.google
+      ? 'google'
+      : user.apple
+      ? 'apple'
+      : user.email
+      ? 'email'
+      : user.phone
+      ? 'phone'
+      : 'social';
 
-      // Unique handle fallback: alphanumeric core + last 4 chars of user id
-      const uniqueSuffix = user.id.replace(/[^a-zA-Z0-9]/g, '').slice(-4).toLowerCase();
-      const defaultUniqueHandle = `@${displayName.toLowerCase().replace(/[^a-z0-9_]/g, '')}_${uniqueSuffix}`;
+    const displayName =
+      user.google?.name ||
+      (email ? email.split('@')[0] : 'PartyMember');
 
-      // Check if user has an existing persisted profile in Supabase
-      void fetchUserProfileFromDb(user.id).then((persisted) => {
-        if (!isSubscribed) return;
+    // Unique handle fallback: alphanumeric core + last 4 chars of user id
+    const uniqueSuffix = user.id.replace(/[^a-zA-Z0-9]/g, '').slice(-4).toLowerCase();
+    const defaultUniqueHandle = `@${displayName.toLowerCase().replace(/[^a-z0-9_]/g, '')}_${uniqueSuffix}`;
 
-        updateUser({
+    const store = usePartyStore.getState();
+
+    // 1. Immediately apply authenticated state to store so downstream route gates
+    // and UI components see an active authenticated session without waiting for network I/O
+    void store.updateUser({
+      id: user.id,
+      name: displayName,
+      handle: defaultUniqueHandle,
+      email: email || undefined,
+      walletAddress: walletAddress || undefined,
+      authMethod,
+      isPrivyAuthenticated: true,
+    });
+
+    // 2. Enrich profile from Supabase asynchronously if existing record is found
+    void fetchUserProfileFromDb(user.id).then((persisted) => {
+      if (!isSubscribed) return;
+      if (persisted) {
+        void store.updateUser({
           id: user.id,
-          name: persisted?.name || displayName,
-          handle: persisted?.handle || defaultUniqueHandle,
-          avatar: persisted?.avatar || undefined,
+          name: persisted.name || displayName,
+          handle: persisted.handle || defaultUniqueHandle,
+          avatar: persisted.avatar || undefined,
           email: email || undefined,
-          walletAddress: address,
+          walletAddress: walletAddress || undefined,
           authMethod,
           isPrivyAuthenticated: true,
         });
-      });
-
-      // Hydrate live data from Supabase for this session
-      hydrateFromSupabase().catch((err) =>
-        console.warn('Initial Supabase hydration fallback:', err)
-      );
-
-      // Automatically transition from splash to home upon authenticating
-      if (currentView === 'splash') {
-        setCurrentView('home');
       }
+    });
 
-      return () => {
-        isSubscribed = false;
-      };
-    }
-  }, [ready, authenticated, user, wallets, updateUser, currentView, setCurrentView, hydrateFromSupabase]);
+    // 3. Hydrate live data from Supabase for this session
+    store.hydrateFromSupabase().catch((err) =>
+      console.warn('Initial Supabase hydration fallback:', err)
+    );
 
-  const handleLogout = async () => {
+    return () => {
+      isSubscribed = false;
+    };
+  }, [ready, authenticated, user, walletAddress]);
+
+  const handleLogout = useCallback(async () => {
+    globalSyncedKey = '';
     try {
       await privyLogout();
     } catch (e) {
       console.warn('Privy logout error/ignored:', e);
     }
-    resetUserSession();
-  };
+    usePartyStore.getState().resetUserSession();
+  }, [privyLogout]);
 
   return {
     ready,

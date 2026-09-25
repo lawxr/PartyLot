@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Music,
+  Gamepad2,
   Receipt,
   Coins,
   BarChart3,
@@ -70,7 +70,7 @@ export const PartyDetailView: React.FC = () => {
   const [isPotSubmitting, setIsPotSubmitting] = useState(false);
 
   const quickActions = [
-    { id: 'play', label: 'Play', icon: Music, onClick: () => setCurrentView('games') },
+    { id: 'play', label: 'Juegos', icon: Gamepad2, onClick: () => setCurrentView('games') },
     { id: 'split', label: 'Split', icon: Receipt, onClick: () => setCurrentView('split') },
     { id: 'pot', label: 'Pot', icon: Coins, onClick: () => setIsPotSheetOpen(true) },
     { id: 'poll', label: 'Poll', icon: BarChart3, onClick: () => setCurrentView('polls') },

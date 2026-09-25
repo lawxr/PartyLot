@@ -162,8 +162,38 @@ export const SplitView: React.FC = () => {
     }
   };
 
-  // Default members list corresponding to the mockup
-  const defaultMockMembers = [
+  // Calculate real debtor list from settlements
+  const realDebtorsList = settlements
+    .filter((s) => s.toId === currentUser.id)
+    .map((s) => ({
+      id: s.fromId,
+      name: s.fromName,
+      avatar: s.fromAvatar,
+      subtitle: isEs ? 'Debe transferir' : 'Owes you',
+      type: 'debtor' as const,
+      amount: `$${s.amount.toFixed(2)}`,
+    }));
+
+  // Calculate real creditor list from settlements
+  const realCreditorsList = settlements
+    .filter((s) => s.fromId === currentUser.id)
+    .map((s) => ({
+      id: s.toId,
+      name: s.toName,
+      avatar: s.toAvatar,
+      subtitle: isEs ? 'Debes transferir' : 'You owe',
+      type: 'creditor' as const,
+      amount: `$${s.amount.toFixed(2)}`,
+    }));
+
+  // Combine debtors and creditors for the equal tab display
+  const realMembersList = [
+    ...realDebtorsList,
+    ...realCreditorsList,
+  ];
+
+  // Fallback mock members when no real data exists
+  const defaultMockMembers = realMembersList.length > 0 ? realMembersList : [
     {
       id: 'u-law',
       name: 'Law',
@@ -924,29 +954,35 @@ export const SplitView: React.FC = () => {
           </div>
 
           <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
-            {defaultMockMembers.filter((m) => m.type === 'debtor').map((member, i) => (
-              <div
-                key={`settle-${member.id}-${i}`}
-                className="p-3.5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between shadow-2xs"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full overflow-hidden bg-[#EFEAE2]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
+            {realDebtorsList.length > 0 ? (
+              realDebtorsList.map((member, i) => (
+                <div
+                  key={`settle-${member.id}-${i}`}
+                  className="p-3.5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between shadow-2xs"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full overflow-hidden bg-[#EFEAE2]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-xs text-[#171512] block">{member.name}</span>
+                      <span className="text-[10px] text-rose-600 font-semibold">{member.subtitle}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-bold text-xs text-[#171512] block">{member.name}</span>
-                    <span className="text-[10px] text-rose-600 font-semibold">{isEs ? 'Debe transferir' : 'Owes you'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <TokenLogo token="usdc" size="xs" />
+                    <span className="font-display font-black text-base text-[#171512]">
+                      {member.amount}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <TokenLogo token="usdc" size="xs" />
-                  <span className="font-display font-black text-base text-[#171512]">
-                    {member.amount}
-                  </span>
-                </div>
+              ))
+            ) : (
+              <div className="p-4 text-center text-sm text-[#8A8173]">
+                {isEs ? 'No hay deudas pendientes' : 'No pending debts'}
               </div>
-            ))}
+            )}
           </div>
 
           <div className="pt-2 space-y-2">
@@ -954,7 +990,7 @@ export const SplitView: React.FC = () => {
               variant="accent"
               size="lg"
               fullWidth
-              disabled={isSettling}
+              disabled={isSettling || realDebtorsList.length === 0}
               onClick={handleSettleOnchain}
             >
               {isSettling

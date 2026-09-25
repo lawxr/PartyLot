@@ -8,9 +8,12 @@ import { TopNav } from '@/components/navigation/TopNav';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import confetti from 'canvas-confetti';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const PollsView: React.FC = () => {
   const { parties, currentPartyId, polls, votePoll, createPoll } = usePartyStore();
+  const { t, language } = useTranslation();
+  const isEs = language === 'es';
   const defaultParty = parties[0];
   const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
   const partyPolls = polls.filter((p) => p.partyId === party?.id);
@@ -52,17 +55,17 @@ export const PollsView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-32 select-none">
-      <TopNav title="GROUP POLLS" />
+      <TopNav title={t.polls.title.toUpperCase()} />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
         {/* Responsive Header */}
         <div className="flex items-end justify-between mb-8 border-b border-[rgba(35,30,22,0.08)] pb-5">
           <div>
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#B89600]">
-              REAL-TIME DECISIONS
+              {t.polls.subtitle}
             </span>
             <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight leading-none mt-1">
-              CREW POLLS
+              {t.polls.title}
             </h2>
           </div>
 
@@ -72,29 +75,34 @@ export const PollsView: React.FC = () => {
             onClick={() => setIsCreateOpen(true)}
             icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
           >
-            Create Poll
+            {t.polls.createPoll}
           </GlassButton>
         </div>
 
         {/* Poll Cards Multi-Column Grid on Desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {partyPolls.map((poll) => (
-            <div
-              key={poll.id}
-              className="p-5 sm:p-6 bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] rounded-[24px] shadow-[0_4px_20px_rgba(40,30,20,0.04)] flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#6F6A62]">
-                    {poll.totalVotes} TOTAL VOTES
-                  </span>
-                  <span className="text-[11px] text-[#8E887E]">{poll.createdAt}</span>
-                </div>
+        {partyPolls.length === 0 ? (
+          <div className="p-12 text-center rounded-3xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-sm max-w-md mx-auto">
+            <p className="text-sm text-[#6F6A62]">{t.polls.empty}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {partyPolls.map((poll) => (
+              <div
+                key={poll.id}
+                className="p-5 sm:p-6 bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] rounded-[24px] shadow-[0_4px_20px_rgba(40,30,20,0.04)] flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#6F6A62]">
+                      {t.polls.totalVotes(poll.totalVotes)}
+                    </span>
+                    <span className="text-[11px] text-[#8E887E]">{poll.createdAt}</span>
+                  </div>
 
-                <h3 className="font-display font-black text-xl sm:text-2xl text-[#171512] tracking-tight mb-5">
-                  {poll.question}
-                </h3>
-              </div>
+                  <h3 className="font-display font-black text-xl sm:text-2xl text-[#171512] tracking-tight mb-5">
+                    {poll.question}
+                  </h3>
+                </div>
 
               {/* Poll Options with Animated Bars */}
               <div className="space-y-3">
@@ -159,23 +167,24 @@ export const PollsView: React.FC = () => {
             </div>
           ))}
         </div>
+      )}
       </main>
 
       {/* BottomSheet: Create Poll */}
       <BottomSheet
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        title="Create Group Poll"
+        title={t.polls.newPollTitle}
       >
         <form onSubmit={handleCreatePoll} className="space-y-4">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              Question
+              {t.polls.questionLabel}
             </label>
             <input
               type="text"
               required
-              placeholder="e.g. What should we play next?"
+              placeholder={t.polls.questionPlaceholder}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] text-base font-bold outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00] placeholder-[#999187]"
@@ -184,14 +193,14 @@ export const PollsView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              Options
+              {t.polls.optionsLabel}
             </label>
             <div className="space-y-2">
               {options.map((opt, idx) => (
                 <input
                   key={idx}
                   type="text"
-                  placeholder={`Option ${idx + 1}`}
+                  placeholder={`${isEs ? 'Opción' : 'Option'} ${idx + 1}`}
                   value={opt}
                   onChange={(e) => updateOptionText(idx, e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl bg-[#F7F2E8] text-[#171512] text-sm outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00] placeholder-[#999187]"
@@ -207,7 +216,7 @@ export const PollsView: React.FC = () => {
               fullWidth
               type="submit"
             >
-              Post Poll
+              {t.polls.publish}
             </GlassButton>
           </div>
         </form>

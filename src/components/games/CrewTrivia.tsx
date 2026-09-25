@@ -13,6 +13,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 export const CrewTrivia: React.FC = () => {
   const { trivia } = usePartyStore();
   const { language } = useTranslation();
+  const isEs = language === 'es';
   const [currentRound, setCurrentRound] = useState(0); // 0 to 4 (5 rounds)
   const [score, setScore] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -72,24 +73,28 @@ export const CrewTrivia: React.FC = () => {
           </div>
 
           <span className="text-xs uppercase font-extrabold tracking-widest text-[#F0DC00]">
-            FINAL PODIUM
+            {isEs ? 'PODIO FINAL' : 'FINAL PODIUM'}
           </span>
           <h3 className="font-display font-black text-3xl text-white tracking-tight mt-1 mb-2">
-            CREW GENIUS!
+            {isEs ? '¡GENIO DE LA CREW!' : 'CREW GENIUS!'}
           </h3>
           <p className="text-xs text-white/60 mb-6">
-            You completed all {totalRounds} rounds of 404 Trivia.
+            {isEs
+              ? `Completaste las ${totalRounds} rondas de la Trivia.`
+              : `You completed all ${totalRounds} rounds of 404 Trivia.`}
           </p>
 
           <div className="p-4 rounded-2xl bg-white/10 border border-white/10 mb-6">
             <span className="text-[11px] uppercase font-bold text-white/50 tracking-wider">
-              YOUR SCORE
+              {isEs ? 'TU PUNTAJE' : 'YOUR SCORE'}
             </span>
             <div className="font-display font-black text-4xl text-[#F0DC00] mt-1">
               {score} PTS
             </div>
             <span className="text-xs text-white/70 block mt-1">
-              {score >= 400 ? 'Certified Inner Circle Legend' : 'Needs more party attendance'}
+              {score >= 400
+                ? isEs ? 'Leyenda certificada del círculo íntimo' : 'Certified Inner Circle Legend'
+                : isEs ? 'Necesitas más asistencia a fiestas' : 'Needs more party attendance'}
             </span>
           </div>
 
@@ -104,7 +109,7 @@ export const CrewTrivia: React.FC = () => {
             onClick={handleRestart}
             icon={<RotateCcw className="w-5 h-5 text-white" />}
           >
-            Play Again
+            {isEs ? 'Jugar de Nuevo' : 'Play Again'}
           </GlassButton>
         </GlassPanel>
       </div>
@@ -117,7 +122,7 @@ export const CrewTrivia: React.FC = () => {
       <div className="w-full flex items-center justify-between mb-4 px-1">
         <span className="text-xs font-extrabold uppercase tracking-wider text-[#F0DC00] flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5" />
-          Round {currentRound + 1} / {totalRounds}
+          {isEs ? `Ronda ${currentRound + 1} / ${totalRounds}` : `Round ${currentRound + 1} / ${totalRounds}`}
         </span>
 
         <span className="px-3 py-1 rounded-full liquid-glass-card text-xs font-mono font-bold text-white">
@@ -136,7 +141,7 @@ export const CrewTrivia: React.FC = () => {
       {/* Question Box */}
       <GlassPanel level={3} className="p-6 mb-6 text-center w-full border border-white/20">
         <span className="text-[10px] uppercase font-extrabold tracking-widest text-white/50">
-          CREW LORE & TRIVIA
+          {isEs ? 'HISTORIA Y TRIVIA DE LA CREW' : 'CREW LORE & TRIVIA'}
         </span>
         <h3 className="font-display font-black text-xl sm:text-2xl text-white tracking-tight mt-2 mb-2 leading-snug">
           {currentQ.question}
@@ -195,7 +200,7 @@ export const CrewTrivia: React.FC = () => {
             className="w-full"
           >
             <div className="p-4 rounded-2xl bg-white/[0.06] border border-white/15 text-xs text-white/80 mb-4 leading-relaxed">
-              💡 <span className="font-bold text-white">Lore check:</span> {currentQ.explanation}
+              💡 <span className="font-bold text-white">{isEs ? 'Dato del lore:' : 'Lore check:'}</span> {currentQ.explanation}
             </div>
 
             <GlassButton
@@ -205,7 +210,9 @@ export const CrewTrivia: React.FC = () => {
               onClick={handleNextRound}
               icon={<ArrowRight className="w-5 h-5 text-black" />}
             >
-              {currentRound + 1 === totalRounds ? 'View Final Score' : 'Next Round →'}
+              {currentRound + 1 === totalRounds
+                ? isEs ? 'Ver Puntaje Final' : 'View Final Score'
+                : isEs ? 'Siguiente Ronda →' : 'Next Round →'}
             </GlassButton>
           </motion.div>
         )}

@@ -70,10 +70,10 @@ export const PartyDetailView: React.FC = () => {
   const [isPotSubmitting, setIsPotSubmitting] = useState(false);
 
   const quickActions = [
-    { id: 'play', label: 'Juegos', icon: Gamepad2, onClick: () => setCurrentView('games') },
+    { id: 'play', label: isEs ? 'Juegos' : 'Games', icon: Gamepad2, onClick: () => setCurrentView('games') },
     { id: 'split', label: 'Split', icon: Receipt, onClick: () => setCurrentView('split') },
     { id: 'pot', label: 'Pot', icon: Coins, onClick: () => setIsPotSheetOpen(true) },
-    { id: 'poll', label: 'Poll', icon: BarChart3, onClick: () => setCurrentView('polls') },
+    { id: 'poll', label: isEs ? 'Votar' : 'Poll', icon: BarChart3, onClick: () => setCurrentView('polls') },
   ];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

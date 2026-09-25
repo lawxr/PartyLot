@@ -179,19 +179,19 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
                     {/* Status Badge */}
                     {isOpen && (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        Open Bounty
+                        {isEs ? 'Misión Abierta' : 'Open Bounty'}
                       </span>
                     )}
                     {isClaimed && (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1">
                         <Clock className="w-2.5 h-2.5" />
-                        Claimed
+                        {isEs ? 'Tomada' : 'Claimed'}
                       </span>
                     )}
                     {isCompleted && (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center gap-1">
                         <PackageCheck className="w-2.5 h-2.5" />
-                        Completed · Awaiting Verification
+                        {isEs ? 'Completada · Esperando Verificación' : 'Completed · Awaiting Verification'}
                       </span>
                     )}
                     {isVerified && (
@@ -242,7 +242,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
                       onClick={() => handleClaim(task.id)}
                       icon={<UserCheck className="w-3.5 h-3.5 text-[#F0DC00]" />}
                     >
-                      Claim
+                      {isEs ? 'Tomar' : 'Claim'}
                     </GlassButton>
                   )}
 
@@ -253,12 +253,12 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
                       onClick={() => handleComplete(task.id)}
                       icon={<Check className="w-3.5 h-3.5 text-black" />}
                     >
-                      Mark Done
+                      {isEs ? 'Marcar Lista' : 'Mark Done'}
                     </GlassButton>
                   )}
 
                   {isClaimed && !isClaimedByMe && (
-                    <span className="text-xs text-white/40 italic">In progress</span>
+                    <span className="text-xs text-white/40 italic">{isEs ? 'En progreso' : 'In progress'}</span>
                   )}
 
                   {isCompleted && (
@@ -283,7 +283,9 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
         ) : (
           <div className="p-8 text-center rounded-3xl liquid-glass-card border border-white/10">
             <Coins className="w-8 h-8 text-white/30 mx-auto mb-2" />
-            <p className="text-xs text-white/50">No bounties in this tab yet.</p>
+            <p className="text-xs text-white/50">
+              {isEs ? 'No hay misiones en esta pestaña todavía.' : 'No bounties in this tab yet.'}
+            </p>
           </div>
         )}
       </div>
@@ -292,7 +294,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
       <BottomSheet
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        title="Create Party Bounty"
+        title={isEs ? 'Crear Misión para la Fiesta' : 'Create Party Bounty'}
       >
         <form onSubmit={handleCreateTask} className="space-y-4">
           <p className="text-xs text-white/70">
@@ -303,12 +305,12 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-1.5">
-              Task Title
+              {isEs ? 'Título de la Misión' : 'Task Title'}
             </label>
             <input
               type="text"
               required
-              placeholder="e.g. Bring 2 bags of ice & lime, Aux cord setup..."
+              placeholder={isEs ? 'Ej. Traer 2 bolsas de hielo y limones, cable AUX...' : 'e.g. Bring 2 bags of ice & lime, Aux cord setup...'}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white placeholder-white/30 text-base font-semibold outline-none border border-white/20 focus:border-[#F0DC00]"
@@ -317,7 +319,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-2">
-              Preset Bounty Amount
+              {isEs ? 'Monto Rápido' : 'Preset Bounty Amount'}
             </label>
             <div className="grid grid-cols-4 gap-2">
               {['3', '5', '8', '10'].map((preset) => (
@@ -339,7 +341,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-1.5">
-              Custom Amount ($)
+              {isEs ? 'Monto Personalizado ($)' : 'Custom Amount ($)'}
             </label>
             <input
               type="number"
@@ -358,7 +360,7 @@ export const PartyTasksBoard: React.FC<PartyTasksBoardProps> = ({ partyId }) => 
               fullWidth
               type="submit"
             >
-              Post Bounty ($ {rewardAmount})
+              {isEs ? `Publicar Misión ($ ${rewardAmount})` : `Post Bounty ($ ${rewardAmount})`}
             </GlassButton>
           </div>
         </form>

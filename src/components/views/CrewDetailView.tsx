@@ -20,6 +20,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { uploadImageFile } from '@/services/storageService';
 import { Member } from '@/types';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const CrewDetailView: React.FC = () => {
   const {
@@ -31,6 +32,9 @@ export const CrewDetailView: React.FC = () => {
     addCrewMember,
     addCrewMemory,
   } = usePartyStore();
+
+  const { t, language } = useTranslation();
+  const isEs = language === 'es';
 
   const [activeSubTab, setActiveSubTab] = useState<'gatherings' | 'members' | 'memories'>('gatherings');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -122,7 +126,7 @@ export const CrewDetailView: React.FC = () => {
           className="flex items-center gap-2 text-xs font-mono tracking-wider uppercase text-[#6F6A62] hover:text-[#171512] transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Dashboard</span>
+          <span>{isEs ? 'Volver al Inicio' : 'Back to Dashboard'}</span>
         </button>
 
         <div className="flex items-center gap-3">
@@ -132,7 +136,7 @@ export const CrewDetailView: React.FC = () => {
             onClick={handleCopyInvite}
             icon={copiedLink ? <Check className="w-4 h-4 text-[#B89600]" /> : <Share2 className="w-4 h-4 text-[#171512]" />}
           >
-            {copiedLink ? 'Link Copied!' : 'Share Invite'}
+            {copiedLink ? t.crewDetail.copied : t.crewDetail.copyLink}
           </GlassButton>
 
           <GlassButton
@@ -141,7 +145,7 @@ export const CrewDetailView: React.FC = () => {
             onClick={() => setCurrentView('create-party')}
             icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
           >
-            Host Gathering
+            {isEs ? 'Organizar Fiesta' : 'Host Gathering'}
           </GlassButton>
         </div>
       </div>
@@ -160,10 +164,10 @@ export const CrewDetailView: React.FC = () => {
         <div className="absolute inset-0 p-6 sm:p-10 flex flex-col justify-end">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-xs font-mono font-bold text-[#171512] shadow-sm">
-              {crew.membersCount} ACTIVE MEMBERS
+              {crew.membersCount} {isEs ? 'MIEMBROS ACTIVOS' : 'ACTIVE MEMBERS'}
             </span>
             <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-xs text-white">
-              {crewParties.length} Gatherings Hosted
+              {crewParties.length} {isEs ? (crewParties.length === 1 ? 'Fiesta organizada' : 'Fiestas organizadas') : 'Gatherings Hosted'}
             </span>
             <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-xs text-white/80">
               {crew.lastActivity}
@@ -175,20 +179,24 @@ export const CrewDetailView: React.FC = () => {
           </h1>
 
           <p className="text-sm sm:text-base text-white/90 max-w-2xl leading-relaxed drop-shadow">
-            {crew.description || 'Private trust network for secret gatherings, shared memories, and collective treasury.'}
+            {crew.description || (isEs ? 'Red privada de confianza para encuentros íntimos, recuerdos compartidos y fondo común.' : 'Private trust network for secret gatherings, shared memories, and collective treasury.')}
           </p>
         </div>
       </div>
 
-      {/* Collective Metrics Bar (PRODUCT.md Section 4 & 7.2) */}
+      {/* Collective Metrics Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="p-4 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_4px_16px_rgba(40,30,20,0.03)] flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#FFF5C0] border border-[#F0DC00]/50 flex items-center justify-center text-[#B89600]">
             <Flame className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">Nights Together</span>
-            <span className="font-display font-extrabold text-xl text-[#171512]">{crew.nightsTogether ?? 1} nights</span>
+            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">
+              {isEs ? 'Noches Juntos' : 'Nights Together'}
+            </span>
+            <span className="font-display font-extrabold text-xl text-[#171512]">
+              {crew.nightsTogether ?? 1} {isEs ? 'noches' : 'nights'}
+            </span>
           </div>
         </div>
 
@@ -197,7 +205,9 @@ export const CrewDetailView: React.FC = () => {
             <Coins className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">Shared Spend</span>
+            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">
+              {isEs ? 'Gasto Compartido' : 'Shared Spend'}
+            </span>
             <span className="font-display font-extrabold text-xl text-[#171512]">${(crew.totalSpent ?? 0).toFixed(2)}</span>
           </div>
         </div>
@@ -207,9 +217,11 @@ export const CrewDetailView: React.FC = () => {
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">Top Party Game</span>
+            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">
+              {isEs ? 'Juego Favorito' : 'Top Party Game'}
+            </span>
             <span className="font-display font-extrabold text-sm sm:text-base text-[#171512] truncate max-w-[130px] block">
-              {crew.topGame || "None yet"}
+              {crew.topGame || (isEs ? 'Ninguno aún' : 'None yet')}
             </span>
           </div>
         </div>
@@ -219,7 +231,9 @@ export const CrewDetailView: React.FC = () => {
             <PartyPopper className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">Treasury Reserve</span>
+            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">
+              {t.crewDetail.treasury}
+            </span>
             <span className="font-display font-extrabold text-xl text-emerald-700">${(crew.treasuryBalance ?? 0).toFixed(2)}</span>
           </div>
         </div>
@@ -236,7 +250,7 @@ export const CrewDetailView: React.FC = () => {
           }`}
         >
           <Calendar className="w-4 h-4" />
-          <span>Gatherings ({crewParties.length})</span>
+          <span>{t.crewDetail.tabGatherings} ({crewParties.length})</span>
         </button>
 
         <button
@@ -248,7 +262,7 @@ export const CrewDetailView: React.FC = () => {
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Inner Circle ({crew.members?.length || crew.membersCount})</span>
+          <span>{t.crewDetail.tabMembers} ({crew.members?.length || crew.membersCount})</span>
         </button>
 
         <button
@@ -260,7 +274,7 @@ export const CrewDetailView: React.FC = () => {
           }`}
         >
           <Camera className="w-4 h-4" />
-          <span>Memories Capsule ({crew.memories?.length || 0})</span>
+          <span>{t.crewDetail.tabMemories} ({crew.memories?.length || 0})</span>
         </button>
       </div>
 
@@ -270,9 +284,13 @@ export const CrewDetailView: React.FC = () => {
           {crewParties.length === 0 ? (
             <div className="p-12 text-center rounded-3xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-sm">
               <PartyPopper className="w-12 h-12 text-[#B89600] mx-auto mb-4 opacity-80" />
-              <h3 className="font-display font-extrabold text-2xl text-[#171512] mb-2">No Gatherings Yet</h3>
+              <h3 className="font-display font-extrabold text-2xl text-[#171512] mb-2">
+                {isEs ? 'No hay fiestas todavía' : 'No Gatherings Yet'}
+              </h3>
               <p className="text-sm text-[#6F6A62] max-w-md mx-auto mb-6">
-                Gatherings strengthen the Crew. Host the first private gathering for this circle.
+                {isEs
+                  ? 'Las fiestas fortalecen el Crew. Organiza el primer encuentro privado para este círculo.'
+                  : 'Gatherings strengthen the Crew. Host the first private gathering for this circle.'}
               </p>
               <GlassButton
                 variant="accent"
@@ -280,7 +298,7 @@ export const CrewDetailView: React.FC = () => {
                 onClick={() => setCurrentView('create-party')}
                 icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
               >
-                Host Party for {crew.name}
+                {isEs ? `Crear fiesta para ${crew.name}` : `Host Party for ${crew.name}`}
               </GlassButton>
             </div>
           ) : (
@@ -330,10 +348,10 @@ export const CrewDetailView: React.FC = () => {
 
                     <div className="pt-3 border-t border-[rgba(35,30,22,0.06)] flex items-center justify-between">
                       <span className="text-[11px] font-medium text-[#8E887E]">
-                        {party.members.length} going · ${party.potBalance.toFixed(2)} pot
+                        {party.members.length} {isEs ? 'asistiendo' : 'going'} · ${party.potBalance.toFixed(2)} {isEs ? 'bote' : 'pot'}
                       </span>
                       <span className="text-xs font-bold text-[#171512]">
-                        Enter Party →
+                        {isEs ? 'Entrar a la Fiesta →' : 'Enter Party →'}
                       </span>
                     </div>
                   </div>
@@ -349,7 +367,7 @@ export const CrewDetailView: React.FC = () => {
         <div>
           <div className="flex items-center justify-between mb-5">
             <span className="text-xs font-mono uppercase tracking-wider text-[#6F6A62]">
-              TRUST NETWORK · EIP-712 AUTHENTICATED
+              {isEs ? 'RED DE CONFIANZA · AUTENTICADA EIP-712' : 'TRUST NETWORK · EIP-712 AUTHENTICATED'}
             </span>
             <GlassButton
               variant="glass"
@@ -357,7 +375,7 @@ export const CrewDetailView: React.FC = () => {
               onClick={() => setIsInviteOpen(true)}
               icon={<Plus className="w-4 h-4 text-[#171512]" />}
             >
-              Add Member
+              {isEs ? 'Añadir Miembro' : 'Add Member'}
             </GlassButton>
           </div>
 
@@ -409,7 +427,9 @@ export const CrewDetailView: React.FC = () => {
                 </div>
 
                 <div className="text-right">
-                  <span className="text-xs font-bold text-[#171512] block">{m.nightsTogether || 1} nights</span>
+                  <span className="text-xs font-bold text-[#171512] block">
+                    {t.crewDetail.nightsTogether(m.nightsTogether || 1)}
+                  </span>
                   {m.walletAddress && (
                     <span className="text-[10px] font-mono text-[#8E887E]">{m.walletAddress.slice(0, 6)}...</span>
                   )}
@@ -422,25 +442,33 @@ export const CrewDetailView: React.FC = () => {
           {isInviteOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
               <div className="w-full max-w-md rounded-3xl border border-[rgba(35,30,22,0.12)] bg-[#FFFDF8] p-6 shadow-2xl text-[#171512]">
-                <h3 className="font-display font-bold text-xl text-[#171512] mb-1">Add Member to {crew.name}</h3>
-                <p className="text-xs text-[#6F6A62] mb-4">Add a friend directly to your trust circle.</p>
+                <h3 className="font-display font-bold text-xl text-[#171512] mb-1">
+                  {isEs ? `Añadir Miembro a ${crew.name}` : `Add Member to ${crew.name}`}
+                </h3>
+                <p className="text-xs text-[#6F6A62] mb-4">
+                  {isEs ? 'Añade a un amigo directamente a tu círculo de confianza.' : 'Add a friend directly to your trust circle.'}
+                </p>
                 <form onSubmit={handleAddMember} className="space-y-4">
                   <div>
-                    <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1">Name</label>
+                    <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1">
+                      {isEs ? 'Nombre' : 'Name'}
+                    </label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Satoshi"
+                      placeholder={isEs ? 'Ej. Satoshi' : 'e.g. Satoshi'}
                       value={newMemberName}
                       onChange={(e) => setNewMemberName(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.12)] text-[#171512] text-sm outline-none focus:border-[#F0DC00]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1">Social Handle</label>
+                    <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1">
+                      {isEs ? 'Usuario / Red Social' : 'Social Handle'}
+                    </label>
                     <input
                       type="text"
-                      placeholder="e.g. @satoshi.monad"
+                      placeholder={isEs ? 'Ej. @satoshi.monad' : 'e.g. @satoshi.monad'}
                       value={newMemberHandle}
                       onChange={(e) => setNewMemberHandle(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.12)] text-[#171512] text-sm outline-none focus:border-[#F0DC00]"
@@ -448,10 +476,10 @@ export const CrewDetailView: React.FC = () => {
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
                     <GlassButton type="button" variant="subtle" size="sm" onClick={() => setIsInviteOpen(false)}>
-                      Cancel
+                      {isEs ? 'Cancelar' : 'Cancel'}
                     </GlassButton>
                     <GlassButton type="submit" variant="accent" size="sm">
-                      Add to Circle
+                      {isEs ? 'Añadir al Círculo' : 'Add to Circle'}
                     </GlassButton>
                   </div>
                 </form>
@@ -466,7 +494,7 @@ export const CrewDetailView: React.FC = () => {
         <div>
           <div className="flex items-center justify-between mb-5">
             <span className="text-xs font-mono uppercase tracking-wider text-[#6F6A62]">
-              COLLECTIVE TIMELINE & TIME CAPSULE
+              {isEs ? 'LÍNEA DE TIEMPO COLECTIVA Y CÁPSULA DEL TIEMPO' : 'COLLECTIVE TIMELINE & TIME CAPSULE'}
             </span>
             <GlassButton
               variant="glass"
@@ -474,16 +502,20 @@ export const CrewDetailView: React.FC = () => {
               onClick={() => setIsMemoryOpen(true)}
               icon={<Camera className="w-4 h-4 text-[#171512]" />}
             >
-              Add Memory
+              {isEs ? 'Añadir Recuerdo' : 'Add Memory'}
             </GlassButton>
           </div>
 
           {(crew.memories || []).length === 0 ? (
             <div className="p-12 text-center rounded-3xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-sm">
               <Camera className="w-12 h-12 text-[#B89600] mx-auto mb-4 opacity-80" />
-              <h3 className="font-display font-extrabold text-2xl text-[#171512] mb-2">No Memories Stored Yet</h3>
+              <h3 className="font-display font-extrabold text-2xl text-[#171512] mb-2">
+                {isEs ? 'Sin Recuerdos Guardados Aún' : 'No Memories Stored Yet'}
+              </h3>
               <p className="text-sm text-[#6F6A62] max-w-md mx-auto mb-6">
-                Upload your group moments after each gathering to cement the crew’s legacy.
+                {isEs
+                  ? 'Sube los momentos de tu grupo después de cada fiesta para inmortalizar el legado de la crew.'
+                  : 'Upload your group moments after each gathering to cement the crew’s legacy.'}
               </p>
               <GlassButton
                 variant="accent"
@@ -491,7 +523,7 @@ export const CrewDetailView: React.FC = () => {
                 onClick={() => setIsMemoryOpen(true)}
                 icon={<Camera className="w-4 h-4 text-[#171512] stroke-[3]" />}
               >
-                Upload First Memory
+                {isEs ? 'Subir Primer Recuerdo' : 'Upload First Memory'}
               </GlassButton>
             </div>
           ) : (
@@ -518,7 +550,7 @@ export const CrewDetailView: React.FC = () => {
                       &quot;{mem.caption}&quot;
                     </p>
                     <div className="flex items-center justify-between text-[11px] text-[#8E887E] border-t border-[rgba(35,30,22,0.06)] pt-3">
-                      <span>Uploaded by {mem.uploadedBy}</span>
+                      <span>{isEs ? 'Subido por' : 'Uploaded by'} {mem.uploadedBy}</span>
                       <span>{mem.uploadedAt}</span>
                     </div>
                   </div>
@@ -531,8 +563,12 @@ export const CrewDetailView: React.FC = () => {
           {isMemoryOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
               <div className="w-full max-w-md rounded-3xl border border-[rgba(35,30,22,0.12)] bg-[#FFFDF8] p-6 shadow-2xl text-[#171512]">
-                <h3 className="font-display font-bold text-xl text-[#171512] mb-1">Add Photo Memory</h3>
-                <p className="text-xs text-[#6F6A62] mb-4">Post a memory from a recent gathering.</p>
+                <h3 className="font-display font-bold text-xl text-[#171512] mb-1">
+                  {isEs ? 'Añadir Foto de Recuerdo' : 'Add Photo Memory'}
+                </h3>
+                <p className="text-xs text-[#6F6A62] mb-4">
+                  {isEs ? 'Publica un recuerdo de una fiesta reciente.' : 'Post a memory from a recent gathering.'}
+                </p>
                 <form onSubmit={handleAddMemory} className="space-y-4">
                   {/* Hidden file input */}
                   <input
@@ -545,14 +581,16 @@ export const CrewDetailView: React.FC = () => {
 
                   <div>
                     <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1.5 flex items-center justify-between">
-                      <span>Photo</span>
+                      <span>{isEs ? 'Foto' : 'Photo'}</span>
                       <button
                         type="button"
                         onClick={() => memoryFileInputRef.current?.click()}
                         disabled={isUploadingMemory}
                         className="text-xs text-[#B89600] font-bold hover:underline cursor-pointer disabled:opacity-50"
                       >
-                        {isUploadingMemory ? 'Subiendo...' : 'Subir desde dispositivo'}
+                        {isUploadingMemory
+                          ? (isEs ? 'Subiendo...' : 'Uploading...')
+                          : (isEs ? 'Subir desde dispositivo' : 'Upload from device')}
                       </button>
                     </label>
 
@@ -565,7 +603,7 @@ export const CrewDetailView: React.FC = () => {
                           onClick={() => memoryFileInputRef.current?.click()}
                           className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs text-white font-bold transition-opacity"
                         >
-                          Cambiar imagen
+                          {isEs ? 'Cambiar imagen' : 'Change image'}
                         </button>
                       </div>
                     ) : (
@@ -578,8 +616,12 @@ export const CrewDetailView: React.FC = () => {
                         ) : (
                           <>
                             <Camera className="w-6 h-6 text-[#B89600] mb-1.5" />
-                            <span className="text-xs font-bold text-[#171512]">Seleccionar o tomar foto</span>
-                            <span className="text-[10px] text-[#8E887E]">PNG, JPG o WEBP hasta 10MB</span>
+                            <span className="text-xs font-bold text-[#171512]">
+                              {isEs ? 'Seleccionar o tomar foto' : 'Select or take photo'}
+                            </span>
+                            <span className="text-[10px] text-[#8E887E]">
+                              {isEs ? 'PNG, JPG o WEBP hasta 10MB' : 'PNG, JPG or WEBP up to 10MB'}
+                            </span>
                           </>
                         )}
                       </div>
@@ -591,18 +633,20 @@ export const CrewDetailView: React.FC = () => {
 
                     <input
                       type="url"
-                      placeholder="o ingresa un URL (https://...)"
+                      placeholder={isEs ? 'o ingresa un URL (https://...)' : 'or enter a URL (https://...)'}
                       value={memoryUrl}
                       onChange={(e) => setMemoryUrl(e.target.value)}
                       className="w-full px-4 py-2 rounded-xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.1)] text-[#171512] text-xs outline-none focus:border-[#F0DC00] placeholder:text-[#999187]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1">Caption / Moment</label>
+                    <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1">
+                      {isEs ? 'Descripción / Momento' : 'Caption / Moment'}
+                    </label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Sunrise rooftop set on the terrace"
+                      placeholder={isEs ? 'Ej. Atardecer en el rooftop con la crew' : 'e.g. Sunrise rooftop set on the terrace'}
                       value={memoryCaption}
                       onChange={(e) => setMemoryCaption(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.1)] text-[#171512] text-sm outline-none focus:border-[#F0DC00]"
@@ -610,10 +654,10 @@ export const CrewDetailView: React.FC = () => {
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
                     <GlassButton type="button" variant="subtle" size="sm" onClick={() => setIsMemoryOpen(false)}>
-                      Cancel
+                      {isEs ? 'Cancelar' : 'Cancel'}
                     </GlassButton>
                     <GlassButton type="submit" variant="accent" size="sm">
-                      Post Memory
+                      {isEs ? 'Publicar Recuerdo' : 'Post Memory'}
                     </GlassButton>
                   </div>
                 </form>

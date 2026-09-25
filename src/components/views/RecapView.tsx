@@ -20,6 +20,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { recordGatheringOnchain } from '@/services/socialGraphService';
 import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
 import confetti from 'canvas-confetti';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const RecapView: React.FC = () => {
   const {
@@ -33,6 +34,9 @@ export const RecapView: React.FC = () => {
     crews,
     tasks,
   } = usePartyStore();
+
+  const { t, language } = useTranslation();
+  const isEs = language === 'es';
 
   const defaultParty = parties[0];
   const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
@@ -100,24 +104,38 @@ export const RecapView: React.FC = () => {
       colors: ['#F0DC00', '#FFFFFF', '#EC4899'],
     });
 
-    const shareText = `PARTYLOT RECAP — ${party.title} 🔥\n` +
-      `📅 ${party.date} · ${party.location}\n\n` +
-      `👥 ${attendeesCount} People Attended\n` +
-      `💸 $${totalSharedDamage.toFixed(2)} Shared Damage\n` +
-      `🎮 ${minigamesCount} Minigames Played\n` +
-      `🗳️ ${totalVotesCast} Consensus Votes\n\n` +
-      `🏆 MVP of the Night: ${mvpMember?.name || 'Ana'}\n` +
-      `👑 Game King: ${gameKingMember?.name || 'Carlos'}\n` +
-      `🎧 Contributor / AUX: ${bountyContributor}\n` +
-      (rolloverAmount > 0
-        ? `🏦 $${rolloverAmount.toFixed(2)} Rolled into ${associatedCrew?.name || 'Crew'} Treasury\n\n`
-        : '\n') +
-      `Proof of Attendance audited on Monad: https://partylot.app/party/${party.code || party.id}`;
+    const shareText = isEs
+      ? `PARTYLOT RESUMEN — ${party.title} 🔥\n` +
+        `📅 ${party.date} · ${party.location}\n\n` +
+        `👥 ${attendeesCount} Asistentes\n` +
+        `💸 $${totalSharedDamage.toFixed(2)} Daño Compartido\n` +
+        `🎮 ${minigamesCount} Minijuegos Jugados\n` +
+        `🗳️ ${totalVotesCast} Votos de Consenso\n\n` +
+        `🏆 MVP de la Noche: ${mvpMember?.name || 'Ana'}\n` +
+        `👑 Rey de los Juegos: ${gameKingMember?.name || 'Carlos'}\n` +
+        `🎧 Contribuidor / AUX: ${bountyContributor}\n` +
+        (rolloverAmount > 0
+          ? `🏦 $${rolloverAmount.toFixed(2)} Trasladados a la Tesorería de ${associatedCrew?.name || 'la Crew'}\n\n`
+          : '\n') +
+        `Prueba de Asistencia auditada en Monad: https://partylot.app/party/${party.code || party.id}`
+      : `PARTYLOT RECAP — ${party.title} 🔥\n` +
+        `📅 ${party.date} · ${party.location}\n\n` +
+        `👥 ${attendeesCount} People Attended\n` +
+        `💸 $${totalSharedDamage.toFixed(2)} Shared Damage\n` +
+        `🎮 ${minigamesCount} Minigames Played\n` +
+        `🗳️ ${totalVotesCast} Consensus Votes\n\n` +
+        `🏆 MVP of the Night: ${mvpMember?.name || 'Ana'}\n` +
+        `👑 Game King: ${gameKingMember?.name || 'Carlos'}\n` +
+        `🎧 Contributor / AUX: ${bountyContributor}\n` +
+        (rolloverAmount > 0
+          ? `🏦 $${rolloverAmount.toFixed(2)} Rolled into ${associatedCrew?.name || 'Crew'} Treasury\n\n`
+          : '\n') +
+        `Proof of Attendance audited on Monad: https://partylot.app/party/${party.code || party.id}`;
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${party.title} — Party Recap`,
+          title: `${party.title} — ${isEs ? 'Resumen de la Fiesta' : 'Party Recap'}`,
           text: shareText,
         });
       } catch {
@@ -162,7 +180,7 @@ export const RecapView: React.FC = () => {
 
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.font = '700 24px monospace';
-      ctx.fillText('OFFICIAL EVENT DOSSIER', 80, 165);
+      ctx.fillText(isEs ? 'DOSSIER OFICIAL DEL EVENTO' : 'OFFICIAL EVENT DOSSIER', 80, 165);
 
       // Border line
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
@@ -199,10 +217,10 @@ export const RecapView: React.FC = () => {
         ctx.fillText(label, x + 35, y + 135);
       };
 
-      drawMetricBox(80, 440, 440, 170, `${attendeesCount}`, 'PEOPLE ATTENDED', '#FFFFFF');
-      drawMetricBox(560, 440, 440, 170, `$${totalSharedDamage.toFixed(0)}`, 'SHARED DAMAGE', '#F0DC00');
-      drawMetricBox(80, 640, 440, 170, `${minigamesCount}`, 'MINIGAMES PLAYED', '#FFFFFF');
-      drawMetricBox(560, 640, 440, 170, `${totalVotesCast}`, 'CONSENSUS VOTES', '#FFFFFF');
+      drawMetricBox(80, 440, 440, 170, `${attendeesCount}`, isEs ? 'ASISTENTES' : 'PEOPLE ATTENDED', '#FFFFFF');
+      drawMetricBox(560, 440, 440, 170, `$${totalSharedDamage.toFixed(0)}`, isEs ? 'DAÑO COMPARTIDO' : 'SHARED DAMAGE', '#F0DC00');
+      drawMetricBox(80, 640, 440, 170, `${minigamesCount}`, isEs ? 'MINIJUEGOS JUGADOS' : 'MINIGAMES PLAYED', '#FFFFFF');
+      drawMetricBox(560, 640, 440, 170, `${totalVotesCast}`, isEs ? 'VOTOS DE CONSENSO' : 'CONSENSUS VOTES', '#FFFFFF');
 
       // Night Awards Card
       ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
@@ -214,7 +232,7 @@ export const RecapView: React.FC = () => {
 
       ctx.fillStyle = '#F0DC00';
       ctx.font = '800 24px sans-serif';
-      ctx.fillText('NIGHT AWARDS & HALL OF FAME', 120, 915);
+      ctx.fillText(isEs ? 'PREMIOS DE LA NOCHE & SALÓN DE LA FAMA' : 'NIGHT AWARDS & HALL OF FAME', 120, 915);
 
       const drawAwardLine = (y: number, title: string, name: string) => {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
@@ -226,9 +244,9 @@ export const RecapView: React.FC = () => {
         ctx.fillText(name.toUpperCase(), 780, y);
       };
 
-      drawAwardLine(990, '🏆 MVP OF THE NIGHT', mvpMember?.name || 'Ana');
-      drawAwardLine(1070, '👑 GAME KING', gameKingMember?.name || 'Carlos');
-      drawAwardLine(1150, '🎧 OFFICIAL AUX DJ', bountyContributor);
+      drawAwardLine(990, isEs ? '🏆 MVP DE LA NOCHE' : '🏆 MVP OF THE NIGHT', mvpMember?.name || 'Ana');
+      drawAwardLine(1070, isEs ? '👑 REY DE LOS JUEGOS' : '👑 GAME KING', gameKingMember?.name || 'Carlos');
+      drawAwardLine(1150, isEs ? '🎧 DJ OFICIAL DEL AUX' : '🎧 OFFICIAL AUX DJ', bountyContributor);
 
       // Rollover Banner
       if (rolloverAmount > 0) {
@@ -241,7 +259,13 @@ export const RecapView: React.FC = () => {
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
         ctx.font = '700 26px sans-serif';
-        ctx.fillText(`ROLLED INTO ${associatedCrew?.name?.toUpperCase() || 'CREW'} TREASURY`, 120, 1320);
+        ctx.fillText(
+          isEs
+            ? `TRASLADADO A TESORERÍA ${associatedCrew?.name?.toUpperCase() || 'CREW'}`
+            : `ROLLED INTO ${associatedCrew?.name?.toUpperCase() || 'CREW'} TREASURY`,
+          120,
+          1320
+        );
 
         ctx.fillStyle = '#F0DC00';
         ctx.font = '900 36px sans-serif';
@@ -251,7 +275,7 @@ export const RecapView: React.FC = () => {
       // Footer
       ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       ctx.font = '600 22px monospace';
-      ctx.fillText('THE NIGHT BELONGS TO THE GROUP · PARTYLOT', 80, 1800);
+      ctx.fillText(isEs ? 'LA NOCHE PERTENECE AL GRUPO · PARTYLOT' : 'THE NIGHT BELONGS TO THE GROUP · PARTYLOT', 80, 1800);
 
       // Trigger download
       const dataUrl = canvas.toDataURL('image/png');
@@ -273,7 +297,7 @@ export const RecapView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-32 select-none">
-      <TopNav title="EDITORIAL RECAP" variant="light" />
+      <TopNav title={isEs ? 'DOSSIER EDITORIAL' : 'EDITORIAL RECAP'} variant="light" />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
@@ -294,7 +318,7 @@ export const RecapView: React.FC = () => {
                   PARTYLOT
                 </span>
                 <span className="text-[11px] font-mono tracking-widest text-white/70 uppercase">
-                  OFFICIAL EVENT DOSSIER
+                  {isEs ? 'DOSSIER OFICIAL DEL EVENTO' : 'OFFICIAL EVENT DOSSIER'}
                 </span>
               </div>
 
@@ -315,7 +339,7 @@ export const RecapView: React.FC = () => {
                     {attendeesCount}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-white/50">
-                    PEOPLE ATTENDED
+                    {isEs ? 'ASISTENTES' : 'PEOPLE ATTENDED'}
                   </span>
                 </div>
 
@@ -324,7 +348,7 @@ export const RecapView: React.FC = () => {
                     ${totalSharedDamage.toFixed(0)}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-white/50">
-                    SHARED DAMAGE
+                    {isEs ? 'DAÑO COMPARTIDO' : 'SHARED DAMAGE'}
                   </span>
                 </div>
 
@@ -333,7 +357,7 @@ export const RecapView: React.FC = () => {
                     {minigamesCount}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-white/50">
-                    MINIGAMES PLAYED
+                    {isEs ? 'MINIJUEGOS JUGADOS' : 'MINIGAMES PLAYED'}
                   </span>
                 </div>
 
@@ -342,7 +366,7 @@ export const RecapView: React.FC = () => {
                     {totalVotesCast}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-white/50">
-                    CONSENSUS VOTES
+                    {isEs ? 'VOTOS DE CONSENSO' : 'CONSENSUS VOTES'}
                   </span>
                 </div>
               </div>
@@ -350,13 +374,13 @@ export const RecapView: React.FC = () => {
               {/* Hall of Fame Awards */}
               <div className="p-4 rounded-2xl liquid-glass-modal border border-white/20 mb-6 space-y-2.5">
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F0DC00] block">
-                  NIGHT AWARDS
+                  {isEs ? 'PREMIOS DE LA NOCHE' : 'NIGHT AWARDS'}
                 </span>
 
                 <div className="flex items-center justify-between text-xs font-bold border-b border-white/10 pb-2">
                   <span className="text-white/60 flex items-center gap-1.5">
                     <Award className="w-3.5 h-3.5 text-[#F0DC00]" />
-                    MVP OF THE NIGHT
+                    {isEs ? 'MVP DE LA NOCHE' : 'MVP OF THE NIGHT'}
                   </span>
                   <span className="text-white font-display font-black">{mvpMember?.name || 'Ana'}</span>
                 </div>
@@ -364,7 +388,7 @@ export const RecapView: React.FC = () => {
                 <div className="flex items-center justify-between text-xs font-bold border-b border-white/10 pb-2">
                   <span className="text-white/60 flex items-center gap-1.5">
                     <Flame className="w-3.5 h-3.5 text-rose-400" />
-                    GAME KING
+                    {isEs ? 'REY DE LOS JUEGOS' : 'GAME KING'}
                   </span>
                   <span className="text-white font-display font-black">{gameKingMember?.name || 'Carlos'}</span>
                 </div>
@@ -372,7 +396,7 @@ export const RecapView: React.FC = () => {
                 <div className="flex items-center justify-between text-xs font-bold">
                   <span className="text-white/60 flex items-center gap-1.5">
                     <Disc className="w-3.5 h-3.5 text-sky-400" />
-                    OFFICIAL AUX DJ
+                    {isEs ? 'DJ OFICIAL DEL AUX' : 'OFFICIAL AUX DJ'}
                   </span>
                   <span className="text-white font-display font-black">{bountyContributor}</span>
                 </div>
@@ -382,7 +406,9 @@ export const RecapView: React.FC = () => {
               {rolloverAmount > 0 && (
                 <div className="p-3.5 rounded-2xl bg-[#F0DC00]/10 border border-[#F0DC00]/30 flex items-center justify-between">
                   <span className="text-xs font-bold text-white/80">
-                    ROLLED INTO {associatedCrew?.name?.toUpperCase() || 'NEXT PARTY'}
+                    {isEs
+                      ? `TRASLADADO A ${associatedCrew?.name?.toUpperCase() || 'PRÓXIMA FIESTA'}`
+                      : `ROLLED INTO ${associatedCrew?.name?.toUpperCase() || 'NEXT PARTY'}`}
                   </span>
                   <span className="font-display font-black text-lg text-[#F0DC00]">
                     +${rolloverAmount.toFixed(2)}
@@ -400,7 +426,9 @@ export const RecapView: React.FC = () => {
                 onClick={handleShareRecap}
                 icon={copied ? <Check className="w-5 h-5 text-black" /> : <Share2 className="w-5 h-5 text-black" />}
               >
-                {copied ? 'Recap Copied to Clipboard!' : 'Share Recap'}
+                {copied
+                  ? isEs ? '¡Resumen copiado al portapapeles!' : 'Recap Copied to Clipboard!'
+                  : isEs ? 'Compartir Resumen' : 'Share Recap'}
               </GlassButton>
 
               <GlassButton
@@ -410,7 +438,9 @@ export const RecapView: React.FC = () => {
                 onClick={handleDownloadStoryPoster}
                 icon={<Download className="w-5 h-5 text-[#171512]" />}
               >
-                {downloading ? 'Rendering...' : 'Download Instagram Story Poster'}
+                {downloading
+                  ? isEs ? 'Renderizando...' : 'Rendering...'
+                  : isEs ? 'Descargar Póster para Historia' : 'Download Instagram Story Poster'}
               </GlassButton>
             </div>
           </div>
@@ -423,36 +453,40 @@ export const RecapView: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-[#B8A700]" />
                   <span className="text-xs uppercase font-extrabold tracking-wider text-[#171512]">
-                    VERIFIED SOCIAL GRAPH
+                    {isEs ? 'GRAFO SOCIAL VERIFICADO' : 'VERIFIED SOCIAL GRAPH'}
                   </span>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 font-bold">
-                  ONCHAIN RECORD
+                  {isEs ? 'REGISTRO ONCHAIN' : 'ONCHAIN RECORD'}
                 </span>
               </div>
 
               <h3 className="font-display font-black text-2xl text-[#171512] tracking-tight mb-2">
-                Dossier de la Noche y Recuerdos
+                {isEs ? 'Dossier de la Noche y Recuerdos' : 'Night Dossier & Collective Memories'}
               </h3>
               <p className="text-xs sm:text-sm text-[#6F6A62] leading-relaxed mb-4">
-                La asistencia, minijuegos y liquidación de gastos de <span className="text-[#171512] font-semibold">{party.title}</span> quedaron certificados permanentemente para todo el grupo.
+                {isEs ? (
+                  <>La asistencia, minijuegos y liquidación de gastos de <span className="text-[#171512] font-semibold">{party.title}</span> quedaron certificados permanentemente para todo el grupo.</>
+                ) : (
+                  <>Attendance, minigames and expense settlement for <span className="text-[#171512] font-semibold">{party.title}</span> have been permanently certified for the entire group.</>
+                )}
               </p>
 
               <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-[rgba(35,30,22,0.08)] text-center mb-4">
                 <div className="p-2.5 rounded-xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.08)]">
                   <Users className="w-4 h-4 text-[#B8A700] mx-auto mb-1" />
                   <span className="font-display font-black text-base text-[#171512] block">{attendeesCount}</span>
-                  <span className="text-[9px] uppercase text-[#8E887E]">Asistentes</span>
+                  <span className="text-[9px] uppercase text-[#8E887E]">{isEs ? 'Asistentes' : 'Attendees'}</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.08)]">
                   <Receipt className="w-4 h-4 text-rose-500 mx-auto mb-1" />
                   <span className="font-display font-black text-base text-[#171512] block">${totalSharedDamage.toFixed(0)}</span>
-                  <span className="text-[9px] uppercase text-[#8E887E]">Saldado</span>
+                  <span className="text-[9px] uppercase text-[#8E887E]">{isEs ? 'Saldado' : 'Settled'}</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.08)]">
                   <Gamepad2 className="w-4 h-4 text-purple-600 mx-auto mb-1" />
                   <span className="font-display font-black text-base text-[#171512] block">{minigamesCount}</span>
-                  <span className="text-[9px] uppercase text-[#8E887E]">Juegos</span>
+                  <span className="text-[9px] uppercase text-[#8E887E]">{isEs ? 'Juegos' : 'Games'}</span>
                 </div>
               </div>
 
@@ -465,7 +499,7 @@ export const RecapView: React.FC = () => {
                   className="w-full py-2.5 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 text-xs font-mono font-bold flex items-center justify-center gap-2 hover:bg-emerald-500/20 transition-all"
                 >
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Certificado en el Historial [Verificado]</span>
+                  <span>{isEs ? 'Certificado en el Historial [Verificado]' : 'Certified on Ledger [Verified]'}</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               ) : (
@@ -475,7 +509,11 @@ export const RecapView: React.FC = () => {
                   className="w-full py-2.5 px-3 rounded-xl bg-[#F0DC00] hover:bg-[#E6D300] active:scale-95 text-[#171512] text-xs font-display font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
                 >
                   <ShieldCheck className="w-4 h-4 text-[#171512] stroke-[2.5]" />
-                  <span>{isAttesting ? 'Certificando noche...' : '⚡ Certificar Noche en el Historial del Grupo'}</span>
+                  <span>
+                    {isAttesting
+                      ? isEs ? 'Certificando noche...' : 'Attesting night onchain...'
+                      : isEs ? '⚡ Certificar Noche en el Historial del Grupo' : '⚡ Certify Night in Group Ledger'}
+                  </span>
                 </button>
               )}
             </div>
@@ -484,9 +522,11 @@ export const RecapView: React.FC = () => {
             <div className="p-6 bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] rounded-[28px] shadow-[0_10px_30px_rgba(65,48,25,0.06)]">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-[#6F6A62]">
-                  VERIFIED ATTENDEES ({party.members.length})
+                  {isEs ? `ASISTENTES VERIFICADOS (${party.members.length})` : `VERIFIED ATTENDEES (${party.members.length})`}
                 </span>
-                <span className="text-[11px] text-[#B8A700] font-semibold">Social badges minted</span>
+                <span className="text-[11px] text-[#B8A700] font-semibold">
+                  {isEs ? 'Insignias sociales acuñadas' : 'Social badges minted'}
+                </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -510,7 +550,7 @@ export const RecapView: React.FC = () => {
                         {member.name}
                       </span>
                       <span className="text-[9px] text-[#B8A700] font-mono font-bold">
-                        {member.role === 'host' ? 'Host' : 'Verified'}
+                        {member.role === 'host' ? (isEs ? 'Anfitrión' : 'Host') : (isEs ? 'Verificado' : 'Verified')}
                       </span>
                     </div>
                   </div>
@@ -527,7 +567,9 @@ export const RecapView: React.FC = () => {
                 onClick={handleShareRecap}
                 icon={copied ? <Check className="w-5 h-5 text-black" /> : <Share2 className="w-5 h-5 text-black" />}
               >
-                {copied ? 'Recap Link & Dossier Copied!' : 'Share Event Dossier'}
+                {copied
+                  ? isEs ? '¡Dossier copiado al portapapeles!' : 'Recap Link & Dossier Copied!'
+                  : isEs ? 'Compartir Dossier del Evento' : 'Share Event Dossier'}
               </GlassButton>
 
               <GlassButton
@@ -538,7 +580,9 @@ export const RecapView: React.FC = () => {
                 onClick={handleDownloadStoryPoster}
                 icon={<Download className="w-5 h-5 text-[#171512]" />}
               >
-                {downloading ? 'Rendering Canvas...' : 'Download Instagram Story Poster'}
+                {downloading
+                  ? isEs ? 'Renderizando Canvas...' : 'Rendering Canvas...'
+                  : isEs ? 'Descargar Póster para Historia' : 'Download Instagram Story Poster'}
               </GlassButton>
             </div>
           </div>

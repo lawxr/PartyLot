@@ -383,7 +383,7 @@ export const PartyPotView: React.FC = () => {
                   CONTRATO INTELIGENTE (MONAD)
                 </span>
                 <span className="text-[9px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Auditado
+                  {isEs ? 'Auditado' : 'Audited'}
                 </span>
               </div>
               <div className="mt-2 flex items-center justify-between bg-black/[0.03] p-2 rounded-xl border border-black/5">
@@ -442,7 +442,7 @@ export const PartyPotView: React.FC = () => {
                 </span>
               </div>
               <span className="text-xs text-[#8C7300] font-mono font-bold">
-                {filteredTransactions.length} registros
+                {filteredTransactions.length} {isEs ? 'registros' : 'records'}
               </span>
             </div>
 
@@ -556,7 +556,9 @@ export const PartyPotView: React.FC = () => {
               <TokenLogo token="usdc" size="md" />
               <div>
                 <span className="text-xs font-bold text-[#171512] block">USDC on Monad</span>
-                <span className="text-[10px] text-[#635B50]">Gas 100% patrocinado (Cero comisiones)</span>
+                <span className="text-[10px] text-[#635B50]">
+                  {isEs ? 'Gas 100% patrocinado (Cero comisiones)' : '100% gas sponsored (Zero fees)'}
+                </span>
               </div>
             </div>
             <CryptoBadge token="usdc" network="Monad" showNetwork={false} />

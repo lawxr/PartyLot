@@ -6,9 +6,12 @@ import { RefreshCw } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
 import confetti from 'canvas-confetti';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const ThisOrThat: React.FC = () => {
   const { thisOrThat, voteThisOrThat } = usePartyStore();
+  const { t, language } = useTranslation();
+  const isEs = language === 'es';
   const [index, setIndex] = useState(0);
 
   const currentQ = thisOrThat[index % thisOrThat.length];
@@ -34,12 +37,12 @@ export const ThisOrThat: React.FC = () => {
     <div className="flex flex-col items-center w-full">
       <div className="text-center mb-5">
         <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
-          GAME 02 · FAST DILEMMA
+          {isEs ? 'JUEGO 02 · DILEMA RÁPIDO' : 'GAME 02 · FAST DILEMMA'}
         </span>
         <h3 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight mt-1">
-          THIS OR THAT
+          {t.games.thisOrThat.toUpperCase()}
         </h3>
-        <p className="text-xs text-white/50">Pick your side. Live group ratio.</p>
+        <p className="text-xs text-white/50">{t.games.pickSide}</p>
       </div>
 
       {/* Split Duel Cards */}
@@ -55,10 +58,10 @@ export const ThisOrThat: React.FC = () => {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-white/60">OPTION A</span>
+            <span className="text-xs font-bold text-white/60">{t.games.optionA}</span>
             {currentQ.userVote === 'A' && (
               <span className="px-2 py-0.5 rounded-full bg-[#F0DC00] text-black text-[10px] font-extrabold">
-                YOU CHOSE
+                {t.games.voted}
               </span>
             )}
           </div>
@@ -72,7 +75,7 @@ export const ThisOrThat: React.FC = () => {
           {/* Ratio bar */}
           <div>
             <div className="flex items-center justify-between text-xs font-extrabold mb-1.5">
-              <span className="text-white/70">{currentQ.votesA} votes</span>
+              <span className="text-white/70">{currentQ.votesA} {t.games.votes}</span>
               <span className="text-[#F0DC00] text-base">{percentA}%</span>
             </div>
             <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
@@ -96,10 +99,10 @@ export const ThisOrThat: React.FC = () => {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-white/60">OPTION B</span>
+            <span className="text-xs font-bold text-white/60">{t.games.optionB}</span>
             {currentQ.userVote === 'B' && (
               <span className="px-2 py-0.5 rounded-full bg-[#F0DC00] text-black text-[10px] font-extrabold">
-                YOU CHOSE
+                {t.games.voted}
               </span>
             )}
           </div>
@@ -113,7 +116,7 @@ export const ThisOrThat: React.FC = () => {
           {/* Ratio bar */}
           <div>
             <div className="flex items-center justify-between text-xs font-extrabold mb-1.5">
-              <span className="text-white/70">{currentQ.votesB} votes</span>
+              <span className="text-white/70">{currentQ.votesB} {t.games.votes}</span>
               <span className="text-white text-base">{percentB}%</span>
             </div>
             <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
@@ -134,7 +137,7 @@ export const ThisOrThat: React.FC = () => {
         onClick={handleNext}
         icon={<RefreshCw className="w-4 h-4 text-[#F0DC00]" />}
       >
-        Next Question
+        {t.games.nextDilemma || (isEs ? 'Siguiente Pregunta' : 'Next Question')}
       </GlassButton>
     </div>
   );

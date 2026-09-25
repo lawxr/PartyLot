@@ -5,9 +5,12 @@ import { Plus, ShieldCheck, ArrowRight, UserPlus } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { CreateCrewModal } from '@/components/ui/CreateCrewModal';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const CrewsView: React.FC = () => {
   const { crews, setCurrentView, selectCrew, parties } = usePartyStore();
+  const { t, language } = useTranslation();
+  const isEs = language === 'es';
   const [isCreateCrewOpen, setIsCreateCrewOpen] = useState(false);
 
   return (
@@ -16,10 +19,10 @@ export const CrewsView: React.FC = () => {
       <header className="flex items-center justify-between py-4 mb-6 sm:mb-8 border-b border-[rgba(35,30,22,0.08)] dark:border-white/10 pb-5">
         <div>
           <span className="text-xs uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196] font-semibold block mb-0.5">
-            PRIVATE TRUST NETWORKS
+            {t.crews.subtitle}
           </span>
           <h2 className="font-display font-extrabold text-3xl sm:text-5xl text-[#171512] dark:text-white tracking-tight">
-            Your Crews
+            {t.crews.title}
           </h2>
         </div>
 
@@ -30,7 +33,7 @@ export const CrewsView: React.FC = () => {
             onClick={() => setIsCreateCrewOpen(true)}
             icon={<UserPlus className="w-4 h-4 text-[#171512] dark:text-white" />}
           >
-            Create Crew
+            {t.crews.createCrew}
           </GlassButton>
 
           <GlassButton
@@ -39,7 +42,7 @@ export const CrewsView: React.FC = () => {
             onClick={() => setCurrentView('create-party')}
             icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
           >
-            New Gathering
+            {t.crews.newGathering}
           </GlassButton>
         </div>
       </header>
@@ -65,7 +68,7 @@ export const CrewsView: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                 <div className="absolute top-3 left-3">
                   <span className="px-2.5 py-1 rounded-full bg-white/90 dark:bg-black/80 backdrop-blur-md text-[10px] font-mono font-bold text-[#171512] dark:text-white shadow-sm">
-                    {crew.membersCount} MEMBERS
+                    {crew.membersCount} {isEs ? 'MIEMBROS' : 'MEMBERS'}
                   </span>
                 </div>
                 <div className="absolute top-3 right-3">
@@ -82,16 +85,16 @@ export const CrewsView: React.FC = () => {
                     {crew.name}
                   </h3>
                   <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] line-clamp-2 leading-relaxed">
-                    {crew.description || 'Private inner circle for secret rooftop sessions and gatherings.'}
+                    {crew.description || (isEs ? 'Círculo íntimo para sesiones privadas y encuentros con amigos.' : 'Private inner circle for secret rooftop sessions and gatherings.')}
                   </p>
                 </div>
 
                 <div className="pt-3 border-t border-[rgba(35,30,22,0.06)] dark:border-white/10 flex items-center justify-between">
                   <span className="text-[11px] font-medium text-[#8E887E] dark:text-[#A8A196]">
-                    {activePartiesCount} active {activePartiesCount === 1 ? 'gathering' : 'gatherings'}
+                    {activePartiesCount} {isEs ? (activePartiesCount === 1 ? 'fiesta activa' : 'fiestas activas') : (activePartiesCount === 1 ? 'active gathering' : 'active gatherings')}
                   </span>
                   <span className="text-xs font-bold text-[#171512] dark:text-white flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                    Enter Crew <ArrowRight className="w-3.5 h-3.5" />
+                    {isEs ? 'Entrar al Crew' : 'Enter Crew'} <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>
               </div>
@@ -108,10 +111,12 @@ export const CrewsView: React.FC = () => {
           </div>
           <div>
             <h4 className="font-display font-bold text-sm text-[#171512] dark:text-white">
-              Sovereign Private Circles
+              {isEs ? 'Círculos Privados Soberanos' : 'Sovereign Private Circles'}
             </h4>
             <p className="text-xs text-[#6F6A62] dark:text-[#A8A196]">
-              Your crew membership is backed by cryptographic EIP-712 permits. No public leaks, zero uninvited guests.
+              {isEs
+                ? 'La membresía de tu crew está respaldada criptográficamente. Sin filtraciones públicas ni invitados desconocidos.'
+                : 'Your crew membership is backed by cryptographic EIP-712 permits. No public leaks, zero uninvited guests.'}
             </p>
           </div>
         </div>
@@ -122,7 +127,7 @@ export const CrewsView: React.FC = () => {
           onClick={() => setCurrentView('join-party')}
           icon={<Plus className="w-4 h-4 text-[#171512]" />}
         >
-          Join with Code
+          {isEs ? 'Unirse con código' : 'Join with Code'}
         </GlassButton>
       </div>
 

@@ -7,13 +7,16 @@ import { WhosMostLikely } from '@/components/games/WhosMostLikely';
 import { ThisOrThat } from '@/components/games/ThisOrThat';
 import { CrewTrivia } from '@/components/games/CrewTrivia';
 
+import { useTranslation } from '@/lib/i18n/useTranslation';
+
 export const GamesView: React.FC = () => {
   const { activeGameId, setActiveGame } = usePartyStore();
+  const { t } = useTranslation();
 
   const games: { id: GameId; label: string; number: string }[] = [
-    { id: 'whos-most-likely', label: "Most Likely", number: '01' },
-    { id: 'this-or-that', label: 'This or That', number: '02' },
-    { id: 'crew-trivia', label: 'Crew Trivia', number: '03' },
+    { id: 'whos-most-likely', label: t.games.mostLikely, number: '01' },
+    { id: 'this-or-that', label: t.games.thisOrThat, number: '02' },
+    { id: 'crew-trivia', label: t.games.crewTrivia, number: '03' },
   ];
 
   return (

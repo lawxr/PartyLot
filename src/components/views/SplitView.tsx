@@ -47,7 +47,7 @@ const CATEGORIES: CategoryMeta[] = [
 
 export const SplitView: React.FC = () => {
   const { parties, currentPartyId, expenses, addExpense, settleAllDebts, goBack, currentUser } = usePartyStore();
-  const { language } = useTranslation();
+  const { t, language } = useTranslation();
   const isEs = language === 'es';
 
   const defaultParty = parties[0];
@@ -198,7 +198,7 @@ export const SplitView: React.FC = () => {
       id: 'u-law',
       name: 'Law',
       avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
-      subtitle: 'You paid $42.00',
+      subtitle: t.split.youPaid('42.00'),
       type: 'creator_positive' as const,
       receiveAmount: '$28.69',
     },
@@ -206,7 +206,7 @@ export const SplitView: React.FC = () => {
       id: 'u-sofi',
       name: 'Sofi',
       avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-      subtitle: 'Owes you',
+      subtitle: t.split.owesYou,
       type: 'debtor' as const,
       amount: '$13.31',
     },
@@ -214,7 +214,7 @@ export const SplitView: React.FC = () => {
       id: 'u-cam',
       name: 'Cam',
       avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
-      subtitle: 'Owes you',
+      subtitle: t.split.owesYou,
       type: 'debtor' as const,
       amount: '$13.31',
     },
@@ -222,15 +222,15 @@ export const SplitView: React.FC = () => {
       id: 'u-ana',
       name: 'Ana',
       avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
-      subtitle: 'Already paid',
+      subtitle: t.split.alreadyPaid,
       type: 'covered_badge' as const,
-      badgeText: 'Covered drinks',
+      badgeText: t.split.coveredDrinks,
     },
     {
       id: 'u-diego',
       name: 'Diego',
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-      subtitle: 'Owes you',
+      subtitle: t.split.owesYou,
       type: 'debtor' as const,
       amount: '$13.31',
     },
@@ -238,7 +238,7 @@ export const SplitView: React.FC = () => {
       id: 'u-sara',
       name: 'Sara',
       avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
-      subtitle: 'Owes you',
+      subtitle: t.split.owesYou,
       type: 'debtor' as const,
       amount: '$13.31',
     },
@@ -275,7 +275,7 @@ export const SplitView: React.FC = () => {
                 {party?.title || '404 House'}
               </h1>
               <span className="text-xs text-[#8A8173] leading-tight block font-medium">
-                {isEs ? 'Dividir gastos' : 'Split expenses'}
+                {t.split.title}
               </span>
             </div>
           </div>
@@ -305,7 +305,7 @@ export const SplitView: React.FC = () => {
                 <Coins className="w-3.5 h-3.5 text-[#171512]" />
               </div>
               <span className="text-xs sm:text-sm font-semibold text-[#7A7265]">
-                {isEs ? 'Total compartido' : 'Total shared spend'}
+                {t.split.totalSharedSpend}
               </span>
             </div>
 
@@ -314,7 +314,7 @@ export const SplitView: React.FC = () => {
             </div>
 
             <p className="text-xs text-[#8A8173] font-medium">
-              {partyMembers.length || 14} {isEs ? 'personas · Actualizado hace 2 min' : 'people · Updated 2 min ago'}
+              {t.split.peopleUpdated(partyMembers.length || 14, isEs ? 'hace 2 min' : '2 min ago')}
             </p>
           </div>
 
@@ -377,7 +377,7 @@ export const SplitView: React.FC = () => {
                 : 'text-[#6F6A62] hover:text-[#171512]'
             }`}
           >
-            {isEs ? 'Equitativo' : 'Equal'}
+            {t.split.tabEqual}
           </button>
           <button
             type="button"
@@ -388,7 +388,7 @@ export const SplitView: React.FC = () => {
                 : 'text-[#6F6A62] hover:text-[#171512]'
             }`}
           >
-            {isEs ? 'Personalizado' : 'Custom'}
+            {t.split.tabCustom}
           </button>
           <button
             type="button"
@@ -399,7 +399,7 @@ export const SplitView: React.FC = () => {
                 : 'text-[#6F6A62] hover:text-[#171512]'
             }`}
           >
-            {isEs ? 'Cuentas' : 'Items'}
+            {t.split.tabItems}
           </button>
         </div>
 
@@ -443,7 +443,7 @@ export const SplitView: React.FC = () => {
                     </div>
                     <div className="text-left">
                       <span className="text-[10px] font-semibold text-emerald-800 leading-none block mb-0.5">
-                        {isEs ? 'Recibirás' : 'You will receive'}
+                        {t.split.youWillReceive}
                       </span>
                       <span className="font-display font-black text-sm text-emerald-700 leading-none block">
                         {member.receiveAmount}
@@ -614,14 +614,14 @@ export const SplitView: React.FC = () => {
         <section className="mb-6">
           <div className="flex items-center justify-between mb-3 px-0.5">
             <h3 className="font-display font-black text-base text-[#171512]">
-              {isEs ? 'Desglose de gastos' : 'Expense breakdown'}
+              {t.split.expenseBreakdown}
             </h3>
             <button
               type="button"
               onClick={() => setActiveTab('items')}
               className="text-xs font-bold text-[#8A8173] hover:text-[#171512] flex items-center gap-0.5 cursor-pointer transition-colors"
             >
-              <span>{isEs ? 'Ver todos' : 'View all'}</span>
+              <span>{t.split.viewAll}</span>
               <ChevronRight className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
           </div>
@@ -634,7 +634,7 @@ export const SplitView: React.FC = () => {
               </div>
               <div className="min-w-0">
                 <span className="text-[11px] font-medium text-[#8A8173] leading-none mb-1 block truncate">
-                  Drinks
+                  {t.split.drinks}
                 </span>
                 <span className="font-display font-bold text-xs sm:text-sm text-[#171512] leading-none mb-0.5 block">
                   ${drinksTotal.toFixed(2)}
@@ -652,7 +652,7 @@ export const SplitView: React.FC = () => {
               </div>
               <div className="min-w-0">
                 <span className="text-[11px] font-medium text-[#8A8173] leading-none mb-1 block truncate">
-                  Snacks
+                  {t.split.snacks}
                 </span>
                 <span className="font-display font-bold text-xs sm:text-sm text-[#171512] leading-none mb-0.5 block">
                   ${snacksTotal.toFixed(2)}
@@ -670,7 +670,7 @@ export const SplitView: React.FC = () => {
               </div>
               <div className="min-w-0">
                 <span className="text-[11px] font-medium text-[#8A8173] leading-none mb-1 block truncate">
-                  Ride
+                  {t.split.ride}
                 </span>
                 <span className="font-display font-bold text-xs sm:text-sm text-[#171512] leading-none mb-0.5 block">
                   ${rideTotal.toFixed(2)}
@@ -693,7 +693,7 @@ export const SplitView: React.FC = () => {
               className="w-full h-13 sm:h-14 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 font-display font-black text-base text-[#171512] shadow-[0_4px_18px_rgba(240,220,0,0.35)] cursor-pointer"
             >
               <Send className="w-4.5 h-4.5 fill-current -rotate-12 translate-x-0.5" />
-              <span>{isEs ? 'Solicitar pagos' : 'Request payments'}</span>
+              <span>{t.split.requestPayments}</span>
             </button>
 
             {/* Secondary Action: Edit split */}
@@ -702,7 +702,7 @@ export const SplitView: React.FC = () => {
               onClick={() => setIsAddOpen(true)}
               className="text-xs font-bold text-[#8A8173] hover:text-[#171512] pt-2.5 pb-1 text-center block w-full cursor-pointer transition-colors"
             >
-              {isEs ? 'Editar división' : 'Edit split'}
+              {t.split.editSplit}
             </button>
           </div>
         </div>
@@ -712,7 +712,7 @@ export const SplitView: React.FC = () => {
       <BottomSheet
         isOpen={isOptionsOpen}
         onClose={() => setIsOptionsOpen(false)}
-        title={isEs ? 'Opciones de división' : 'Split Options'}
+        title={t.split.optionsTitle}
       >
         <div className="space-y-3">
           <button
@@ -729,7 +729,7 @@ export const SplitView: React.FC = () => {
               </div>
               <div>
                 <span className="font-bold text-sm text-[#171512] block">
-                  {isEs ? 'Añadir nuevo gasto' : 'Add new expense'}
+                  {t.split.addExpense}
                 </span>
                 <span className="text-xs text-[#8A8173]">
                   {isEs ? 'Registra una factura pagada por alguien' : 'Log a bill paid by someone'}
@@ -753,10 +753,10 @@ export const SplitView: React.FC = () => {
               </div>
               <div>
                 <span className="font-bold text-sm text-[#171512] block">
-                  {isEs ? 'Liquidar en Monad (USDC)' : 'Settle on Monad (USDC)'}
+                  {t.split.settleOnMonad}
                 </span>
                 <span className="text-xs text-[#8A8173]">
-                  {isEs ? 'Minimización matemática y liquidación web3' : 'Greedy algorithm & web3 settlement'}
+                  {t.split.settleSubtitle}
                 </span>
               </div>
             </div>
@@ -780,7 +780,7 @@ export const SplitView: React.FC = () => {
               </div>
               <div>
                 <span className="font-bold text-sm text-[#171512] block">
-                  {isEs ? 'Copiar enlace para compartir' : 'Copy share link'}
+                  {t.split.copyShareLink}
                 </span>
                 <span className="text-xs text-[#8A8173]">
                   {isEs ? 'Envía este desglose a tu grupo' : 'Send this split to the group'}
@@ -796,12 +796,12 @@ export const SplitView: React.FC = () => {
       <BottomSheet
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
-        title={isEs ? 'Añadir gasto' : 'Add Expense'}
+        title={t.split.addExpense}
       >
         <form onSubmit={handleCreateExpense} className="space-y-4">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              Category
+              {t.split.categoryLabel}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {CATEGORIES.map((cat) => {
@@ -828,7 +828,7 @@ export const SplitView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              Description
+              {t.split.descLabel}
             </label>
             <input
               type="text"
@@ -842,7 +842,7 @@ export const SplitView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              Amount ($)
+              {t.split.amountLabel}
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 font-display font-black text-xl text-[#8E887E]">
@@ -862,7 +862,7 @@ export const SplitView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              Paid by
+              {t.split.paidByLabel}
             </label>
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
               {partyMembers.map((member) => (
@@ -888,7 +888,7 @@ export const SplitView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5 flex justify-between">
-              <span>Split Between</span>
+              <span>{t.split.splitBetweenLabel}</span>
               <span className="text-[#B89600] font-bold">{splitBetween.length} selected</span>
             </label>
             <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
@@ -923,7 +923,7 @@ export const SplitView: React.FC = () => {
               fullWidth
               type="submit"
             >
-              {isEs ? 'Dividir gasto' : 'Split Expense'}
+              {t.split.splitButton}
             </GlassButton>
           </div>
         </form>
@@ -935,7 +935,7 @@ export const SplitView: React.FC = () => {
         onClose={() => {
           if (!isSettling) setIsSettleOpen(false);
         }}
-        title={isEs ? 'Liquidación de Cuentas (USDC)' : 'Request & Settle Payments'}
+        title={t.split.settleTitle}
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-[#2775CA]/10 via-[#836EF9]/10 to-transparent border border-[#2775CA]/20">
@@ -943,10 +943,10 @@ export const SplitView: React.FC = () => {
               <TokenLogo token="usdc" size="md" />
               <div>
                 <span className="text-xs font-bold text-[#171512] block">
-                  USDC Split Engine · Monad Testnet
+                  {t.split.settleEngineBadge}
                 </span>
                 <span className="text-[10px] text-[#6F6A62]">
-                  {isEs ? 'Transferencias minimizadas con liquidación directa' : 'Greedy minimal debt minimization & settlement'}
+                  {t.split.settleEngineDesc}
                 </span>
               </div>
             </div>
@@ -994,10 +994,8 @@ export const SplitView: React.FC = () => {
               onClick={handleSettleOnchain}
             >
               {isSettling
-                ? isEs ? 'Liquidando en Monad...' : 'Settling on Monad...'
-                : isEs
-                ? `Confirmar solicitud y liquidación en Monad (USDC)`
-                : `Confirm payment requests on Monad (USDC)`}
+                ? t.split.settling
+                : t.split.confirmSettle(realDebtorsList.length || 4)}
             </GlassButton>
           </div>
         </div>

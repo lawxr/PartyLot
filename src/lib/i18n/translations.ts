@@ -207,6 +207,146 @@ export interface TranslationDictionary {
     activeCircles: string;
     members: (count: number) => string;
   };
+  crews: {
+    subtitle: string;
+    title: string;
+    createCrew: string;
+    newGathering: string;
+    membersCount: (count: number) => string;
+    partiesCount: (count: number) => string;
+    nightsTogether: (count: number) => string;
+    treasuryBalance: string;
+    topGame: string;
+    emptyTitle: string;
+    emptySubtitle: string;
+  };
+  crewDetail: {
+    back: string;
+    tabGatherings: string;
+    tabMembers: string;
+    tabMemories: string;
+    treasury: string;
+    addMemory: string;
+    inviteMember: string;
+    copyLink: string;
+    copied: string;
+    nightsTogether: (count: number) => string;
+    activeGatherings: string;
+    pastGatherings: string;
+    membersTitle: string;
+    memoriesTitle: string;
+    noMemories: string;
+    captionPlaceholder: string;
+    uploading: string;
+    saveMemory: string;
+  };
+  split: {
+    title: string;
+    subtitle: string;
+    totalSharedSpend: string;
+    peopleUpdated: (count: number, time: string) => string;
+    tabEqual: string;
+    tabCustom: string;
+    tabItems: string;
+    youPaid: (amount: string) => string;
+    youWillReceive: string;
+    owesYou: string;
+    alreadyPaid: string;
+    coveredDrinks: string;
+    expenseBreakdown: string;
+    viewAll: string;
+    drinks: string;
+    snacks: string;
+    ride: string;
+    requestPayments: string;
+    editSplit: string;
+    addExpense: string;
+    settleOnMonad: string;
+    settleSubtitle: string;
+    optionsTitle: string;
+    copyShareLink: string;
+    categoryLabel: string;
+    descLabel: string;
+    amountLabel: string;
+    paidByLabel: string;
+    splitBetweenLabel: string;
+    splitButton: string;
+    settleTitle: string;
+    settleEngineBadge: string;
+    settleEngineDesc: string;
+    settling: string;
+    confirmSettle: (count: number) => string;
+  };
+  partyPot: {
+    potTitle: string;
+    addUSDC: string;
+    reward: string;
+    spend: string;
+    rollover: string;
+    balanceLabel: string;
+    recentTransactions: string;
+    all: string;
+    deposits: string;
+    spends: string;
+    rewards: string;
+    noTransactions: string;
+    addFundsModalTitle: string;
+    spendFundsModalTitle: string;
+    rewardModalTitle: string;
+    confirmDeposit: string;
+    confirmSpend: string;
+    confirmReward: string;
+    processing: string;
+  };
+  games: {
+    gamesHeader: string;
+    mostLikely: string;
+    thisOrThat: string;
+    crewTrivia: string;
+    fastDilemma: string;
+    pickSide: string;
+    optionA: string;
+    optionB: string;
+    voted: string;
+    nextDilemma: string;
+    whosMostLikelyTitle: string;
+    whosMostLikelySubtitle: string;
+    yourVote: string;
+    votes: string;
+    triviaTitle: string;
+    triviaSubtitle: string;
+    correct: string;
+    incorrect: string;
+    nextQuestion: string;
+  };
+  polls: {
+    title: string;
+    subtitle: string;
+    createPoll: string;
+    newPollTitle: string;
+    questionLabel: string;
+    questionPlaceholder: string;
+    optionsLabel: string;
+    addOption: string;
+    publish: string;
+    vote: string;
+    votedBadge: string;
+    totalVotes: (count: number) => string;
+    empty: string;
+  };
+  recap: {
+    badge: string;
+    title: string;
+    attest: string;
+    attesting: string;
+    attested: string;
+    download: string;
+    totalDamage: string;
+    memoriesCount: string;
+    gamesPlayed: string;
+    peopleAttended: string;
+    mvpTitle: string;
+  };
 }
 
 export const translations: Record<Language, TranslationDictionary> = {
@@ -417,6 +557,146 @@ export const translations: Record<Language, TranslationDictionary> = {
       activeCircles: 'CÍRCULOS ACTIVOS',
       members: (count: number) => `${count} miembros`,
     },
+    crews: {
+      subtitle: 'REDES PRIVADAS DE CONFIANZA',
+      title: 'Tus Crews',
+      createCrew: 'Crear Crew',
+      newGathering: 'Nueva Fiesta',
+      membersCount: (count: number) => `${count} miembros`,
+      partiesCount: (count: number) => `${count} fiestas`,
+      nightsTogether: (count: number) => `${count} noches juntos`,
+      treasuryBalance: 'Fondo Común',
+      topGame: 'Juego Favorito',
+      emptyTitle: 'No tienes crews todavía',
+      emptySubtitle: 'Crea un crew para reunir a tus amigos en fiestas y eventos recurrentes.',
+    },
+    crewDetail: {
+      back: 'Atrás',
+      tabGatherings: 'Fiestas',
+      tabMembers: 'Miembros',
+      tabMemories: 'Recuerdos',
+      treasury: 'Fondo del Crew',
+      addMemory: 'Subir Foto',
+      inviteMember: 'Invitar',
+      copyLink: 'Copiar enlace',
+      copied: '¡Copiado!',
+      nightsTogether: (count: number) => `${count} noches juntos`,
+      activeGatherings: 'Fiestas Activas',
+      pastGatherings: 'Fiestas Anteriores',
+      membersTitle: 'Miembros del Círculo',
+      memoriesTitle: 'Álbum Compartido',
+      noMemories: 'Aún no hay fotos guardadas en este crew.',
+      captionPlaceholder: 'Escribe una dedicatoria o recuerdo...',
+      uploading: 'Subiendo recuerdo...',
+      saveMemory: 'Guardar Recuerdo',
+    },
+    split: {
+      title: 'Dividir gastos',
+      subtitle: 'Liquidación de cuentas entre amigos',
+      totalSharedSpend: 'Total compartido',
+      peopleUpdated: (count: number, time: string) => `${count} personas · Actualizado ${time}`,
+      tabEqual: 'Equitativo',
+      tabCustom: 'Personalizado',
+      tabItems: 'Cuentas',
+      youPaid: (amount: string) => `Pagaste $${amount}`,
+      youWillReceive: 'Recibirás',
+      owesYou: 'Te debe',
+      alreadyPaid: 'Ya pagó',
+      coveredDrinks: 'Cubrió tragos',
+      expenseBreakdown: 'Desglose de gastos',
+      viewAll: 'Ver todos',
+      drinks: 'Tragos',
+      snacks: 'Snacks',
+      ride: 'Transporte',
+      requestPayments: 'Solicitar pagos',
+      editSplit: 'Editar división',
+      addExpense: 'Añadir gasto',
+      settleOnMonad: 'Liquidar en Monad (USDC)',
+      settleSubtitle: 'Minimización matemática y liquidación web3',
+      optionsTitle: 'Opciones de división',
+      copyShareLink: 'Copiar enlace para compartir',
+      categoryLabel: 'Categoría',
+      descLabel: 'Descripción',
+      amountLabel: 'Monto ($)',
+      paidByLabel: 'Pagado por',
+      splitBetweenLabel: 'Dividir entre',
+      splitButton: 'Dividir gasto',
+      settleTitle: 'Liquidación de Cuentas (USDC)',
+      settleEngineBadge: 'USDC Split Engine · Monad Testnet',
+      settleEngineDesc: 'Transferencias minimizadas con liquidación directa',
+      settling: 'Liquidando en Monad...',
+      confirmSettle: (count: number) => `Confirmar liquidación (${count} pagos en USDC)`,
+    },
+    partyPot: {
+      potTitle: 'POZO DEL GRUPO',
+      addUSDC: 'Aportar USDC',
+      reward: 'Recompensa',
+      spend: 'Gasto',
+      rollover: 'Traspasar a Crew',
+      balanceLabel: 'Fondo activo en USDC',
+      recentTransactions: 'HISTORIAL DE FONDOS',
+      all: 'Todos',
+      deposits: 'Aportes',
+      spends: 'Gastos',
+      rewards: 'Premios',
+      noTransactions: 'No hay transacciones registradas todavía.',
+      addFundsModalTitle: 'Aportar al Fondo (USDC)',
+      spendFundsModalTitle: 'Registrar Gasto del Fondo',
+      rewardModalTitle: 'Premiar Rol de Fiesta',
+      confirmDeposit: 'Confirmar Aporte (USDC)',
+      confirmSpend: 'Confirmar Gasto',
+      confirmReward: 'Enviar Recompensa',
+      processing: 'Procesando en Monad...',
+    },
+    games: {
+      gamesHeader: 'MINIJUEGOS DE FIESTA',
+      mostLikely: 'Quién es más',
+      thisOrThat: 'This or That',
+      crewTrivia: 'Lore Trivia',
+      fastDilemma: 'DILEMA RÁPIDO',
+      pickSide: 'Elige tu bando. Porcentajes del grupo en vivo.',
+      optionA: 'OPCIÓN A',
+      optionB: 'OPCIÓN B',
+      voted: 'VOTASTE',
+      nextDilemma: 'Siguiente dilema',
+      whosMostLikelyTitle: '¿QUIÉN ES MÁS PROBABLE QUE...',
+      whosMostLikelySubtitle: 'Vota en secreto por alguien del grupo',
+      yourVote: 'Tu voto',
+      votes: 'votos',
+      triviaTitle: 'LORE TRIVIA',
+      triviaSubtitle: '¿Qué tan bien conoces las historias del grupo?',
+      correct: '¡Correcto!',
+      incorrect: 'Incorrecto',
+      nextQuestion: 'Siguiente pregunta',
+    },
+    polls: {
+      title: 'VOTACIONES DE GRUPO',
+      subtitle: 'Decisiones democráticas en tiempo real',
+      createPoll: 'Crear Votación',
+      newPollTitle: 'Nueva Votación',
+      questionLabel: 'Pregunta',
+      questionPlaceholder: 'ej. ¿A qué hora nos vamos? ¿Dónde es el after?',
+      optionsLabel: 'Opciones',
+      addOption: 'Añadir opción',
+      publish: 'Publicar votación',
+      vote: 'Votar',
+      votedBadge: 'Votado',
+      totalVotes: (count: number) => `${count} votos`,
+      empty: 'No hay votaciones activas en esta fiesta todavía.',
+    },
+    recap: {
+      badge: 'LA MAÑANA SIGUIENTE',
+      title: 'Resumen de la Noche',
+      attest: 'Atestar en Monad',
+      attesting: 'Atestando en Monad...',
+      attested: 'Atestado en Monad',
+      download: 'Descargar Póster',
+      totalDamage: 'GASTO TOTAL',
+      memoriesCount: 'FOTOS COMPARTIDAS',
+      gamesPlayed: 'RONDAS JUGADAS',
+      peopleAttended: 'ASISTENTES',
+      mvpTitle: 'ALMA DE LA FIESTA',
+    },
   },
   en: {
     common: {
@@ -624,6 +904,146 @@ export const translations: Record<Language, TranslationDictionary> = {
       empty: 'No activity under this category yet.',
       activeCircles: 'ACTIVE CREW CIRCLES',
       members: (count: number) => `${count} members`,
+    },
+    crews: {
+      subtitle: 'PRIVATE TRUST NETWORKS',
+      title: 'Your Crews',
+      createCrew: 'Create Crew',
+      newGathering: 'New Gathering',
+      membersCount: (count: number) => `${count} members`,
+      partiesCount: (count: number) => `${count} parties`,
+      nightsTogether: (count: number) => `${count} nights together`,
+      treasuryBalance: 'Treasury Balance',
+      topGame: 'Top Game',
+      emptyTitle: 'No crews yet',
+      emptySubtitle: 'Create a crew to gather your friends for recurring gatherings and parties.',
+    },
+    crewDetail: {
+      back: 'Back',
+      tabGatherings: 'Gatherings',
+      tabMembers: 'Members',
+      tabMemories: 'Memories',
+      treasury: 'Crew Treasury',
+      addMemory: 'Add Photo',
+      inviteMember: 'Invite',
+      copyLink: 'Copy link',
+      copied: 'Copied!',
+      nightsTogether: (count: number) => `${count} nights together`,
+      activeGatherings: 'Active Gatherings',
+      pastGatherings: 'Past Gatherings',
+      membersTitle: 'Crew Members',
+      memoriesTitle: 'Shared Memories',
+      noMemories: 'No memories shared yet in this crew.',
+      captionPlaceholder: 'Write a caption for this memory...',
+      uploading: 'Uploading memory...',
+      saveMemory: 'Save Memory',
+    },
+    split: {
+      title: 'Split expenses',
+      subtitle: 'Damage calculator between friends',
+      totalSharedSpend: 'Total shared spend',
+      peopleUpdated: (count: number, time: string) => `${count} people · Updated ${time}`,
+      tabEqual: 'Equal',
+      tabCustom: 'Custom',
+      tabItems: 'Items',
+      youPaid: (amount: string) => `You paid $${amount}`,
+      youWillReceive: 'You will receive',
+      owesYou: 'Owes you',
+      alreadyPaid: 'Already paid',
+      coveredDrinks: 'Covered drinks',
+      expenseBreakdown: 'Expense breakdown',
+      viewAll: 'View all',
+      drinks: 'Drinks',
+      snacks: 'Snacks',
+      ride: 'Ride',
+      requestPayments: 'Request payments',
+      editSplit: 'Edit split',
+      addExpense: 'Add expense',
+      settleOnMonad: 'Settle on Monad (USDC)',
+      settleSubtitle: 'Greedy algorithm & web3 settlement',
+      optionsTitle: 'Split Options',
+      copyShareLink: 'Copy share link',
+      categoryLabel: 'Category',
+      descLabel: 'Description',
+      amountLabel: 'Amount ($)',
+      paidByLabel: 'Paid by',
+      splitBetweenLabel: 'Split between',
+      splitButton: 'Split Expense',
+      settleTitle: 'Request & Settle Payments',
+      settleEngineBadge: 'USDC Split Engine · Monad Testnet',
+      settleEngineDesc: 'Greedy minimal debt minimization & settlement',
+      settling: 'Settling on Monad...',
+      confirmSettle: (count: number) => `Confirm settlement (${count} payments in USDC)`,
+    },
+    partyPot: {
+      potTitle: 'PARTY POT',
+      addUSDC: 'Add USDC',
+      reward: 'Reward',
+      spend: 'Spend',
+      rollover: 'Rollover to Crew',
+      balanceLabel: 'Active USDC Balance',
+      recentTransactions: 'TREASURY HISTORY',
+      all: 'All',
+      deposits: 'Deposits',
+      spends: 'Expenses',
+      rewards: 'Rewards',
+      noTransactions: 'No transactions recorded yet.',
+      addFundsModalTitle: 'Deposit Funds (USDC)',
+      spendFundsModalTitle: 'Log Treasury Expense',
+      rewardModalTitle: 'Reward Party Role',
+      confirmDeposit: 'Confirm Deposit (USDC)',
+      confirmSpend: 'Confirm Expense',
+      confirmReward: 'Send Reward',
+      processing: 'Processing on Monad...',
+    },
+    games: {
+      gamesHeader: 'PARTY MINIGAMES',
+      mostLikely: 'Most Likely',
+      thisOrThat: 'This or That',
+      crewTrivia: 'Crew Trivia',
+      fastDilemma: 'FAST DILEMMA',
+      pickSide: 'Pick your side. Live group ratio.',
+      optionA: 'OPTION A',
+      optionB: 'OPTION B',
+      voted: 'YOU VOTED',
+      nextDilemma: 'Next dilemma',
+      whosMostLikelyTitle: 'WHO IS MOST LIKELY TO...',
+      whosMostLikelySubtitle: 'Secretly vote for someone in the group',
+      yourVote: 'Your vote',
+      votes: 'votes',
+      triviaTitle: 'LORE TRIVIA',
+      triviaSubtitle: 'How well do you know the crew lore?',
+      correct: 'Correct!',
+      incorrect: 'Incorrect',
+      nextQuestion: 'Next question',
+    },
+    polls: {
+      title: 'GROUP POLLS',
+      subtitle: 'Realtime democratic decisions',
+      createPoll: 'Create Poll',
+      newPollTitle: 'New Poll',
+      questionLabel: 'Question',
+      questionPlaceholder: 'e.g. What time are we heading out? Where is the after?',
+      optionsLabel: 'Options',
+      addOption: 'Add option',
+      publish: 'Publish poll',
+      vote: 'Vote',
+      votedBadge: 'Voted',
+      totalVotes: (count: number) => `${count} votes`,
+      empty: 'No active polls in this party yet.',
+    },
+    recap: {
+      badge: 'THE MORNING AFTER',
+      title: 'Party Recap',
+      attest: 'Attest on Monad',
+      attesting: 'Attesting on Monad...',
+      attested: 'Attested on Monad',
+      download: 'Download Poster',
+      totalDamage: 'TOTAL DAMAGE',
+      memoriesCount: 'SHARED PHOTOS',
+      gamesPlayed: 'GAMES PLAYED',
+      peopleAttended: 'PEOPLE ATTENDED',
+      mvpTitle: 'PARTY MVP',
     },
   },
 };

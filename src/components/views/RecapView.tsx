@@ -19,7 +19,6 @@ import { TopNav } from '@/components/navigation/TopNav';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { recordGatheringOnchain } from '@/services/socialGraphService';
 import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
-import { INITIAL_PARTIES } from '@/data/mockData';
 import confetti from 'canvas-confetti';
 
 export const RecapView: React.FC = () => {
@@ -35,7 +34,7 @@ export const RecapView: React.FC = () => {
     tasks,
   } = usePartyStore();
 
-  const defaultParty = INITIAL_PARTIES[0];
+  const defaultParty = parties[0];
   const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
   const partyExpenses = expenses.filter((e) => e.partyId === party?.id);
   const partyTransactions = transactions.filter((t) => t.partyId === party?.id);

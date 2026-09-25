@@ -20,7 +20,6 @@ import { LiquidBlob } from '@/components/ui/LiquidBlob';
 import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
 import { PartyTasksBoard } from '@/components/party/PartyTasksBoard';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { INITIAL_PARTIES } from '@/data/mockData';
 import { MONAD_CONTRACT_ADDRESSES } from '@/contracts';
 import confetti from 'canvas-confetti';
 
@@ -29,7 +28,7 @@ export const PartyPotView: React.FC = () => {
     usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
-  const defaultParty = INITIAL_PARTIES[0];
+  const defaultParty = parties[0];
   const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
   const partyTransactions = transactions.filter((t) => t.partyId === party?.id);
 
@@ -268,7 +267,7 @@ export const PartyPotView: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Liquid Blob + Quick Actions (5 cols on desktop) */}
           <div className="lg:col-span-5 flex flex-col items-center text-center">
-            {/* Liquid Glass Interactive Blob Sphere */}
+            {/* Interactive sphere */}
             <div className="relative my-2 w-full flex justify-center">
               <LiquidBlob balance={party.potBalance} />
 

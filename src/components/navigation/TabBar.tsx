@@ -25,7 +25,7 @@ export const TabBar: React.FC = () => {
     <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none flex justify-center px-4 pb-3 sm:pb-4 safe-bottom">
       <nav
         aria-label="Main Navigation"
-        className="pointer-events-auto rounded-[36px] px-2.5 sm:px-3 py-1.5 sm:py-2 flex items-center shadow-[0_16px_40px_rgba(65,48,25,0.12),inset_0_1px_1px_rgba(255,255,255,0.92)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.55),inset_0_1px_1px_rgba(255,255,255,0.12)] border border-white/90 dark:border-white/15 max-w-sm sm:max-w-md w-full justify-around backdrop-blur-2xl bg-[rgba(250,248,243,0.86)] dark:bg-[rgba(28,26,22,0.90)] transition-colors duration-200"
+        className="pointer-events-auto liquid-glass-nav rounded-[36px] px-2.5 sm:px-3 py-1.5 sm:py-2 flex items-center max-w-sm sm:max-w-md w-full justify-around"
       >
         {tabs.map((tab) => {
           const Icon = tab.icon;

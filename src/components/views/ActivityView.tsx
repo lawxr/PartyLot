@@ -70,7 +70,7 @@ export const ActivityView: React.FC = () => {
         </div>
       </header>
 
-      {/* Responsive 2-Column Layout on Desktop */}
+      {/* Desktop layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Activity Feed (8 cols on desktop) */}
         <div className="lg:col-span-8 flex flex-col gap-3">

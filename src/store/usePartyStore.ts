@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
+import { useEffect } from 'react';
 import {
   User,
   Party,
@@ -20,19 +21,6 @@ import {
   SharedExperienceConnection,
   PartyMemory,
 } from '@/types';
-import {
-  CURRENT_USER,
-  INITIAL_PARTIES,
-  INITIAL_CREWS,
-  INITIAL_EXPENSES,
-  INITIAL_TRANSACTIONS,
-  INITIAL_POLLS,
-  INITIAL_ACTIVITIES,
-  WHOS_MOST_LIKELY_QUESTIONS,
-  THIS_OR_THAT_QUESTIONS,
-  TRIVIA_QUESTIONS,
-  INITIAL_PARTY_MEMORIES,
-} from '@/data/mockData';
 import { generatePartyCode } from '@/services/party';
 import {
   persistPartyToSupabase,
@@ -46,10 +34,16 @@ import {
   fetchPartiesFromDb,
   fetchPartyDetailsFromDb,
   fetchCrewsFromDb,
+  fetchActivitiesFromDb,
+  fetchPollsFromDb,
+  fetchGameSessionsFromDb,
+  persistPollToSupabase,
+  persistGameSessionToSupabase,
   syncUserDataToDb,
   subscribeToPartyRealtime,
   subscribeToTasksRealtime,
   persistPartyMemoryToSupabase,
+  fetchUserProfileFromDb,
 } from '@/services/supabaseService';
 import { Language } from '@/lib/i18n/translations';
 import {
@@ -123,6 +117,7 @@ interface PartyStoreState {
   whosMostLikely: WhosMostLikelyQuestion[];
   thisOrThat: ThisOrThatQuestion[];
   trivia: TriviaQuestion[];
+  crewTrivia: TriviaQuestion[];
   activeGameId: GameId;
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -244,7 +239,7 @@ interface PartyStoreState {
 export const usePartyStore = create<PartyStoreState>()(
   persist(
     (set, get) => ({
-      currentUser: demoMode ? CURRENT_USER : signedOutUser,
+      currentUser: signedOutUser,
       isOnboardingOpen: false,
       setIsOnboardingOpen: (open) => set({ isOnboardingOpen: open }),
       pendingInviteCode: null,
@@ -268,7 +263,7 @@ export const usePartyStore = create<PartyStoreState>()(
         }
         set({ theme: nextTheme });
       },
-      starredUserIds: ['u-sofi', 'u-ana', 'u-cam'],
+      starredUserIds: [],
       toggleStarUser: (userId) => {
         set((state) => {
           const currentList = state.starredUserIds || [];
@@ -282,7 +277,7 @@ export const usePartyStore = create<PartyStoreState>()(
       isUserStarred: (userId) => {
         return (get().starredUserIds || []).includes(userId);
       },
-      attendedPartyIds: ['p-404', 'p-rooftop', 'p-hackathon'],
+      attendedPartyIds: [],
       addAttendedNight: (partyId) => {
         set((state) => {
           const currentList = state.attendedPartyIds || [];
@@ -297,51 +292,20 @@ export const usePartyStore = create<PartyStoreState>()(
           };
         });
       },
-      parties: demoMode ? INITIAL_PARTIES : [],
-      currentPartyId: demoMode ? 'p-404' : '',
-      crews: demoMode ? INITIAL_CREWS : [],
-      currentCrewId: demoMode ? 'c-404' : null,
-      expenses: demoMode ? INITIAL_EXPENSES : [],
-      transactions: demoMode ? INITIAL_TRANSACTIONS : [],
-      tasks: demoMode ? [
-        {
-          id: 'task-1',
-          partyId: 'p-404',
-          title: 'Bring 2 bags of ice & lime',
-          rewardAmount: 5,
-          status: 'open',
-          createdAt: '15m ago',
-        },
-        {
-          id: 'task-2',
-          partyId: 'p-404',
-          title: 'Aux cable & bluetooth receiver',
-          rewardAmount: 8,
-          status: 'claimed',
-          claimedById: 'u-carlos',
-          claimedByName: 'Carlos',
-          claimedByAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-          createdAt: '30m ago',
-        },
-        {
-          id: 'task-3',
-          partyId: 'p-404',
-          title: 'Extra cups & napkins from bodega',
-          rewardAmount: 4,
-          status: 'completed',
-          claimedById: 'u-valen',
-          claimedByName: 'Valen',
-          claimedByAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
-          completedAt: 'Just now',
-          createdAt: '45m ago',
-        },
-      ] : [],
-      polls: demoMode ? INITIAL_POLLS : [],
-      activities: demoMode ? INITIAL_ACTIVITIES : [],
-      memories: demoMode ? INITIAL_PARTY_MEMORIES : [],
-      whosMostLikely: demoMode ? WHOS_MOST_LIKELY_QUESTIONS : [],
-      thisOrThat: demoMode ? THIS_OR_THAT_QUESTIONS : [],
-      trivia: demoMode ? TRIVIA_QUESTIONS : [],
+      parties: [],
+      currentPartyId: '',
+      crews: [],
+      currentCrewId: null,
+      expenses: [],
+      transactions: [],
+      tasks: [],
+      polls: [],
+      activities: [],
+      memories: [],
+      whosMostLikely: [],
+      thisOrThat: [],
+      trivia: [],
+      crewTrivia: [],
       activeGameId: 'whos-most-likely',
 
       setCurrentView: (view) => {
@@ -369,14 +333,12 @@ export const usePartyStore = create<PartyStoreState>()(
         set((state) => {
           const isAuthed = Boolean(state.currentUser?.isPrivyAuthenticated || demoMode);
 
-          // If on home dashboard with a subtab open (e.g. profile, crews, activity), back returns to main home feed
           if (state.currentView === 'home' && state.activeTab !== 'home') {
             return {
               activeTab: 'home',
             };
           }
 
-          // If coming from splash (e.g. into join-party), always return to splash
           if (state.previousView === 'splash') {
             return {
               currentView: 'splash',
@@ -384,7 +346,6 @@ export const usePartyStore = create<PartyStoreState>()(
             };
           }
 
-          // If the user is unauthenticated, they can never be sent to home
           if (!isAuthed) {
             return {
               currentView: 'splash',
@@ -392,7 +353,6 @@ export const usePartyStore = create<PartyStoreState>()(
             };
           }
 
-          // If in standalone profile view, return to home feed
           if (state.currentView === 'profile') {
             return {
               currentView: 'home',
@@ -401,7 +361,6 @@ export const usePartyStore = create<PartyStoreState>()(
             };
           }
 
-          // For authenticated users, return to the previous view if valid
           if (
             state.previousView &&
             state.previousView !== state.currentView &&
@@ -592,83 +551,36 @@ export const usePartyStore = create<PartyStoreState>()(
         const state = get();
         const normalized = code.trim().toUpperCase();
 
-        if (!demoMode) {
-          const result = await joinPartyWithInviteCode(normalized, authToken || null);
-          if (!result.success || !result.party) {
-            return {
-              success: false,
-              message: result.error || 'The server could not confirm this invite join.',
-            };
-          }
-
-          const confirmedParty = result.party;
-          const partyExists = state.parties.some((p) => p.id === confirmedParty.id);
-          const updatedParties = partyExists
-            ? state.parties.map((p) => (p.id === confirmedParty.id ? confirmedParty : p))
-            : [...state.parties, confirmedParty];
-
-          const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
-            partyId: confirmedParty.id,
-            type: 'join',
-            text: `${state.currentUser.name} joined via code ${confirmedParty.code}`,
-            time: 'Just now',
-            avatar: state.currentUser.avatar,
+        const result = await joinPartyWithInviteCode(normalized, authToken || null);
+        if (!result.success || !result.party) {
+          return {
+            success: false,
+            message: result.error || 'The server could not confirm this invite join.',
           };
-
-          set({
-            parties: updatedParties,
-            currentPartyId: confirmedParty.id,
-            activities: [newActivity, ...state.activities],
-          });
-
-          return { success: true, party: confirmedParty };
         }
 
-        const matched = state.parties.find((p) => p.code.toUpperCase() === normalized);
+        const confirmedParty = result.party;
+        const partyExists = state.parties.some((p) => p.id === confirmedParty.id);
+        const updatedParties = partyExists
+          ? state.parties.map((p) => (p.id === confirmedParty.id ? confirmedParty : p))
+          : [...state.parties, confirmedParty];
 
-        if (!matched) {
-          return { success: false, message: 'Party code not found. Check with host!' };
-        }
+        const newActivity: ActivityItem = {
+          id: `act-${Date.now()}`,
+          partyId: confirmedParty.id,
+          type: 'join',
+          text: `${state.currentUser.name} joined via code ${confirmedParty.code}`,
+          time: 'Just now',
+          avatar: state.currentUser.avatar,
+        };
 
-        const isAlreadyMember = matched.members.some((m) => m.id === state.currentUser.id);
+        set({
+          parties: updatedParties,
+          currentPartyId: confirmedParty.id,
+          activities: [newActivity, ...state.activities],
+        });
 
-        if (!isAlreadyMember) {
-          const newMember: Member = {
-            id: state.currentUser.id,
-            name: state.currentUser.name,
-            avatar: state.currentUser.avatar,
-            role: 'guest',
-            status: 'going',
-            nightsTogether: 1,
-            walletAddress: state.currentUser.walletAddress,
-          };
-
-          const updatedParties = state.parties.map((p) =>
-            p.id === matched.id ? { ...p, members: [...p.members, newMember] } : p
-          );
-
-          const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
-            partyId: matched.id,
-            type: 'join',
-            text: `${state.currentUser.name} joined via code ${matched.code}`,
-            time: 'Just now',
-            avatar: state.currentUser.avatar,
-          };
-
-          set({
-            parties: updatedParties,
-            currentPartyId: matched.id,
-            activities: [newActivity, ...state.activities],
-          });
-
-          persistActivityToSupabase(newActivity);
-        } else {
-          set({ currentPartyId: matched.id });
-        }
-
-        return { success: true, party: matched };
+        return { success: true, party: confirmedParty };
       },
 
       addPartyMemory: async ({ imageUrl, caption }) => {
@@ -777,7 +689,6 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      // Onchain settlement and treasury execution on Monad Testnet (USDC)
       settleAllDebts: async (targetPartyId?: string) => {
         const state = get();
         const pId = targetPartyId || state.currentPartyId;
@@ -1145,13 +1056,11 @@ export const usePartyStore = create<PartyStoreState>()(
             let votes = opt.votes;
             let voters = [...opt.voters];
 
-            // Remove previous vote if any
             if (poll.userVoteId === opt.id) {
               votes = Math.max(0, votes - 1);
               voters = voters.filter((id) => id !== state.currentUser.id);
             }
 
-            // Add new vote if not deselecting
             if (!wasAlreadyVoted && opt.id === optionId) {
               votes += 1;
               voters.push(state.currentUser.id);
@@ -1306,10 +1215,6 @@ export const usePartyStore = create<PartyStoreState>()(
         const targetName = targetMember.name;
         const targetWallet = targetMember.walletAddress;
 
-        const isDemoUser =
-          demoMode && ['u-ana', 'u-carlos', 'u-valen', 'u-sofi'].includes(targetId);
-
-        // Gatherings together: parties where both appear in members
         const mutualParties = state.parties.filter((p) => {
           const hasCurrentUser = p.members.some(
             (m) =>
@@ -1328,7 +1233,6 @@ export const usePartyStore = create<PartyStoreState>()(
 
         const mutualPartyIds = new Set(mutualParties.map((p) => p.id));
 
-        // Real Minigames played together:
         let realGames = 0;
         state.activities.forEach((act) => {
           if (mutualPartyIds.has(act.partyId) && act.type === 'game') {
@@ -1346,7 +1250,6 @@ export const usePartyStore = create<PartyStoreState>()(
           if (tot.userVote) realGames++;
         });
 
-        // Real Settlements verified together:
         let realSettlements = 0;
         let unsettledCount = 0;
         state.expenses.forEach((exp) => {
@@ -1363,7 +1266,6 @@ export const usePartyStore = create<PartyStoreState>()(
           }
         });
 
-        // Real Recurring crews shared:
         const sharedCrews = state.crews.filter((c) => {
           const hasUser = c.members?.some(
             (m) => (currentUserId && m.userId === currentUserId) || m.name === currentUserName
@@ -1376,38 +1278,20 @@ export const usePartyStore = create<PartyStoreState>()(
 
         const onchainNights = targetMember.nightsTogether || 0;
 
-        const gatheringsTogether = isDemoUser
-          ? Math.max(
-              mutualParties.length,
-              targetId === 'u-ana' ? 12 : targetId === 'u-carlos' ? 9 : targetId === 'u-valen' ? 7 : 6
-            )
-          : Math.max(mutualParties.length, onchainNights, 1);
+        const gatheringsTogether = Math.max(mutualParties.length, onchainNights, 1);
+        const gamesPlayedTogether = realGames;
+        const settlementsTogether = realSettlements;
+        const recurringCrewsShared = sharedCrews.length;
 
-        const gamesPlayedTogether = isDemoUser
-          ? (targetId === 'u-ana' ? 31 : targetId === 'u-carlos' ? 24 : targetId === 'u-valen' ? 18 : 14)
-          : realGames;
-
-        const settlementsTogether = isDemoUser
-          ? (targetId === 'u-ana' ? 8 : targetId === 'u-carlos' ? 5 : targetId === 'u-valen' ? 4 : 3)
-          : realSettlements;
-
-        const recurringCrewsShared = isDemoUser
-          ? (targetId === 'u-ana' ? 3 : targetId === 'u-carlos' ? 2 : targetId === 'u-valen' ? 2 : 1)
-          : sharedCrews.length;
-
-        // Dynamic settlement reputation
         let settlementReputation = '100% Instant Settler';
-        if (!isDemoUser) {
-          if (unsettledCount > 0) {
-            settlementReputation = `${unsettledCount} ${unsettledCount === 1 ? 'cuenta pendiente' : 'cuentas pendientes'}`;
-          } else if (settlementsTogether > 0) {
-            settlementReputation = '100% Instant Settler';
-          } else {
-            settlementReputation = 'Sin deudas pendientes';
-          }
+        if (unsettledCount > 0) {
+          settlementReputation = `${unsettledCount} ${unsettledCount === 1 ? 'cuenta pendiente' : 'cuentas pendientes'}`;
+        } else if (settlementsTogether > 0) {
+          settlementReputation = '100% Instant Settler';
+        } else {
+          settlementReputation = 'Sin deudas pendientes';
         }
 
-        // Dynamic favorite game
         let favoriteGame = "Who's Most Likely";
         if (state.whosMostLikely.length > 0 && state.whosMostLikely.some((q) => Object.keys(q.votes).length > 0)) {
           favoriteGame = "Who's Most Likely";
@@ -1417,7 +1301,6 @@ export const usePartyStore = create<PartyStoreState>()(
           favoriteGame = 'Crew Trivia';
         }
 
-        // Spark level calculation
         const totalScore = gatheringsTogether * 4 + gamesPlayedTogether * 2 + settlementsTogether * 3 + recurringCrewsShared * 5;
         let sparkLevel: 'Kindling' | 'Ignited' | 'Soul Crew' | 'Ride or Die' = 'Kindling';
         if (totalScore >= 45) {
@@ -1535,7 +1418,6 @@ export const usePartyStore = create<PartyStoreState>()(
           ...updates,
         };
 
-        // Apply local state immediately so downstream guards and UI have instantaneous identity
         set({ currentUser: updated });
 
         if (authToken && updated.id) {
@@ -1549,15 +1431,16 @@ export const usePartyStore = create<PartyStoreState>()(
 
       resetUserSession: () => {
         set({
-          currentUser: demoMode ? CURRENT_USER : signedOutUser,
+          currentUser: signedOutUser,
           currentView: 'splash',
         });
       },
 
       hydrateFromSupabase: async () => {
-        const [dbParties, dbCrews] = await Promise.all([
+        const [dbParties, dbCrews, dbActivities] = await Promise.all([
           fetchPartiesFromDb(),
           fetchCrewsFromDb(),
+          fetchActivitiesFromDb(),
         ]);
 
         if (dbParties.length > 0) {
@@ -1579,11 +1462,20 @@ export const usePartyStore = create<PartyStoreState>()(
                 : dbCrews[0].id,
           }));
         }
+
+        if (dbActivities.length > 0) {
+          set({ activities: dbActivities });
+        }
       },
 
       loadPartyFromSupabase: async (partyId: string) => {
         const details = await fetchPartyDetailsFromDb(partyId);
         if (!details || !details.party) return;
+
+        const [dbPolls, dbGameSessions] = await Promise.all([
+          fetchPollsFromDb(partyId),
+          fetchGameSessionsFromDb(partyId),
+        ]);
 
         set((s) => ({
           parties: s.parties.some((p) => p.id === partyId)
@@ -1595,7 +1487,19 @@ export const usePartyStore = create<PartyStoreState>()(
           tasks: details.tasks.length > 0 ? details.tasks : s.tasks,
           activities: details.activities.length > 0 ? details.activities : s.activities,
           memories: details.memories && details.memories.length > 0 ? details.memories : s.memories,
+          polls: dbPolls.length > 0 ? dbPolls : s.polls,
         }));
+
+        // Load game sessions into appropriate game state
+        dbGameSessions.forEach((session) => {
+          if (session.gameType === 'whos-most-likely' && session.questions.length > 0) {
+            set({ whosMostLikely: session.questions });
+          } else if (session.gameType === 'this-or-that' && session.questions.length > 0) {
+            set({ thisOrThat: session.questions });
+          } else if (session.gameType === 'crew-trivia' && session.questions.length > 0) {
+            set({ crewTrivia: session.questions });
+          }
+        });
       },
 
       listenToActivePartyRealtime: (partyId: string) => {
@@ -1612,48 +1516,27 @@ export const usePartyStore = create<PartyStoreState>()(
         };
       },
 
-
       resetToDefaults: () => {
         set({
-          currentUser: demoMode ? CURRENT_USER : signedOutUser,
-          parties: demoMode ? INITIAL_PARTIES : [],
-          crews: demoMode ? INITIAL_CREWS : [],
-          expenses: demoMode ? INITIAL_EXPENSES : [],
-          transactions: demoMode ? INITIAL_TRANSACTIONS : [],
-          tasks: demoMode ? [
-            {
-              id: 'task-1',
-              partyId: 'p-404',
-              title: 'Bring 2 bags of ice & lime',
-              rewardAmount: 5,
-              status: 'open',
-              createdAt: '15m ago',
-            },
-            {
-              id: 'task-2',
-              partyId: 'p-404',
-              title: 'Aux cable & bluetooth receiver',
-              rewardAmount: 8,
-              status: 'claimed',
-              claimedById: 'u-carlos',
-              claimedByName: 'Carlos',
-              claimedByAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-              createdAt: '30m ago',
-            },
-          ] : [],
-          polls: demoMode ? INITIAL_POLLS : [],
-          activities: demoMode ? INITIAL_ACTIVITIES : [],
-          memories: demoMode ? INITIAL_PARTY_MEMORIES : [],
-          whosMostLikely: demoMode ? WHOS_MOST_LIKELY_QUESTIONS : [],
-          thisOrThat: demoMode ? THIS_OR_THAT_QUESTIONS : [],
-          trivia: demoMode ? TRIVIA_QUESTIONS : [],
+          currentUser: signedOutUser,
+          parties: [],
+          crews: [],
+          expenses: [],
+          transactions: [],
+          tasks: [],
+          polls: [],
+          activities: [],
+          memories: [],
+          whosMostLikely: [],
+          thisOrThat: [],
+          trivia: [],
         });
       },
     }),
     {
       name: 'partylot-storage-v1',
       storage: createJSONStorage(() =>
-        demoMode && typeof window !== 'undefined' ? window.localStorage : volatileStorage
+        typeof window !== 'undefined' ? window.localStorage : volatileStorage
       ),
       partialize: (state) => ({
         currentUser: state.currentUser,
@@ -1673,3 +1556,14 @@ export const usePartyStore = create<PartyStoreState>()(
     }
   )
 );
+
+// Hook to hydrate data from Supabase on app mount
+export function useHydrateStore() {
+  const hydrateFromSupabase = usePartyStore((state) => state.hydrateFromSupabase);
+  
+  useEffect(() => {
+    if (!demoMode) {
+      hydrateFromSupabase();
+    }
+  }, [hydrateFromSupabase]);
+}

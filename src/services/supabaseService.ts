@@ -1,4 +1,5 @@
 import { getSupabase } from '@/lib/supabase/client';
+import { getRandomPastelBanner } from '@/lib/pastelBanners';
 import {
   Party,
   Member,
@@ -599,6 +600,9 @@ export function subscribeToTasksRealtime(partyId: string, onTaskChange: () => vo
  * Persists or updates user profile in Supabase
  */
 export async function syncUserDataToDb(user: User, authToken?: string | null): Promise<void> {
+  const isNewUser = !user.coverImage;
+  const coverImageToUse = isNewUser ? getRandomPastelBanner() : user.coverImage;
+
   if (authToken) {
     try {
       const res = await fetch('/api/users/profile', {
@@ -611,6 +615,7 @@ export async function syncUserDataToDb(user: User, authToken?: string | null): P
           name: user.name,
           handle: user.handle,
           avatar: user.avatar,
+          coverImage: coverImageToUse,
         }),
       });
       if (!res.ok) {
@@ -635,6 +640,7 @@ export async function syncUserDataToDb(user: User, authToken?: string | null): P
       p_name: user.name,
       p_handle: user.handle,
       p_avatar: user.avatar || null,
+      p_cover_image: coverImageToUse || null,
     });
     if (error) throw error;
   } catch (err) {
@@ -935,5 +941,149 @@ export async function fetchCrewsFromDb(): Promise<Crew[]> {
   } catch (err) {
     console.warn('Failed to fetch crews from Supabase:', err);
     return [];
+  }
+}
+
+/**
+ * Fetches activities from Supabase
+ */
+export async function fetchActivitiesFromDb(partyId?: string): Promise<ActivityItem[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  try {
+    let query = supabase
+      .from('activities')
+      .select('*')
+      .order('timestamp', { ascending: false });
+
+    if (partyId) {
+      query = query.eq('party_id', partyId);
+    }
+
+    const { data, error } = await query;
+
+    if (error || !data) return [];
+
+    return data.map((a) => ({
+      id: a.id,
+      partyId: a.party_id,
+      type: a.type,
+      text: a.details || a.text || '',
+      time: a.timestamp || a.time,
+      avatar: a.user_avatar || a.avatar || undefined,
+    }));
+  } catch (err) {
+    console.warn('Failed to fetch activities from Supabase:', err);
+    return [];
+  }
+}
+
+/**
+ * Fetches polls for a party from Supabase
+ */
+export async function fetchPollsFromDb(partyId: string): Promise<any[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('polls')
+      .select('*')
+      .eq('party_id', partyId)
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return [];
+
+    return data.map((p) => ({
+      id: p.id,
+      partyId: p.party_id,
+      question: p.question,
+      options: p.options,
+      createdById: p.created_by_id,
+      createdAt: p.created_at,
+    }));
+  } catch (err) {
+    console.warn('Failed to fetch polls from Supabase:', err);
+    return [];
+  }
+}
+
+/**
+ * Persists a poll to Supabase
+ */
+export async function persistPollToSupabase(poll: any): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    await supabase.from('polls').upsert({
+      id: poll.id,
+      party_id: poll.partyId,
+      question: poll.question,
+      options: poll.options,
+      created_by_id: poll.createdById || null,
+    });
+  } catch (err) {
+    console.warn('Failed to persist poll to Supabase:', err);
+  }
+}
+
+/**
+ * Fetches game sessions for a party from Supabase
+ */
+export async function fetchGameSessionsFromDb(
+  partyId: string,
+  gameType?: string
+): Promise<any[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  try {
+    let query = supabase
+      .from('game_sessions')
+      .select('*')
+      .eq('party_id', partyId)
+      .order('created_at', { ascending: false });
+
+    if (gameType) {
+      query = query.eq('game_type', gameType);
+    }
+
+    const { data, error } = await query;
+
+    if (error || !data) return [];
+
+    return data.map((g) => ({
+      id: g.id,
+      partyId: g.party_id,
+      gameType: g.game_type,
+      questions: g.questions,
+      createdAt: g.created_at,
+      updatedAt: g.updated_at,
+    }));
+  } catch (err) {
+    console.warn('Failed to fetch game sessions from Supabase:', err);
+    return [];
+  }
+}
+
+/**
+ * Persists a game session to Supabase
+ */
+export async function persistGameSessionToSupabase(session: any): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    await supabase.from('game_sessions').upsert({
+      id: session.id,
+      party_id: session.partyId,
+      game_type: session.gameType,
+      questions: session.questions,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('Failed to persist game session to Supabase:', err);
   }
 }

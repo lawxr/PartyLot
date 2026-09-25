@@ -5,7 +5,6 @@ import { PrivyClientProvider } from "@/components/providers/PrivyClientProvider"
 export const metadata: Metadata = {
   title: "PARTYLOT — Plan Your Party",
   description: "Private group social party app. RSVP, party pot, minigames, split damage, and recap memories.",
-  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },

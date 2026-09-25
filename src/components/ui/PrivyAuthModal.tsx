@@ -44,7 +44,7 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={t.privy.welcomeTitle}>
       <div className="space-y-4 text-center select-none py-1 relative">
-        {/* Ambient Warm Golden Bokeh */}
+        {/* Golden bokeh */}
         <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-[#F0DC00]/10 rounded-full blur-2xl pointer-events-none" />
 
         {/* Top Header Badge */}
@@ -81,7 +81,7 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
                 </span>
               </motion.button>
 
-              {/* Google Login - Frosted Liquid Glass Button */}
+              {/* Google login */}
               <motion.button
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
@@ -97,7 +97,7 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
                 </span>
               </motion.button>
 
-              {/* Email Login - Frosted Smoked Glass */}
+              {/* Email login */}
               <motion.button
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}

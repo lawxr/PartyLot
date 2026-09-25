@@ -493,3 +493,23 @@ body {
   box-shadow: 0 0 10px 3px rgba(255, 214, 92, 0.65);
   pointer-events: none;
 }
+
+/* Mobile gestures and app-like behavior */
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  overscroll-behavior-y: contain;
+}
+
+button, a {
+  -webkit-touch-callout: none;
+  user-select: none;
+}

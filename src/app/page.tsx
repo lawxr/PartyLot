@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useSyncExternalStore, useEffect } from 'react';
-import { usePartyStore } from '@/store/usePartyStore';
+import { usePartyStore, useHydrateStore } from '@/store/usePartyStore';
 import { SplashView } from '@/components/views/SplashView';
 import { HomeView } from '@/components/views/HomeView';
 import { CreatePartyView } from '@/components/views/CreatePartyView';
@@ -27,6 +27,9 @@ const getServerSnapshot = () => false;
 export default function App() {
   const { currentView, parties, currentPartyId, currentUser, setCurrentView, theme } = usePartyStore();
   const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+
+  // Hydrate store from Supabase on mount
+  useHydrateStore();
 
   // Synchronize Privy auth & embedded wallet state across views
   const { ready } = usePrivySync();

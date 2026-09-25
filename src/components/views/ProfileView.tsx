@@ -30,7 +30,6 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 import { EditProfileModal } from '@/components/ui/EditProfileModal';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
-import { INITIAL_MEMBERS, INITIAL_PARTIES } from '@/data/mockData';
 
 const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-3 h-3' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -87,13 +86,6 @@ export const ProfileView: React.FC = () => {
     const list: Member[] = [];
     const seen = new Set<string>();
 
-    INITIAL_MEMBERS.forEach((m) => {
-      if (m.id !== currentUser.id && !seen.has(m.id)) {
-        seen.add(m.id);
-        list.push(m);
-      }
-    });
-
     parties.forEach((p) => {
       (p.members || []).forEach((m) => {
         if (m.id !== currentUser.id && !seen.has(m.id)) {
@@ -116,10 +108,9 @@ export const ProfileView: React.FC = () => {
 
   // Attended nights / events
   const attendedPartiesList: Party[] = useMemo(() => {
-    const ids = attendedPartyIds || ['p-404', 'p-rooftop', 'p-hackathon'];
+    const ids = attendedPartyIds || [];
     const found = parties.filter((p) => ids.includes(p.id));
-    if (found.length > 0) return found;
-    return INITIAL_PARTIES.slice(0, 3);
+    return found;
   }, [parties, attendedPartyIds]);
 
   const handleCopyAddress = async () => {
@@ -161,18 +152,26 @@ export const ProfileView: React.FC = () => {
       />
 
       {/* ============================================================== */}
-      {/* TOP COVER BANNER                                               */}
-      {/* ============================================================== */}
+      {/* TOP COVER BANNER */}
       <div className="relative h-64 sm:h-72 md:h-80 w-full md:max-w-3xl lg:max-w-5xl md:mx-auto md:rounded-b-[36px] md:mt-2 md:shadow-lg overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={currentUser.coverImage || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80'}
-          alt="Profile Cover"
-          className="absolute inset-0 w-full h-full object-cover object-top cursor-pointer"
-          onClick={() => bannerInputRef.current?.click()}
-          title={isEs ? 'Haz clic para cambiar la portada' : 'Click to change cover'}
-          loading="eager"
-        />
+        {currentUser.coverImage?.startsWith('linear-gradient') ? (
+          <div
+            style={{ background: currentUser.coverImage }}
+            className="absolute inset-0 w-full h-full cursor-pointer"
+            onClick={() => bannerInputRef.current?.click()}
+            title={isEs ? 'Haz clic para cambiar la portada' : 'Click to change cover'}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={currentUser.coverImage || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80'}
+            alt="Profile Cover"
+            className="absolute inset-0 w-full h-full object-cover object-top cursor-pointer"
+            onClick={() => bannerInputRef.current?.click()}
+            title={isEs ? 'Haz clic para cambiar la portada' : 'Click to change cover'}
+            loading="eager"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
 
         {/* Clean Floating Settings Button (Top-Right Only, Exactly Like Reference) */}

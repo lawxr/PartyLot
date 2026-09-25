@@ -18,11 +18,19 @@ import {
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
-import { SAMPLE_PARTY_COVERS } from '@/data/mockData';
 import { Party } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import confetti from 'canvas-confetti';
 import { uploadImageFile } from '@/services/storageService';
+
+const SAMPLE_PARTY_COVERS = [
+  { id: '1', url: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=800&q=80' },
+  { id: '2', url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80' },
+  { id: '3', url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80' },
+  { id: '4', url: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80' },
+  { id: '5', url: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=800&q=80' },
+  { id: '6', url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80' },
+];
 
 export const CreatePartyView: React.FC = () => {
   const { createParty, selectParty, goBack, currentUser, crews, currentCrewId } = usePartyStore();
@@ -454,7 +462,7 @@ export const CreatePartyView: React.FC = () => {
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={cover.url}
-                                alt={cover.name}
+                                alt={`Party cover ${cover.id}`}
                                 className="w-full h-full object-cover"
                               />
                             </div>

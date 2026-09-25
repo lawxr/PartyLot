@@ -8,11 +8,10 @@ import { TopNav } from '@/components/navigation/TopNav';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import confetti from 'canvas-confetti';
-import { INITIAL_PARTIES } from '@/data/mockData';
 
 export const PollsView: React.FC = () => {
   const { parties, currentPartyId, polls, votePoll, createPoll } = usePartyStore();
-  const defaultParty = INITIAL_PARTIES[0];
+  const defaultParty = parties[0];
   const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
   const partyPolls = polls.filter((p) => p.partyId === party?.id);
 

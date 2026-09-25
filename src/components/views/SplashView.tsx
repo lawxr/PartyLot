@@ -42,7 +42,7 @@ export const SplashView: React.FC = () => {
             'url("https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1600&q=85")',
         }}
       >
-        {/* Soft warm amber gradient vignette per DESIGN.md section 4.1 */}
+        {/* Gradient vignette */}
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(20,14,8,0.78)] via-[rgba(20,14,8,0.35)] to-transparent" />
       </motion.div>
 

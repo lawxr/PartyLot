@@ -28,7 +28,6 @@ import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
 import { Member, PartyMemory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { uploadImageFile } from '@/services/storageService';
-import { INITIAL_PARTIES } from '@/data/mockData';
 
 export const PartyDetailView: React.FC = () => {
   const {
@@ -47,7 +46,7 @@ export const PartyDetailView: React.FC = () => {
   const { t, language } = useTranslation();
   const isEs = language === 'es';
 
-  const defaultParty = INITIAL_PARTIES[0];
+  const defaultParty = parties[0];
   const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
   const partyMemories = (memories || []).filter(
     (m) => m.partyId === party?.id || m.partyId === 'party_hackathon_demo' || m.partyId === 'p-404'
@@ -63,7 +62,7 @@ export const PartyDetailView: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [hoveredAction, setHoveredAction] = useState<string | null>('pot');
+  const [hoveredAction, setHoveredAction] = useState<string | null>(null);
 
   // Phone 3 Party Pot Sheet state
   const [isPotSheetOpen, setIsPotSheetOpen] = useState(false);
@@ -152,7 +151,7 @@ export const PartyDetailView: React.FC = () => {
             if (goBack) goBack();
             else setCurrentView('home');
           }}
-          className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md pointer-events-auto active:scale-95 transition-transform cursor-pointer"
+          className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md pointer-events-auto active:scale-95 transition-transform cursor-pointer p-0"
           aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5 stroke-[2.4]" />
@@ -161,7 +160,7 @@ export const PartyDetailView: React.FC = () => {
         <div className="flex items-center gap-2 pointer-events-auto">
           <button
             onClick={() => setIsInviteOpen(true)}
-            className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md active:scale-95 transition-transform cursor-pointer"
+            className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md active:scale-95 transition-transform cursor-pointer p-0"
             aria-label="Share"
           >
             <Share2 className="w-4 h-4 stroke-[2.2]" />
@@ -169,7 +168,7 @@ export const PartyDetailView: React.FC = () => {
 
           <button
             onClick={() => setIsInviteOpen(true)}
-            className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md active:scale-95 transition-transform cursor-pointer"
+            className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md active:scale-95 transition-transform cursor-pointer p-0"
             aria-label="More options"
           >
             <MoreHorizontal className="w-5 h-5 stroke-[2.2]" />
@@ -177,10 +176,10 @@ export const PartyDetailView: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Container */}
+      
       <main className="max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto w-full md:pt-4">
         {/* ============================================================== */}
-        {/* HERO SECTION: Full-Bleed Party Photography Header             */}
+        {/* Hero header */}
         {/* ============================================================== */}
         <div className="relative h-[60vh] sm:h-[64vh] min-h-[480px] lg:h-[440px] lg:min-h-0 w-full overflow-hidden md:rounded-[36px] md:shadow-2xl">
           {/* Background Image: Bright, Candid Party Photography */}
@@ -196,7 +195,7 @@ export const PartyDetailView: React.FC = () => {
           {/* Restrained Dark Gradient (lower half only) */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent pointer-events-none" />
 
-          {/* Hero Overlay Details (Title, Date, Host, Avatars) positioned cleanly above floating actions */}
+          {/* Hero details */}
           <div className="absolute bottom-16 sm:bottom-18 left-0 right-0 px-5 z-20 flex flex-col justify-end text-white">
             <h1 className="font-display font-black text-4xl sm:text-5xl text-white tracking-tight leading-none mb-2 drop-shadow-md">
               {party?.title || defaultParty.title}
@@ -265,10 +264,10 @@ export const PartyDetailView: React.FC = () => {
         {/* LOWER CONTENT AREA: Warm Ivory Sheet                           */}
         {/* ============================================================== */}
         <div className="relative -mt-6 md:-mt-8 z-20 rounded-t-[34px] md:rounded-none bg-[#F7F2E8] dark:bg-[#12110E] md:bg-transparent px-4 sm:px-6 md:px-0 pt-0 pb-20 shadow-[0_-12px_40px_rgba(65,48,25,0.08)] md:shadow-none transition-colors duration-200">
-          {/* Floating Liquid Glass Quick Actions Bar (-top-10 overlapping photo & sheet) */}
+          {/* Quick actions */}
           <nav
             aria-label="Herramientas de la fiesta"
-            className="relative -top-10 md:-top-12 h-[86px] sm:h-[90px] md:h-[96px] max-w-md sm:max-w-lg md:max-w-2xl mx-auto grid grid-cols-4 gap-2 p-2 sm:p-2.5 rounded-[36px] transition-all select-none bg-[rgba(250,248,243,0.78)] dark:bg-[rgba(28,25,22,0.88)] border border-white/90 dark:border-white/15 shadow-[0_10px_25px_rgba(71,55,35,0.12)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+            className="relative -top-8 md:-top-10 h-[86px] sm:h-[90px] md:h-[96px] max-w-md sm:max-w-lg md:max-w-2xl mx-auto grid grid-cols-4 gap-2 p-2 sm:p-2.5 rounded-[36px] transition-all select-none bg-[rgba(250,248,243,0.78)] dark:bg-[rgba(28,25,22,0.88)] border border-white/90 dark:border-white/15 shadow-[0_10px_25px_rgba(71,55,35,0.12)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
           >
             {quickActions.map((action) => {
               const Icon = action.icon;
@@ -312,7 +311,7 @@ export const PartyDetailView: React.FC = () => {
             })}
           </nav>
 
-          {/* Responsive Desktop Grid */}
+          {/* Desktop grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8 lg:items-start -mt-5 lg:mt-0">
             {/* Party Pot Summary Card (Directly below Quick Actions on mobile, right column on desktop) */}
             <article
@@ -360,7 +359,7 @@ export const PartyDetailView: React.FC = () => {
             </motion.button>
           </article>
 
-          {/* Live Activity Section (Phone 2 — 3 rows matching image) */}
+          {/* Activity feed */}
           <section className="mt-6 lg:mt-0 lg:col-span-7 xl:col-span-8 lg:col-start-1 lg:row-start-1">
             <div className="flex items-center justify-between mb-3 px-1">
               <h3 className="font-display font-extrabold text-base text-[#171512] dark:text-white tracking-tight">
@@ -457,7 +456,7 @@ export const PartyDetailView: React.FC = () => {
             </div>
           </section>
 
-          {/* Shared Memories Album Section (Collapsible/Access) */}
+          {/* Memories */}
           <section className="mt-8 lg:mt-6 lg:col-span-7 xl:col-span-8 lg:col-start-1 lg:row-start-2">
             <div className="flex items-center justify-between mb-3 px-1">
               <h3 className="font-display font-extrabold text-base text-[#171512] tracking-tight flex items-center gap-1.5">
@@ -540,7 +539,7 @@ export const PartyDetailView: React.FC = () => {
       <AnimatePresence>
         {isPotSheetOpen && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-            {/* Soft Blurred Backdrop */}
+            
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -549,7 +548,7 @@ export const PartyDetailView: React.FC = () => {
               className="fixed inset-0 bg-black/45 backdrop-blur-[10px]"
             />
 
-            {/* Milky Liquid Glass Bottom Sheet (DESIGN.md Section 19) */}
+            {/* Bottom sheet */}
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}

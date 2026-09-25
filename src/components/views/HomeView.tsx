@@ -9,7 +9,6 @@ import { ProfileView } from '@/components/views/ProfileView';
 import { CrewsView } from '@/components/views/CrewsView';
 import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { INITIAL_CREWS } from '@/data/mockData';
 
 export const HomeView: React.FC = () => {
   const {
@@ -25,7 +24,7 @@ export const HomeView: React.FC = () => {
   const isEs = language === 'es';
   const [isFavorited, setIsFavorited] = useState(false);
 
-  const displayCrews = crews.length > 0 ? crews : INITIAL_CREWS;
+  const displayCrews = crews;
 
   // Handle active bottom tab views
   if (activeTab === 'crews') {
@@ -72,7 +71,7 @@ export const HomeView: React.FC = () => {
           {/* Circular Glass Notification Bell with Yellow Unread Indicator */}
           <button
             onClick={() => setActiveTab('activity')}
-            className="relative w-11 h-11 rounded-full glass-light dark:bg-white/10 flex items-center justify-center border border-white/80 dark:border-white/15 shadow-[0_4px_14px_rgba(65,48,25,0.08)] active:scale-95 transition-transform cursor-pointer"
+            className="relative w-11 h-11 rounded-full glass-light dark:bg-white/10 flex items-center justify-center border border-white/80 dark:border-white/15 shadow-[0_4px_14px_rgba(65,48,25,0.08)] active:scale-95 transition-transform cursor-pointer p-0"
             aria-label="Activity notifications"
           >
             <Bell className="w-5 h-5 text-[#171512] dark:text-white stroke-[2.2]" />
@@ -82,7 +81,7 @@ export const HomeView: React.FC = () => {
           {/* Quick Create Action */}
           <button
             onClick={() => setCurrentView('create-party')}
-            className="w-11 h-11 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] flex items-center justify-center font-bold shadow-[0_4px_16px_rgba(240,220,0,0.3)] active:scale-95 transition-transform shrink-0 cursor-pointer"
+            className="w-11 h-11 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] flex items-center justify-center font-bold shadow-[0_4px_16px_rgba(240,220,0,0.3)] active:scale-95 transition-transform shrink-0 cursor-pointer p-0"
             aria-label="Create Party"
           >
             <Plus className="w-5 h-5 stroke-[2.5]" />
@@ -109,7 +108,7 @@ export const HomeView: React.FC = () => {
             decoding="async"
           />
 
-          {/* Soft Editorial Gradient Overlay (Only in the lower third as per DESIGN.md) */}
+          {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent pointer-events-none" />
 
           {/* Top Pill Tags & Favorite Action */}
@@ -345,54 +344,6 @@ export const HomeView: React.FC = () => {
               <ChevronRight className="w-5 h-5" />
             </div>
           </motion.div>
-        </section>
-
-        {/* Desktop-Only Monad Treasury Quick Widget */}
-        <section className="hidden lg:block lg:col-span-5 xl:col-span-4 lg:col-start-8 xl:col-start-9 lg:row-start-2 mb-6">
-          <div className="rounded-[24px] p-5 bg-gradient-to-br from-[#836EF9]/10 via-[#2775CA]/10 to-transparent border border-[#836EF9]/25 shadow-[0_8px_24px_rgba(131,110,249,0.08)] backdrop-blur-md">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <TokenLogo token="usdc" size="sm" />
-                <span className="text-xs font-bold text-[#171512] dark:text-white uppercase tracking-wider">
-                  {isEs ? 'Tesorería Monad' : 'Monad Treasury'}
-                </span>
-              </div>
-              <CryptoBadge token="usdc" network="Monad" />
-            </div>
-
-            <div className="mb-4">
-              <span className="text-xs text-[#6F6A62] dark:text-[#A8A196] font-medium block">
-                {isEs ? 'Bote activo' : 'Active Party Pot'}
-              </span>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="font-bubble text-3xl text-[#171512] dark:text-white tracking-tight">
-                  ${heroParty?.potBalance ? heroParty.potBalance.toFixed(2) : '186.40'}
-                </span>
-                <span className="text-xs font-bold text-[#836EF9]">USDC</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <button
-                onClick={() => {
-                  selectParty(heroParty.id);
-                  setCurrentView('party-pot');
-                }}
-                className="flex-1 py-2.5 px-3 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] font-display font-extrabold text-xs text-center shadow-sm transition-transform active:scale-95 cursor-pointer"
-              >
-                {isEs ? 'Ver pozo' : 'View pot'}
-              </button>
-              <button
-                onClick={() => {
-                  selectParty(heroParty.id);
-                  setCurrentView('split');
-                }}
-                className="py-2.5 px-3 rounded-full bg-white/70 dark:bg-white/10 hover:bg-white text-[#171512] dark:text-white font-display font-bold text-xs border border-black/10 dark:border-white/15 transition-transform active:scale-95 cursor-pointer"
-              >
-                {isEs ? 'Dividir gastos' : 'Split expenses'}
-              </button>
-            </div>
-          </div>
         </section>
       </div>
     </div>

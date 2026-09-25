@@ -20,8 +20,8 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { TopNav } from '@/components/navigation/TopNav';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
 import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
-import { FINANCIAL_ACTIONS_AVAILABLE, getFinancialActionsUnavailableMessage } from '@/services/treasury';
 import { ExpenseCategory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { INITIAL_PARTIES } from '@/data/mockData';
@@ -43,7 +43,7 @@ const CATEGORIES: {
 ];
 
 export const SplitView: React.FC = () => {
-  const { parties, currentPartyId, expenses, addExpense } = usePartyStore();
+  const { parties, currentPartyId, expenses, addExpense, settleAllDebts } = usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
   const defaultParty = INITIAL_PARTIES[0];
@@ -53,6 +53,7 @@ export const SplitView: React.FC = () => {
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSettleOpen, setIsSettleOpen] = useState(false);
+  const [isSettling, setIsSettling] = useState(false);
 
   // Form states
   const [desc, setDesc] = useState('');
@@ -63,7 +64,6 @@ export const SplitView: React.FC = () => {
 
   // Category filter state
   const [selectedFilter, setSelectedFilter] = useState<'all' | ExpenseCategory>('all');
-  const financialActionsMessage = getFinancialActionsUnavailableMessage(language);
 
   // Calculations
   const netBalances = calculateNetBalances(partyExpenses, partyMembers);
@@ -115,14 +115,49 @@ export const SplitView: React.FC = () => {
     return CATEGORIES.find((c) => c.id === catId) || CATEGORIES[CATEGORIES.length - 1];
   };
 
+  const handleSettleOnchain = async () => {
+    setIsSettling(true);
+    try {
+      await settleAllDebts(party.id);
+      confetti({
+        particleCount: 60,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#2775CA', '#836EF9', '#F0DC00'],
+      });
+      setIsSettleOpen(false);
+    } catch (err) {
+      console.error('Error settling debts:', err);
+    } finally {
+      setIsSettling(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-32 select-none">
       <TopNav title={isEs ? 'DIVISIÓN DE GASTOS' : 'EXPENSE ENGINE'} />
 
-      <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
-        <p role="status" className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {financialActionsMessage}
-        </p>
+      <main className="px-4 sm:px-6 md:px-8 max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-2 w-full">
+        {/* Monad Testnet USDC Settlement Banner */}
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#2775CA]/25 bg-gradient-to-r from-[#2775CA]/10 via-[#836EF9]/10 to-transparent p-3.5 backdrop-blur-md shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <TokenLogo token="usdc" size="md" />
+            <div>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#171512] dark:text-white">
+                <span>USDC Split Engine · Monad Testnet</span>
+                <span className="px-2 py-0.5 rounded-full bg-[#836EF9]/15 text-[#674FF4] text-[10px] font-mono font-bold">
+                  Chain 10143
+                </span>
+              </div>
+              <span className="text-[11px] text-[#635B50]">
+                {isEs
+                  ? 'Minimización matemática de deudas con liquidación en USDC'
+                  : 'Greedy debt minimization with 1-click onchain settlement in USDC'}
+              </span>
+            </div>
+          </div>
+          <CryptoBadge token="usdc" network="Monad" />
+        </div>
         {/* Editorial Header */}
         <div className="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-[rgba(35,30,22,0.08)] pb-5">
           <div>
@@ -143,11 +178,14 @@ export const SplitView: React.FC = () => {
           <div className="flex items-center gap-6">
             <div className="text-right">
               <span className="text-[10px] uppercase font-bold text-[#6F6A62] block">
-                {isEs ? 'TOTAL GASTADO' : 'TOTAL SPENT'}
+                {isEs ? 'TOTAL GASTADO (USDC)' : 'TOTAL SPENT (USDC)'}
               </span>
-              <span className="font-display font-black text-2xl sm:text-3xl text-[#171512]">
-                ${totalAmount.toFixed(2)}
-              </span>
+              <div className="flex items-center gap-1.5 justify-end">
+                <TokenLogo token="usdc" size="sm" />
+                <span className="font-display font-black text-2xl sm:text-3xl text-[#171512]">
+                  ${totalAmount.toFixed(2)}
+                </span>
+              </div>
             </div>
 
             <div className="hidden sm:flex items-center gap-3">
@@ -164,10 +202,10 @@ export const SplitView: React.FC = () => {
                 variant="glass"
                 size="md"
                 onClick={() => setIsSettleOpen(true)}
-                disabled={!FINANCIAL_ACTIONS_AVAILABLE || settlements.length === 0}
+                disabled={settlements.length === 0}
                 icon={<Sparkles className="w-4 h-4 text-[#171512]" />}
               >
-                {isEs ? 'Saldar cuentas' : 'Settle debts'}
+                {isEs ? 'Saldar cuentas (USDC)' : 'Settle debts (USDC)'}
               </GlassButton>
             </div>
           </div>
@@ -182,18 +220,18 @@ export const SplitView: React.FC = () => {
             onClick={() => setIsAddOpen(true)}
             icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
           >
-            Add expense
+            {isEs ? 'Añadir gasto' : 'Add expense'}
           </GlassButton>
 
           <GlassButton
             variant="glass"
             size="md"
             fullWidth
-            disabled={!FINANCIAL_ACTIONS_AVAILABLE}
+            disabled={settlements.length === 0}
             onClick={() => setIsSettleOpen(true)}
             icon={<CheckCircle2 className="w-4 h-4 text-[#171512]" />}
           >
-            {isEs ? 'Liquidación no disponible' : 'Settlement unavailable'}
+            {isEs ? 'Saldar cuentas' : 'Settle debts'}
           </GlassButton>
         </div>
 
@@ -275,16 +313,16 @@ export const SplitView: React.FC = () => {
                 Reduce las transferencias entre amigos al mínimo matemático para que nadie pague de más.
               </p>
               <GlassButton
-                variant="glass"
+                variant="accent"
                 size="md"
                 fullWidth
-                disabled={!FINANCIAL_ACTIONS_AVAILABLE}
+                disabled={settlements.length === 0}
                 onClick={() => {
                   setIsSettleOpen(true);
                 }}
-                icon={<CheckCircle2 className="w-4 h-4 text-[#171512]" />}
+                icon={<Sparkles className="w-4 h-4 text-[#171512]" />}
               >
-                {isEs ? 'Ver resumen (pagos no disponibles)' : 'Review summary (payments unavailable)'}
+                {isEs ? 'Saldar cuentas en Monad (USDC)' : 'Settle debts on Monad (USDC)'}
               </GlassButton>
             </div>
           </div>
@@ -538,27 +576,62 @@ export const SplitView: React.FC = () => {
       {/* BottomSheet: SETTLE UP Confirmation */}
       <BottomSheet
         isOpen={isSettleOpen}
-        onClose={() => setIsSettleOpen(false)}
-        title={isEs ? 'Resumen de saldos' : 'Balance summary'}
+        onClose={() => {
+          if (!isSettling) setIsSettleOpen(false);
+        }}
+        title={isEs ? 'Saldar Cuentas (USDC)' : 'Settle Debts (USDC)'}
       >
         <div className="space-y-4">
-          <p className="text-xs text-[#6F6A62]">{financialActionsMessage}</p>
-          <p className="text-xs text-[#6F6A62]">
-            {isEs
-              ? 'Este resumen sugiere cómo podrían repartirse los gastos. No confirma pagos ni cambia saldos.'
-              : 'This summary suggests how expenses could be split. It does not confirm payments or change balances.'}
-          </p>
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-[#2775CA]/10 to-[#836EF9]/10 border border-[#2775CA]/20">
+            <div className="flex items-center gap-2.5">
+              <TokenLogo token="usdc" size="md" />
+              <div>
+                <span className="text-xs font-bold text-[#171512] block">
+                  {isEs ? 'Liquidación instantánea en Monad' : 'Instant settlement on Monad'}
+                </span>
+                <span className="text-[10px] text-[#6F6A62]">
+                  {isEs ? 'Algoritmo codicioso de transferencias mínimas' : 'Greedy minimal-transfer algorithm'}
+                </span>
+              </div>
+            </div>
+            <CryptoBadge token="usdc" network="Monad" showNetwork={false} />
+          </div>
+
           <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
             {settlements.map((settlement, index) => (
-              <div key={`${settlement.fromId}-${settlement.toId}-${index}`} className="p-3.5 rounded-2xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between">
+              <div
+                key={`${settlement.fromId}-${settlement.toId}-${index}`}
+                className="p-3.5 rounded-2xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between"
+              >
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-xs text-rose-600">{settlement.fromName}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#8E887E]" />
-                  <span className="font-bold text-xs text-[#171512]">{settlement.toName}</span>
+                  <span className="font-bold text-xs text-emerald-700">{settlement.toName}</span>
                 </div>
-                <span className="font-display font-black text-base text-[#171512]">${settlement.amount.toFixed(2)}</span>
+                <div className="flex items-center gap-1.5">
+                  <TokenLogo token="usdc" size="xs" />
+                  <span className="font-display font-black text-base text-[#171512]">
+                    ${settlement.amount.toFixed(2)}
+                  </span>
+                </div>
               </div>
             ))}
+          </div>
+
+          <div className="pt-2">
+            <GlassButton
+              variant="accent"
+              size="lg"
+              fullWidth
+              disabled={isSettling || settlements.length === 0}
+              onClick={handleSettleOnchain}
+            >
+              {isSettling
+                ? isEs ? 'Liquidando en Monad...' : 'Settling on Monad...'
+                : isEs
+                ? `Confirmar liquidación (${settlements.length} pagos en USDC)`
+                : `Confirm settlement (${settlements.length} payments in USDC)`}
+            </GlassButton>
           </div>
         </div>
       </BottomSheet>

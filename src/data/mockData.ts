@@ -5,7 +5,7 @@ export const CURRENT_USER: User = {
   name: 'Law',
   handle: '@lawx',
   avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
-  coverImage: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80',
+  coverImage: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1600&q=80',
   gatheringsCount: 24,
   gamesCount: 142,
   peopleCount: 38,

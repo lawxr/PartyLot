@@ -163,7 +163,7 @@ export const ProfileView: React.FC = () => {
       {/* ============================================================== */}
       {/* TOP COVER BANNER                                               */}
       {/* ============================================================== */}
-      <div className="relative h-64 sm:h-72 md:h-80 w-full overflow-hidden">
+      <div className="relative h-64 sm:h-72 md:h-80 w-full md:max-w-3xl lg:max-w-5xl md:mx-auto md:rounded-b-[36px] md:mt-2 md:shadow-lg overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={currentUser.coverImage || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80'}
@@ -190,114 +190,121 @@ export const ProfileView: React.FC = () => {
       {/* ============================================================== */}
       {/* MAIN PROFILE CARD SURFACE                                      */}
       {/* ============================================================== */}
-      <div className="relative -mt-8 z-20 rounded-t-[34px] bg-[#FFFDF8] dark:bg-[#1C1A16] border-t border-black/5 dark:border-white/10 px-5 sm:px-6 md:px-8 pt-0 pb-12 shadow-[0_-12px_40px_rgba(65,48,25,0.06)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5)] max-w-md md:max-w-xl lg:max-w-2xl mx-auto w-full transition-colors duration-200">
-        {/* Circular Avatar Overlapping Cover & Card */}
-        <div className="relative -mt-12 mb-2 inline-block">
-          <div className="w-24 h-24 sm:w-26 sm:h-26 rounded-full overflow-hidden border-4 border-white dark:border-[#1C1A16] shadow-md bg-black/10">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={currentUser.avatar || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80'}
-              alt={currentUser.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          {/* Small Camera Button on Bottom-Right */}
-          <button
-            onClick={() => setIsEditProfileOpen(true)}
-            className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-white dark:bg-[#2C2822] text-[#171512] dark:text-white flex items-center justify-center border border-black/10 dark:border-white/15 shadow-sm active:scale-90 transition-transform cursor-pointer hover:bg-slate-50 dark:hover:bg-[#38332B]"
-            aria-label="Change photo"
-            title={isEs ? 'Cambiar foto de perfil' : 'Change profile photo'}
-          >
-            <Camera className="w-3.5 h-3.5 stroke-[2.2]" />
-          </button>
-        </div>
+      <div className="relative -mt-8 md:-mt-12 z-20 rounded-t-[34px] md:rounded-[36px] bg-[#FFFDF8] dark:bg-[#1C1A16] border-t md:border border-black/5 dark:border-white/10 px-5 sm:px-6 md:px-10 pt-0 pb-12 shadow-[0_-12px_40px_rgba(65,48,25,0.06)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5)] max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-5xl mx-auto w-full transition-colors duration-200">
+        {/* Profile Identity & Stats Header */}
+        <div className="md:grid md:grid-cols-12 md:gap-8 md:items-start mb-6">
+          <div className="md:col-span-7 lg:col-span-8">
+            {/* Circular Avatar Overlapping Cover & Card */}
+            <div className="relative -mt-12 mb-2 inline-block">
+              <div className="w-24 h-24 sm:w-26 sm:h-26 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white dark:border-[#1C1A16] shadow-md bg-black/10">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={currentUser.avatar || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80'}
+                  alt={currentUser.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Small Camera Button on Bottom-Right */}
+              <button
+                onClick={() => setIsEditProfileOpen(true)}
+                className="absolute bottom-0 right-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-white dark:bg-[#2C2822] text-[#171512] dark:text-white flex items-center justify-center border border-black/10 dark:border-white/15 shadow-sm active:scale-90 transition-transform cursor-pointer hover:bg-slate-50 dark:hover:bg-[#38332B]"
+                aria-label="Change photo"
+                title={isEs ? 'Cambiar foto de perfil' : 'Change profile photo'}
+              >
+                <Camera className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.2]" />
+              </button>
+            </div>
 
-        {/* Name and Handle */}
-        <div className="mb-3">
-          <h2 className="font-display font-black text-2xl sm:text-3xl text-[#171512] dark:text-white tracking-tight leading-tight">
-            {currentUser.name || 'Law'}
-          </h2>
-          <span className="text-xs sm:text-sm font-semibold text-[#8E887E] dark:text-[#A8A196] block mt-0.5">
-            {currentUser.handle?.startsWith('@') ? currentUser.handle : `@${currentUser.handle || 'lawx'}`}
-          </span>
-        </div>
+            {/* Name and Handle */}
+            <div className="mb-3">
+              <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl text-[#171512] dark:text-white tracking-tight leading-tight">
+                {currentUser.name || 'Law'}
+              </h2>
+              <span className="text-xs sm:text-sm font-semibold text-[#8E887E] dark:text-[#A8A196] block mt-0.5">
+                {currentUser.handle?.startsWith('@') ? currentUser.handle : `@${currentUser.handle || 'lawx'}`}
+              </span>
+            </div>
 
-        {/* 3 Stats Columns */}
-        <div className="grid grid-cols-3 divide-x divide-[#EFE8DD] dark:divide-white/10 text-center my-4 py-2 border-y border-[#EFE8DD] dark:border-white/10">
-          <div>
-            <span className="font-display font-black text-xl text-[#171512] dark:text-white block">
-              {currentUser.gatheringsCount || 24}
-            </span>
-            <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
-              {isEs ? 'noches' : 'nights'}
-            </span>
-          </div>
-          <div>
-            <span className="font-display font-black text-xl text-[#171512] dark:text-white block">
-              {crews.length || 8}
-            </span>
-            <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
-              crews
-            </span>
-          </div>
-          <div>
-            <span className="font-display font-black text-xl text-[#171512] dark:text-white block">
-              {currentUser.gamesCount || 142}
-            </span>
-            <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
-              {isEs ? 'juegos' : 'games'}
-            </span>
-          </div>
-        </div>
+            {/* Bio & Location */}
+            <div className="mb-3">
+              <p className="text-xs sm:text-sm text-[#504437] dark:text-[#D1C9BE] font-medium mb-1.5 leading-relaxed">
+                {currentUser.bio || 'Good food, better people.'}
+              </p>
+              <div className="flex items-center gap-1.5 text-xs text-[#8E887E] dark:text-[#A8A196] font-medium">
+                <MapPin className="w-3.5 h-3.5 stroke-[2.2] shrink-0" />
+                <span>{currentUser.location || 'Medellin, Colombia'}</span>
+              </div>
 
-        {/* Bio & Location */}
-        <div className="mb-5">
-          <p className="text-xs sm:text-sm text-[#504437] dark:text-[#D1C9BE] font-medium mb-1.5 leading-relaxed">
-            {currentUser.bio || 'Good food, better people.'}
-          </p>
-          <div className="flex items-center gap-1.5 text-xs text-[#8E887E] dark:text-[#A8A196] font-medium">
-            <MapPin className="w-3.5 h-3.5 stroke-[2.2] shrink-0" />
-            <span>{currentUser.location || 'Medellin, Colombia'}</span>
-          </div>
-
-          {/* Social Links if present */}
-          {(currentUser.website || currentUser.instagram || currentUser.twitter) && (
-            <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-              {currentUser.website && (
-                <a
-                  href={currentUser.website.startsWith('http') ? currentUser.website : `https://${currentUser.website}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-semibold text-[#171512] dark:text-white hover:bg-black/10 transition-colors"
-                >
-                  <Globe className="w-3 h-3 text-[#F0DC00]" />
-                  <span>{currentUser.website.replace(/^https?:\/\//, '')}</span>
-                </a>
-              )}
-              {currentUser.instagram && (
-                <a
-                  href={`https://instagram.com/${currentUser.instagram.replace(/^@/, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-semibold text-[#171512] dark:text-white hover:bg-black/10 transition-colors"
-                >
-                  <InstagramIcon className="w-3 h-3 text-pink-500" />
-                  <span>@{currentUser.instagram.replace(/^@/, '')}</span>
-                </a>
-              )}
-              {currentUser.twitter && (
-                <a
-                  href={`https://twitter.com/${currentUser.twitter.replace(/^@/, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-semibold text-[#171512] dark:text-white hover:bg-black/10 transition-colors"
-                >
-                  <TwitterIcon className="w-3 h-3 text-sky-400" />
-                  <span>@{currentUser.twitter.replace(/^@/, '')}</span>
-                </a>
+              {/* Social Links if present */}
+              {(currentUser.website || currentUser.instagram || currentUser.twitter) && (
+                <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                  {currentUser.website && (
+                    <a
+                      href={currentUser.website.startsWith('http') ? currentUser.website : `https://${currentUser.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-semibold text-[#171512] dark:text-white hover:bg-black/10 transition-colors"
+                    >
+                      <Globe className="w-3 h-3 text-[#F0DC00]" />
+                      <span>{currentUser.website.replace(/^https?:\/\//, '')}</span>
+                    </a>
+                  )}
+                  {currentUser.instagram && (
+                    <a
+                      href={`https://instagram.com/${currentUser.instagram.replace(/^@/, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-semibold text-[#171512] dark:text-white hover:bg-black/10 transition-colors"
+                    >
+                      <InstagramIcon className="w-3 h-3 text-pink-500" />
+                      <span>@{currentUser.instagram.replace(/^@/, '')}</span>
+                    </a>
+                  )}
+                  {currentUser.twitter && (
+                    <a
+                      href={`https://twitter.com/${currentUser.twitter.replace(/^@/, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-semibold text-[#171512] dark:text-white hover:bg-black/10 transition-colors"
+                    >
+                      <TwitterIcon className="w-3 h-3 text-sky-400" />
+                      <span>@{currentUser.twitter.replace(/^@/, '')}</span>
+                    </a>
+                  )}
+                </div>
               )}
             </div>
-          )}
+          </div>
+
+          {/* 3 Stats Columns */}
+          <div className="md:col-span-5 lg:col-span-4 md:mt-6">
+            <div className="grid grid-cols-3 divide-x divide-[#EFE8DD] dark:divide-white/10 text-center my-4 md:my-0 py-2 md:py-4 border-y md:border border-[#EFE8DD] dark:border-white/10 md:rounded-2xl md:bg-black/[0.02] md:dark:bg-white/[0.03]">
+              <div>
+                <span className="font-display font-black text-xl sm:text-2xl text-[#171512] dark:text-white block">
+                  {currentUser.gatheringsCount || 24}
+                </span>
+                <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+                  {isEs ? 'noches' : 'nights'}
+                </span>
+              </div>
+              <div>
+                <span className="font-display font-black text-xl sm:text-2xl text-[#171512] dark:text-white block">
+                  {crews.length || 8}
+                </span>
+                <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+                  crews
+                </span>
+              </div>
+              <div>
+                <span className="font-display font-black text-xl sm:text-2xl text-[#171512] dark:text-white block">
+                  {currentUser.gamesCount || 142}
+                </span>
+                <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+                  {isEs ? 'juegos' : 'games'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Floating Translucent Glass Options Container */}
@@ -350,12 +357,12 @@ export const ProfileView: React.FC = () => {
         {/* TAB 1: NIGHTS (EVENTS ATTENDED)                                */}
         {/* ============================================================== */}
         {activeProfileTab === 'nights' && (
-          <div className="flex items-center gap-2.5 mb-6 overflow-x-auto no-scrollbar pb-1">
+          <div className="flex items-center gap-2.5 mb-6 overflow-x-auto no-scrollbar pb-1 md:grid md:grid-cols-4 lg:grid-cols-5 md:gap-3.5 md:overflow-visible">
             {attendedPartiesList.map((party) => (
               <div
                 key={party.id}
                 onClick={() => selectParty(party.id)}
-                className="h-26 w-22 sm:h-28 sm:w-24 rounded-2xl overflow-hidden shadow-sm shrink-0 border border-black/5 dark:border-white/10 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer relative group"
+                className="h-26 w-22 sm:h-28 sm:w-24 md:h-36 md:w-full rounded-2xl overflow-hidden shadow-sm shrink-0 border border-black/5 dark:border-white/10 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer relative group"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -363,11 +370,11 @@ export const ProfileView: React.FC = () => {
                   alt={party.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-1.5">
-                  <span className="text-[10px] font-bold text-white leading-tight truncate">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-1.5 md:p-2.5">
+                  <span className="text-[10px] md:text-xs font-bold text-white leading-tight truncate">
                     {party.title}
                   </span>
-                  <span className="text-[8px] text-[#F0DC00] font-medium">
+                  <span className="text-[8px] md:text-[10px] text-[#F0DC00] font-medium">
                     {party.date}
                   </span>
                 </div>
@@ -377,12 +384,12 @@ export const ProfileView: React.FC = () => {
             {/* Dashed Add Night Squircle Button */}
             <button
               onClick={() => setIsAddNightOpen(true)}
-              className="h-26 w-22 sm:h-28 sm:w-24 rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-all shrink-0 cursor-pointer active:scale-95 group"
+              className="h-26 w-22 sm:h-28 sm:w-24 md:h-36 md:w-full rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-all shrink-0 cursor-pointer active:scale-95 group"
               aria-label={isEs ? 'Registrar noche asistida' : 'Log attended night'}
               title={isEs ? 'Registrar evento asistido' : 'Log attended event'}
             >
               <Plus className="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform" />
-              <span className="text-[9px] font-bold mt-1">
+              <span className="text-[9px] md:text-xs font-bold mt-1">
                 {isEs ? 'Añadir' : 'Add'}
               </span>
             </button>
@@ -464,14 +471,14 @@ export const ProfileView: React.FC = () => {
             </button>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3">
             {peopleConnections.slice(0, 3).map((person) => {
               const starred = isUserStarred(person.id);
 
               return (
                 <div
                   key={person.id}
-                  className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors"
+                  className="flex items-center justify-between p-2 md:p-3 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] md:border md:border-black/5 md:dark:border-white/10 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
                 >
                   <div
                     onClick={() => setSelectedConnectionMember(person)}

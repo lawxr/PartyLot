@@ -18,7 +18,7 @@ export const GamesView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-28 pt-2 transition-colors">
-      <main className="px-4 sm:px-6 max-w-lg mx-auto w-full">
+      <main className="px-4 sm:px-6 max-w-lg md:max-w-xl mx-auto w-full">
         {/* Game Switcher Pills (Liquid Glass Pill) */}
         <div className="flex justify-center gap-1.5 p-1 rounded-full glass-strong border border-black/10 mb-4 max-w-xs mx-auto shadow-sm">
           {games.map((g) => {

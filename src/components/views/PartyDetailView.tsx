@@ -16,7 +16,6 @@ import {
   Loader2,
   UploadCloud,
   MoreHorizontal,
-  ChevronDown,
   ChevronRight,
   Check,
 } from 'lucide-react';
@@ -25,6 +24,7 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { PartyInviteModal } from '@/components/ui/PartyInviteModal';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
 import { Member, PartyMemory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { uploadImageFile } from '@/services/storageService';
@@ -41,6 +41,7 @@ export const PartyDetailView: React.FC = () => {
     listenToActivePartyRealtime,
     loadPartyFromSupabase,
     addPartyMemory,
+    addToPot,
     theme,
   } = usePartyStore();
   const { t, language } = useTranslation();
@@ -113,18 +114,23 @@ export const PartyDetailView: React.FC = () => {
     }
   };
 
-  const handleAddToPot = () => {
+  const handleAddToPot = async () => {
+    if (!party?.id) return;
     setIsPotSubmitting(true);
-    setTimeout(() => {
-      setIsPotSubmitting(false);
-      setIsPotSheetOpen(false);
+    try {
+      await addToPot(party.id, potAmount, `Deposit of $${potAmount} USDC on Monad`);
       confetti({
         particleCount: 60,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#F0DC00', '#10B981', '#FFD65C'],
+        colors: ['#2775CA', '#836EF9', '#F0DC00'],
       });
-    }, 700);
+      setIsPotSheetOpen(false);
+    } catch (err) {
+      console.error('Error adding to party pot:', err);
+    } finally {
+      setIsPotSubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -140,7 +146,7 @@ export const PartyDetailView: React.FC = () => {
       {/* ============================================================== */}
       {/* PHONE 2 TOP FLOATING CONTROLS (Back, Share, More)             */}
       {/* ============================================================== */}
-      <header className="absolute top-0 left-0 right-0 z-40 px-4 sm:px-6 md:px-8 py-3 safe-top flex items-center justify-between pointer-events-none max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto w-full">
+      <header className="absolute top-0 left-0 right-0 z-40 px-4 sm:px-6 md:px-8 py-3 safe-top flex items-center justify-between pointer-events-none max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto w-full">
         <button
           onClick={() => {
             if (goBack) goBack();
@@ -172,11 +178,11 @@ export const PartyDetailView: React.FC = () => {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto w-full">
+      <main className="max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto w-full md:pt-4">
         {/* ============================================================== */}
         {/* HERO SECTION: Full-Bleed Party Photography Header             */}
         {/* ============================================================== */}
-        <div className="relative h-[60vh] sm:h-[64vh] min-h-[480px] w-full overflow-hidden">
+        <div className="relative h-[60vh] sm:h-[64vh] min-h-[480px] lg:h-[440px] lg:min-h-0 w-full overflow-hidden md:rounded-[36px] md:shadow-2xl">
           {/* Background Image: Bright, Candid Party Photography */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -258,11 +264,11 @@ export const PartyDetailView: React.FC = () => {
         {/* ============================================================== */}
         {/* LOWER CONTENT AREA: Warm Ivory Sheet                           */}
         {/* ============================================================== */}
-        <div className="relative -mt-6 z-20 rounded-t-[34px] bg-[#F7F2E8] dark:bg-[#12110E] px-4 sm:px-6 md:px-8 pt-0 pb-20 shadow-[0_-12px_40px_rgba(65,48,25,0.08)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5)] transition-colors duration-200">
+        <div className="relative -mt-6 md:-mt-8 z-20 rounded-t-[34px] md:rounded-none bg-[#F7F2E8] dark:bg-[#12110E] md:bg-transparent px-4 sm:px-6 md:px-0 pt-0 pb-20 shadow-[0_-12px_40px_rgba(65,48,25,0.08)] md:shadow-none transition-colors duration-200">
           {/* Floating Liquid Glass Quick Actions Bar (-top-10 overlapping photo & sheet) */}
           <nav
             aria-label="Herramientas de la fiesta"
-            className="relative -top-10 h-[86px] sm:h-[90px] grid grid-cols-4 gap-2 p-2 sm:p-2.5 rounded-[36px] transition-all select-none bg-[rgba(250,248,243,0.78)] dark:bg-[rgba(28,25,22,0.88)] border border-white/90 dark:border-white/15 shadow-[0_10px_25px_rgba(71,55,35,0.12)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+            className="relative -top-10 md:-top-12 h-[86px] sm:h-[90px] md:h-[96px] max-w-md sm:max-w-lg md:max-w-2xl mx-auto grid grid-cols-4 gap-2 p-2 sm:p-2.5 rounded-[36px] transition-all select-none bg-[rgba(250,248,243,0.78)] dark:bg-[rgba(28,25,22,0.88)] border border-white/90 dark:border-white/15 shadow-[0_10px_25px_rgba(71,55,35,0.12)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
           >
             {quickActions.map((action) => {
               const Icon = action.icon;
@@ -306,11 +312,13 @@ export const PartyDetailView: React.FC = () => {
             })}
           </nav>
 
-          {/* Party Pot Summary Card (Directly below Quick Actions, -mt-5 to flow smoothly) */}
-          <article
-            aria-label="Bote de la fiesta"
-            className="-mt-5 min-h-[108px] sm:min-h-[118px] grid grid-cols-[48px_1fr_auto] sm:grid-cols-[58px_1fr_auto] items-center gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-[32px] transition-all bg-white/50 dark:bg-[#1C1A16] border border-white/75 dark:border-white/10 shadow-[0_9px_20px_rgba(66,52,32,0.09)] dark:shadow-[0_9px_20px_rgba(0,0,0,0.45)] backdrop-blur-md"
-          >
+          {/* Responsive Desktop Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8 lg:items-start -mt-5 lg:mt-0">
+            {/* Party Pot Summary Card (Directly below Quick Actions on mobile, right column on desktop) */}
+            <article
+              aria-label="Bote de la fiesta"
+              className="lg:col-span-5 xl:col-span-4 lg:col-start-8 xl:col-start-9 lg:row-start-1 min-h-[108px] sm:min-h-[118px] grid grid-cols-[48px_1fr_auto] sm:grid-cols-[58px_1fr_auto] items-center gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-[32px] transition-all bg-white/50 dark:bg-[#1C1A16] border border-white/75 dark:border-white/10 shadow-[0_9px_20px_rgba(66,52,32,0.09)] dark:shadow-[0_9px_20px_rgba(0,0,0,0.45)] backdrop-blur-md"
+            >
             <div
               className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-[#24201c] dark:text-[#F0DC00] bg-[#EEE9E1] dark:bg-white/10 shadow-inner shrink-0"
               aria-hidden="true"
@@ -321,11 +329,17 @@ export const PartyDetailView: React.FC = () => {
               <span className="text-xs sm:text-[14px] font-medium text-[#161514] dark:text-white tracking-tight block leading-none">
                 {isEs ? 'Bote de la fiesta' : 'Party Pot'}
               </span>
-              <span className="font-display font-black text-xl sm:text-[26px] text-[#161514] dark:text-white tracking-tight leading-none mt-1 mb-0.5 block">
-                ${party?.potBalance !== undefined ? party.potBalance.toFixed(2) : '186.40'}
-              </span>
+              <div className="flex items-center gap-1.5 mt-1 mb-0.5">
+                <TokenLogo token="usdc" size="sm" />
+                <span className="font-display font-black text-xl sm:text-[26px] text-[#161514] dark:text-white tracking-tight leading-none">
+                  ${party?.potBalance !== undefined ? party.potBalance.toFixed(2) : '186.40'}
+                </span>
+                <span className="text-[10px] font-bold text-[#2775CA] bg-[#2775CA]/10 dark:bg-[#2775CA]/20 px-1.5 py-0.5 rounded-full">
+                  USDC
+                </span>
+              </div>
               <span className="text-[11px] sm:text-xs text-[#706B66] dark:text-[#A8A196] font-medium tracking-tight block truncate">
-                {isEs ? 'Compartido por 14 personas' : 'Shared by 14 people'}
+                {isEs ? 'Compartido en Monad' : 'Shared on Monad'}
               </span>
             </div>
 
@@ -347,7 +361,7 @@ export const PartyDetailView: React.FC = () => {
           </article>
 
           {/* Live Activity Section (Phone 2 — 3 rows matching image) */}
-          <section className="mt-6">
+          <section className="mt-6 lg:mt-0 lg:col-span-7 xl:col-span-8 lg:col-start-1 lg:row-start-1">
             <div className="flex items-center justify-between mb-3 px-1">
               <h3 className="font-display font-extrabold text-base text-[#171512] dark:text-white tracking-tight">
                 {isEs ? 'Actividad en vivo' : 'Live activity'}
@@ -444,7 +458,7 @@ export const PartyDetailView: React.FC = () => {
           </section>
 
           {/* Shared Memories Album Section (Collapsible/Access) */}
-          <section className="mt-8">
+          <section className="mt-8 lg:mt-6 lg:col-span-7 xl:col-span-8 lg:col-start-1 lg:row-start-2">
             <div className="flex items-center justify-between mb-3 px-1">
               <h3 className="font-display font-extrabold text-base text-[#171512] tracking-tight flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-[#F0DC00]" />
@@ -467,7 +481,7 @@ export const PartyDetailView: React.FC = () => {
             </div>
 
             {/* Photo Grid */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {(partyMemories.length > 0 ? partyMemories : [
                 { id: '1', imageUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=400&q=80' },
                 { id: '2', imageUrl: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=400&q=80' },
@@ -484,8 +498,41 @@ export const PartyDetailView: React.FC = () => {
               ))}
             </div>
           </section>
+
+          {/* Desktop-only Games & Polls Shortcuts */}
+          <section className="hidden lg:block lg:col-span-5 xl:col-span-4 lg:col-start-8 xl:col-start-9 lg:row-start-2 lg:mt-6 space-y-4">
+            <div className="rounded-[28px] p-5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 shadow-[0_4px_20px_rgba(40,30,20,0.04)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-display font-bold text-sm text-[#171512] dark:text-white">
+                  {isEs ? 'Mini-juegos en vivo' : 'Live Party Games'}
+                </h4>
+                <button
+                  onClick={() => setCurrentView('games')}
+                  className="text-xs font-bold text-[#836EF9] hover:underline cursor-pointer"
+                >
+                  {isEs ? 'Jugar' : 'Play'}
+                </button>
+              </div>
+              <div
+                onClick={() => setCurrentView('games')}
+                className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between cursor-pointer hover:bg-amber-500/15 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">🎲</span>
+                  <div>
+                    <span className="text-xs font-bold text-[#171512] dark:text-white block">Who&apos;s Most Likely</span>
+                    <span className="text-[10px] text-[#6F6A62] dark:text-[#A8A196]">
+                      {isEs ? '4 participantes activos' : '4 active players'}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#8E887E]" />
+              </div>
+            </div>
+          </section>
         </div>
-      </main>
+      </div>
+    </main>
 
       {/* ============================================================== */}
       {/* PHONE 3: ADD TO THE PARTY POT BOTTOM SHEET                     */}
@@ -580,22 +627,25 @@ export const PartyDetailView: React.FC = () => {
                 ))}
               </div>
 
-              {/* Payment Source Selection Row (USDC · Base) */}
+              {/* Payment Source Selection Row (USDC · Monad Testnet) */}
               <div className="w-full p-3 rounded-2xl bg-white/70 dark:bg-white/5 border border-black/[0.06] dark:border-white/10 flex items-center justify-between mb-6 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-500/15 text-blue-600 flex items-center justify-center font-bold text-xs">
-                    🔵
-                  </div>
+                  <TokenLogo token="usdc" size="md" />
                   <div className="text-left">
-                    <span className="font-display font-bold text-xs text-[#171512] dark:text-white block">
-                      USDC · Base
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-display font-bold text-xs text-[#171512] dark:text-white block">
+                        USDC · Monad Testnet
+                      </span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#836EF9]/15 text-[#674FF4] font-bold">
+                        10143
+                      </span>
+                    </div>
                     <span className="text-[10px] text-[#6F6A62] dark:text-[#A8A196] font-medium block">
-                      {isEs ? 'Rápido, comisiones ultra bajas' : 'Fast, low fees'}
+                      {isEs ? 'Gas 100% patrocinado · ~400ms' : '100% sponsored gas · ~400ms'}
                     </span>
                   </div>
                 </div>
-                <ChevronDown className="w-4 h-4 text-[#6F6A62] dark:text-[#A8A196]" />
+                <CryptoBadge token="usdc" network="Monad" showNetwork={false} />
               </div>
 
               {/* Primary Yellow CTA Button */}

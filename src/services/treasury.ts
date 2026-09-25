@@ -1,11 +1,25 @@
 import type { DebtSettlement, PotTransaction } from '@/types';
+import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
 
-export const FINANCIAL_ACTIONS_AVAILABLE = false as const;
+/**
+ * Onchain Financial Treasury & Settlement is live on Monad Testnet (Chain ID: 10143)
+ */
+export const FINANCIAL_ACTIONS_AVAILABLE = true as const;
+
+export interface TreasuryReceipt {
+  success: boolean;
+  txHash: string;
+  blockNumber: number;
+  explorerUrl: string;
+  amount: number;
+  token: 'USDC';
+  network: 'Monad Testnet';
+}
 
 export type FinancialActionResult = {
-  status: 'unavailable';
-  code: 'financial-provider-not-configured';
+  status: 'available';
   message: string;
+  receipt?: TreasuryReceipt;
 };
 
 export function calculateTotalContributed(transactions: PotTransaction[]): number {
@@ -22,72 +36,168 @@ export function calculateTotalSpent(transactions: PotTransaction[]): number {
 
 export function getFinancialActionsUnavailableMessage(language: 'en' | 'es'): string {
   return language === 'es'
-    ? 'Los pagos, retiros, recompensas y liquidaciones no están disponibles. No se ha movido dinero ni cambiado ningún saldo.'
-    : 'Payments, spending, rewards, and settlements are unavailable. No money has moved and no balances have changed.';
+    ? 'Tesorería activa en Monad Testnet (USDC / MON).'
+    : 'Treasury active on Monad Testnet (USDC / MON).';
 }
 
 export function getFinancialActionUnavailableResult(
   language: 'en' | 'es' = 'en'
 ): FinancialActionResult {
   return {
-    status: 'unavailable',
-    code: 'financial-provider-not-configured',
+    status: 'available',
     message: getFinancialActionsUnavailableMessage(language),
   };
 }
 
-export class TreasuryUnavailableError extends Error {
-  constructor() {
-    super('Financial actions are unavailable until a real payment service is configured.');
-    this.name = 'TreasuryUnavailableError';
-  }
-}
-
-function rejectUnavailable(): never {
-  throw new TreasuryUnavailableError();
-}
-
-/** Financial integrations are intentionally unavailable until a real provider exists. */
+/**
+ * Executes an onchain deposit into the shared party pot on Monad Testnet.
+ */
 export async function depositToPartyPotOnchain(
-  _partyId: string,
-  _amount: number,
-  _userAddress?: string
-): Promise<never> {
-  void _partyId;
-  void _amount;
-  void _userAddress;
-  return rejectUnavailable();
+  partyId: string,
+  amount: number,
+  options?: {
+    userAddress?: string;
+    userId?: string;
+    userName?: string;
+  }
+): Promise<TreasuryReceipt> {
+  const res = await fetch('/api/treasury/action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'deposit',
+      partyId,
+      amount,
+      userAddress: options?.userAddress,
+      userId: options?.userId,
+      userName: options?.userName,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Failed to deposit into Monad Treasury.');
+  }
+
+  return {
+    success: true,
+    txHash: data.txHash,
+    blockNumber: data.blockNumber,
+    explorerUrl: data.explorerUrl || getMonadExplorerTxUrl(data.txHash),
+    amount: data.amount,
+    token: 'USDC',
+    network: 'Monad Testnet',
+  };
 }
 
+/**
+ * Distributes an economic reward / bounty on Monad Testnet.
+ */
 export async function distributeBountyOnchain(
-  _partyId: string,
-  _recipientAddress: string,
-  _amount: number,
-  _role: string
-): Promise<never> {
-  void _partyId;
-  void _recipientAddress;
-  void _amount;
-  void _role;
-  return rejectUnavailable();
+  partyId: string,
+  recipientAddress: string,
+  amount: number,
+  role: string,
+  recipientName?: string
+): Promise<TreasuryReceipt> {
+  const res = await fetch('/api/treasury/action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'reward',
+      partyId,
+      amount,
+      recipientAddress,
+      recipientName,
+      role,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Failed to distribute bounty on Monad.');
+  }
+
+  return {
+    success: true,
+    txHash: data.txHash,
+    blockNumber: data.blockNumber,
+    explorerUrl: data.explorerUrl || getMonadExplorerTxUrl(data.txHash),
+    amount: data.amount,
+    token: 'USDC',
+    network: 'Monad Testnet',
+  };
 }
 
+/**
+ * Settles debts between group members on Monad Testnet.
+ */
 export async function settleDamageOnchain(
-  _partyId: string,
-  _settlements: DebtSettlement[]
-): Promise<never> {
-  void _partyId;
-  void _settlements;
-  return rejectUnavailable();
+  partyId: string,
+  settlements: DebtSettlement[],
+  userAddress?: string
+): Promise<TreasuryReceipt> {
+  const totalAmount = settlements.reduce((sum, s) => sum + s.amount, 0);
+
+  const res = await fetch('/api/treasury/action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'reimbursement',
+      partyId,
+      amount: totalAmount,
+      userAddress,
+      description: `Settlement of ${settlements.length} debts totaling $${totalAmount.toFixed(2)} USDC`,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Failed to settle debt on Monad.');
+  }
+
+  return {
+    success: true,
+    txHash: data.txHash,
+    blockNumber: data.blockNumber,
+    explorerUrl: data.explorerUrl || getMonadExplorerTxUrl(data.txHash),
+    amount: totalAmount,
+    token: 'USDC',
+    network: 'Monad Testnet',
+  };
 }
 
+/**
+ * Rolls over remaining funds to the next party treasury on Monad.
+ */
 export async function rolloverFundsOnchain(
-  _fromTreasury: string,
-  _nextPartyId: string,
-  _amount: number
-): Promise<never> {
-  void _fromTreasury;
-  void _nextPartyId;
-  void _amount;
-  return rejectUnavailable();
+  fromTreasury: string,
+  nextPartyId: string,
+  amount: number
+): Promise<TreasuryReceipt> {
+  const res = await fetch('/api/treasury/action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'rollover',
+      partyId: nextPartyId,
+      amount,
+      description: `Rollover of $${amount.toFixed(2)} USDC to next gathering`,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Failed to rollover funds on Monad.');
+  }
+
+  return {
+    success: true,
+    txHash: data.txHash,
+    blockNumber: data.blockNumber,
+    explorerUrl: data.explorerUrl || getMonadExplorerTxUrl(data.txHash),
+    amount,
+    token: 'USDC',
+    network: 'Monad Testnet',
+  };
 }

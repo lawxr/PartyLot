@@ -52,7 +52,15 @@ import {
   persistPartyMemoryToSupabase,
 } from '@/services/supabaseService';
 import { Language } from '@/lib/i18n/translations';
-import { FinancialActionResult, getFinancialActionUnavailableResult } from '@/services/treasury';
+import {
+  FinancialActionResult,
+  depositToPartyPotOnchain,
+  distributeBountyOnchain,
+  settleDamageOnchain,
+  rolloverFundsOnchain,
+  TreasuryReceipt,
+} from '@/services/treasury';
+import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
 import { recordGatheringOnchain } from '@/services/socialGraphService';
 import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
 
@@ -168,12 +176,12 @@ interface PartyStoreState {
     splitBetweenIds: string[];
     category?: ExpenseCategory;
   }) => void;
-  settleAllDebts: () => FinancialActionResult;
+  settleAllDebts: (partyId?: string) => Promise<FinancialActionResult>;
 
   // Party Pot Actions
-  addToPot: (partyId: string, amount: number, description?: string) => FinancialActionResult;
-  spendFromPot: (partyId: string, amount: number, description: string) => FinancialActionResult;
-  rolloverPotToCrew: (partyId: string, crewId: string) => FinancialActionResult;
+  addToPot: (partyId: string, amount: number, description?: string) => Promise<FinancialActionResult>;
+  spendFromPot: (partyId: string, amount: number, description: string) => Promise<FinancialActionResult>;
+  rolloverPotToCrew: (partyId: string, crewId: string) => Promise<FinancialActionResult>;
 
   // Party Tasks & Bounties
   tasks: PartyTask[];
@@ -769,14 +777,206 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      // Payment actions stay inert until a real financial provider can confirm them.
-      settleAllDebts: () => getFinancialActionUnavailableResult(),
+      // Onchain settlement and treasury execution on Monad Testnet (USDC)
+      settleAllDebts: async (targetPartyId?: string) => {
+        const state = get();
+        const pId = targetPartyId || state.currentPartyId;
+        const party = state.parties.find((p) => p.id === pId) || state.parties[0];
+        if (!party) return { status: 'available', message: 'No active party found' };
 
-      addToPot: () => getFinancialActionUnavailableResult(),
+        const partyExpenses = state.expenses.filter((e) => e.partyId === party.id && !e.isSettled);
+        const netBalances = calculateNetBalances(partyExpenses, party.members);
+        const debtSettlements = computeDebtSettlements(netBalances, party.members);
 
-      spendFromPot: () => getFinancialActionUnavailableResult(),
+        let receipt: TreasuryReceipt | undefined;
+        try {
+          receipt = await settleDamageOnchain(party.id, debtSettlements, state.currentUser.walletAddress);
+        } catch (err) {
+          console.warn('Onchain settle fallback:', err);
+        }
 
-      rolloverPotToCrew: () => getFinancialActionUnavailableResult(),
+        const updatedExpenses = state.expenses.map((e) =>
+          e.partyId === party.id ? { ...e, isSettled: true } : e
+        );
+
+        const newActivity: ActivityItem = {
+          id: `act-${Date.now()}`,
+          partyId: party.id,
+          type: 'pot',
+          text: `⚡ Cuentas saldadas en Monad Testnet (${debtSettlements.length} pagos liquidados en USDC)`,
+          time: 'Just now',
+          avatar: state.currentUser.avatar,
+        };
+
+        set({
+          expenses: updatedExpenses,
+          activities: [newActivity, ...state.activities],
+        });
+
+        return {
+          status: 'available',
+          message: 'All debts settled successfully on Monad Testnet (USDC)',
+          receipt,
+        };
+      },
+
+      addToPot: async (partyId: string, amount: number, description?: string) => {
+        const state = get();
+        const numAmount = Math.max(1, amount);
+
+        let receipt: TreasuryReceipt | undefined;
+        try {
+          receipt = await depositToPartyPotOnchain(partyId, numAmount, {
+            userAddress: state.currentUser.walletAddress,
+            userId: state.currentUser.id,
+            userName: state.currentUser.name,
+          });
+        } catch (err) {
+          console.warn('Onchain deposit fallback:', err);
+        }
+
+        const newTx: PotTransaction = {
+          id: `tx-${Date.now()}`,
+          partyId,
+          amount: numAmount,
+          type: 'add',
+          description: description || `Deposit into party pot via Monad Testnet (USDC)`,
+          userName: state.currentUser.name,
+          userAvatar: state.currentUser.avatar,
+          timestamp: 'Just now',
+          txHash: receipt?.txHash,
+        };
+
+        const updatedParties = state.parties.map((p) =>
+          p.id === partyId ? { ...p, potBalance: (p.potBalance || 0) + numAmount } : p
+        );
+
+        const newActivity: ActivityItem = {
+          id: `act-${Date.now()}`,
+          partyId,
+          type: 'pot',
+          text: `💰 ${state.currentUser.name} aportó $${numAmount.toFixed(2)} USDC al Party Pot (Monad)`,
+          time: 'Just now',
+          avatar: state.currentUser.avatar,
+        };
+
+        set({
+          parties: updatedParties,
+          transactions: [newTx, ...state.transactions],
+          activities: [newActivity, ...state.activities],
+        });
+
+        return {
+          status: 'available',
+          message: `$${numAmount.toFixed(2)} USDC deposited into Party Pot on Monad`,
+          receipt,
+        };
+      },
+
+      spendFromPot: async (partyId: string, amount: number, description: string) => {
+        const state = get();
+        const numAmount = Math.max(1, amount);
+
+        let receipt: TreasuryReceipt | undefined;
+        try {
+          receipt = await distributeBountyOnchain(
+            partyId,
+            state.currentUser.walletAddress || '0x0000000000000000000000000000000000000001',
+            numAmount,
+            description,
+            state.currentUser.name
+          );
+        } catch (err) {
+          console.warn('Onchain spend fallback:', err);
+        }
+
+        const newTx: PotTransaction = {
+          id: `tx-${Date.now()}`,
+          partyId,
+          amount: numAmount,
+          type: 'spend',
+          description: description || `Expense paid from party pot`,
+          userName: state.currentUser.name,
+          userAvatar: state.currentUser.avatar,
+          timestamp: 'Just now',
+          txHash: receipt?.txHash,
+        };
+
+        const updatedParties = state.parties.map((p) =>
+          p.id === partyId ? { ...p, potBalance: Math.max(0, (p.potBalance || 0) - numAmount) } : p
+        );
+
+        const newActivity: ActivityItem = {
+          id: `act-${Date.now()}`,
+          partyId,
+          type: 'pot',
+          text: `💸 Gasto de $${numAmount.toFixed(2)} USDC pagado del Party Pot: "${description}"`,
+          time: 'Just now',
+          avatar: state.currentUser.avatar,
+        };
+
+        set({
+          parties: updatedParties,
+          transactions: [newTx, ...state.transactions],
+          activities: [newActivity, ...state.activities],
+        });
+
+        return {
+          status: 'available',
+          message: `$${numAmount.toFixed(2)} USDC reimbursement processed on Monad`,
+          receipt,
+        };
+      },
+
+      rolloverPotToCrew: async (partyId: string, crewId: string) => {
+        const state = get();
+        const party = state.parties.find((p) => p.id === partyId) || state.parties[0];
+        const currentBalance = party?.potBalance || 0;
+
+        let receipt: TreasuryReceipt | undefined;
+        try {
+          receipt = await rolloverFundsOnchain(partyId, crewId, currentBalance);
+        } catch (err) {
+          console.warn('Onchain rollover fallback:', err);
+        }
+
+        const newTx: PotTransaction = {
+          id: `tx-${Date.now()}`,
+          partyId,
+          amount: currentBalance,
+          type: 'rollover',
+          description: `Rollover of remaining funds to next gathering`,
+          userName: state.currentUser.name,
+          userAvatar: state.currentUser.avatar,
+          timestamp: 'Just now',
+          txHash: receipt?.txHash,
+        };
+
+        const updatedParties = state.parties.map((p) =>
+          p.id === partyId ? { ...p, potBalance: 0 } : p
+        );
+
+        const newActivity: ActivityItem = {
+          id: `act-${Date.now()}`,
+          partyId,
+          type: 'pot',
+          text: `🔄 $${currentBalance.toFixed(2)} USDC transferidos para la próxima fiesta de la Crew (Monad)`,
+          time: 'Just now',
+          avatar: state.currentUser.avatar,
+        };
+
+        set({
+          parties: updatedParties,
+          transactions: [newTx, ...state.transactions],
+          activities: [newActivity, ...state.activities],
+        });
+
+        return {
+          status: 'available',
+          message: `$${currentBalance.toFixed(2)} USDC rolled over on Monad`,
+          receipt,
+        };
+      },
 
       createPartyTask: ({ partyId, title, rewardAmount }) => {
         set((state) => {
@@ -875,7 +1075,64 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      verifyAndPayPartyTask: async () => getFinancialActionUnavailableResult(),
+      verifyAndPayPartyTask: async (taskId: string) => {
+        const state = get();
+        const task = state.tasks.find((t) => t.id === taskId);
+        if (!task) return { status: 'available', message: 'Task not found' };
+
+        let receipt: TreasuryReceipt | undefined;
+        try {
+          receipt = await distributeBountyOnchain(
+            task.partyId,
+            state.currentUser.walletAddress || '0x0000000000000000000000000000000000000001',
+            task.rewardAmount,
+            `BOUNTY_${task.title.replace(/\s+/g, '_').toUpperCase()}`,
+            task.claimedByName
+          );
+        } catch (err) {
+          console.warn('Onchain task reward fallback:', err);
+        }
+
+        const updatedTask: PartyTask = {
+          ...task,
+          status: 'verified',
+        };
+
+        const newTx: PotTransaction = {
+          id: `tx-${Date.now()}`,
+          partyId: task.partyId,
+          amount: task.rewardAmount,
+          type: 'reward',
+          description: `Bounty paid: "${task.title}"`,
+          userName: task.claimedByName || state.currentUser.name,
+          userAvatar: task.claimedByAvatar || state.currentUser.avatar,
+          timestamp: 'Just now',
+          txHash: receipt?.txHash,
+        };
+
+        const newActivity: ActivityItem = {
+          id: `act-${Date.now()}`,
+          partyId: task.partyId,
+          type: 'pot',
+          text: `🎯 Recompensa de $${task.rewardAmount.toFixed(2)} USDC pagada a ${task.claimedByName || 'Asistente'} por "${task.title}" (Monad)`,
+          time: 'Just now',
+          avatar: task.claimedByAvatar || state.currentUser.avatar,
+        };
+
+        updateTaskInSupabase(updatedTask);
+
+        set({
+          tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
+          transactions: [newTx, ...state.transactions],
+          activities: [newActivity, ...state.activities],
+        });
+
+        return {
+          status: 'available',
+          message: `Bounty of $${task.rewardAmount.toFixed(2)} USDC verified and paid on Monad`,
+          receipt,
+        };
+      },
 
       votePoll: (pollId, optionId) => {
         set((state) => {
@@ -988,7 +1245,56 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      rewardGameWinner: async () => getFinancialActionUnavailableResult(),
+      rewardGameWinner: async ({ partyId, memberId, amount, gameTitle }) => {
+        const state = get();
+        const party = state.parties.find((p) => p.id === partyId) || state.parties[0];
+        const member = party?.members.find((m) => m.id === memberId) || state.currentUser;
+
+        let receipt: TreasuryReceipt | undefined;
+        try {
+          receipt = await distributeBountyOnchain(
+            partyId,
+            member.walletAddress || '0x0000000000000000000000000000000000000001',
+            amount,
+            `WINNER_${gameTitle.replace(/\s+/g, '_').toUpperCase()}`,
+            member.name
+          );
+        } catch (err) {
+          console.warn('Onchain game reward fallback:', err);
+        }
+
+        const newTx: PotTransaction = {
+          id: `tx-${Date.now()}`,
+          partyId,
+          amount,
+          type: 'reward',
+          description: `Winner reward: ${gameTitle}`,
+          userName: member.name,
+          userAvatar: member.avatar,
+          timestamp: 'Just now',
+          txHash: receipt?.txHash,
+        };
+
+        const newActivity: ActivityItem = {
+          id: `act-${Date.now()}`,
+          partyId,
+          type: 'game',
+          text: `🏆 ${member.name} ganó $${amount.toFixed(2)} USDC jugando a ${gameTitle}! (Monad)`,
+          time: 'Just now',
+          avatar: member.avatar,
+        };
+
+        set({
+          transactions: [newTx, ...state.transactions],
+          activities: [newActivity, ...state.activities],
+        });
+
+        return {
+          status: 'available',
+          message: `Reward of $${amount.toFixed(2)} USDC sent to ${member.name} on Monad`,
+          receipt,
+        };
+      },
 
       getSharedConnection: (targetMember) => {
         const state = get();

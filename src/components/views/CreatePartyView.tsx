@@ -110,7 +110,7 @@ export const CreatePartyView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F2E8] text-[#171512] flex flex-col justify-between p-4 sm:p-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top safe-bottom select-none w-full">
+    <div className="min-h-screen bg-[#F7F2E8] text-[#171512] flex flex-col justify-between p-4 sm:p-6 md:px-8 lg:max-w-5xl xl:max-w-6xl mx-auto safe-top safe-bottom select-none w-full">
       {/* Top Header */}
       <div className="flex items-center justify-between mb-6 w-full shrink-0">
         <button

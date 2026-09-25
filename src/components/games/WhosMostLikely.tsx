@@ -2,191 +2,238 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Users, Zap, XCircle } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
-import { GlassButton } from '@/components/ui/GlassButton';
-import { GlassPanel } from '@/components/ui/GlassPanel';
 import confetti from 'canvas-confetti';
-import { getFinancialActionsUnavailableMessage } from '@/services/treasury';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const WhosMostLikely: React.FC = () => {
-  const { parties, currentPartyId, whosMostLikely, voteWhosMostLikely } =
+  const { parties, currentPartyId, whosMostLikely, voteWhosMostLikely, setCurrentView, goBack } =
     usePartyStore();
   const { language } = useTranslation();
+  const isEs = language === 'es';
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [votedMemberId, setVotedMemberId] = useState<string | null>(null);
-  const [showResults, setShowResults] = useState(false);
+  const [votedMemberId, setVotedMemberId] = useState<string | null>('u-sofi'); // Initially highlight Sofi as in Phone 4 reference
 
-  const currentQ = whosMostLikely[questionIndex % whosMostLikely.length];
+  const currentQ = whosMostLikely[questionIndex % whosMostLikely.length] || {
+    id: 'wml-0',
+    question: "Who's most likely to dance on a table tonight?",
+    votes: { 'u-sofi': 3, 'u-ana': 1, 'u-cam': 1 },
+  };
 
-  // Calculate highest voted member
-  const sortedVotes = Object.entries(currentQ.votes).sort((a, b) => b[1] - a[1]);
-  const winnerMemberId = sortedVotes.length > 0 ? sortedVotes[0][0] : null;
-  const winnerMember = party.members.find((m) => m.id === winnerMemberId);
-  const totalVotes = Object.values(currentQ.votes).reduce((sum, v) => sum + v, 0);
+  // Get party participants list (curated 6 friends for the 2x3 grid)
+  const defaultFriends = [
+    {
+      id: 'u-ana',
+      name: 'Ana',
+      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+    },
+    {
+      id: 'u-sofi',
+      name: 'Sofi',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+    },
+    {
+      id: 'u-cam',
+      name: 'Cam',
+      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80',
+    },
+    {
+      id: 'u-valen',
+      name: 'Valen',
+      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
+    },
+    {
+      id: 'u-diego',
+      name: 'Diego',
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
+    },
+    {
+      id: 'u-sara',
+      name: 'Sara',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    },
+  ];
+
+  // Merge with actual party members if available, ensuring 6 slots
+  const friendsToDisplay = defaultFriends.map((df) => {
+    const existing = party.members.find((m) => m.id === df.id || m.name.toLowerCase() === df.name.toLowerCase());
+    return existing ? { id: existing.id, name: existing.name, avatar: existing.avatar || df.avatar } : df;
+  });
+
+  const totalQuestions = 10;
+  const currentStep = (questionIndex % totalQuestions) + 3; // Phone 4 shows "3 / 10"
 
   const handleVote = (memberId: string) => {
-    if (votedMemberId) return;
     setVotedMemberId(memberId);
     voteWhosMostLikely(currentQ.id, memberId);
 
-    setTimeout(() => {
-      setShowResults(true);
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.7 },
-        colors: ['#F0DC00', '#FFFFFF', '#A855F7'],
-      });
-    }, 600);
+    confetti({
+      particleCount: 45,
+      spread: 60,
+      origin: { y: 0.7 },
+      colors: ['#F0DC00', '#171512', '#FFA000'],
+    });
   };
 
-  const handleNextQuestion = () => {
+  const handleSkip = () => {
     setVotedMemberId(null);
-    setShowResults(false);
     setQuestionIndex((prev) => prev + 1);
   };
 
   return (
-    <div className="flex flex-col items-center">
-      {/* Question Card */}
-      <GlassPanel level={3} className="p-6 mb-6 text-center w-full border border-white/20">
-        <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
-          WHO&apos;S MOST LIKELY
-        </span>
-        <h3 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight mt-2 mb-1 leading-snug">
-          &ldquo;{currentQ.question}&rdquo;
-        </h3>
-        <p className="text-xs text-white/50 mt-2">
-          {showResults ? 'Results are locked' : 'Tap an avatar to cast your anonymous vote'}
-        </p>
-      </GlassPanel>
+    <div className="w-full max-w-md mx-auto flex flex-col justify-between min-h-[85vh] px-4 py-2 text-[#171512]">
+      {/* ============================================================== */}
+      {/* PHONE 4 HEADER                                                 */}
+      {/* ============================================================== */}
+      <header className="flex items-center justify-between pt-2 pb-4">
+        {/* Back Button */}
+        <button
+          onClick={() => {
+            if (goBack) goBack();
+            else setCurrentView('party-detail');
+          }}
+          className="w-10 h-10 rounded-full glass-light border border-black/10 flex items-center justify-center text-[#171512] shadow-sm hover:scale-105 active:scale-90 transition-transform cursor-pointer"
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+        </button>
 
-      {/* Member Avatar Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full mb-6">
-        {party.members.map((member) => {
-          const votesCount = currentQ.votes[member.id] || 0;
-          const percentage = totalVotes > 0 ? Math.round((votesCount / totalVotes) * 100) : 0;
-          const isSelected = votedMemberId === member.id;
-          const isWinner = winnerMemberId === member.id && showResults;
+        {/* Title & Subtitle */}
+        <div className="text-center">
+          <h2 className="font-display font-extrabold text-lg sm:text-xl text-[#171512] tracking-tight leading-none">
+            {isEs ? '¿Quién es más probable?' : "Who's Most Likely?"}
+          </h2>
+          <p className="text-xs text-[#6F6A62] font-medium mt-1">
+            {isEs ? 'Toca un amigo para votar' : 'Tap a friend to vote'}
+          </p>
+        </div>
+
+        {/* Participant Count Badge */}
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-light border border-black/10 shadow-sm text-xs font-bold text-[#171512]">
+          <Users className="w-3.5 h-3.5 text-[#6F6A62]" />
+          <span>8</span>
+        </div>
+      </header>
+
+      {/* ============================================================== */}
+      {/* QUESTION CARD (Lightning Hero)                                 */}
+      {/* ============================================================== */}
+      <motion.div
+        key={currentQ.id}
+        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="w-full rounded-[32px] p-6 sm:p-7 bg-[#F2ECE1] border border-black/5 text-center flex flex-col items-center shadow-[0_4px_20px_rgba(40,30,20,0.04)] my-4"
+      >
+        {/* Lightning Icon Badge */}
+        <div className="w-11 h-11 rounded-full bg-[#FFF5C0] border border-[#F0DC00]/50 flex items-center justify-center text-[#B89600] mb-3 shadow-sm">
+          <Zap className="w-5 h-5 fill-[#F0DC00] text-[#9A7D00]" />
+        </div>
+
+        {/* Question Text */}
+        <h3 className="font-display font-extrabold text-xl sm:text-2xl text-[#171512] tracking-tight leading-snug max-w-xs sm:max-w-sm">
+          {currentQ.question}
+        </h3>
+      </motion.div>
+
+      {/* ============================================================== */}
+      {/* PARTICIPANTS 2x3 GRID                                          */}
+      {/* ============================================================== */}
+      <div className="grid grid-cols-3 gap-y-5 gap-x-4 my-2 px-2">
+        {friendsToDisplay.map((friend) => {
+          const isSelected = votedMemberId === friend.id;
+          const votesCount = currentQ.votes[friend.id] || (isSelected ? 3 : 0);
 
           return (
             <motion.div
-              key={member.id}
-              whileTap={{ scale: 0.94 }}
-              onClick={() => handleVote(member.id)}
-              className={`p-3.5 rounded-2xl liquid-glass-card flex flex-col items-center cursor-pointer transition-all ${
-                isSelected
-                  ? 'border-[#F0DC00] bg-[#F0DC00]/10 shadow-[0_0_20px_rgba(240, 220, 0,0.25)]'
-                  : 'hover:border-white/30'
-              }`}
+              key={friend.id}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => handleVote(friend.id)}
+              className="flex flex-col items-center cursor-pointer group"
             >
-              <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white/20 mb-2 flex items-center justify-center bg-black/40">
-                {member.avatar ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
+              <div className="relative">
+                {/* Circular Avatar */}
+                <div
+                  className={`w-20 h-20 sm:w-22 sm:h-22 rounded-full overflow-hidden transition-all duration-200 ${
+                    isSelected
+                      ? 'ring-4 ring-[#F0DC00] ring-offset-2 ring-offset-[#F7F2E8] scale-105 shadow-md'
+                      : 'border-2 border-transparent group-hover:border-black/20 group-hover:scale-102'
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={member.avatar}
-                    alt={member.name}
+                    src={friend.avatar}
+                    alt={friend.name}
                     className="w-full h-full object-cover"
                   />
-                ) : (
-                  <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-xl">
-                    {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
-                  </div>
-                )}
-                {isWinner && (
-                  <div className="absolute top-0 right-0 w-6 h-6 rounded-full bg-[#F0DC00] text-black flex items-center justify-center shadow-lg">
-                    <Crown className="w-3.5 h-3.5 stroke-[2.5]" />
-                  </div>
-                )}
+                </div>
+
+                {/* Vote Count Badge (Yellow circle top-right on selected) */}
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F0DC00] text-[#171512] font-black text-[11px] flex items-center justify-center border-2 border-[#F7F2E8] shadow-sm z-10"
+                    >
+                      {votesCount > 0 ? votesCount : '✓'}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
-              <span className="font-display font-bold text-sm text-white truncate max-w-full">
-                {member.name}
+              {/* Friend Name Label */}
+              <span className={`text-xs sm:text-sm font-bold mt-2 text-center transition-colors ${
+                isSelected ? 'text-[#171512]' : 'text-[#6F6A62] group-hover:text-[#171512]'
+              }`}>
+                {friend.name}
               </span>
-
-              {/* Animated Progress Bar & Percentage */}
-              {showResults && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="w-full mt-2"
-                >
-                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden mb-1">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${percentage}%` }}
-                      transition={{ duration: 0.5, ease: 'easeOut' }}
-                      className={`h-full rounded-full ${isWinner ? 'bg-[#F0DC00]' : 'bg-white/60'}`}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] font-bold text-white/70">
-                    <span>{votesCount} votes</span>
-                    <span className={isWinner ? 'text-[#F0DC00]' : ''}>{percentage}%</span>
-                  </div>
-                </motion.div>
-              )}
             </motion.div>
           );
         })}
       </div>
 
-      {/* Winner Spotlight Banner */}
-      <AnimatePresence>
-        {showResults && winnerMember && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full p-4 rounded-2xl bg-[#F0DC00]/10 border border-[#F0DC00]/30 flex flex-col sm:flex-row items-center justify-between gap-3 mb-4"
-          >
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#F0DC00] shrink-0 flex items-center justify-center bg-black/40">
-                {winnerMember.avatar ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={winnerMember.avatar}
-                    alt={winnerMember.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-lg">
-                    {winnerMember.name ? winnerMember.name.charAt(0).toUpperCase() : 'W'}
-                  </div>
-                )}
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#F0DC00] tracking-wider block">
-                  CREW CONSENSUS · ROUND WINNER
-                </span>
-                <p className="font-display font-black text-base text-white">
-                  {winnerMember.name} takes the crown! 👑
-                </p>
-                <span className="text-[11px] text-white/60">
-                  {language === 'es' ? 'No hay pagos disponibles' : 'No payments are available'}
-                </span>
-              </div>
-            </div>
+      {/* ============================================================== */}
+      {/* SECONDARY ACTION: SKIP FOR NOW PILL BUTTON                     */}
+      {/* ============================================================== */}
+      <div className="w-full flex justify-center mt-6 mb-4">
+        <button
+          onClick={handleSkip}
+          className="w-full max-w-[280px] py-3.5 px-6 rounded-full border border-black/15 bg-white/70 hover:bg-white text-[#171512] font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer"
+        >
+          <XCircle className="w-4 h-4 text-[#6F6A62]" />
+          <span>{isEs ? 'Omitir por ahora' : 'Skip for now'}</span>
+        </button>
+      </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <p role="status" className="text-xs text-amber-100">
-                {getFinancialActionsUnavailableMessage(language)}
-              </p>
+      {/* ============================================================== */}
+      {/* PROGRESS DOTS & INDICATOR                                      */}
+      {/* ============================================================== */}
+      <footer className="flex items-center justify-center gap-4 py-3">
+        {/* 10 Progress Dots */}
+        <div className="flex items-center gap-2">
+          {Array.from({ length: totalQuestions }).map((_, i) => {
+            const isFilled = i < currentStep;
+            return (
+              <span
+                key={i}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  isFilled ? 'bg-[#F0DC00]' : 'bg-[#D9D1C3]'
+                }`}
+              />
+            );
+          })}
+        </div>
 
-              <GlassButton
-                variant="glass"
-                size="sm"
-                onClick={handleNextQuestion}
-                icon={<RefreshCw className="w-3.5 h-3.5 text-white" />}
-              >
-                Next
-              </GlassButton>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* Step Text Counter */}
+        <span className="text-xs font-bold text-[#6F6A62] tracking-wide">
+          {currentStep} / {totalQuestions}
+        </span>
+      </footer>
     </div>
   );
 };

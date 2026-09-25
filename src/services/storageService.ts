@@ -5,20 +5,25 @@ import { getSupabase } from '@/lib/supabase/client';
  * Automatically tries the server-side /api/upload endpoint first, falling back
  * to direct client-side Supabase storage upload if available.
  */
-export async function uploadImageFile(file: File, folder: string = 'uploads'): Promise<string> {
+export async function uploadImageFile(file: File | Blob, folder: string = 'uploads'): Promise<string> {
+  const fileObj =
+    file instanceof File
+      ? file
+      : new File([file], 'cropped-image.jpg', { type: file.type || 'image/jpeg' });
+
   // Validate basic constraints client-side
-  if (!file.type.startsWith('image/')) {
+  if (!fileObj.type.startsWith('image/')) {
     throw new Error('Please select a valid image file (JPEG, PNG, WEBP, GIF).');
   }
 
-  if (file.size > 10 * 1024 * 1024) {
+  if (fileObj.size > 10 * 1024 * 1024) {
     throw new Error('Image size must be less than 10MB.');
   }
 
   // 1. Try server-side upload endpoint
   try {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', fileObj);
     formData.append('folder', folder);
 
     const res = await fetch('/api/upload', {
@@ -41,13 +46,13 @@ export async function uploadImageFile(file: File, folder: string = 'uploads'): P
   if (supabase) {
     try {
       const cleanFolder = folder.replace(/[^a-zA-Z0-9_-]/g, '') || 'uploads';
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const ext = fileObj.name.split('.').pop()?.toLowerCase() || 'jpg';
       const safeExt = ext.replace(/[^a-z0-9]/g, '') || 'jpg';
       const filePath = `${cleanFolder}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${safeExt}`;
 
       const { data, error } = await supabase.storage
         .from('partylot-media')
-        .upload(filePath, file, {
+        .upload(filePath, fileObj, {
           cacheControl: '3600',
           upsert: false,
         });

@@ -17,6 +17,8 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { formatPartyInviteText } from '@/services/party';
 import confetti from 'canvas-confetti';
 
+import QRCode from 'qrcode';
+
 interface PartyInviteModalProps {
   party: Party;
   isOpen: boolean;
@@ -32,103 +34,119 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const inviteUrl = `https://partylot.app/join?code=${party.code}`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://partylot.app';
+  const inviteUrl = `${origin}/join?code=${party.code}`;
 
-  // Draw a crisp, high-contrast QR Matrix on Canvas
+  // Draw Instagram-style rounded QR Code on Canvas (clean, sleek, without center emoji)
   useEffect(() => {
     if (!isOpen || !canvasRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const size = 260;
-    canvas.width = size;
-    canvas.height = size;
+    try {
+      const qr = QRCode.create(inviteUrl, {
+        errorCorrectionLevel: 'M',
+      });
+      const moduleCount = qr.modules.size;
+      const margin = 3;
+      const totalModules = moduleCount + margin * 2;
 
-    // Background
-    ctx.fillStyle = '#0F0F0F';
-    ctx.fillRect(0, 0, size, size);
+      // High-resolution canvas for ultra-sharp rendering on Retina displays
+      const cellSize = Math.floor(520 / totalModules);
+      const canvasSize = cellSize * totalModules;
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
 
-    const gridSize = 25;
-    const cellSize = (size - 32) / gridSize;
-    const offsetX = 16;
-    const offsetY = 16;
+      // Crisp pure white background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-    // Deterministic pseudo-random based on party code
-    const seed = party.code.split('').reduce((acc, c) => acc + c.charCodeAt(0), 42);
-    const pseudoRandom = (x: number, y: number) => {
-      const val = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
-      return val - Math.floor(val) > 0.46;
-    };
+      const offset = margin * cellSize;
+      const dotColor = '#141414';
+      const bgColor = '#FFFFFF';
 
-    // Helper: Draw QR Finder Pattern (corners)
-    const drawFinder = (startX: number, startY: number) => {
-      const x = offsetX + startX * cellSize;
-      const y = offsetY + startY * cellSize;
-      const outerSize = 7 * cellSize;
+      const isFinder = (r: number, c: number) => {
+        if (r <= 7 && c <= 7) return true;
+        if (r <= 7 && c >= moduleCount - 8) return true;
+        if (r >= moduleCount - 8 && c <= 7) return true;
+        return false;
+      };
 
-      ctx.fillStyle = '#F0DC00';
-      ctx.fillRect(x, y, outerSize, outerSize);
+      const drawRoundRect = (
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        radius: number,
+        fillColor: string
+      ) => {
+        ctx.fillStyle = fillColor;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+          ctx.roundRect(x, y, w, h, radius);
+        } else {
+          ctx.rect(x, y, w, h);
+        }
+        ctx.fill();
+      };
 
-      ctx.fillStyle = '#0F0F0F';
-      ctx.fillRect(x + cellSize, y + cellSize, 5 * cellSize, 5 * cellSize);
+      // Draw Instagram rounded finder pattern (eyes)
+      const drawFinder = (r0: number, c0: number) => {
+        const x = offset + c0 * cellSize;
+        const y = offset + r0 * cellSize;
 
-      ctx.fillStyle = '#F0DC00';
-      ctx.fillRect(x + 2 * cellSize, y + 2 * cellSize, 3 * cellSize, 3 * cellSize);
-    };
+        // Outer 7x7 rounded squircle
+        drawRoundRect(
+          x,
+          y,
+          7 * cellSize,
+          7 * cellSize,
+          cellSize * 1.7,
+          dotColor
+        );
+        // Inner 5x5 cutout
+        drawRoundRect(
+          x + cellSize,
+          y + cellSize,
+          5 * cellSize,
+          5 * cellSize,
+          cellSize * 1.15,
+          bgColor
+        );
+        // Center 3x3 solid rounded pupil
+        drawRoundRect(
+          x + 2 * cellSize,
+          y + 2 * cellSize,
+          3 * cellSize,
+          3 * cellSize,
+          cellSize * 0.85,
+          dotColor
+        );
+      };
 
-    // Draw 3 position finders
-    drawFinder(0, 0); // Top-left
-    drawFinder(gridSize - 7, 0); // Top-right
-    drawFinder(0, gridSize - 7); // Bottom-left
+      // 1. Draw the 3 rounded finders
+      drawFinder(0, 0);
+      drawFinder(0, moduleCount - 7);
+      drawFinder(moduleCount - 7, 0);
 
-    // Draw Data Modules
-    ctx.fillStyle = '#FFFFFF';
-    for (let row = 0; row < gridSize; row++) {
-      for (let col = 0; col < gridSize; col++) {
-        // Skip finder zones
-        const inTopLeft = row < 8 && col < 8;
-        const inTopRight = row < 8 && col >= gridSize - 8;
-        const inBottomLeft = row >= gridSize - 8 && col < 8;
-        const inCenterLogo = row >= 10 && row <= 14 && col >= 10 && col <= 14;
-
-        if (inTopLeft || inTopRight || inBottomLeft || inCenterLogo) continue;
-
-        if (pseudoRandom(col, row)) {
-          ctx.beginPath();
-          ctx.roundRect(
-            offsetX + col * cellSize + 0.6,
-            offsetY + row * cellSize + 0.6,
-            cellSize - 1.2,
-            cellSize - 1.2,
-            cellSize * 0.25
-          );
-          ctx.fill();
+      // 2. Draw rounded squircle data modules
+      const gap = Math.max(0.4, cellSize * 0.05);
+      for (let r = 0; r < moduleCount; r++) {
+        for (let c = 0; c < moduleCount; c++) {
+          if (isFinder(r, c)) continue;
+          if (qr.modules.get(r, c) === 1) {
+            const x = offset + c * cellSize + gap;
+            const y = offset + r * cellSize + gap;
+            const s = cellSize - gap * 2;
+            drawRoundRect(x, y, s, s, s * 0.38, dotColor);
+          }
         }
       }
+    } catch (err) {
+      console.error('Failed to generate Instagram rounded QR code:', err);
     }
-
-    // Center Partylot Icon badge
-    const badgeSize = cellSize * 5;
-    const badgeX = offsetX + 10 * cellSize;
-    const badgeY = offsetY + 10 * cellSize;
-
-    ctx.fillStyle = '#15140f';
-    ctx.beginPath();
-    ctx.roundRect(badgeX - 2, badgeY - 2, badgeSize + 4, badgeSize + 4, 8);
-    ctx.fill();
-
-    ctx.fillStyle = '#F0DC00';
-    ctx.beginPath();
-    ctx.roundRect(badgeX, badgeY, badgeSize, badgeSize, 6);
-    ctx.fill();
-
-    ctx.fillStyle = '#000000';
-    ctx.font = '900 18px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('⚡', badgeX + badgeSize / 2, badgeY + badgeSize / 2);
-  }, [isOpen, party.code]);
+  }, [isOpen, inviteUrl]);
 
   if (!isOpen) return null;
 
@@ -189,7 +207,7 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/80 backdrop-blur-md"
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         />
 
         {/* Modal Window */}
@@ -198,15 +216,12 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 15 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-md rounded-[32px] liquid-glass-card border border-white/20 p-6 shadow-2xl text-white z-10 overflow-hidden"
+          className="relative w-full max-w-md rounded-[32px] bg-[#FFFDF8] border border-[rgba(35,30,22,0.12)] p-6 shadow-[0_24px_80px_rgba(65,48,25,0.18)] text-[#171512] z-10 overflow-hidden"
         >
-          {/* Ambient Glow */}
-          <div className="absolute -top-20 -right-20 w-44 h-44 bg-[#F0DC00]/15 rounded-full blur-3xl pointer-events-none" />
-
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors"
+            className="absolute top-5 right-5 w-9 h-9 rounded-full bg-[#F8F3EA] hover:bg-[#F1EADF] flex items-center justify-center text-[#171512] transition-colors"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -214,60 +229,45 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
 
           {/* Header */}
           <div className="text-center mb-5">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F0DC00]/10 border border-[#F0DC00]/30 text-[#F0DC00] text-[11px] font-extrabold uppercase tracking-widest mb-2">
-              <Sparkles className="w-3.5 h-3.5" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F0DC00]/20 border border-[#F0DC00]/40 text-[#171512] text-[11px] font-extrabold uppercase tracking-widest mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#B8A700]" />
               PRIVATE PARTY INVITATION
             </span>
-            <h3 className="font-display font-black text-2xl text-white tracking-tight">
+            <h3 className="font-bubble text-2xl sm:text-3xl text-[#171512] tracking-tight leading-none mb-1">
               {party.title}
             </h3>
-            <p className="text-xs text-white/60 mt-0.5">
+            <p className="text-xs text-[#6F6A62] mt-1">
               Scan QR code or use the 4-character passkey to join
             </p>
           </div>
 
-          {/* QR Code Canvas Card */}
+          {/* QR Code Canvas Card (Instagram rounded style) */}
           <div className="flex flex-col items-center justify-center mb-5">
-            <div className="p-3.5 rounded-3xl bg-[#0F0F0F] border border-white/15 shadow-2xl relative">
+            <div className="p-4 sm:p-5 rounded-[28px] bg-white text-black shadow-md border border-[rgba(35,30,22,0.1)] relative flex flex-col items-center">
               <canvas
                 ref={canvasRef}
-                className="w-48 h-48 sm:w-56 sm:h-56 rounded-2xl block"
+                className="w-52 h-52 sm:w-60 sm:h-60 rounded-2xl block"
               />
-              <span className="absolute bottom-2 left-0 right-0 text-[10px] text-center font-mono text-white/40 tracking-wider">
-                SCAN WITH MOBILE CAMERA
-              </span>
+              <div className="mt-3 pt-2.5 border-t border-black/10 flex items-center justify-between w-full px-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-black/50">
+                    CODE:
+                  </span>
+                  <span className="font-mono font-black text-sm text-black tracking-widest">
+                    {party.code}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  className="px-2.5 py-1 rounded-lg bg-black/5 hover:bg-black/10 text-black text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Copy passkey"
+                >
+                  {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-black/60" />}
+                  <span>{copiedCode ? 'Copiado' : 'Copiar'}</span>
+                </button>
+              </div>
             </div>
-          </div>
-
-          {/* Verbal 4-Character Code Card */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 mb-5 flex items-center justify-between">
-            <div>
-              <span className="text-[10px] uppercase font-bold text-white/40 block">
-                Verbal Passkey
-              </span>
-              <span className="font-mono font-black text-3xl text-[#F0DC00] tracking-widest block">
-                {party.code}
-              </span>
-            </div>
-
-            <button
-              onClick={handleCopyCode}
-              className={`px-4 py-2 rounded-xl text-xs font-bold font-display flex items-center gap-1.5 transition-all ${
-                copiedCode
-                  ? 'bg-emerald-500 text-black'
-                  : 'bg-white/15 text-white hover:bg-white/25'
-              }`}
-            >
-              {copiedCode ? (
-                <>
-                  <Check className="w-4 h-4" /> Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" /> Copy Code
-                </>
-              )}
-            </button>
           </div>
 
           {/* Quick Viral Share Actions */}
@@ -276,7 +276,7 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
               href={`https://wa.me/?text=${shareTextWhatsApp}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="py-3 px-3 rounded-2xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-emerald-300 font-display font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
+              className="py-3 px-3 rounded-2xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-emerald-800 font-display font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
             >
               <MessageCircle className="w-4 h-4" />
               WhatsApp
@@ -286,7 +286,7 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
               href={`https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${shareTextTelegram}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="py-3 px-3 rounded-2xl bg-[#0088cc]/15 hover:bg-[#0088cc]/25 border border-[#0088cc]/30 text-sky-300 font-display font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
+              className="py-3 px-3 rounded-2xl bg-[#0088cc]/15 hover:bg-[#0088cc]/25 border border-[#0088cc]/30 text-sky-800 font-display font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
             >
               <Send className="w-4 h-4" />
               Telegram
@@ -313,8 +313,8 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
           </div>
 
           {/* Security & Verification note */}
-          <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-center gap-1.5 text-[11px] font-mono text-white/40">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="mt-4 pt-3 border-t border-[rgba(35,30,22,0.08)] flex items-center justify-center gap-1.5 text-[11px] font-mono text-[#8E887E]">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>ENLACE PRIVADO Y CIFRADO · ACCESO EXCLUSIVO</span>
           </div>
         </motion.div>

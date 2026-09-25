@@ -41,6 +41,7 @@ broadcast/
 # Testing & Coverage
 coverage/
 *.lcov
+playwright-screenshots/
 
 # Debug Logs
 logs/

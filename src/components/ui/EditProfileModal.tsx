@@ -7,14 +7,7 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { usePrivy } from '@privy-io/react-auth';
 import { Check, Sparkles, AlertCircle, Camera, Link as LinkIcon } from 'lucide-react';
 
-const AVATAR_PRESETS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&q=80',
-];
+import { AvatarCropModal } from '@/components/ui/AvatarCropModal';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -28,10 +21,32 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [name, setName] = useState(currentUser.name || '');
   const [handle, setHandle] = useState(currentUser.handle?.replace(/^@/, '') || '');
   const [avatar, setAvatar] = useState(currentUser.avatar || '');
+  const [coverImage, setCoverImage] = useState(currentUser.coverImage || '');
   const [customUrl, setCustomUrl] = useState('');
   const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const bannerFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingBanner(true);
+    setError(null);
+    try {
+      const { uploadImageFile } = await import('@/services/storageService');
+      const uploadedUrl = await uploadImageFile(file, 'banners');
+      setCoverImage(uploadedUrl);
+    } catch (bErr) {
+      console.error('Banner upload failed:', bErr);
+      setError(bErr instanceof Error ? bErr.message : 'Error al subir la portada.');
+    } finally {
+      setIsUploadingBanner(false);
+      if (bannerFileInputRef.current) bannerFileInputRef.current.value = '';
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +81,7 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           name: name.trim(),
           handle: formattedHandle,
           avatar: avatar.trim() || undefined,
+          coverImage: coverImage.trim() || undefined,
         },
         token
       );
@@ -89,30 +105,39 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   const [isUploading, setIsUploading] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [isCropOpen, setIsCropOpen] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const previewUrl = URL.createObjectURL(file);
+    setCropImageSrc(previewUrl);
+    setIsCropOpen(true);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
     setIsUploading(true);
     setError(null);
     try {
       const { uploadImageFile } = await import('@/services/storageService');
-      const uploadedUrl = await uploadImageFile(file, 'avatars');
+      const uploadedUrl = await uploadImageFile(croppedBlob, 'avatars');
       setAvatar(uploadedUrl);
     } catch (uploadErr) {
       console.error('Avatar upload failed:', uploadErr);
       setError(uploadErr instanceof Error ? uploadErr.message : 'Error al subir la imagen.');
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setCropImageSrc(null);
     }
   };
 
   return (
     <form onSubmit={handleSave} className="space-y-6 pt-2 pb-6 px-1">
-      {/* Hidden file input */}
+      {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
         type="file"
@@ -120,9 +145,39 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         className="hidden"
         onChange={handleFileChange}
       />
+      <input
+        ref={bannerFileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={handleBannerFileChange}
+      />
+
+      {/* Cover Banner Preview & Change */}
+      <div className="relative w-full h-24 sm:h-28 rounded-2xl overflow-hidden border border-white/15 bg-black/40 group">
+        {coverImage ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={coverImage} alt="Cover Banner Preview" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
+            Sin portada
+          </div>
+        )}
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => bannerFileInputRef.current?.click()}
+            disabled={isUploadingBanner}
+            className="px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white text-xs font-bold border border-white/30 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>{isUploadingBanner ? 'Subiendo portada...' : 'Cambiar portada'}</span>
+          </button>
+        </div>
+      </div>
 
       {/* Avatar Preview & Selection */}
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center -mt-8">
         <div className="relative group">
           <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#F0DC00] p-1 liquid-glass-card shadow-2xl flex items-center justify-center bg-black/40">
             {isUploading ? (
@@ -172,32 +227,13 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </button>
         </div>
 
-        {/* Preset Avatars */}
-        <div className="flex items-center gap-2.5 mt-3.5 overflow-x-auto max-w-full pb-1">
-          {AVATAR_PRESETS.map((url, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => setAvatar(url)}
-              className={`relative w-10 h-10 rounded-full overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
-                avatar === url
-                  ? 'border-[#F0DC00] scale-110 shadow-[0_0_12px_rgba(240,220,0,0.5)]'
-                  : 'border-white/20 hover:border-white/50 opacity-70 hover:opacity-100'
-              }`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt={`Preset ${idx + 1}`} className="w-full h-full object-cover" />
-            </button>
-          ))}
-        </div>
-
         {/* Custom URL Input Toggle */}
         {showCustomUrlInput && (
           <div className="mt-3.5 w-full flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl p-2">
             <LinkIcon className="w-4 h-4 text-white/40 ml-1 shrink-0" />
             <input
               type="url"
-              placeholder="https://images.unsplash.com/..."
+              placeholder="https://..."
               value={customUrl}
               onChange={(e) => setCustomUrl(e.target.value)}
               className="bg-transparent text-xs text-white outline-none flex-1 placeholder:text-white/30"
@@ -277,6 +313,16 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </GlassButton>
         </div>
       </div>
+
+      <AvatarCropModal
+        isOpen={isCropOpen}
+        imageSrc={cropImageSrc}
+        onCropComplete={handleCropComplete}
+        onClose={() => {
+          setIsCropOpen(false);
+          setCropImageSrc(null);
+        }}
+      />
     </form>
   );
 };

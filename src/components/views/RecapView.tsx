@@ -17,9 +17,9 @@ import {
 import { usePartyStore } from '@/store/usePartyStore';
 import { TopNav } from '@/components/navigation/TopNav';
 import { GlassButton } from '@/components/ui/GlassButton';
-import { GlassPanel } from '@/components/ui/GlassPanel';
 import { recordGatheringOnchain } from '@/services/socialGraphService';
 import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
+import { INITIAL_PARTIES } from '@/data/mockData';
 import confetti from 'canvas-confetti';
 
 export const RecapView: React.FC = () => {
@@ -35,11 +35,12 @@ export const RecapView: React.FC = () => {
     tasks,
   } = usePartyStore();
 
-  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
-  const partyExpenses = expenses.filter((e) => e.partyId === party.id);
-  const partyTransactions = transactions.filter((t) => t.partyId === party.id);
-  const partyPolls = polls.filter((p) => p.partyId === party.id);
-  const associatedCrew = crews.find((c) => c.id === party.crewId);
+  const defaultParty = INITIAL_PARTIES[0];
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
+  const partyExpenses = expenses.filter((e) => e.partyId === party?.id);
+  const partyTransactions = transactions.filter((t) => t.partyId === party?.id);
+  const partyPolls = polls.filter((p) => p.partyId === party?.id);
+  const associatedCrew = crews.find((c) => c.id === party?.crewId);
 
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -143,8 +144,8 @@ export const RecapView: React.FC = () => {
 
       if (!ctx) return;
 
-      // Dark background
-      ctx.fillStyle = '#15140f';
+      // Poster background
+      ctx.fillStyle = '#171512';
       ctx.fillRect(0, 0, 1080, 1920);
 
       // Gradient accent glow
@@ -272,8 +273,8 @@ export const RecapView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#15140f] text-white pb-32 select-none">
-      <TopNav title="EDITORIAL RECAP" />
+    <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-32 select-none">
+      <TopNav title="EDITORIAL RECAP" variant="light" />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
@@ -408,7 +409,7 @@ export const RecapView: React.FC = () => {
                 size="lg"
                 fullWidth
                 onClick={handleDownloadStoryPoster}
-                icon={<Download className="w-5 h-5 text-white" />}
+                icon={<Download className="w-5 h-5 text-[#171512]" />}
               >
                 {downloading ? 'Rendering...' : 'Download Instagram Story Poster'}
               </GlassButton>
@@ -418,41 +419,41 @@ export const RecapView: React.FC = () => {
           {/* Right Column: Editorial Breakdown & Export Hub (6 cols on desktop) */}
           <div className="lg:col-span-6 space-y-6">
             {/* Monad Proof-of-Presence Card */}
-            <GlassPanel level={2} className="p-6 border border-white/15 shadow-xl">
+            <div className="p-6 bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] rounded-[28px] shadow-[0_10px_30px_rgba(65,48,25,0.06)]">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-[#F0DC00]" />
-                  <span className="text-xs uppercase font-extrabold tracking-wider text-white">
+                  <ShieldCheck className="w-5 h-5 text-[#B8A700]" />
+                  <span className="text-xs uppercase font-extrabold tracking-wider text-[#171512]">
                     VERIFIED SOCIAL GRAPH
                   </span>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 font-bold">
                   ONCHAIN RECORD
                 </span>
               </div>
 
-              <h3 className="font-display font-black text-2xl text-white tracking-tight mb-2">
+              <h3 className="font-display font-black text-2xl text-[#171512] tracking-tight mb-2">
                 Dossier de la Noche y Recuerdos
               </h3>
-              <p className="text-xs sm:text-sm text-white/70 leading-relaxed mb-4">
-                La asistencia, minijuegos y liquidación de gastos de <span className="text-white font-semibold">{party.title}</span> quedaron certificados permanentemente para todo el grupo.
+              <p className="text-xs sm:text-sm text-[#6F6A62] leading-relaxed mb-4">
+                La asistencia, minijuegos y liquidación de gastos de <span className="text-[#171512] font-semibold">{party.title}</span> quedaron certificados permanentemente para todo el grupo.
               </p>
 
-              <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-white/10 text-center mb-4">
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                  <Users className="w-4 h-4 text-[#F0DC00] mx-auto mb-1" />
-                  <span className="font-display font-black text-base text-white block">{attendeesCount}</span>
-                  <span className="text-[9px] uppercase text-white/50">Asistentes</span>
+              <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-[rgba(35,30,22,0.08)] text-center mb-4">
+                <div className="p-2.5 rounded-xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.08)]">
+                  <Users className="w-4 h-4 text-[#B8A700] mx-auto mb-1" />
+                  <span className="font-display font-black text-base text-[#171512] block">{attendeesCount}</span>
+                  <span className="text-[9px] uppercase text-[#8E887E]">Asistentes</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                  <Receipt className="w-4 h-4 text-rose-400 mx-auto mb-1" />
-                  <span className="font-display font-black text-base text-white block">${totalSharedDamage.toFixed(0)}</span>
-                  <span className="text-[9px] uppercase text-white/50">Saldado</span>
+                <div className="p-2.5 rounded-xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.08)]">
+                  <Receipt className="w-4 h-4 text-rose-500 mx-auto mb-1" />
+                  <span className="font-display font-black text-base text-[#171512] block">${totalSharedDamage.toFixed(0)}</span>
+                  <span className="text-[9px] uppercase text-[#8E887E]">Saldado</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                  <Gamepad2 className="w-4 h-4 text-purple-400 mx-auto mb-1" />
-                  <span className="font-display font-black text-base text-white block">{minigamesCount}</span>
-                  <span className="text-[9px] uppercase text-white/50">Juegos</span>
+                <div className="p-2.5 rounded-xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.08)]">
+                  <Gamepad2 className="w-4 h-4 text-purple-600 mx-auto mb-1" />
+                  <span className="font-display font-black text-base text-[#171512] block">{minigamesCount}</span>
+                  <span className="text-[9px] uppercase text-[#8E887E]">Juegos</span>
                 </div>
               </div>
 
@@ -462,9 +463,9 @@ export const RecapView: React.FC = () => {
                   href={getMonadExplorerTxUrl(attestationTxHash)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2.5 px-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-bold flex items-center justify-center gap-2 hover:bg-emerald-500/25 transition-all"
+                  className="w-full py-2.5 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 text-xs font-mono font-bold flex items-center justify-center gap-2 hover:bg-emerald-500/20 transition-all"
                 >
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   <span>Certificado en el Historial [Verificado]</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
@@ -472,51 +473,51 @@ export const RecapView: React.FC = () => {
                 <button
                   onClick={handleAttestGathering}
                   disabled={isAttesting}
-                  className="w-full py-2.5 px-3 rounded-xl bg-[#F0DC00] hover:brightness-105 active:scale-95 text-black text-xs font-display font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#F0DC00] hover:bg-[#E6D300] active:scale-95 text-[#171512] text-xs font-display font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
                 >
-                  <ShieldCheck className="w-4 h-4 text-black stroke-[2.5]" />
+                  <ShieldCheck className="w-4 h-4 text-[#171512] stroke-[2.5]" />
                   <span>{isAttesting ? 'Certificando noche...' : '⚡ Certificar Noche en el Historial del Grupo'}</span>
                 </button>
               )}
-            </GlassPanel>
+            </div>
 
             {/* Attendees Who Earned Co-Presence Badge */}
-            <GlassPanel level={2} className="p-6 border border-white/15">
+            <div className="p-6 bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] rounded-[28px] shadow-[0_10px_30px_rgba(65,48,25,0.06)]">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-white/60">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-[#6F6A62]">
                   VERIFIED ATTENDEES ({party.members.length})
                 </span>
-                <span className="text-[11px] text-[#F0DC00] font-semibold">Social badges minted</span>
+                <span className="text-[11px] text-[#B8A700] font-semibold">Social badges minted</span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {party.members.map((member) => (
                   <div
                     key={member.id}
-                    className="p-2.5 rounded-xl liquid-glass-card flex items-center gap-2.5 border border-white/10"
+                    className="p-2.5 rounded-xl bg-[#F8F3EA] flex items-center gap-2.5 border border-[rgba(35,30,22,0.08)]"
                   >
-                    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/20 flex items-center justify-center bg-black/40">
+                    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[rgba(35,30,22,0.12)] flex items-center justify-center bg-[#F1EADF]">
                       {member.avatar ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-bold text-xs">
+                        <div className="w-full h-full bg-[#F0DC00]/30 text-[#171512] flex items-center justify-center font-bold text-xs">
                           {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
                         </div>
                       )}
                     </div>
                     <div className="min-w-0">
-                      <span className="text-xs font-bold text-white truncate block">
+                      <span className="text-xs font-bold text-[#171512] truncate block">
                         {member.name}
                       </span>
-                      <span className="text-[9px] text-[#F0DC00] font-mono">
+                      <span className="text-[9px] text-[#B8A700] font-mono font-bold">
                         {member.role === 'host' ? 'Host' : 'Verified'}
                       </span>
                     </div>
                   </div>
                 ))}
               </div>
-            </GlassPanel>
+            </div>
 
             {/* Desktop Action Buttons */}
             <div className="hidden lg:flex flex-col gap-3 pt-2">
@@ -536,7 +537,7 @@ export const RecapView: React.FC = () => {
                 fullWidth
                 disabled={downloading}
                 onClick={handleDownloadStoryPoster}
-                icon={<Download className="w-5 h-5 text-white" />}
+                icon={<Download className="w-5 h-5 text-[#171512]" />}
               >
                 {downloading ? 'Rendering Canvas...' : 'Download Instagram Story Poster'}
               </GlassButton>

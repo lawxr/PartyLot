@@ -1,8 +1,5 @@
 import { publicMonadClient } from '@/lib/web3/monad';
 import { MONAD_CONTRACT_ADDRESSES, SocialGraphABI } from '@/contracts';
-import { executeSponsoredUserOp, getOrCreateSmartAccount } from '@/lib/web3/smartAccount';
-import { simulateTreasuryCall } from '@/lib/web3/metropolis';
-import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
 
 export interface GatheringRecordReceipt {
   success: boolean;
@@ -10,51 +7,54 @@ export interface GatheringRecordReceipt {
   blockNumber: number;
   explorerUrl: string;
   participantsCount: number;
+  nightsTogether?: number;
+}
+
+export interface AttestGatheringOptions {
+  userAName?: string;
+  userBName?: string;
+  userAId?: string;
+  userBId?: string;
 }
 
 /**
  * Records verified co-presence at a gathering on Monad's SocialGraph smart contract.
- * Automatically updates pairwise "nights together" ties for every attendee.
+ * Automatically updates pairwise "nights together" ties onchain and in database.
  */
 export async function recordGatheringOnchain(
   partyId: string,
-  participantAddresses: string[]
+  participantAddresses: string[],
+  options?: AttestGatheringOptions
 ): Promise<GatheringRecordReceipt> {
-  const account = getOrCreateSmartAccount();
-  const partyNumericId = BigInt(partyId.replace(/[^0-9]/g, '') || '404');
-
-  // Format valid checksummed or hex addresses
-  const validAddresses = participantAddresses.map((addr) => {
-    if (addr.startsWith('0x') && addr.length === 42) {
-      return addr as `0x${string}`;
-    }
-    // Pad deterministic mock address
-    const hexPart = addr.replace(/[^a-fA-F0-9]/g, '').padEnd(40, '0').slice(0, 40);
-    return `0x${hexPart}` as `0x${string}`;
+  const res = await fetch('/api/social-graph/attest', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      partyId,
+      userAAddress: participantAddresses[0],
+      userBAddress: participantAddresses[1],
+      userAName: options?.userAName,
+      userBName: options?.userBName,
+      userAId: options?.userAId,
+      userBId: options?.userBId,
+    }),
   });
 
-  // 1. Simulate on Tenderly Pro
-  await simulateTreasuryCall(
-    MONAD_CONTRACT_ADDRESSES.socialGraph,
-    'recordGathering',
-    { partyNumericId: partyNumericId.toString(), participantsCount: validAddresses.length }
-  );
+  const data = await res.json();
 
-  // 2. Execute via sponsored ERC-4337 UserOp on Monad
-  const userOpReceipt = await executeSponsoredUserOp(account.address, [
-    {
-      to: MONAD_CONTRACT_ADDRESSES.socialGraph,
-      value: 0,
-      label: `SocialGraph.recordGathering(${partyId}, ${validAddresses.length} members)`,
-    },
-  ]);
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Failed to record gathering on Monad blockchain.');
+  }
 
   return {
-    success: userOpReceipt.success,
-    txHash: userOpReceipt.transactionHash,
-    blockNumber: userOpReceipt.blockNumber,
-    explorerUrl: getMonadExplorerTxUrl(userOpReceipt.transactionHash),
-    participantsCount: validAddresses.length,
+    success: true,
+    txHash: data.txHash,
+    blockNumber: data.blockNumber,
+    explorerUrl: data.explorerUrl,
+    participantsCount: participantAddresses.length,
+    nightsTogether: data.nightsTogether,
   };
 }
 
@@ -62,12 +62,18 @@ export async function recordGatheringOnchain(
  * Reads the verifiable count of shared gatherings between two wallet addresses on Monad.
  */
 export async function getNightsTogetherOnchain(
-  addressA: string,
-  addressB: string
+  addressA?: string,
+  addressB?: string
 ): Promise<number> {
+  if (!addressA || !addressB) return 0;
+
   try {
     const formattedA = (addressA.startsWith('0x') ? addressA : `0x${addressA}`) as `0x${string}`;
     const formattedB = (addressB.startsWith('0x') ? addressB : `0x${addressB}`) as `0x${string}`;
+
+    if (formattedA.length !== 42 || formattedB.length !== 42) {
+      return 0;
+    }
 
     const count = await publicMonadClient.readContract({
       address: MONAD_CONTRACT_ADDRESSES.socialGraph,
@@ -79,6 +85,6 @@ export async function getNightsTogetherOnchain(
     return Number(count);
   } catch (err) {
     console.warn('Falling back from onchain SocialGraph read:', err);
-    return 12; // High-affinity default for primary crew demo
+    return 0;
   }
 }

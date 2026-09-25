@@ -18,6 +18,7 @@ import {
   ExpenseCategory,
   PartyTask,
   SharedExperienceConnection,
+  PartyMemory,
 } from '@/types';
 import {
   CURRENT_USER,
@@ -30,6 +31,7 @@ import {
   WHOS_MOST_LIKELY_QUESTIONS,
   THIS_OR_THAT_QUESTIONS,
   TRIVIA_QUESTIONS,
+  INITIAL_PARTY_MEMORIES,
 } from '@/data/mockData';
 import { generatePartyCode } from '@/services/party';
 import {
@@ -47,9 +49,11 @@ import {
   syncUserDataToDb,
   subscribeToPartyRealtime,
   subscribeToTasksRealtime,
+  persistPartyMemoryToSupabase,
 } from '@/services/supabaseService';
 import { Language } from '@/lib/i18n/translations';
 import { FinancialActionResult, getFinancialActionUnavailableResult } from '@/services/treasury';
+import { recordGatheringOnchain } from '@/services/socialGraphService';
 import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
 
 const demoMode = isExplicitDevelopmentDemoMode();
@@ -114,6 +118,9 @@ interface PartyStoreState {
   activeGameId: GameId;
   language: Language;
   setLanguage: (lang: Language) => void;
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+  toggleTheme: () => void;
 
   // Navigation
   setCurrentView: (view: AppView) => void;
@@ -148,6 +155,8 @@ interface PartyStoreState {
     code: string,
     authToken?: string | null
   ) => Promise<{ success: boolean; party?: Party; message?: string }>;
+  memories: PartyMemory[];
+  addPartyMemory: (params: { imageUrl: string; caption?: string }) => Promise<void>;
   toggleRsvp: (partyId: string) => void;
 
   // Expense & Split Actions
@@ -190,12 +199,23 @@ interface PartyStoreState {
 
   // Shared-Experience Graph
   getSharedConnection: (targetMember: Member) => SharedExperienceConnection;
+  syncConnectionOnchain: (targetMember: Member) => Promise<{
+    success: boolean;
+    txHash?: string;
+    blockNumber?: number;
+    explorerUrl?: string;
+    nightsTogether?: number;
+    error?: string;
+  }>;
+  sendPartyCheers: (targetMember: Member) => Promise<void>;
 
   // User & Auth Actions
   updateUser: (updates: Partial<User>, authToken?: string | null) => Promise<void>;
   resetUserSession: () => void;
   isOnboardingOpen: boolean;
   setIsOnboardingOpen: (open: boolean) => void;
+  pendingInviteCode: string | null;
+  setPendingInviteCode: (code: string | null) => void;
 
   // Realtime Supabase Persistence & Hydration
   hydrateFromSupabase: () => Promise<void>;
@@ -212,11 +232,27 @@ export const usePartyStore = create<PartyStoreState>()(
       currentUser: demoMode ? CURRENT_USER : signedOutUser,
       isOnboardingOpen: false,
       setIsOnboardingOpen: (open) => set({ isOnboardingOpen: open }),
+      pendingInviteCode: null,
+      setPendingInviteCode: (code) => set({ pendingInviteCode: code }),
       currentView: 'splash',
       previousView: null,
       activeTab: 'home',
       language: detectInitialLanguage(),
       setLanguage: (lang) => set({ language: lang }),
+      theme: 'light',
+      setTheme: (theme) => {
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+        }
+        set({ theme });
+      },
+      toggleTheme: () => {
+        const nextTheme = get().theme === 'dark' ? 'light' : 'dark';
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.toggle('dark', nextTheme === 'dark');
+        }
+        set({ theme: nextTheme });
+      },
       parties: demoMode ? INITIAL_PARTIES : [],
       currentPartyId: demoMode ? 'p-404' : '',
       crews: demoMode ? INITIAL_CREWS : [],
@@ -258,6 +294,7 @@ export const usePartyStore = create<PartyStoreState>()(
       ] : [],
       polls: demoMode ? INITIAL_POLLS : [],
       activities: demoMode ? INITIAL_ACTIVITIES : [],
+      memories: demoMode ? INITIAL_PARTY_MEMORIES : [],
       whosMostLikely: demoMode ? WHOS_MOST_LIKELY_QUESTIONS : [],
       thisOrThat: demoMode ? THIS_OR_THAT_QUESTIONS : [],
       trivia: demoMode ? TRIVIA_QUESTIONS : [],
@@ -288,6 +325,13 @@ export const usePartyStore = create<PartyStoreState>()(
         set((state) => {
           const isAuthed = Boolean(state.currentUser?.isPrivyAuthenticated || demoMode);
 
+          // If on home dashboard with a subtab open (e.g. profile, crews, activity), back returns to main home feed
+          if (state.currentView === 'home' && state.activeTab !== 'home') {
+            return {
+              activeTab: 'home',
+            };
+          }
+
           // If coming from splash (e.g. into join-party), always return to splash
           if (state.previousView === 'splash') {
             return {
@@ -300,6 +344,15 @@ export const usePartyStore = create<PartyStoreState>()(
           if (!isAuthed) {
             return {
               currentView: 'splash',
+              previousView: null,
+            };
+          }
+
+          // If in standalone profile view, return to home feed
+          if (state.currentView === 'profile') {
+            return {
+              currentView: 'home',
+              activeTab: 'home',
               previousView: null,
             };
           }
@@ -317,7 +370,7 @@ export const usePartyStore = create<PartyStoreState>()(
             };
           }
 
-          return { currentView: 'home', previousView: null };
+          return { currentView: 'home', activeTab: 'home', previousView: null };
         });
       },
 
@@ -572,6 +625,42 @@ export const usePartyStore = create<PartyStoreState>()(
         }
 
         return { success: true, party: matched };
+      },
+
+      addPartyMemory: async ({ imageUrl, caption }) => {
+        const state = get();
+        const partyId = state.currentPartyId || 'party_hackathon_demo';
+        const newMemory: PartyMemory = {
+          id: `mem-${Date.now()}`,
+          partyId,
+          imageUrl,
+          caption,
+          uploadedById: state.currentUser.id,
+          uploadedByName: state.currentUser.name || 'Anonymous',
+          uploadedByAvatar: state.currentUser.avatar,
+          createdAt: 'Just now',
+        };
+
+        const newActivity: ActivityItem = {
+          id: `act-memory-${Date.now()}`,
+          partyId,
+          type: 'game',
+          text: `📸 ${state.currentUser.name} añadió una nueva foto al álbum!`,
+          time: 'Just now',
+          avatar: state.currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+        };
+
+        set((s) => ({
+          memories: [newMemory, ...s.memories],
+          activities: [newActivity, ...s.activities],
+        }));
+
+        if (!demoMode && partyId) {
+          await Promise.all([
+            persistPartyMemoryToSupabase(newMemory),
+            persistActivityToSupabase(newActivity),
+          ]);
+        }
       },
 
       toggleRsvp: (partyId) => {
@@ -868,44 +957,144 @@ export const usePartyStore = create<PartyStoreState>()(
       getSharedConnection: (targetMember) => {
         const state = get();
         const currentUserId = state.currentUser.id;
+        const currentUserName = state.currentUser.name;
+        const currentUserWallet = state.currentUser.walletAddress;
+
         const targetId = targetMember.id;
+        const targetName = targetMember.name;
+        const targetWallet = targetMember.walletAddress;
 
-        // Gatherings together: parties where both appear
-        const mutualParties = state.parties.filter(
-          (p) =>
-            p.members.some((m) => m.id === currentUserId || m.name === state.currentUser.name) &&
-            p.members.some((m) => m.id === targetId || m.name === targetMember.name)
-        );
+        const isDemoUser =
+          demoMode && ['u-ana', 'u-carlos', 'u-valen', 'u-sofi'].includes(targetId);
 
-        // Pre-computed historical ground truth for primary crew members
-        const baseGatherings =
-          targetId === 'u-ana' ? 12 : targetId === 'u-carlos' ? 9 : targetId === 'u-valen' ? 7 : targetId === 'u-sofi' ? 6 : 3;
-        const gatheringsTogether = Math.max(mutualParties.length, baseGatherings);
+        // Gatherings together: parties where both appear in members
+        const mutualParties = state.parties.filter((p) => {
+          const hasCurrentUser = p.members.some(
+            (m) =>
+              (currentUserId && m.id === currentUserId) ||
+              (currentUserName && m.name?.toLowerCase() === currentUserName.toLowerCase()) ||
+              (currentUserWallet && m.walletAddress && m.walletAddress.toLowerCase() === currentUserWallet.toLowerCase())
+          );
+          const hasTarget = p.members.some(
+            (m) =>
+              (targetId && m.id === targetId) ||
+              (targetName && m.name?.toLowerCase() === targetName.toLowerCase()) ||
+              (targetWallet && m.walletAddress && m.walletAddress.toLowerCase() === targetWallet.toLowerCase())
+          );
+          return hasCurrentUser && hasTarget;
+        });
 
-        const baseGames =
-          targetId === 'u-ana' ? 31 : targetId === 'u-carlos' ? 24 : targetId === 'u-valen' ? 18 : targetId === 'u-sofi' ? 14 : 6;
-        const gamesPlayedTogether = baseGames;
+        const mutualPartyIds = new Set(mutualParties.map((p) => p.id));
 
-        const baseSettlements =
-          targetId === 'u-ana' ? 8 : targetId === 'u-carlos' ? 5 : targetId === 'u-valen' ? 4 : targetId === 'u-sofi' ? 3 : 2;
-        const settlementsTogether = baseSettlements;
+        // Real Minigames played together:
+        let realGames = 0;
+        state.activities.forEach((act) => {
+          if (mutualPartyIds.has(act.partyId) && act.type === 'game') {
+            realGames++;
+          }
+        });
+        state.whosMostLikely.forEach((q) => {
+          const votesForTarget = q.votes[targetId] || 0;
+          const votesForUser = q.votes[currentUserId] || 0;
+          if (votesForTarget > 0 || votesForUser > 0) {
+            realGames += votesForTarget + votesForUser;
+          }
+        });
+        state.thisOrThat.forEach((tot) => {
+          if (tot.userVote) realGames++;
+        });
 
-        const baseCrews =
-          targetId === 'u-ana' ? 3 : targetId === 'u-carlos' ? 2 : targetId === 'u-valen' ? 2 : targetId === 'u-sofi' ? 1 : 1;
-        const recurringCrewsShared = baseCrews;
+        // Real Settlements verified together:
+        let realSettlements = 0;
+        let unsettledCount = 0;
+        state.expenses.forEach((exp) => {
+          if (mutualPartyIds.has(exp.partyId)) {
+            const isTargetInvolved = exp.paidById === targetId || exp.splitBetweenIds.includes(targetId);
+            const isUserInvolved = exp.paidById === currentUserId || exp.splitBetweenIds.includes(currentUserId);
+            if (isTargetInvolved && isUserInvolved) {
+              if (exp.isSettled) {
+                realSettlements++;
+              } else {
+                unsettledCount++;
+              }
+            }
+          }
+        });
 
-        // Spark level calculation
-        const totalScore = gatheringsTogether * 2 + gamesPlayedTogether + settlementsTogether * 3;
-        let sparkLevel: 'Kindling' | 'Ignited' | 'Soul Crew' | 'Ride or Die' = 'Kindling';
-        if (totalScore >= 60) {
-          sparkLevel = 'Ride or Die';
-        } else if (totalScore >= 35) {
-          sparkLevel = 'Soul Crew';
-        } else if (totalScore >= 18) {
-          sparkLevel = 'Ignited';
+        // Real Recurring crews shared:
+        const sharedCrews = state.crews.filter((c) => {
+          const hasUser = c.members?.some(
+            (m) => (currentUserId && m.userId === currentUserId) || m.name === currentUserName
+          );
+          const hasTarget = c.members?.some(
+            (m) => (targetId && m.userId === targetId) || m.name === targetName
+          );
+          return hasUser && hasTarget;
+        });
+
+        const onchainNights = targetMember.nightsTogether || 0;
+
+        const gatheringsTogether = isDemoUser
+          ? Math.max(
+              mutualParties.length,
+              targetId === 'u-ana' ? 12 : targetId === 'u-carlos' ? 9 : targetId === 'u-valen' ? 7 : 6
+            )
+          : Math.max(mutualParties.length, onchainNights, 1);
+
+        const gamesPlayedTogether = isDemoUser
+          ? (targetId === 'u-ana' ? 31 : targetId === 'u-carlos' ? 24 : targetId === 'u-valen' ? 18 : 14)
+          : realGames;
+
+        const settlementsTogether = isDemoUser
+          ? (targetId === 'u-ana' ? 8 : targetId === 'u-carlos' ? 5 : targetId === 'u-valen' ? 4 : 3)
+          : realSettlements;
+
+        const recurringCrewsShared = isDemoUser
+          ? (targetId === 'u-ana' ? 3 : targetId === 'u-carlos' ? 2 : targetId === 'u-valen' ? 2 : 1)
+          : sharedCrews.length;
+
+        // Dynamic settlement reputation
+        let settlementReputation = '100% Instant Settler';
+        if (!isDemoUser) {
+          if (unsettledCount > 0) {
+            settlementReputation = `${unsettledCount} ${unsettledCount === 1 ? 'cuenta pendiente' : 'cuentas pendientes'}`;
+          } else if (settlementsTogether > 0) {
+            settlementReputation = '100% Instant Settler';
+          } else {
+            settlementReputation = 'Sin deudas pendientes';
+          }
         }
 
-        const cleanHandle = `@${targetMember.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.monad`;
+        // Dynamic favorite game
+        let favoriteGame = "Who's Most Likely";
+        if (state.whosMostLikely.length > 0 && state.whosMostLikely.some((q) => Object.keys(q.votes).length > 0)) {
+          favoriteGame = "Who's Most Likely";
+        } else if (state.thisOrThat.some((t) => t.userVote)) {
+          favoriteGame = 'This or That';
+        } else if (state.trivia.length > 0) {
+          favoriteGame = 'Crew Trivia';
+        }
+
+        // Spark level calculation
+        const totalScore = gatheringsTogether * 4 + gamesPlayedTogether * 2 + settlementsTogether * 3 + recurringCrewsShared * 5;
+        let sparkLevel: 'Kindling' | 'Ignited' | 'Soul Crew' | 'Ride or Die' = 'Kindling';
+        if (totalScore >= 45) {
+          sparkLevel = 'Ride or Die';
+        } else if (totalScore >= 20) {
+          sparkLevel = 'Soul Crew';
+        } else if (totalScore >= 8) {
+          sparkLevel = 'Ignited';
+        } else {
+          sparkLevel = 'Kindling';
+        }
+
+        let cleanHandle = targetMember.handle;
+        if (!cleanHandle) {
+          cleanHandle = `@${targetMember.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+        }
+        if (!cleanHandle.startsWith('@')) {
+          cleanHandle = `@${cleanHandle}`;
+        }
 
         return {
           targetUserId: targetId,
@@ -917,7 +1106,84 @@ export const usePartyStore = create<PartyStoreState>()(
           settlementsTogether,
           recurringCrewsShared,
           sparkLevel,
+          settlementReputation,
+          favoriteGame,
+          onchainNights: targetMember.nightsTogether,
         };
+      },
+
+      syncConnectionOnchain: async (targetMember) => {
+        const state = get();
+        const partyId = state.currentPartyId || 'party_hackathon_demo';
+        const userAAddress = state.currentUser.walletAddress || '';
+        const userBAddress = targetMember.walletAddress || '';
+
+        try {
+          const receipt = await recordGatheringOnchain(
+            partyId,
+            [userAAddress, userBAddress],
+            {
+              userAName: state.currentUser.name,
+              userBName: targetMember.name,
+              userAId: state.currentUser.id,
+              userBId: targetMember.id,
+            }
+          );
+
+          const updatedNights = receipt.nightsTogether || (targetMember.nightsTogether || 1) + 1;
+          set((s) => ({
+            parties: s.parties.map((p) => {
+              if (p.id !== partyId) return p;
+              return {
+                ...p,
+                members: p.members.map((m) =>
+                  m.id === targetMember.id || m.name === targetMember.name
+                    ? { ...m, nightsTogether: updatedNights }
+                    : m
+                ),
+              };
+            }),
+          }));
+
+          if (!demoMode && partyId) {
+            get().loadPartyFromSupabase(partyId).catch(() => {});
+          }
+
+          return {
+            success: true,
+            txHash: receipt.txHash,
+            blockNumber: receipt.blockNumber,
+            explorerUrl: receipt.explorerUrl,
+            nightsTogether: updatedNights,
+          };
+        } catch (err) {
+          console.error('Failed to sync connection onchain:', err);
+          return {
+            success: false,
+            error: err instanceof Error ? err.message : 'Error syncing onchain',
+          };
+        }
+      },
+
+      sendPartyCheers: async (targetMember) => {
+        const state = get();
+        const partyId = state.currentPartyId;
+        const newActivity: ActivityItem = {
+          id: `act-cheers-${Date.now()}`,
+          partyId: partyId || 'party_hackathon_demo',
+          type: 'game',
+          text: `🥂 ${state.currentUser.name} brindó con ${targetMember.name}!`,
+          time: 'Just now',
+          avatar: state.currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+        };
+
+        set((s) => ({
+          activities: [newActivity, ...s.activities],
+        }));
+
+        if (!demoMode && partyId) {
+          persistActivityToSupabase(newActivity).catch(() => {});
+        }
       },
 
       updateUser: async (updates, authToken) => {
@@ -986,6 +1252,7 @@ export const usePartyStore = create<PartyStoreState>()(
           transactions: details.transactions.length > 0 ? details.transactions : s.transactions,
           tasks: details.tasks.length > 0 ? details.tasks : s.tasks,
           activities: details.activities.length > 0 ? details.activities : s.activities,
+          memories: details.memories && details.memories.length > 0 ? details.memories : s.memories,
         }));
       },
 
@@ -1034,6 +1301,7 @@ export const usePartyStore = create<PartyStoreState>()(
           ] : [],
           polls: demoMode ? INITIAL_POLLS : [],
           activities: demoMode ? INITIAL_ACTIVITIES : [],
+          memories: demoMode ? INITIAL_PARTY_MEMORIES : [],
           whosMostLikely: demoMode ? WHOS_MOST_LIKELY_QUESTIONS : [],
           thisOrThat: demoMode ? THIS_OR_THAT_QUESTIONS : [],
           trivia: demoMode ? TRIVIA_QUESTIONS : [],
@@ -1056,6 +1324,7 @@ export const usePartyStore = create<PartyStoreState>()(
         polls: state.polls,
         currentPartyId: state.currentPartyId,
         language: state.language,
+        theme: state.theme,
       }),
     }
   )

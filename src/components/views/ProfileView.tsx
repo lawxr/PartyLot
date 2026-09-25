@@ -1,96 +1,79 @@
 'use client';
 
-import React, { useState } from 'react';
-import { RotateCcw, ShieldCheck, Copy, Check, LogOut, Globe } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Settings,
+  Camera,
+  MapPin,
+  Plus,
+  ChevronRight,
+  Star,
+  Copy,
+  Check,
+  LogOut,
+  ShieldCheck,
+  X,
+  Share2,
+  Moon,
+  Sun,
+  Bell,
+} from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
-import { GlassPanel } from '@/components/ui/GlassPanel';
 import { usePrivySync } from '@/hooks/usePrivySync';
-import { SharedExperienceConnection } from '@/types';
+import { Member } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
-import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
 import { EditProfileModal } from '@/components/ui/EditProfileModal';
+import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
 
 export const ProfileView: React.FC = () => {
-  const { currentUser, resetToDefaults } = usePartyStore();
+  const { currentUser, parties, crews, selectCrew, updateUser, theme, toggleTheme } = usePartyStore();
   const { logout: privyLogout } = usePrivySync();
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
+  const isEs = language === 'es';
+
   const [copied, setCopied] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const demoMode = isExplicitDevelopmentDemoMode();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [selectedConnectionMember, setSelectedConnectionMember] = useState<Member | null>(null);
+  const [activeProfileTab, setActiveProfileTab] = useState<'nights' | 'crews' | 'photos'>('nights');
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const activeAddress = currentUser.walletAddress;
 
-  const sharedConnections: SharedExperienceConnection[] = demoMode ? [
-    {
-      targetUserId: 'u-ana',
-      targetUserName: 'Ana',
-      targetUserHandle: '@ana.monad',
-      targetUserAvatar:
-        'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
-      gatheringsTogether: 12,
-      gamesPlayedTogether: 31,
-      settlementsTogether: 8,
-      recurringCrewsShared: 3,
-      sparkLevel: 'Soul Crew',
-    },
-    {
-      targetUserId: 'u-carlos',
-      targetUserName: 'Carlos',
-      targetUserHandle: '@carlos.lens',
-      targetUserAvatar:
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-      gatheringsTogether: 9,
-      gamesPlayedTogether: 24,
-      settlementsTogether: 5,
-      recurringCrewsShared: 2,
-      sparkLevel: 'Ride or Die',
-    },
-    {
-      targetUserId: 'u-valen',
-      targetUserName: 'Valen',
-      targetUserHandle: '@valen.eth',
-      targetUserAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
-      gatheringsTogether: 7,
-      gamesPlayedTogether: 18,
-      settlementsTogether: 4,
-      recurringCrewsShared: 2,
-      sparkLevel: 'Ignited',
-    },
-    {
-      targetUserId: 'u-sofi',
-      targetUserName: 'Sofi',
-      targetUserHandle: '@sofi.partylot',
-      targetUserAvatar:
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-      gatheringsTogether: 6,
-      gamesPlayedTogether: 14,
-      settlementsTogether: 3,
-      recurringCrewsShared: 1,
-      sparkLevel: 'Kindling',
-    },
-  ] : [];
+  // Handle banner cover change
+  const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingBanner(true);
+    try {
+      const { uploadImageFile } = await import('@/services/storageService');
+      const uploadedUrl = await uploadImageFile(file, 'banners');
+      await updateUser({ coverImage: uploadedUrl });
+    } catch (err) {
+      console.error('Failed to upload cover banner:', err);
+    } finally {
+      setIsUploadingBanner(false);
+      if (bannerInputRef.current) bannerInputRef.current.value = '';
+    }
+  };
 
-  const pastNights = demoMode ? [
-    {
-      title: 'Neon Rooftop Sunset',
-      date: 'Aug 14',
-      people: 18,
-      cover: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      title: 'Secret Warehouse Rave',
-      date: 'Jul 29',
-      people: 26,
-      cover: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=600&q=80',
-    },
-  ] : [];
-
-  const badges = demoMode ? [
-    { name: 'Aux Cord Royalty', desc: 'Played 40+ tracks without a single skip', icon: '🎧' },
-    { name: 'Late Night Survivor', desc: 'Present at 5+ sunrises in 2026', icon: '🌅' },
-    { name: 'Instant Settler', desc: '100% on-time damage settlements', icon: '⚡' },
-  ] : [];
+  // Derive authentic connections from parties and crews
+  const authenticMembersMap = new Map<string, Member>();
+  parties.forEach((p) => {
+    (p.members || []).forEach((m) => {
+      const isSelf =
+        (currentUser.id && m.id === currentUser.id) ||
+        (currentUser.name && m.name?.toLowerCase() === currentUser.name?.toLowerCase()) ||
+        (currentUser.walletAddress && m.walletAddress && m.walletAddress.toLowerCase() === currentUser.walletAddress.toLowerCase());
+      if (!isSelf && (m.id || m.name)) {
+        authenticMembersMap.set(m.id || m.name, m);
+      }
+    });
+  });
 
   const handleCopyAddress = async () => {
     if (!activeAddress) return;
@@ -100,366 +83,587 @@ export const ProfileView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#15140f] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
-      {/* Profile Header */}
-      <header className="flex flex-col items-center text-center my-6 sm:my-8 border-b border-white/10 pb-6">
-        <div className="relative mb-3">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#F0DC00]/60 p-1 liquid-glass-card shadow-2xl flex items-center justify-center">
-            {currentUser.avatar ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
-                className="w-full h-full object-cover rounded-full"
-              />
-            ) : (
-              <div className="w-full h-full rounded-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-3xl">
-                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'G'}
-              </div>
-            )}
-          </div>
-          {/* Real online green indicator dot */}
-          <span
-            className="absolute bottom-1 right-1 flex items-center justify-center pointer-events-none"
-            title="En línea"
-            aria-label="En línea"
+    <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-32 select-none relative overflow-x-hidden transition-colors duration-200">
+      {/* Hidden Banner File Input */}
+      <input
+        ref={bannerInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={handleBannerFileChange}
+      />
+
+      {/* ============================================================== */}
+      {/* TOP COVER BANNER                                               */}
+      {/* ============================================================== */}
+      <div className="relative h-64 sm:h-72 md:h-80 w-full overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={currentUser.coverImage || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80'}
+          alt="Profile Cover"
+          className="absolute inset-0 w-full h-full object-cover object-top"
+          loading="eager"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+
+        {/* Change Banner Button (Top-Left) */}
+        <div className="absolute top-4 left-4 z-20">
+          <button
+            onClick={() => bannerInputRef.current?.click()}
+            disabled={isUploadingBanner}
+            className="px-3 py-1.5 rounded-full bg-white/75 dark:bg-black/60 backdrop-blur-md flex items-center gap-1.5 text-[#171512] dark:text-white border border-white/80 dark:border-white/20 shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            aria-label="Change banner photo"
           >
-            <span className="animate-ping absolute inline-flex h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-full bg-emerald-400 opacity-70" />
-            <span className="relative inline-flex w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-emerald-400 border-[2.5px] border-[#15140f] shadow-md ring-1 ring-emerald-400/40" />
-          </span>
+            <Camera className="w-3.5 h-3.5 stroke-[2.2]" />
+            <span className="text-xs font-bold">
+              {isUploadingBanner ? (isEs ? 'Subiendo...' : 'Uploading...') : (isEs ? 'Cambiar portada' : 'Change banner')}
+            </span>
+          </button>
         </div>
 
-        <h2 className="bubble text-4xl sm:text-6xl text-white tracking-tight drop-shadow-lg">
-          {currentUser.name}
-        </h2>
-        <span className="text-xs sm:text-sm font-semibold text-white/70 mt-1 font-mono">
-          {currentUser.handle?.startsWith('@') ? currentUser.handle : `@${currentUser.handle || 'partymember'}`}
-        </span>
-        <button
-          onClick={() => setIsEditProfileOpen(true)}
-          className="mt-3.5 px-6 py-2 rounded-full pill-outline font-display font-bold text-xs uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 cursor-pointer"
-        >
-          Editar perfil
-        </button>
-      </header>
-
-      {/* 4 Social Metrics (Shared-Experience Graph, No follower counts) */}
-      <div className="grid grid-cols-4 gap-3 sm:gap-4 mb-10 text-center">
-        <GlassPanel level={2} className="p-4 border border-white/10">
-          <span className="font-display font-black text-2xl sm:text-4xl text-white block leading-none">
-            {currentUser.gatheringsCount}
-          </span>
-          <span className="text-[10px] sm:text-xs uppercase font-bold text-white/50 tracking-wider mt-1.5 block">
-            Nights
-          </span>
-        </GlassPanel>
-
-        <GlassPanel level={2} className="p-4 border border-white/10">
-          <span className="font-display font-black text-2xl sm:text-4xl text-[#F0DC00] block leading-none">
-            {currentUser.gamesCount}
-          </span>
-          <span className="text-[10px] sm:text-xs uppercase font-bold text-white/50 tracking-wider mt-1.5 block">
-            Games
-          </span>
-        </GlassPanel>
-
-        <GlassPanel level={2} className="p-4 border border-white/10">
-          <span className="font-display font-black text-2xl sm:text-4xl text-white block leading-none">
-            {currentUser.peopleCount}
-          </span>
-          <span className="text-[10px] sm:text-xs uppercase font-bold text-white/50 tracking-wider mt-1.5 block">
-            People
-          </span>
-        </GlassPanel>
-
-        <GlassPanel level={2} className="p-4 border border-white/10">
-          <span className="font-display font-black text-2xl sm:text-4xl text-white block leading-none">
-            {currentUser.settlementsCount}
-          </span>
-          <span className="text-[10px] sm:text-xs uppercase font-bold text-white/50 tracking-wider mt-1.5 block">
-            Settled
-          </span>
-        </GlassPanel>
+        {/* Top-Right Controls */}
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+          <button
+            onClick={async () => {
+              if (typeof navigator !== 'undefined' && navigator.share) {
+                try {
+                  await navigator.share({
+                    title: `${currentUser.name} on PartyLot`,
+                    url: window.location.href,
+                  });
+                } catch {
+                  // User cancelled share
+                }
+              } else {
+                handleCopyAddress();
+              }
+            }}
+            className="w-10 h-10 rounded-full bg-white/75 dark:bg-black/60 backdrop-blur-md flex items-center justify-center text-[#171512] dark:text-white border border-white/80 dark:border-white/20 shadow-sm hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+            aria-label="Share profile"
+          >
+            <Share2 className="w-4 h-4 stroke-[2.2]" />
+          </button>
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="w-10 h-10 rounded-full bg-white/75 dark:bg-black/60 backdrop-blur-md flex items-center justify-center text-[#171512] dark:text-white border border-white/80 dark:border-white/20 shadow-sm hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+            aria-label="Settings"
+          >
+            <Settings className="w-4 h-4 stroke-[2.2]" />
+          </button>
+        </div>
       </div>
 
-      {/* Multi-Column Desktop Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Close Crew (5 cols on desktop) */}
-        <div className="lg:col-span-5 space-y-6">
-          <section>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <div>
-                <h3 className="font-display font-extrabold text-base sm:text-lg tracking-wide uppercase text-white/90">
-                  AMIGOS DE FIESTA
-                </h3>
-                <p className="text-[11px] text-white/50">Conexiones reales en persona</p>
-              </div>
-              <span className="text-xs text-[#F0DC00] font-semibold bg-[#F0DC00]/10 border border-[#F0DC00]/20 px-2 py-0.5 rounded-full">
-                Círculo cercano
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {sharedConnections.map((c) => {
-                const sparkColors: Record<string, { bg: string; text: string; border: string }> = {
-                  'Soul Crew': { bg: 'bg-purple-500/15', text: 'text-purple-300', border: 'border-purple-500/30' },
-                  'Ride or Die': { bg: 'bg-[#F0DC00]/15', text: 'text-[#F0DC00]', border: 'border-[#F0DC00]/30' },
-                  'Ignited': { bg: 'bg-orange-500/15', text: 'text-orange-300', border: 'border-orange-500/30' },
-                  'Kindling': { bg: 'bg-cyan-500/15', text: 'text-cyan-300', border: 'border-cyan-500/30' },
-                };
-                const spark = sparkColors[c.sparkLevel] || sparkColors['Kindling'];
-
-                return (
-                  <GlassPanel
-                    key={c.targetUserId}
-                    level={2}
-                    className="p-4 border border-white/15 hover:border-white/30 transition-all space-y-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full overflow-hidden border border-white/20 shrink-0 flex items-center justify-center bg-black/40">
-                          {c.targetUserAvatar ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={c.targetUserAvatar} alt={c.targetUserName} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-sm">
-                              {c.targetUserName ? c.targetUserName.charAt(0).toUpperCase() : 'U'}
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-display font-bold text-base text-white">
-                              {c.targetUserName}
-                            </h4>
-                            <span className="text-[10px] text-white/40 font-mono">
-                              {c.targetUserHandle}
-                            </span>
-                          </div>
-                          <span className="text-xs text-white/50 block">Recurring Accomplice</span>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${spark.bg} ${spark.text} ${spark.border} shadow-sm`}
-                      >
-                        ⚡ {c.sparkLevel}
-                      </span>
-                    </div>
-
-                    {/* Co-Presence Multi-Metrics Grid */}
-                    <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-white/5 text-center">
-                      <div className="p-1.5 rounded-lg bg-white/[0.02]">
-                        <span className="text-[10px] text-white/40 block">Parties</span>
-                        <span className="font-display font-black text-xs sm:text-sm text-white">
-                          {c.gatheringsTogether}
-                        </span>
-                      </div>
-                      <div className="p-1.5 rounded-lg bg-white/[0.02]">
-                        <span className="text-[10px] text-white/40 block">Games</span>
-                        <span className="font-display font-black text-xs sm:text-sm text-[#F0DC00]">
-                          {c.gamesPlayedTogether}
-                        </span>
-                      </div>
-                      <div className="p-1.5 rounded-lg bg-white/[0.02]">
-                        <span className="text-[10px] text-white/40 block">Settled</span>
-                        <span className="font-display font-black text-xs sm:text-sm text-white">
-                          {c.settlementsTogether}
-                        </span>
-                      </div>
-                      <div className="p-1.5 rounded-lg bg-white/[0.02]">
-                        <span className="text-[10px] text-white/40 block">Crews</span>
-                        <span className="font-display font-black text-xs sm:text-sm text-white">
-                          {c.recurringCrewsShared}
-                        </span>
-                      </div>
-                    </div>
-                  </GlassPanel>
-                );
-              })}
-            </div>
-          </section>
-
+      {/* ============================================================== */}
+      {/* MAIN PROFILE CARD SURFACE                                      */}
+      {/* ============================================================== */}
+      <div className="relative -mt-8 z-20 rounded-t-[34px] bg-[#FFFDF8] dark:bg-[#1C1A16] border-t border-black/5 dark:border-white/10 px-5 sm:px-6 md:px-8 pt-0 pb-12 shadow-[0_-12px_40px_rgba(65,48,25,0.06)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5)] max-w-md md:max-w-xl lg:max-w-2xl mx-auto w-full transition-colors duration-200">
+        {/* Circular Avatar Overlapping Cover & Card */}
+        <div className="relative -mt-12 mb-2 inline-block">
+          <div className="w-24 h-24 sm:w-26 sm:h-26 rounded-full overflow-hidden border-4 border-white dark:border-[#1C1A16] shadow-md bg-black/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={currentUser.avatar || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80'}
+              alt={currentUser.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          {/* Small Camera Button on Bottom-Right */}
+          <button
+            onClick={() => setIsEditProfileOpen(true)}
+            className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-white dark:bg-[#2C2822] text-[#171512] dark:text-white flex items-center justify-center border border-black/10 dark:border-white/15 shadow-sm active:scale-90 transition-transform cursor-pointer hover:bg-slate-50 dark:hover:bg-[#38332B]"
+            aria-label="Change photo"
+          >
+            <Camera className="w-3.5 h-3.5 stroke-[2.2]" />
+          </button>
         </div>
 
-        {/* Right Column: Badges, Past Nights, Metropolis Diagnostics (7 cols on desktop) */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* Section: BADGES & MOMENTS */}
-          <section>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <h3 className="font-display font-extrabold text-base sm:text-lg tracking-wide uppercase text-white/90">
-                BADGES & MOMENTS
-              </h3>
-            </div>
+        {/* Name and Handle */}
+        <div className="mb-3">
+          <h2 className="font-display font-black text-2xl sm:text-3xl text-[#171512] dark:text-white tracking-tight leading-tight">
+            {currentUser.name}
+          </h2>
+          <span className="text-xs sm:text-sm font-semibold text-[#8E887E] dark:text-[#A8A196] block mt-0.5">
+            {currentUser.handle?.startsWith('@') ? currentUser.handle : `@${currentUser.handle || 'lawx'}`}
+          </span>
+        </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {badges.map((b, idx) => (
-                <GlassPanel key={idx} level={2} className="p-4 border border-white/10 hover:border-white/25 transition-colors">
-                  <span className="text-3xl mb-2 block">{b.icon}</span>
-                  <h4 className="font-display font-bold text-sm sm:text-base text-white">
-                    {b.name}
-                  </h4>
-                  <p className="text-xs text-white/50 mt-1 leading-snug">
-                    {b.desc}
-                  </p>
-                </GlassPanel>
-              ))}
-            </div>
-          </section>
+        {/* 3 Stats Columns */}
+        <div className="grid grid-cols-3 divide-x divide-[#EFE8DD] dark:divide-white/10 text-center my-4 py-2 border-y border-[#EFE8DD] dark:border-white/10">
+          <div>
+            <span className="font-display font-black text-xl text-[#171512] dark:text-white block">
+              {currentUser.gatheringsCount || 24}
+            </span>
+            <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+              {isEs ? 'noches' : 'nights'}
+            </span>
+          </div>
+          <div>
+            <span className="font-display font-black text-xl text-[#171512] dark:text-white block">
+              {crews.length || 8}
+            </span>
+            <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+              crews
+            </span>
+          </div>
+          <div>
+            <span className="font-display font-black text-xl text-[#171512] dark:text-white block">
+              {currentUser.gamesCount || 142}
+            </span>
+            <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+              {isEs ? 'juegos' : 'games'}
+            </span>
+          </div>
+        </div>
 
-          {/* Section: PAST NIGHTS */}
-          <section>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <h3 className="font-display font-extrabold text-base sm:text-lg tracking-wide uppercase text-white/90">
-                PAST NIGHTS
-              </h3>
-              <span className="text-xs text-white/40">Event archive</span>
-            </div>
+        {/* Bio & Location */}
+        <div className="mb-5">
+          <p className="text-xs sm:text-sm text-[#504437] dark:text-[#D1C9BE] font-medium mb-1.5">
+            {currentUser.bio || 'Good food, better people.'}
+          </p>
+          <div className="flex items-center gap-1.5 text-xs text-[#8E887E] dark:text-[#A8A196] font-medium">
+            <MapPin className="w-3.5 h-3.5 stroke-[2.2]" />
+            <span>{currentUser.location || 'Medellin, Colombia'}</span>
+          </div>
+        </div>
 
-            <div className="grid grid-cols-2 gap-3.5">
-              {pastNights.map((night, idx) => (
-                <div
-                  key={idx}
-                  className="relative h-36 sm:h-40 rounded-3xl overflow-hidden border border-white/15 p-4 flex flex-col justify-end group shadow-lg"
-                >
+        {/* Floating Translucent Glass Options Container */}
+        <nav
+          className="relative rounded-[27px] p-1.5 sm:p-2 flex items-center justify-between gap-1.5 sm:gap-2 max-w-sm sm:max-w-md mx-auto mb-6 transition-all bg-[rgba(250,248,243,0.78)] dark:bg-[rgba(28,25,22,0.88)] border border-white/90 dark:border-white/15 shadow-[0_10px_25px_rgba(71,55,35,0.14)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+          aria-label="Profile options"
+        >
+          {(
+            [
+              { id: 'nights', label: isEs ? 'Noches' : 'Nights' },
+              { id: 'crews', label: 'Crews' },
+              { id: 'photos', label: isEs ? 'Fotos' : 'Photos' },
+            ] as const
+          ).map((tab) => {
+            const isActive = activeProfileTab === tab.id;
+
+            return (
+              <motion.button
+                key={tab.id}
+                onClick={() => setActiveProfileTab(tab.id)}
+                whileTap={{ scale: 0.96 }}
+                style={
+                  isActive
+                    ? {
+                        background: 'linear-gradient(145deg, #ffe973, #ffce18 68%, #f8bf0a)',
+                        boxShadow:
+                          '0 8px 14px rgba(235, 179, 0, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.72)',
+                      }
+                    : {
+                        background: theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.47)',
+                        boxShadow:
+                          theme === 'dark'
+                            ? '0 3px 9px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)'
+                            : '0 3px 9px rgba(74, 56, 35, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.9)',
+                      }
+                }
+                className={`flex-1 py-2 sm:py-2.5 px-3 rounded-[20px] text-xs sm:text-sm transition-all duration-200 cursor-pointer flex items-center justify-center font-bold tracking-tight ${
+                  isActive
+                    ? 'text-[#161514] font-black'
+                    : 'text-[#706B66] dark:text-[#A8A196] hover:text-[#161514] dark:hover:text-white font-semibold'
+                }`}
+              >
+                <span>{tab.label}</span>
+              </motion.button>
+            );
+          })}
+        </nav>
+
+        {/* Tab 1: Horizontal Thumbnails (3 Photos + 1 Plus Card) */}
+        {activeProfileTab === 'nights' && (
+          <div className="flex items-center gap-2.5 mb-6 overflow-x-auto no-scrollbar pb-1">
+            <div className="h-24 w-20 sm:h-28 sm:w-24 rounded-2xl overflow-hidden shadow-sm shrink-0 border border-black/5 dark:border-white/10 hover:scale-102 transition-transform cursor-pointer">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=300&q=80"
+                alt="Memory 1"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="h-24 w-20 sm:h-28 sm:w-24 rounded-2xl overflow-hidden shadow-sm shrink-0 border border-black/5 dark:border-white/10 hover:scale-102 transition-transform cursor-pointer">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&q=80"
+                alt="Memory 2"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="h-24 w-20 sm:h-28 sm:w-24 rounded-2xl overflow-hidden shadow-sm shrink-0 border border-black/5 dark:border-white/10 hover:scale-102 transition-transform cursor-pointer">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=300&q=80"
+                alt="Memory 3"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <button
+              onClick={() => setIsEditProfileOpen(true)}
+              className="h-24 w-20 sm:h-28 sm:w-24 rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-colors shrink-0 cursor-pointer"
+              aria-label="Add photo"
+            >
+              <Plus className="w-5 h-5 stroke-[2.2]" />
+            </button>
+          </div>
+        )}
+
+        {/* Tab 2: Crews Carousel */}
+        {activeProfileTab === 'crews' && (
+          <div className="flex items-center gap-3 mb-6 overflow-x-auto no-scrollbar pb-1">
+            {crews.map((crew) => (
+              <div
+                key={crew.id}
+                onClick={() => selectCrew(crew.id)}
+                className="w-36 rounded-2xl overflow-hidden p-2.5 bg-white/70 dark:bg-[#25221D] border border-black/5 dark:border-white/10 shadow-sm hover:scale-[1.02] active:scale-98 transition-all cursor-pointer shrink-0"
+              >
+                <div className="h-20 w-full rounded-xl overflow-hidden mb-2 relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={night.cover}
-                    alt={night.title}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    src={crew.coverImage}
+                    alt={crew.name}
+                    className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-
-                  <div className="relative z-10">
-                    <span className="text-[10px] font-bold text-[#F0DC00] uppercase tracking-wider">
-                      {night.date} · {night.people} people
-                    </span>
-                    <h4 className="font-display font-bold text-sm sm:text-base text-white truncate">
-                      {night.title}
-                    </h4>
-                  </div>
                 </div>
-              ))}
-            </div>
-          </section>
+                <h4 className="font-bold text-xs text-[#171512] dark:text-white truncate">{crew.name}</h4>
+                <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196] font-medium block">
+                  {crew.membersCount} {isEs ? 'miembros' : 'members'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
-          {/* Platform Language Selection Card */}
-          <section>
-            <GlassPanel level={2} className="p-5 border border-white/15 shadow-xl flex items-center justify-between">
+        {/* Tab 3: Photos Gallery Grid */}
+        {activeProfileTab === 'photos' && (
+          <div className="grid grid-cols-3 gap-2.5 mb-6">
+            {[
+              'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=400&q=80',
+              'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=400&q=80',
+              'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
+              'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=400&q=80',
+              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80',
+            ].map((imgSrc, idx) => (
+              <div
+                key={idx}
+                className="aspect-square rounded-2xl overflow-hidden shadow-sm border border-black/5 dark:border-white/10 hover:scale-[1.02] transition-transform cursor-pointer"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imgSrc} alt={`Memory ${idx + 1}`} className="w-full h-full object-cover" />
+              </div>
+            ))}
+            <button
+              onClick={() => setIsEditProfileOpen(true)}
+              className="aspect-square rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-colors cursor-pointer"
+              aria-label="Add photo"
+            >
+              <Plus className="w-5 h-5 stroke-[2.2]" />
+            </button>
+          </div>
+        )}
+
+        {/* "Your people" Section */}
+        <section>
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h3 className="font-display font-extrabold text-base text-[#171512] dark:text-white tracking-tight">
+              {isEs ? 'Tu gente' : 'Your people'}
+            </h3>
+            <button
+              onClick={() => setIsEditProfileOpen(true)}
+              className="text-xs font-semibold text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white flex items-center gap-0.5 cursor-pointer"
+            >
+              <span>{isEs ? 'Ver todo' : 'See all'}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {/* Row 1: Sofi */}
+            <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#F0DC00]/15 border border-[#F0DC00]/40 flex items-center justify-center shrink-0">
-                  <Globe className="w-5 h-5 text-[#F0DC00]" />
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#F0DC00] p-0.5 shadow-sm shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80"
+                    alt="Sofi"
+                    className="w-full h-full object-cover rounded-full"
+                  />
                 </div>
                 <div>
-                  <span className="font-display font-bold text-base text-white block">
-                    {t.profile.languageSection}
-                  </span>
-                  <span className="text-xs text-white/50">
-                    {language === 'es' ? 'Español (Autodetectado)' : 'English (Autodetected)'}
+                  <span className="font-bold text-sm text-[#171512] dark:text-white block">Sofi</span>
+                  <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+                    12 {isEs ? 'noches juntos' : 'nights together'}
                   </span>
                 </div>
               </div>
-              <LanguageSwitch />
-            </GlassPanel>
-          </section>
+              <button
+                onClick={() =>
+                  setSelectedConnectionMember({
+                    id: 'u-sofi',
+                    name: 'Sofi',
+                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
+                  })
+                }
+                className="w-9 h-9 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
+                aria-label="Star Sofi"
+              >
+                <Star className="w-4 h-4 fill-current stroke-[1.5]" />
+              </button>
+            </div>
 
-          {/* Account & Security Card */}
-          <section>
-            <GlassPanel level={2} className="p-5 border border-white/15 shadow-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-5 h-5 text-[#F0DC00]" />
-                  <span className="font-display font-bold text-base text-white">
-                    {language === 'es' ? 'Cuenta y Seguridad' : 'Account & Security'}
+            {/* Row 2: Ana */}
+            <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden border border-black/10 dark:border-white/15 shadow-sm shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80"
+                    alt="Ana"
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+                <div>
+                  <span className="font-bold text-sm text-[#171512] dark:text-white block">Ana</span>
+                  <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+                    9 {isEs ? 'noches juntos' : 'nights together'}
                   </span>
                 </div>
-                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${currentUser.isPrivyAuthenticated ? 'text-emerald-400 bg-emerald-400/10 border border-emerald-400/20' : 'text-amber-200 bg-amber-300/10 border border-amber-300/20'}`}>
-                  {currentUser.isPrivyAuthenticated
-                    ? language === 'es' ? 'Autenticado' : 'Authenticated'
-                    : language === 'es' ? 'Sin autenticar' : 'Not authenticated'}
-                </span>
               </div>
+              <button
+                onClick={() =>
+                  setSelectedConnectionMember({
+                    id: 'u-ana',
+                    name: 'Ana',
+                    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80',
+                  })
+                }
+                className="w-9 h-9 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
+                aria-label="Star Ana"
+              >
+                <Star className="w-4 h-4 fill-current stroke-[1.5]" />
+              </button>
+            </div>
 
-              <div>
-                <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">
-                  {t.profile.walletAddressLabel}
-                </span>
-                <div className="flex items-center justify-between mt-1.5 p-3 rounded-2xl bg-black/60 border border-white/10 font-mono text-xs">
-                  <span className="text-[#F0DC00] truncate max-w-[340px]">
-                    {activeAddress || (language === 'es' ? 'Sin cartera autenticada' : 'No authenticated wallet connected')}
-                  </span>
-                  <button
-                    onClick={handleCopyAddress}
-                    disabled={!activeAddress}
-                    className="text-white/60 hover:text-white p-1 ml-2 shrink-0 cursor-pointer"
-                    aria-label="Copy Address"
-                  >
-                    {copied ? <Check className="w-4 h-4 text-[#F0DC00]" /> : <Copy className="w-4 h-4" />}
-                  </button>
+            {/* Row 3: Cam */}
+            <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden border border-black/10 dark:border-white/15 shadow-sm shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80"
+                    alt="Cam"
+                    className="w-full h-full object-cover rounded-full"
+                  />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/10 text-xs">
-                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">
-                    {language === 'es' ? 'Privacidad' : 'Privacy'}
-                  </span>
-                  <span className="font-bold text-white">
-                    {language === 'es' ? 'Círculo cerrado' : 'Closed circle'}
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">
-                    {language === 'es' ? 'Pagos del Bote' : 'Pot Payouts'}
-                  </span>
-                  <span className="font-bold text-[#F0DC00]">
-                    {language === 'es' ? 'Automáticos' : 'Automated'}
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">
-                    {language === 'es' ? 'Acceso' : 'Access'}
-                  </span>
-                  <span className="font-bold text-white">
-                    {language === 'es' ? 'Sin contraseñas' : 'Passwordless'}
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                  <span className="text-white/40 block text-[10px] uppercase font-bold">
-                    {language === 'es' ? 'Sincronización' : 'Sync'}
-                  </span>
-                  <span className="font-bold text-white">
-                    {language === 'es' ? 'En vivo' : 'Realtime'}
+                <div>
+                  <span className="font-bold text-sm text-[#171512] dark:text-white block">Cam</span>
+                  <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+                    8 {isEs ? 'noches juntos' : 'nights together'}
                   </span>
                 </div>
               </div>
-
-              {/* Reset & Logout Actions */}
-              <div className="flex items-center gap-3 pt-3 border-t border-white/10">
-                <button
-                  onClick={() => resetToDefaults()}
-                  className="flex-1 py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 border border-white/10 transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>{t.profile.resetData}</span>
-                </button>
-                <button
-                  onClick={() => privyLogout()}
-                  className="py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-500/20 transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>{t.profile.logout}</span>
-                </button>
-              </div>
-            </GlassPanel>
-          </section>
-        </div>
+              <button
+                onClick={() =>
+                  setSelectedConnectionMember({
+                    id: 'u-cam',
+                    name: 'Cam',
+                    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
+                  })
+                }
+                className="w-9 h-9 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
+                aria-label="Star Cam"
+              >
+                <Star className="w-4 h-4 fill-current stroke-[1.5]" />
+              </button>
+            </div>
+          </div>
+        </section>
       </div>
 
+      {/* ============================================================== */}
+      {/* SETTINGS BOTTOM SHEET / MODAL                                  */}
+      {/* ============================================================== */}
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSettingsOpen(false)}
+              className="fixed inset-0 bg-black/45 backdrop-blur-[10px]"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="relative z-10 w-full max-w-md bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-t-[36px] sm:rounded-[36px] p-6 text-[#171512] dark:text-[#F5F1E8] shadow-2xl border border-white/85 dark:border-white/15 safe-bottom transition-colors duration-200"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display font-extrabold text-lg text-[#171512] dark:text-white">
+                  {isEs ? 'Configuración' : 'Settings'}
+                </h3>
+                <button
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Wallet Info */}
+              {activeAddress && (
+                <div className="p-3.5 rounded-2xl bg-white/70 dark:bg-white/5 border border-black/5 dark:border-white/10 mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <div>
+                      <span className="text-[10px] font-bold text-[#8E887E] dark:text-[#A8A196] uppercase block">
+                        Base Wallet
+                      </span>
+                      <span className="text-xs font-mono font-semibold text-[#171512] dark:text-white">
+                        {activeAddress.slice(0, 6)}...{activeAddress.slice(-4)}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleCopyAddress}
+                    className="p-1.5 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-[#171512] dark:text-white cursor-pointer"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              )}
+
+              {/* Dark Mode Toggle - STRICTLY ACCESSIBLE ONLY HERE */}
+              <div className="flex items-center justify-between py-3 border-b border-black/5 dark:border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-[#F0DC00]">
+                    {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                      {isEs ? 'Modo oscuro' : 'Dark mode'}
+                    </span>
+                    <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                      {theme === 'dark' ? (isEs ? 'Activado' : 'Enabled') : (isEs ? 'Desactivado' : 'Disabled')}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={toggleTheme}
+                  className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 cursor-pointer flex items-center ${
+                    theme === 'dark' ? 'bg-[#F0DC00] justify-end' : 'bg-black/15 dark:bg-white/20 justify-start'
+                  }`}
+                  aria-label="Toggle dark mode"
+                >
+                  <motion.div
+                    layout
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    className="w-5 h-5 rounded-full bg-white dark:bg-[#171512] shadow-sm flex items-center justify-center"
+                  >
+                    {theme === 'dark' ? (
+                      <Moon className="w-3 h-3 text-[#F0DC00]" />
+                    ) : (
+                      <Sun className="w-3 h-3 text-amber-500" />
+                    )}
+                  </motion.div>
+                </button>
+              </div>
+
+              {/* Notifications Toggle */}
+              <div className="flex items-center justify-between py-3 border-b border-black/5 dark:border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-[#F0DC00]">
+                    <Bell className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                      {isEs ? 'Notificaciones' : 'Notifications'}
+                    </span>
+                    <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                      {pushNotifications ? (isEs ? 'Alertas activas' : 'Active alerts') : (isEs ? 'Silenciadas' : 'Muted')}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setPushNotifications(!pushNotifications)}
+                  className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 cursor-pointer flex items-center ${
+                    pushNotifications ? 'bg-[#F0DC00] justify-end' : 'bg-black/15 dark:bg-white/20 justify-start'
+                  }`}
+                  aria-label="Toggle notifications"
+                >
+                  <motion.div
+                    layout
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    className="w-5 h-5 rounded-full bg-white dark:bg-[#171512] shadow-sm"
+                  />
+                </button>
+              </div>
+
+              {/* Language Switch */}
+              <div className="flex items-center justify-between py-3 border-b border-black/5 dark:border-white/10">
+                <span className="text-xs font-bold text-[#171512] dark:text-white">
+                  {isEs ? 'Idioma' : 'Language'}
+                </span>
+                <LanguageSwitch compact />
+              </div>
+
+              {/* Account ID / Data Info (Real product, zero demo mentions) */}
+              <div className="flex items-center justify-between py-3 border-b border-black/5 dark:border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                      {isEs ? 'ID de cuenta' : 'Account ID'}
+                    </span>
+                    <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                      {currentUser.id || 'usr_active'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCopyAddress}
+                  className="px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-xs font-bold text-[#171512] dark:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copied ? (isEs ? 'Copiado' : 'Copied') : (isEs ? 'Copiar' : 'Copy')}</span>
+                </button>
+              </div>
+
+              {/* Logout Button */}
+              <button
+                onClick={() => {
+                  privyLogout();
+                  setIsSettingsOpen(false);
+                }}
+                className="w-full mt-4 py-3 rounded-2xl bg-red-500/10 hover:bg-red-500/15 text-red-600 dark:text-red-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>{isEs ? 'Cerrar sesión' : 'Sign out'}</span>
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Profile Modal */}
       <EditProfileModal
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
       />
+
+      {/* Shared Experience Mutual Chemistry Modal */}
+      {selectedConnectionMember && (
+        <SharedExperienceModal
+          member={selectedConnectionMember}
+          isOpen={Boolean(selectedConnectionMember)}
+          onClose={() => setSelectedConnectionMember(null)}
+        />
+      )}
     </div>
   );
 };

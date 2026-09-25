@@ -9,15 +9,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import confetti from 'canvas-confetti';
 import { uploadImageFile } from '@/services/storageService';
 import { User as UserType } from '@/types';
-
-const AVATAR_PRESETS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80',
-  'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&q=80',
-];
+import { AvatarCropModal } from '@/components/ui/AvatarCropModal';
 
 interface OnboardingFormProps {
   currentUser: UserType;
@@ -43,6 +35,8 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
   const [handleManuallyEdited, setHandleManuallyEdited] = useState(Boolean(initialHandle));
   const [avatar, setAvatar] = useState(currentUser.avatar || '');
   const [isUploading, setIsUploading] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [isCropOpen, setIsCropOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,21 +62,28 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
     setHandle(cleaned);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const previewUrl = URL.createObjectURL(file);
+    setCropImageSrc(previewUrl);
+    setIsCropOpen(true);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
     setIsUploading(true);
     setError(null);
     try {
-      const uploadedUrl = await uploadImageFile(file, 'avatars');
+      const uploadedUrl = await uploadImageFile(croppedBlob, 'avatars');
       setAvatar(uploadedUrl);
     } catch (uploadErr) {
       console.error('Avatar upload failed in onboarding:', uploadErr);
       setError(uploadErr instanceof Error ? uploadErr.message : 'Error al subir la imagen.');
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setCropImageSrc(null);
     }
   };
 
@@ -197,24 +198,6 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
           <span>{isUploading ? 'Subiendo...' : t.onboarding.uploadPhoto}</span>
         </button>
 
-        {/* Presets Row */}
-        <div className="flex items-center gap-2 mt-3 overflow-x-auto max-w-full pb-1">
-          {AVATAR_PRESETS.map((presetUrl, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => setAvatar(presetUrl)}
-              className={`relative w-9 h-9 rounded-full overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
-                avatar === presetUrl
-                  ? 'border-[#F0DC00] scale-110 shadow-[0_0_12px_rgba(240,220,0,0.5)]'
-                  : 'border-white/20 hover:border-white/50 opacity-60 hover:opacity-100'
-              }`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={presetUrl} alt={`Avatar ${idx + 1}`} className="w-full h-full object-cover" />
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Error Message */}
@@ -285,6 +268,16 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
           </>
         )}
       </button>
+
+      <AvatarCropModal
+        isOpen={isCropOpen}
+        imageSrc={cropImageSrc}
+        onCropComplete={handleCropComplete}
+        onClose={() => {
+          setIsCropOpen(false);
+          setCropImageSrc(null);
+        }}
+      />
     </form>
   );
 };

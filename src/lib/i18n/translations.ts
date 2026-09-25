@@ -66,6 +66,19 @@ export interface TranslationDictionary {
     enterPartyButton: string;
     enteringButton: string;
     connectToJoin: string;
+    invitationBadge: string;
+    onTheList: string;
+    when: string;
+    where: string;
+    peopleGoing: (count: number) => string;
+    confirmedGuestlist: string;
+    alreadyInParty: string;
+    enterParty: string;
+    acceptAndJoin: string;
+    accepting: string;
+    signInToAccept: string;
+    enterDifferentCode: string;
+    invitedBy: (name: string) => string;
   };
   createParty: {
     back: string;
@@ -111,6 +124,9 @@ export interface TranslationDictionary {
     curatedBy: (host: string) => string;
     sharedAlbum: string;
     photosCount: (count: number) => string;
+    addPhoto: string;
+    noPhotosYet: string;
+    uploadMemory: string;
     quickActions: {
       play: string;
       playSub: string;
@@ -150,6 +166,19 @@ export interface TranslationDictionary {
     pastNightsTitle: string;
     resetData: string;
     logout: string;
+    nightsMetric: string;
+    gamesMetric: string;
+    peopleMetric: string;
+    settledMetric: string;
+    nightsDetailTitle: string;
+    nightsDetailDesc: string;
+    gamesDetailTitle: string;
+    gamesDetailDesc: string;
+    peopleDetailTitle: string;
+    peopleDetailDesc: string;
+    settledDetailTitle: string;
+    settledDetailDesc: string;
+    closeModal: string;
   };
   onboarding: {
     welcomeBadge: string;
@@ -165,6 +194,18 @@ export interface TranslationDictionary {
     saving: string;
     errorNameRequired: string;
     errorHandleInvalid: string;
+  };
+  activityView: {
+    subtitle: string;
+    title: string;
+    all: string;
+    rsvps: string;
+    treasury: string;
+    games: string;
+    polls: string;
+    empty: string;
+    activeCircles: string;
+    members: (count: number) => string;
   };
 }
 
@@ -235,6 +276,19 @@ export const translations: Record<Language, TranslationDictionary> = {
       enterPartyButton: 'Entrar a la fiesta',
       enteringButton: 'Entrando a la fiesta...',
       connectToJoin: 'Inicia sesión para entrar',
+      invitationBadge: 'Invitación a la Fiesta',
+      onTheList: '¡ESTÁS EN LA LISTA!',
+      when: 'Cuándo',
+      where: 'Dónde',
+      peopleGoing: (count: number) => `${count} personas asistirán`,
+      confirmedGuestlist: 'Confirmados en la fiesta',
+      alreadyInParty: '¡Ya formas parte de esta fiesta!',
+      enterParty: 'Entrar a la Fiesta',
+      acceptAndJoin: 'Aceptar Invitación y Unirme',
+      accepting: 'Aceptando invitación...',
+      signInToAccept: 'Conectar para Aceptar Invitación',
+      enterDifferentCode: '¿Quieres unirte con otro código? Toca aquí',
+      invitedBy: (name: string) => `Invitado por el anfitrión ${name}`,
     },
     createParty: {
       back: 'Atrás',
@@ -280,6 +334,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       curatedBy: (host: string) => `Curado por ${host}`,
       sharedAlbum: 'Álbum compartido',
       photosCount: (count: number) => `${count} fotos`,
+      addPhoto: 'Añadir foto',
+      noPhotosYet: 'Sé el primero en subir un recuerdo',
+      uploadMemory: 'Subir recuerdo al álbum',
       quickActions: {
         play: 'JUGAR',
         playSub: '3 minijuegos',
@@ -319,6 +376,19 @@ export const translations: Record<Language, TranslationDictionary> = {
       pastNightsTitle: 'NOCHES ANTERIORES',
       resetData: 'Limpiar caché local',
       logout: 'Cerrar sesión',
+      nightsMetric: 'Noches',
+      gamesMetric: 'Juegos',
+      peopleMetric: 'Personas',
+      settledMetric: 'Pagos',
+      nightsDetailTitle: 'Noches de Fiesta',
+      nightsDetailDesc: 'Historial de fiestas y encuentros privados en los que has participado con tus crews.',
+      gamesDetailTitle: 'Juegos y Desafíos',
+      gamesDetailDesc: 'Rondas sociales jugadas en vivo: ¿Quién es más probable?, This or That y Trivia de Lore.',
+      peopleDetailTitle: 'Círculo de Amigos',
+      peopleDetailDesc: 'Personas reales con las que has compartido experiencias en persona. Sin seguidores falsos.',
+      settledDetailTitle: 'Cuentas Saldadas',
+      settledDetailDesc: 'Historial verificado de liquidaciones del daño y cuentas divididas saldadas a tiempo.',
+      closeModal: 'Entendido',
     },
     onboarding: {
       welcomeBadge: 'NUEVO MIEMBRO · BIENVENIDO',
@@ -334,6 +404,18 @@ export const translations: Record<Language, TranslationDictionary> = {
       saving: 'Guardando tu perfil...',
       errorNameRequired: 'Por favor ingresa cómo quieres llamarte.',
       errorHandleInvalid: 'El @usuario debe tener entre 3 y 24 caracteres (letras, números o guión bajo).',
+    },
+    activityView: {
+      subtitle: 'PULSO DE LA RED EN VIVO',
+      title: 'Actividad de Fiesta',
+      all: 'Toda la Actividad',
+      rsvps: 'Confirmaciones',
+      treasury: 'Fondo / Bote',
+      games: 'Juegos y Trivia',
+      polls: 'Votaciones',
+      empty: 'No hay actividad en esta categoría todavía.',
+      activeCircles: 'CÍRCULOS ACTIVOS',
+      members: (count: number) => `${count} miembros`,
     },
   },
   en: {
@@ -402,6 +484,19 @@ export const translations: Record<Language, TranslationDictionary> = {
       enterPartyButton: 'Enter Party',
       enteringButton: 'Entering Party...',
       connectToJoin: 'Sign in to join',
+      invitationBadge: 'Party Invitation',
+      onTheList: "YOU'RE ON THE LIST!",
+      when: 'When',
+      where: 'Where',
+      peopleGoing: (count: number) => `${count} people going`,
+      confirmedGuestlist: 'Confirmed on guestlist',
+      alreadyInParty: "You're already in this party!",
+      enterParty: 'Enter Party Details',
+      acceptAndJoin: 'Accept Invite & Join',
+      accepting: 'Accepting invite...',
+      signInToAccept: 'Sign in to Accept Invite',
+      enterDifferentCode: 'Want to enter a different code? Tap here',
+      invitedBy: (name: string) => `Invited by host ${name}`,
     },
     createParty: {
       back: 'Back',
@@ -447,6 +542,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       curatedBy: (host: string) => `Curated by ${host}`,
       sharedAlbum: 'Shared album',
       photosCount: (count: number) => `${count} photos`,
+      addPhoto: 'Add photo',
+      noPhotosYet: 'Be the first to share a memory',
+      uploadMemory: 'Upload party memory',
       quickActions: {
         play: 'PLAY',
         playSub: '3 minigames',
@@ -486,6 +584,19 @@ export const translations: Record<Language, TranslationDictionary> = {
       pastNightsTitle: 'PAST NIGHTS',
       resetData: 'Clear local cache',
       logout: 'Log out',
+      nightsMetric: 'Nights',
+      gamesMetric: 'Games',
+      peopleMetric: 'People',
+      settledMetric: 'Settled',
+      nightsDetailTitle: 'Party Nights',
+      nightsDetailDesc: 'Verified history of private parties and gatherings attended with your crews.',
+      gamesDetailTitle: 'Games & Challenges',
+      gamesDetailDesc: 'Live social game rounds played: Who’s Most Likely, This or That, and Lore Trivia.',
+      peopleDetailTitle: 'Friend Circle',
+      peopleDetailDesc: 'Authentic people you have spent real-world time with. Zero vanity followers.',
+      settledDetailTitle: 'Settled Expenses',
+      settledDetailDesc: 'Track record of group expense splits settled on-time without awkward debts.',
+      closeModal: 'Got it',
     },
     onboarding: {
       welcomeBadge: 'NEW MEMBER · WELCOME',
@@ -501,6 +612,18 @@ export const translations: Record<Language, TranslationDictionary> = {
       saving: 'Saving your profile...',
       errorNameRequired: 'Please enter your name or nickname.',
       errorHandleInvalid: 'Username must be between 3 and 24 characters (letters, numbers, or underscore).',
+    },
+    activityView: {
+      subtitle: 'LIVE NETWORK PULSE',
+      title: 'Party Activity',
+      all: 'All Activity',
+      rsvps: 'RSVPs',
+      treasury: 'Treasury',
+      games: 'Games & Trivia',
+      polls: 'Polls',
+      empty: 'No activity under this category yet.',
+      activeCircles: 'ACTIVE CREW CIRCLES',
+      members: (count: number) => `${count} members`,
     },
   },
 };

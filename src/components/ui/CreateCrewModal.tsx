@@ -71,7 +71,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/80 backdrop-blur-md"
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         />
 
         {/* Modal Window */}
@@ -79,22 +79,22 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          className="relative z-10 w-full max-w-lg overflow-hidden rounded-3xl border border-white/20 bg-[#0d0d12]/95 p-6 shadow-2xl backdrop-blur-2xl"
+          className="relative z-10 w-full max-w-lg overflow-hidden rounded-[32px] border border-[rgba(35,30,22,0.12)] bg-[#FFFDF8] p-6 shadow-[0_24px_70px_rgba(65,48,25,0.18)]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
+          <div className="flex items-center justify-between pb-4 border-b border-[rgba(35,30,22,0.08)] mb-5">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-[#F0DC00]/20 border border-[#F0DC00] flex items-center justify-center text-[#F0DC00]">
+              <div className="w-9 h-9 rounded-2xl bg-[#F0DC00]/25 border border-[#F0DC00]/40 flex items-center justify-center text-[#171512]">
                 <Users className="w-4 h-4 stroke-[2.5]" />
               </div>
               <div>
-                <h3 className="font-display font-extrabold text-xl text-white">Create New Crew</h3>
-                <p className="text-[11px] text-white/50">Durable group container for recurring gatherings</p>
+                <h3 className="font-display font-extrabold text-xl text-[#171512]">Create New Crew</h3>
+                <p className="text-[11px] text-[#6F6A62]">Durable group container for recurring gatherings</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors"
+              className="w-8 h-8 rounded-full bg-[#F8F3EA] hover:bg-[#F1EADF] flex items-center justify-center text-[#171512] transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -103,7 +103,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Crew Name */}
             <div>
-              <label className="block text-xs uppercase font-mono tracking-wider text-white/70 mb-1.5">
+              <label className="block text-xs uppercase font-mono tracking-wider text-[#6F6A62] mb-1.5">
                 Crew Name *
               </label>
               <input
@@ -112,13 +112,13 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                 placeholder="e.g. 404 House, Monad Hackers, Roomies"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 focus:border-[#F0DC00] focus:ring-1 focus:ring-[#F0DC00] text-white placeholder-white/30 text-sm outline-none transition-all"
+                className="w-full px-4 py-3 rounded-2xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00] focus:ring-1 focus:ring-[#F0DC00] text-[#171512] placeholder-[#8E887E] text-sm outline-none transition-all shadow-sm"
               />
             </div>
 
             {/* Crew Description */}
             <div>
-              <label className="block text-xs uppercase font-mono tracking-wider text-white/70 mb-1.5">
+              <label className="block text-xs uppercase font-mono tracking-wider text-[#6F6A62] mb-1.5">
                 Vibe / Mission
               </label>
               <input
@@ -126,20 +126,20 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                 placeholder="e.g. Secret rooftop sessions, late night builds & afters"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 focus:border-[#F0DC00] focus:ring-1 focus:ring-[#F0DC00] text-white placeholder-white/30 text-sm outline-none transition-all"
+                className="w-full px-4 py-3 rounded-2xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00] focus:ring-1 focus:ring-[#F0DC00] text-[#171512] placeholder-[#8E887E] text-sm outline-none transition-all shadow-sm"
               />
             </div>
 
             {/* Cover Image Selector */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs uppercase font-mono tracking-wider text-white/70">
+                <label className="text-xs uppercase font-mono tracking-wider text-[#6F6A62]">
                   Cover Photography
                 </label>
                 <button
                   type="button"
                   onClick={() => setUseCustomCover(!useCustomCover)}
-                  className="text-[11px] text-[#F0DC00] hover:underline flex items-center gap-1 font-mono"
+                  className="text-[11px] text-[#B8A700] hover:underline flex items-center gap-1 font-mono font-bold"
                 >
                   <ImageIcon className="w-3 h-3" />
                   {useCustomCover ? 'Select Preset' : 'Paste URL'}
@@ -152,7 +152,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                   placeholder="https://images.unsplash.com/..."
                   value={customCover}
                   onChange={(e) => setCustomCover(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 focus:border-[#F0DC00] text-white placeholder-white/30 text-xs outline-none"
+                  className="w-full px-4 py-3 rounded-2xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00] text-[#171512] placeholder-[#8E887E] text-xs outline-none shadow-sm"
                 />
               ) : (
                 <div className="grid grid-cols-5 gap-2">
@@ -163,8 +163,8 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                       onClick={() => setSelectedCover(preset.url)}
                       className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all group ${
                         selectedCover === preset.url
-                          ? 'border-[#F0DC00] scale-105 shadow-md shadow-[#F0DC00]/20'
-                          : 'border-white/10 opacity-60 hover:opacity-100 hover:border-white/30'
+                          ? 'border-[#171512] scale-105 shadow-sm'
+                          : 'border-transparent opacity-70 hover:opacity-100'
                       }`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -180,10 +180,10 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
             </div>
 
             {/* Trust Network Notice */}
-            <div className="p-3 rounded-2xl bg-[#F0DC00]/5 border border-[#F0DC00]/20 flex items-start gap-2.5">
-              <ShieldCheck className="w-4 h-4 text-[#F0DC00] shrink-0 mt-0.5" />
-              <p className="text-[11px] text-white/70 leading-relaxed">
-                You will be the <strong className="text-white">Owner</strong> of this Crew. Your members will share collective stats, memories, and access to private gatherings.
+            <div className="p-3 rounded-2xl bg-[#F0DC00]/15 border border-[#F0DC00]/30 flex items-start gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-[#B8A700] shrink-0 mt-0.5" />
+              <p className="text-[11px] text-[#171512] leading-relaxed">
+                You will be the <strong className="text-[#171512] font-extrabold">Owner</strong> of this Crew. Your members will share collective stats, memories, and access to private gatherings.
               </p>
             </div>
 

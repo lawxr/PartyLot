@@ -5,15 +5,16 @@ import { motion } from 'framer-motion';
 import { Plus, Check } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { TopNav } from '@/components/navigation/TopNav';
-import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import confetti from 'canvas-confetti';
+import { INITIAL_PARTIES } from '@/data/mockData';
 
 export const PollsView: React.FC = () => {
   const { parties, currentPartyId, polls, votePoll, createPoll } = usePartyStore();
-  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
-  const partyPolls = polls.filter((p) => p.partyId === party.id);
+  const defaultParty = INITIAL_PARTIES[0];
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
+  const partyPolls = polls.filter((p) => p.partyId === party?.id);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [question, setQuestion] = useState('');
@@ -51,17 +52,17 @@ export const PollsView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#15140f] text-white pb-32 select-none">
+    <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-32 select-none">
       <TopNav title="GROUP POLLS" />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
         {/* Responsive Header */}
-        <div className="flex items-end justify-between mb-8 border-b border-white/10 pb-5">
+        <div className="flex items-end justify-between mb-8 border-b border-[rgba(35,30,22,0.08)] pb-5">
           <div>
-            <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
+            <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#B89600]">
               REAL-TIME DECISIONS
             </span>
-            <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight leading-none mt-1">
+            <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight leading-none mt-1">
               CREW POLLS
             </h2>
           </div>
@@ -70,7 +71,7 @@ export const PollsView: React.FC = () => {
             variant="accent"
             size="md"
             onClick={() => setIsCreateOpen(true)}
-            icon={<Plus className="w-4 h-4 text-black stroke-[3]" />}
+            icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
           >
             Create Poll
           </GlassButton>
@@ -79,20 +80,19 @@ export const PollsView: React.FC = () => {
         {/* Poll Cards Multi-Column Grid on Desktop */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {partyPolls.map((poll) => (
-            <GlassPanel
+            <div
               key={poll.id}
-              level={2}
-              className="p-5 sm:p-6 border border-white/15 hover:border-white/25 transition-colors flex flex-col justify-between"
+              className="p-5 sm:p-6 bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] rounded-[24px] shadow-[0_4px_20px_rgba(40,30,20,0.04)] flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#6F6A62]">
                     {poll.totalVotes} TOTAL VOTES
                   </span>
-                  <span className="text-[11px] text-white/40">{poll.createdAt}</span>
+                  <span className="text-[11px] text-[#8E887E]">{poll.createdAt}</span>
                 </div>
 
-                <h3 className="font-display font-black text-xl sm:text-2xl text-white tracking-tight mb-5">
+                <h3 className="font-display font-black text-xl sm:text-2xl text-[#171512] tracking-tight mb-5">
                   {poll.question}
                 </h3>
               </div>
@@ -113,8 +113,8 @@ export const PollsView: React.FC = () => {
                       onClick={() => handleVote(poll.id, opt.id)}
                       className={`relative p-3.5 sm:p-4 rounded-2xl overflow-hidden cursor-pointer border transition-all ${
                         isSelected
-                          ? 'border-[#F0DC00] shadow-[0_0_15px_rgba(240, 220, 0,0.2)]'
-                          : 'border-white/10 hover:border-white/25'
+                          ? 'border-[#F0DC00] bg-[#FFF5C0]/40 shadow-xs'
+                          : 'border-[rgba(35,30,22,0.08)] bg-[#F7F2E8] hover:border-[rgba(35,30,22,0.15)]'
                       }`}
                     >
                       {/* Fluid Background Fill */}
@@ -123,7 +123,7 @@ export const PollsView: React.FC = () => {
                         animate={{ width: `${percentage}%` }}
                         transition={{ duration: 0.45, ease: 'easeOut' }}
                         className={`absolute inset-y-0 left-0 ${
-                          isSelected ? 'bg-[#F0DC00]/25' : 'bg-white/10'
+                          isSelected ? 'bg-[#F0DC00]/30' : 'bg-black/[0.04]'
                         }`}
                       />
 
@@ -131,22 +131,22 @@ export const PollsView: React.FC = () => {
                       <div className="relative z-10 flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                           {isSelected && (
-                            <span className="w-5 h-5 rounded-full bg-[#F0DC00] text-black flex items-center justify-center shrink-0">
+                            <span className="w-5 h-5 rounded-full bg-[#F0DC00] text-[#171512] flex items-center justify-center shrink-0">
                               <Check className="w-3.5 h-3.5 stroke-[3]" />
                             </span>
                           )}
-                          <span className="font-display font-bold text-sm sm:text-base text-white">
+                          <span className="font-display font-bold text-sm sm:text-base text-[#171512]">
                             {opt.label}
                           </span>
                         </div>
 
                         <div className="text-right flex items-center gap-2">
-                          <span className="text-xs font-semibold text-white/50">
+                          <span className="text-xs font-semibold text-[#8E887E]">
                             {opt.votes}
                           </span>
                           <span
                             className={`font-display font-black text-sm sm:text-base ${
-                              isSelected ? 'text-[#F0DC00]' : 'text-white/80'
+                              isSelected ? 'text-[#171512]' : 'text-[#6F6A62]'
                             }`}
                           >
                             {percentage}%
@@ -157,7 +157,7 @@ export const PollsView: React.FC = () => {
                   );
                 })}
               </div>
-            </GlassPanel>
+            </div>
           ))}
         </div>
       </main>
@@ -170,7 +170,7 @@ export const PollsView: React.FC = () => {
       >
         <form onSubmit={handleCreatePoll} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
               Question
             </label>
             <input
@@ -179,12 +179,12 @@ export const PollsView: React.FC = () => {
               placeholder="e.g. What should we play next?"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white text-base font-bold outline-none border border-white/20 focus:border-[#F0DC00]"
+              className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] text-base font-bold outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00] placeholder-[#999187]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
               Options
             </label>
             <div className="space-y-2">
@@ -195,7 +195,7 @@ export const PollsView: React.FC = () => {
                   placeholder={`Option ${idx + 1}`}
                   value={opt}
                   onChange={(e) => updateOptionText(idx, e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl liquid-glass-card text-white text-sm outline-none border border-white/10 focus:border-[#F0DC00]"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#F7F2E8] text-[#171512] text-sm outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00] placeholder-[#999187]"
                 />
               ))}
             </div>

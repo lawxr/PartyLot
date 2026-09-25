@@ -11,6 +11,7 @@ interface AvatarStackProps {
   countLabel?: string;
   className?: string;
   onMemberClick?: (member: Member) => void;
+  variant?: 'light' | 'over-image';
 }
 
 export const AvatarStack: React.FC<AvatarStackProps> = ({
@@ -21,6 +22,7 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
   countLabel = 'going',
   className = '',
   onMemberClick,
+  variant = 'light',
 }) => {
   const sizeMap = {
     sm: 'w-6 h-6 -space-x-1.5 text-[10px]',
@@ -36,6 +38,7 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
 
   const visibleMembers = members.slice(0, maxDisplay);
   const remaining = Math.max(0, members.length - maxDisplay);
+  const isOverImage = variant === 'over-image';
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -44,7 +47,11 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
           <div
             key={member.id || index}
             onClick={() => onMemberClick?.(member)}
-            className={`relative rounded-full overflow-hidden border-[#15140f] bg-neutral-800 shrink-0 shadow-md ${avatarSize} ${
+            className={`relative rounded-full overflow-hidden shrink-0 shadow-sm ${avatarSize} ${
+              isOverImage
+                ? 'border-white bg-[#171512]'
+                : 'border-[#FFFDF8] bg-[#F1EADF]'
+            } ${
               onMemberClick ? 'cursor-pointer hover:scale-110 hover:z-20 transition-transform' : ''
             }`}
             style={{ zIndex: maxDisplay - index }}
@@ -57,9 +64,10 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
                 alt={member.name}
                 className="w-full h-full object-cover"
                 loading="lazy"
+                decoding="async"
               />
             ) : (
-              <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-bold text-[10px]">
+              <div className="w-full h-full bg-[#F0DC00]/30 text-[#171512] flex items-center justify-center font-bold text-[10px]">
                 {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
               </div>
             )}
@@ -68,7 +76,11 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
 
         {remaining > 0 && (
           <div
-            className={`relative rounded-full overflow-hidden border-[#15140f] bg-neutral-900/90 text-white/90 font-semibold flex items-center justify-center shrink-0 backdrop-blur-md shadow-md ${avatarSize}`}
+            className={`relative rounded-full overflow-hidden font-bold flex items-center justify-center shrink-0 shadow-sm ${avatarSize} ${
+              isOverImage
+                ? 'border-white glass-light text-white'
+                : 'border-[#FFFDF8] bg-[#EFE9DF] text-[#171512]'
+            }`}
             style={{ zIndex: 0 }}
           >
             +{remaining}
@@ -77,7 +89,11 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
       </div>
 
       {showCount && (
-        <span className="text-xs font-semibold text-white/90 tracking-tight">
+        <span
+          className={`text-xs font-semibold tracking-tight ${
+            isOverImage ? 'text-white drop-shadow' : 'text-[#6F6A62]'
+          }`}
+        >
           {members.length} {countLabel}
         </span>
       )}

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <!-- Background Amber Glow -->
+    <radialGradient id="bgGlow" cx="50%" cy="38%" r="62%">
+      <stop offset="0%" stop-color="#F0DC00" stop-opacity="0.28" />
+      <stop offset="55%" stop-color="#15140F" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#0C0B0A" />
+    </radialGradient>
+
+    <!-- Electric Yellow Gradient for the Brand Monogram -->
+    <linearGradient id="pGrad" x1="160" y1="120" x2="380" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF59D" />
+      <stop offset="40%" stop-color="#F0DC00" />
+      <stop offset="100%" stop-color="#D4C200" />
+    </linearGradient>
+
+    <!-- Glass Specular Border -->
+    <linearGradient id="glassBorder" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.4" />
+      <stop offset="50%" stop-color="#F0DC00" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.05" />
+    </linearGradient>
+
+    <!-- Subtle Drop Shadow -->
+    <filter id="pShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.6" />
+      <feDropShadow dx="0" dy="0" stdDeviation="24" flood-color="#F0DC00" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Base Rounded Squircle in Espresso Obsidian -->
+  <rect x="24" y="24" width="464" height="464" rx="124" fill="#15140F" />
+  <rect x="24" y="24" width="464" height="464" rx="124" fill="url(#bgGlow)" />
+  <rect x="24" y="24" width="464" height="464" rx="124" stroke="url(#glassBorder)" stroke-width="12" />
+
+  <!-- Iconic PartyLot "P" Monogram -->
+  <path
+    d="M 160 152 C 160 138.7 170.7 128 184 128 L 308 128 C 363.2 128 402 165.2 402 216 C 402 266.8 363.2 304 308 304 L 220 304 L 220 360 C 220 373.3 209.3 384 196 384 L 184 384 C 170.7 384 160 373.3 160 360 Z M 220 180 L 220 252 L 304 252 C 328.3 252 346 235.9 346 216 C 346 196.1 328.3 180 304 180 Z"
+    fill="url(#pGrad)"
+    filter="url(#pShadow)"
+  />
+
+  <!-- 4-Point Radiant Party Star / Sparkle -->
+  <path
+    d="M 396 72 Q 396 112 356 112 Q 396 112 396 152 Q 396 112 436 112 Q 396 112 396 72 Z"
+    fill="#FFFFFF"
+  />
+  <circle cx="396" cy="112" r="6" fill="#F0DC00" />
+</svg>

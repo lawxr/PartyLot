@@ -3,6 +3,7 @@ export interface User {
   name: string;
   handle: string;
   avatar: string;
+  coverImage?: string;
   gatheringsCount: number;
   gamesCount: number;
   peopleCount: number;
@@ -12,6 +13,8 @@ export interface User {
   email?: string;
   authMethod?: string;
   isPrivyAuthenticated?: boolean;
+  bio?: string;
+  location?: string;
 }
 
 export interface Member {
@@ -22,6 +25,7 @@ export interface Member {
   status?: 'going' | 'maybe' | 'invited';
   nightsTogether?: number;
   walletAddress?: string;
+  handle?: string;
 }
 
 export interface Party {
@@ -62,6 +66,17 @@ export interface CrewMemory {
   uploadedBy: string;
   uploadedAt: string;
   partyTitle?: string;
+}
+
+export interface PartyMemory {
+  id: string;
+  partyId: string;
+  imageUrl: string;
+  caption?: string;
+  uploadedById?: string;
+  uploadedByName: string;
+  uploadedByAvatar?: string;
+  createdAt: string;
 }
 
 export interface Crew {
@@ -228,5 +243,10 @@ export interface SharedExperienceConnection {
   settlementsTogether: number;
   recurringCrewsShared: number;
   sparkLevel: 'Kindling' | 'Ignited' | 'Soul Crew' | 'Ride or Die';
+  onchainTxHash?: string;
+  onchainNights?: number;
+  isSyncedOnchain?: boolean;
+  settlementReputation?: string;
+  favoriteGame?: string;
 }
 

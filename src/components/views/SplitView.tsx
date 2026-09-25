@@ -18,13 +18,13 @@ import {
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { TopNav } from '@/components/navigation/TopNav';
-import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
 import { FINANCIAL_ACTIONS_AVAILABLE, getFinancialActionsUnavailableMessage } from '@/services/treasury';
 import { ExpenseCategory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { INITIAL_PARTIES } from '@/data/mockData';
 import confetti from 'canvas-confetti';
 
 const CATEGORIES: {
@@ -46,8 +46,10 @@ export const SplitView: React.FC = () => {
   const { parties, currentPartyId, expenses, addExpense } = usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
-  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
-  const partyExpenses = expenses.filter((e) => e.partyId === party.id);
+  const defaultParty = INITIAL_PARTIES[0];
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
+  const partyMembers = party?.members || [];
+  const partyExpenses = expenses.filter((e) => e.partyId === party?.id);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSettleOpen, setIsSettleOpen] = useState(false);
@@ -56,16 +58,16 @@ export const SplitView: React.FC = () => {
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('drinks');
-  const [paidById, setPaidById] = useState(party.members[0]?.id || 'u-law');
-  const [splitBetween, setSplitBetween] = useState<string[]>(party.members.map((m) => m.id));
+  const [paidById, setPaidById] = useState(partyMembers[0]?.id || 'u-law');
+  const [splitBetween, setSplitBetween] = useState<string[]>(partyMembers.map((m) => m.id));
 
   // Category filter state
   const [selectedFilter, setSelectedFilter] = useState<'all' | ExpenseCategory>('all');
   const financialActionsMessage = getFinancialActionsUnavailableMessage(language);
 
   // Calculations
-  const netBalances = calculateNetBalances(partyExpenses, party.members);
-  const settlements = computeDebtSettlements(netBalances, party.members);
+  const netBalances = calculateNetBalances(partyExpenses, partyMembers);
+  const settlements = computeDebtSettlements(netBalances, partyMembers);
   const totalAmount = partyExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   const filteredExpenses = selectedFilter === 'all'
@@ -114,36 +116,36 @@ export const SplitView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#15140f] text-white pb-32 select-none">
-      <TopNav title={isEs ? 'DIVISIÓN DE GASTOS' : 'EXPENSE ENGINE'} showLanguageSwitch />
+    <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-32 select-none">
+      <TopNav title={isEs ? 'DIVISIÓN DE GASTOS' : 'EXPENSE ENGINE'} />
 
       <main className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto pt-2 w-full">
-        <p role="status" className="mb-5 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+        <p role="status" className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {financialActionsMessage}
         </p>
         {/* Editorial Header */}
-        <div className="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-5">
+        <div className="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-[rgba(35,30,22,0.08)] pb-5">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#B89600]">
                 {isEs ? 'LIQUIDACIÓN DE CUENTAS' : 'DAMAGE CALCULATOR'}
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-200 border border-amber-500/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
                 <ShieldCheck className="w-3 h-3" />
                 {isEs ? 'Sugerencia de división' : 'Suggested split'}
               </span>
             </div>
-            <h2 className="bubble text-4xl sm:text-6xl text-white tracking-tight leading-none">
+            <h2 className="font-bubble text-4xl sm:text-6xl text-[#171512] tracking-tight leading-none">
               {isEs ? 'DIVIDE LOS GASTOS' : 'SPLIT THE DAMAGE'}
             </h2>
           </div>
 
           <div className="flex items-center gap-6">
             <div className="text-right">
-              <span className="text-[10px] uppercase font-bold text-white/50 block">
+              <span className="text-[10px] uppercase font-bold text-[#6F6A62] block">
                 {isEs ? 'TOTAL GASTADO' : 'TOTAL SPENT'}
               </span>
-              <span className="font-display font-black text-2xl sm:text-3xl text-[#F0DC00]">
+              <span className="font-display font-black text-2xl sm:text-3xl text-[#171512]">
                 ${totalAmount.toFixed(2)}
               </span>
             </div>
@@ -153,7 +155,7 @@ export const SplitView: React.FC = () => {
                 variant="accent"
                 size="md"
                 onClick={() => setIsAddOpen(true)}
-                icon={<Plus className="w-4 h-4 text-black stroke-[3]" />}
+                icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
               >
                 {isEs ? 'Añadir gasto' : 'Add expense'}
               </GlassButton>
@@ -163,7 +165,7 @@ export const SplitView: React.FC = () => {
                 size="md"
                 onClick={() => setIsSettleOpen(true)}
                 disabled={!FINANCIAL_ACTIONS_AVAILABLE || settlements.length === 0}
-                icon={<Sparkles className="w-4 h-4 text-[#F0DC00]" />}
+                icon={<Sparkles className="w-4 h-4 text-[#171512]" />}
               >
                 {isEs ? 'Saldar cuentas' : 'Settle debts'}
               </GlassButton>
@@ -178,7 +180,7 @@ export const SplitView: React.FC = () => {
             size="md"
             fullWidth
             onClick={() => setIsAddOpen(true)}
-            icon={<Plus className="w-4 h-4 text-black stroke-[3]" />}
+            icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
           >
             Add expense
           </GlassButton>
@@ -189,7 +191,7 @@ export const SplitView: React.FC = () => {
             fullWidth
             disabled={!FINANCIAL_ACTIONS_AVAILABLE}
             onClick={() => setIsSettleOpen(true)}
-            icon={<CheckCircle2 className="w-4 h-4 text-[#F0DC00]" />}
+            icon={<CheckCircle2 className="w-4 h-4 text-[#171512]" />}
           >
             {isEs ? 'Liquidación no disponible' : 'Settlement unavailable'}
           </GlassButton>
@@ -202,10 +204,10 @@ export const SplitView: React.FC = () => {
             {/* Net Balances Summary Section */}
             <section>
               <div className="flex items-center justify-between mb-3 px-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-white/60">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#6F6A62]">
                   WHO OWES WHO
                 </span>
-                <span className="text-[11px] text-white/40">{isEs ? 'Cálculo orientativo' : 'Suggested calculation'}</span>
+                <span className="text-[11px] text-[#8E887E]">{isEs ? 'Cálculo orientativo' : 'Suggested calculation'}</span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5">
@@ -214,23 +216,22 @@ export const SplitView: React.FC = () => {
                   const isNegative = b.netAmount < -0.001;
 
                   return (
-                    <GlassPanel
+                    <div
                       key={b.memberId}
-                      level={2}
-                      className="p-3.5 flex flex-col justify-between border border-white/10"
+                      className="p-3.5 flex flex-col justify-between rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_2px_12px_rgba(40,30,20,0.03)]"
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-7 h-7 rounded-full overflow-hidden border border-white/20 shrink-0 flex items-center justify-center bg-black/40">
+                        <div className="w-7 h-7 rounded-full overflow-hidden border border-black/5 shrink-0 flex items-center justify-center bg-[#F1EADF]">
                           {b.avatar ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img src={b.avatar} alt={b.memberName} className="w-full h-full object-cover" />
                           ) : (
-                            <span className="text-[10px] font-bold text-white/70">
+                            <span className="text-[10px] font-bold text-[#171512]">
                               {b.memberName ? b.memberName.charAt(0).toUpperCase() : 'U'}
                             </span>
                           )}
                         </div>
-                        <span className="text-xs font-bold text-white truncate">
+                        <span className="text-xs font-bold text-[#171512] truncate">
                           {b.memberName}
                         </span>
                       </div>
@@ -239,38 +240,38 @@ export const SplitView: React.FC = () => {
                         <span
                           className={`font-display font-black text-base ${
                             isPositive
-                              ? 'text-[#F0DC00]'
+                              ? 'text-[#8C7300]'
                               : isNegative
-                              ? 'text-rose-400'
-                              : 'text-white/40'
+                              ? 'text-rose-600'
+                              : 'text-[#8E887E]'
                           }`}
                         >
                           {isPositive ? `+$${b.netAmount.toFixed(2)}` : isNegative ? `-$${Math.abs(b.netAmount).toFixed(2)}` : '$0.00'}
                         </span>
-                        <span className="block text-[9px] uppercase font-bold text-white/40 tracking-wider">
+                        <span className="block text-[9px] uppercase font-bold text-[#8E887E] tracking-wider">
                           {isPositive ? (isEs ? 'recibe' : 'gets back') : isNegative ? (isEs ? 'debe' : 'owes') : (isEs ? 'en equilibrio' : 'balanced')}
                         </span>
                       </div>
-                    </GlassPanel>
+                    </div>
                   );
                 })}
               </div>
             </section>
 
             {/* Desktop Quick Settlement Summary */}
-            <div className="p-5 rounded-3xl liquid-glass-card border border-white/15">
+            <div className="p-5 rounded-3xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_4px_20px_rgba(40,30,20,0.04)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F0DC00]">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#B89600]">
                   {isEs ? 'DIVISIÓN SUGERIDA' : 'SUGGESTED SPLIT'}
                 </span>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
                   {isEs ? 'Sin pagos' : 'No payments'}
                 </span>
               </div>
-              <h4 className="font-display font-black text-xl text-white mb-2">
+              <h4 className="font-display font-black text-xl text-[#171512] mb-2">
                 {isEs ? 'Resumen de saldos' : 'Balance summary'}
               </h4>
-              <p className="text-xs text-white/70 leading-relaxed mb-4">
+              <p className="text-xs text-[#6F6A62] leading-relaxed mb-4">
                 Reduce las transferencias entre amigos al mínimo matemático para que nadie pague de más.
               </p>
               <GlassButton
@@ -281,7 +282,7 @@ export const SplitView: React.FC = () => {
                 onClick={() => {
                   setIsSettleOpen(true);
                 }}
-                icon={<CheckCircle2 className="w-4 h-4 text-[#F0DC00]" />}
+                icon={<CheckCircle2 className="w-4 h-4 text-[#171512]" />}
               >
                 {isEs ? 'Ver resumen (pagos no disponibles)' : 'Review summary (payments unavailable)'}
               </GlassButton>
@@ -295,10 +296,10 @@ export const SplitView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedFilter('all')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
                   selectedFilter === 'all'
-                    ? 'bg-[#F0DC00] text-black shadow-md'
-                    : 'liquid-glass-card text-white/60 hover:text-white'
+                    ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
+                    : 'bg-[#FFFDF8] text-[#6F6A62] hover:text-[#171512] border border-[rgba(35,30,22,0.08)] shadow-xs'
                 }`}
               >
                 All ({partyExpenses.length})
@@ -312,10 +313,10 @@ export const SplitView: React.FC = () => {
                     key={cat.id}
                     type="button"
                     onClick={() => setSelectedFilter(cat.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
                       selectedFilter === cat.id
-                        ? 'bg-white text-black shadow-md'
-                        : 'liquid-glass-card text-white/60 hover:text-white'
+                        ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
+                        : 'bg-[#FFFDF8] text-[#6F6A62] hover:text-[#171512] border border-[rgba(35,30,22,0.08)] shadow-xs'
                     }`}
                   >
                     <IconComponent className="w-3.5 h-3.5" />
@@ -327,10 +328,10 @@ export const SplitView: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between px-1">
-              <span className="text-xs font-bold uppercase tracking-wider text-white/60">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#6F6A62]">
                 RECENT BILLS ({filteredExpenses.length})
               </span>
-              <span className="text-xs text-white/40">Itemized expenses</span>
+              <span className="text-xs text-[#8E887E]">Itemized expenses</span>
             </div>
 
             <div className="space-y-3">
@@ -341,10 +342,9 @@ export const SplitView: React.FC = () => {
                   const perPerson = exp.splitBetweenIds.length > 0 ? exp.amount / exp.splitBetweenIds.length : exp.amount;
 
                   return (
-                    <GlassPanel
+                    <div
                       key={exp.id}
-                      level={2}
-                      className="p-4 sm:p-5 flex items-center justify-between border border-white/15 hover:border-white/25 transition-colors"
+                      className="p-4 sm:p-5 flex items-center justify-between bg-[#FFFDF8] border border-[rgba(35,30,22,0.07)] rounded-[20px] shadow-[0_4px_16px_rgba(40,30,20,0.03)] hover:shadow-md transition-all"
                     >
                       <div className="flex items-center gap-3.5">
                         <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border shrink-0 ${meta.color}`}>
@@ -352,37 +352,37 @@ export const SplitView: React.FC = () => {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h4 className="font-display font-bold text-base sm:text-lg text-white">
+                            <h4 className="font-display font-bold text-base sm:text-lg text-[#171512]">
                               {exp.description}
                             </h4>
                             {exp.isSettled && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
                                 <ShieldCheck className="w-2.5 h-2.5" />
                                 {isEs ? 'Marcado como saldado' : 'Previously marked settled'}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-white/50">
-                            Paid by <span className="text-white font-semibold">{exp.paidByName}</span> · split by {exp.splitBetweenIds.length} people
+                          <p className="text-xs text-[#6F6A62]">
+                            Paid by <span className="text-[#171512] font-semibold">{exp.paidByName}</span> · split by {exp.splitBetweenIds.length} people
                           </p>
                         </div>
                       </div>
 
                       <div className="text-right">
-                        <span className="font-display font-black text-lg sm:text-xl text-white">
+                        <span className="font-display font-black text-lg sm:text-xl text-[#171512]">
                           ${exp.amount.toFixed(2)}
                         </span>
-                        <span className="block text-xs text-[#F0DC00] font-semibold">
+                        <span className="block text-xs text-[#8C7300] font-semibold">
                           ${perPerson.toFixed(2)} / ea
                         </span>
                       </div>
-                    </GlassPanel>
+                    </div>
                   );
                 })
               ) : (
-                <div className="p-8 text-center rounded-3xl liquid-glass-card border border-white/10">
-                  <Receipt className="w-8 h-8 text-white/30 mx-auto mb-2" />
-                  <p className="text-xs text-white/50">No expenses recorded in this category yet.</p>
+                <div className="p-8 text-center rounded-3xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-sm">
+                  <Receipt className="w-8 h-8 text-[#999187] mx-auto mb-2" />
+                  <p className="text-xs text-[#6F6A62]">No expenses recorded in this category yet.</p>
                 </div>
               )}
             </div>
@@ -398,7 +398,7 @@ export const SplitView: React.FC = () => {
       >
         <form onSubmit={handleCreateExpense} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
               Category
             </label>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -410,13 +410,13 @@ export const SplitView: React.FC = () => {
                     key={cat.id}
                     type="button"
                     onClick={() => setCategory(cat.id)}
-                    className={`flex items-center gap-1.5 p-2 rounded-xl text-xs font-bold border transition-all ${
+                    className={`flex items-center gap-1.5 p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-[#F0DC00] bg-[#F0DC00]/10 text-white'
-                        : 'border-white/10 opacity-60 text-white/60 hover:opacity-100'
+                        ? 'border-[#F0DC00] bg-[#FFF5C0] text-[#171512]'
+                        : 'border-[rgba(35,30,22,0.08)] bg-[#F7F2E8] text-[#6F6A62] hover:text-[#171512]'
                     }`}
                   >
-                    <IconComponent className="w-3.5 h-3.5 text-[#F0DC00]" />
+                    <IconComponent className="w-3.5 h-3.5 text-[#B89600]" />
                     <span className="truncate">{cat.label}</span>
                   </button>
                 );
@@ -425,7 +425,7 @@ export const SplitView: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
               Description
             </label>
             <input
@@ -434,16 +434,16 @@ export const SplitView: React.FC = () => {
               placeholder="e.g. Sourdough Pizza, Drinks, Ice, Venue Deposit..."
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white placeholder-white/30 text-base font-semibold outline-none border border-white/20 focus:border-[#F0DC00]"
+              className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] placeholder-[#999187] text-base font-semibold outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
               Amount ($)
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-display font-black text-xl text-white/50">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-display font-black text-xl text-[#8E887E]">
                 $
               </span>
               <input
@@ -453,13 +453,13 @@ export const SplitView: React.FC = () => {
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-9 pr-4 py-3 rounded-2xl liquid-glass-card text-white font-display font-black text-2xl outline-none border border-white/20 focus:border-[#F0DC00]"
+                className="w-full pl-9 pr-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
               Paid by
             </label>
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
@@ -468,17 +468,17 @@ export const SplitView: React.FC = () => {
                   key={member.id}
                   type="button"
                   onClick={() => setPaidById(member.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
                     paidById === member.id
-                      ? 'bg-[#F0DC00] text-black shadow-md'
-                      : 'liquid-glass-card text-white/70'
+                      ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
+                      : 'bg-[#F7F2E8] text-[#6F6A62] border border-[rgba(35,30,22,0.08)]'
                   }`}
                 >
                   {member.avatar ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={member.avatar} alt={member.name} className="w-4 h-4 rounded-full object-cover" />
                   ) : (
-                    <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-bold text-white">
+                    <div className="w-4 h-4 rounded-full bg-[#EFE9DF] flex items-center justify-center text-[9px] font-bold text-[#171512]">
                       {member.name ? member.name.charAt(0).toUpperCase() : 'U'}
                     </div>
                   )}
@@ -489,9 +489,9 @@ export const SplitView: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-1.5 flex justify-between">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5 flex justify-between">
               <span>Split Between</span>
-              <span className="text-[#F0DC00]">{splitBetween.length} selected</span>
+              <span className="text-[#B89600] font-bold">{splitBetween.length} selected</span>
             </label>
             <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
               {party.members.map((member) => {
@@ -501,17 +501,17 @@ export const SplitView: React.FC = () => {
                     key={member.id}
                     type="button"
                     onClick={() => toggleSplitMember(member.id)}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl text-xs font-bold border transition-all ${
+                    className={`flex items-center gap-2 p-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-[#F0DC00] bg-[#F0DC00]/10 text-white'
-                        : 'border-white/10 opacity-50 text-white/50'
+                        ? 'border-[#F0DC00] bg-[#FFF5C0] text-[#171512]'
+                        : 'border-[rgba(35,30,22,0.08)] bg-[#F7F2E8] text-[#6F6A62]'
                     }`}
                   >
                     {member.avatar ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={member.avatar} alt={member.name} className="w-5 h-5 rounded-full object-cover" />
                     ) : (
-                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold text-white">
+                      <div className="w-5 h-5 rounded-full bg-[#EFE9DF] flex items-center justify-center text-[10px] font-bold text-[#171512]">
                         {member.name ? member.name.charAt(0).toUpperCase() : 'U'}
                       </div>
                     )}
@@ -542,21 +542,21 @@ export const SplitView: React.FC = () => {
         title={isEs ? 'Resumen de saldos' : 'Balance summary'}
       >
         <div className="space-y-4">
-          <p className="text-xs text-white/70">{financialActionsMessage}</p>
-          <p className="text-xs text-white/70">
+          <p className="text-xs text-[#6F6A62]">{financialActionsMessage}</p>
+          <p className="text-xs text-[#6F6A62]">
             {isEs
               ? 'Este resumen sugiere cómo podrían repartirse los gastos. No confirma pagos ni cambia saldos.'
               : 'This summary suggests how expenses could be split. It does not confirm payments or change balances.'}
           </p>
           <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
             {settlements.map((settlement, index) => (
-              <div key={`${settlement.fromId}-${settlement.toId}-${index}`} className="p-3.5 rounded-2xl liquid-glass-card flex items-center justify-between border border-white/15">
+              <div key={`${settlement.fromId}-${settlement.toId}-${index}`} className="p-3.5 rounded-2xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-xs text-rose-300">{settlement.fromName}</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-white/40" />
-                  <span className="font-bold text-xs text-[#F0DC00]">{settlement.toName}</span>
+                  <span className="font-bold text-xs text-rose-600">{settlement.fromName}</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#8E887E]" />
+                  <span className="font-bold text-xs text-[#171512]">{settlement.toName}</span>
                 </div>
-                <span className="font-display font-black text-base text-white">${settlement.amount.toFixed(2)}</span>
+                <span className="font-display font-black text-base text-[#171512]">${settlement.amount.toFixed(2)}</span>
               </div>
             ))}
           </div>

@@ -30,7 +30,7 @@ export const SplashView: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full min-h-[100dvh] overflow-y-auto overflow-x-hidden flex flex-col justify-between bg-[#15140f] text-[#FCFAF7] select-none">
+    <div className="relative w-full min-h-[100dvh] overflow-y-auto overflow-x-hidden flex flex-col justify-between bg-[#F7F2E8] text-[#FCFAF7] select-none">
       {/* Background warm golden hour party photography */}
       <motion.div
         initial={{ scale: 1.05 }}
@@ -42,9 +42,8 @@ export const SplashView: React.FC = () => {
             'url("https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1600&q=85")',
         }}
       >
-        {/* Soft warm amber gradient vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#15140f] via-[#15140f]/70 to-[#0c0b0a]/40" />
-        <div className="absolute inset-0 bg-radial-at-c from-transparent via-[#15140f]/40 to-[#0c0b0a]/80" />
+        {/* Soft warm amber gradient vignette per DESIGN.md section 4.1 */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(20,14,8,0.78)] via-[rgba(20,14,8,0.35)] to-transparent" />
       </motion.div>
 
       {/* Warm fairy light bulbs */}
@@ -70,13 +69,14 @@ export const SplashView: React.FC = () => {
         >
           {/* Left card */}
           <div
-            className="absolute left-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform -rotate-6 shadow-xl border border-white/20 overflow-hidden"
+            onClick={handleGetStarted}
+            className="group absolute left-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform -rotate-6 hover:-rotate-2 hover:scale-105 hover:z-30 shadow-xl hover:shadow-[0_16px_40px_rgba(0,0,0,0.8)] border border-white/20 hover:border-white/50 overflow-hidden cursor-pointer transition-all duration-300 active:scale-95"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=400&q=80"
               alt="New York Jam"
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0c0b0a] via-[#0c0b0a]/50 to-transparent" />
             <span className="relative z-10 self-end px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] mb-auto">
@@ -92,19 +92,19 @@ export const SplashView: React.FC = () => {
                 <img
                   src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80"
                   alt="Attendee"
-                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#FFFDF8]"
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100&q=80"
                   alt="Attendee"
-                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#FFFDF8]"
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&h=100&q=80"
                   alt="Attendee"
-                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#FFFDF8]"
                 />
               </div>
             </div>
@@ -112,13 +112,14 @@ export const SplashView: React.FC = () => {
 
           {/* Right card */}
           <div
-            className="absolute right-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform rotate-6 shadow-xl border border-white/20 overflow-hidden"
+            onClick={handleGetStarted}
+            className="group absolute right-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform rotate-6 hover:rotate-2 hover:scale-105 hover:z-30 shadow-xl hover:shadow-[0_16px_40px_rgba(0,0,0,0.8)] border border-white/20 hover:border-white/50 overflow-hidden cursor-pointer transition-all duration-300 active:scale-95"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=400&q=80"
               alt="Rooftop Party"
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0c0b0a] via-[#0c0b0a]/50 to-transparent" />
             <span className="relative z-10 self-end px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] mb-auto">
@@ -134,19 +135,19 @@ export const SplashView: React.FC = () => {
                 <img
                   src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=100&h=100&q=80"
                   alt="Attendee"
-                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#FFFDF8]"
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80"
                   alt="Attendee"
-                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#FFFDF8]"
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=100&h=100&q=80"
                   alt="Attendee"
-                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#15140f]"
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-[#FFFDF8]"
                 />
               </div>
             </div>
@@ -154,13 +155,14 @@ export const SplashView: React.FC = () => {
 
           {/* Center card */}
           <div
-            className="relative z-10 w-[190px] h-[160px] rounded-2xl liquid-glass-card p-3.5 flex flex-col justify-end shadow-2xl border border-white/30 transform hover:scale-105 transition-transform overflow-hidden"
+            onClick={handleGetStarted}
+            className="group relative z-10 w-[190px] h-[160px] rounded-2xl liquid-glass-card p-3.5 flex flex-col justify-end shadow-2xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.9)] border border-white/30 hover:border-white/60 transform hover:scale-105 hover:z-30 overflow-hidden cursor-pointer transition-all duration-300 active:scale-95"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=600&q=80"
               alt="Cocktails Night"
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0c0b0a] via-[#0c0b0a]/40 to-transparent" />
             <span className="relative z-10 self-end px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] flex items-center gap-1 mb-auto">
@@ -175,21 +177,20 @@ export const SplashView: React.FC = () => {
               <img
                 src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80"
                 alt="Sofia"
-                className="w-5 h-5 rounded-full object-cover border-[1.5px] border-[#15140f] ring-1 ring-white/20"
+                className="w-5 h-5 rounded-full object-cover border-[1.5px] border-[#FFFDF8] ring-1 ring-white/20"
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&h=120&q=80"
                 alt="Mateo"
-                className="w-5 h-5 rounded-full object-cover border-[1.5px] border-[#15140f] ring-1 ring-white/20"
+                className="w-5 h-5 rounded-full object-cover border-[1.5px] border-[#FFFDF8] ring-1 ring-white/20"
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=120&h=120&q=80"
                 alt="Lucas"
-                className="w-5 h-5 rounded-full object-cover border-[1.5px] border-[#15140f] ring-1 ring-white/20"
+                className="w-5 h-5 rounded-full object-cover border-[1.5px] border-[#FFFDF8] ring-1 ring-white/20"
               />
-              <span className="pl-2 text-[9px] font-bold text-white/90 drop-shadow">+14</span>
             </div>
           </div>
         </motion.div>

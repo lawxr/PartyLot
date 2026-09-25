@@ -17,12 +17,10 @@ import {
   Upload,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
-import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { SAMPLE_PARTY_COVERS } from '@/data/mockData';
 import { Party } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 import confetti from 'canvas-confetti';
 import { uploadImageFile } from '@/services/storageService';
 
@@ -112,12 +110,12 @@ export const CreatePartyView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#15140f] text-white flex flex-col justify-between p-4 sm:p-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top safe-bottom select-none w-full">
+    <div className="min-h-screen bg-[#F7F2E8] text-[#171512] flex flex-col justify-between p-4 sm:p-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top safe-bottom select-none w-full">
       {/* Top Header */}
       <div className="flex items-center justify-between mb-6 w-full shrink-0">
         <button
           onClick={goBack}
-          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full liquid-glass-button flex items-center justify-center text-white/80 hover:text-white transition-transform active:scale-95"
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#FFFDF8] border border-[rgba(35,30,22,0.1)] shadow-sm flex items-center justify-center text-[#171512] hover:bg-[#F8F3EA] transition-transform active:scale-95"
           aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -125,13 +123,11 @@ export const CreatePartyView: React.FC = () => {
 
         {/* Step Progress Pill */}
         {!createdParty && (
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-card text-xs font-semibold text-white/80 border border-white/15">
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFFDF8] border border-[rgba(35,30,22,0.1)] text-xs font-semibold text-[#171512] shadow-sm">
             <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
             <span>{t.createParty.stepCount(step, 4)}</span>
           </div>
         )}
-
-        <LanguageSwitch compact />
       </div>
 
       {/* Main Content Area */}
@@ -147,7 +143,7 @@ export const CreatePartyView: React.FC = () => {
             >
               {/* Left Column: Resulting Party Card Preview */}
               <div className="lg:col-span-5 hidden lg:flex flex-col items-center">
-                <div className="w-full h-[460px] rounded-[32px] relative overflow-hidden border border-white/20 shadow-2xl group">
+                <div className="w-full h-[460px] rounded-[32px] relative overflow-hidden border border-[rgba(35,30,22,0.1)] shadow-xl group">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={createdParty.coverImage}
@@ -156,7 +152,7 @@ export const CreatePartyView: React.FC = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
                   <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-                    <span className="px-3 py-1 rounded-full liquid-glass-nav text-xs font-bold text-[#F0DC00]">
+                    <span className="px-3 py-1 rounded-full bg-[#FFFDF8]/90 backdrop-blur-md text-xs font-bold text-[#171512] border border-[rgba(35,30,22,0.1)] shadow-sm">
                       {createdParty.date}
                     </span>
                     <span className="px-2.5 py-1 rounded-full bg-black/60 text-xs font-mono text-white/90">
@@ -174,35 +170,35 @@ export const CreatePartyView: React.FC = () => {
 
               {/* Right Column: Celebration Actions & Code */}
               <div className="lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left">
-                <div className="w-14 h-14 rounded-full bg-[#F0DC00]/20 border border-[#F0DC00]/40 text-[#F0DC00] flex items-center justify-center mb-4">
+                <div className="w-14 h-14 rounded-full bg-[#F0DC00]/25 border border-[#F0DC00]/40 text-[#171512] flex items-center justify-center mb-4">
                   <Sparkles className="w-7 h-7" />
                 </div>
 
-                <span className="text-xs uppercase font-extrabold tracking-widest text-[#F0DC00]">
+                <span className="text-xs uppercase font-extrabold tracking-widest text-[#B8A700]">
                   CONGRATS · LIVE ON MONAD
                 </span>
-                <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight mt-1 mb-2">
+                <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight mt-1 mb-2">
                   {t.createParty.partyCreatedTitle}
                 </h2>
-                <p className="text-sm text-white/70 max-w-md mb-6 leading-relaxed">
+                <p className="text-sm text-[#6F6A62] max-w-md mb-6 leading-relaxed">
                   {t.createParty.partyCreatedSubtitle}
                 </p>
 
                 {/* Giant Code Box */}
-                <GlassPanel level={3} className="p-6 mb-6 w-full max-w-md border border-white/20">
+                <div className="p-6 mb-6 w-full max-w-md bg-[#FFFDF8] rounded-[28px] border border-[rgba(35,30,22,0.1)] shadow-[0_12px_40px_rgba(65,48,25,0.08)]">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] uppercase font-bold text-white/50 tracking-wider">
+                    <span className="text-[11px] uppercase font-bold text-[#6F6A62] tracking-wider">
                       {t.createParty.partyCodeLabel}
                     </span>
-                    <span className="text-[11px] font-mono text-[#F0DC00] font-semibold">EIP-712 PERMIT</span>
+                    <span className="text-[11px] font-mono text-[#171512] font-semibold bg-[#F0DC00]/20 px-2 py-0.5 rounded-full">EIP-712 PERMIT</span>
                   </div>
-                  <div className="font-display font-black text-5xl sm:text-6xl tracking-widest text-[#F0DC00] my-2 text-center">
+                  <div className="font-display font-black text-5xl sm:text-6xl tracking-widest text-[#171512] my-2 text-center">
                     {createdParty.code}
                   </div>
-                  <div className="text-xs text-white/60 text-center">
+                  <div className="text-xs text-[#6F6A62] text-center">
                     {createdParty.title} · {createdParty.date} @ {createdParty.time}
                   </div>
-                </GlassPanel>
+                </div>
 
                 {/* Action Buttons */}
                 <div className="w-full max-w-md flex flex-col sm:flex-row gap-3">
@@ -221,7 +217,7 @@ export const CreatePartyView: React.FC = () => {
                     size="lg"
                     fullWidth
                     onClick={handleShare}
-                    icon={<Share2 className="w-5 h-5 text-white" />}
+                    icon={<Share2 className="w-5 h-5 text-[#171512]" />}
                   >
                     {t.createParty.shareInviteButton}
                   </GlassButton>
@@ -229,7 +225,7 @@ export const CreatePartyView: React.FC = () => {
 
                 <button
                   onClick={() => selectParty(createdParty.id)}
-                  className="mt-5 text-sm font-bold text-[#F0DC00] hover:underline underline-offset-4 cursor-pointer"
+                  className="mt-5 text-sm font-bold text-[#171512] hover:underline underline-offset-4 cursor-pointer"
                 >
                   {t.createParty.goToPartyButton} →
                 </button>
@@ -240,12 +236,12 @@ export const CreatePartyView: React.FC = () => {
             <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
               {/* Left Column: Live Updating Card Preview (Desktop Only) */}
               <div className="lg:col-span-5 hidden lg:block">
-                <div className="flex items-center gap-2 mb-3 text-xs font-bold text-white/50 uppercase tracking-wider">
-                  <Eye className="w-4 h-4 text-[#F0DC00]" />
+                <div className="flex items-center gap-2 mb-3 text-xs font-bold text-[#6F6A62] uppercase tracking-wider">
+                  <Eye className="w-4 h-4 text-[#B8A700]" />
                   <span>Live Feed Preview</span>
                 </div>
 
-                <div className="w-full h-[460px] rounded-[32px] relative overflow-hidden border border-white/20 shadow-2xl group transition-all">
+                <div className="w-full h-[460px] rounded-[32px] relative overflow-hidden border border-[rgba(35,30,22,0.1)] shadow-xl group transition-all">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={selectedCover}
@@ -256,7 +252,7 @@ export const CreatePartyView: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent" />
 
                   <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full liquid-glass-nav text-xs font-bold text-[#F0DC00]">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFFDF8]/90 backdrop-blur-md text-xs font-bold text-[#171512] border border-[rgba(35,30,22,0.1)] shadow-sm">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#F0DC00] animate-pulse" />
                       {date}
                     </span>
@@ -315,15 +311,15 @@ export const CreatePartyView: React.FC = () => {
                 >
                   {step === 1 && (
                     <div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-[#F0DC00]">
+                      <span className="text-xs font-bold uppercase tracking-widest text-[#B8A700]">
                         {t.createParty.stepCount(1, 4).toUpperCase()}
                       </span>
-                      <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight mt-1 mb-6">
+                      <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight mt-1 mb-6">
                         {t.createParty.step1Title}
                       </h2>
 
                       <div className="mb-6">
-                        <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
+                        <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2">
                           {t.createParty.partyNameLabel}
                         </label>
                         <input
@@ -332,15 +328,15 @@ export const CreatePartyView: React.FC = () => {
                           value={partyName}
                           onChange={(e) => setPartyName(e.target.value)}
                           autoFocus
-                          className="w-full px-5 py-4 rounded-2xl liquid-glass-card text-white placeholder-white/30 text-lg sm:text-xl font-display font-bold outline-none border border-white/20 focus:border-[#F0DC00] transition-colors"
+                          className="w-full px-5 py-4 rounded-2xl bg-[#FFFDF8] text-[#171512] placeholder-[#8E887E] text-lg sm:text-xl font-display font-bold outline-none border border-[rgba(35,30,22,0.12)] focus:border-[#F0DC00] focus:ring-2 focus:ring-[#F0DC00]/30 transition-all shadow-sm"
                         />
                       </div>
 
                       {/* Crew Selector */}
                       <div className="mb-6">
-                        <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2 flex items-center justify-between">
+                        <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2 flex items-center justify-between">
                           <span>{t.createParty.crewLabel}</span>
-                          <span className="text-[11px] text-[#F0DC00] font-mono">Durable Social Circle</span>
+                          <span className="text-[11px] text-[#B8A700] font-mono">Durable Social Circle</span>
                         </label>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                           {crews.map((c) => (
@@ -350,12 +346,12 @@ export const CreatePartyView: React.FC = () => {
                               onClick={() => setSelectedCrewId(c.id)}
                               className={`px-3 py-2.5 rounded-xl text-xs font-bold text-left border transition-all ${
                                 selectedCrewId === c.id
-                                  ? 'bg-[#F0DC00]/20 border-[#F0DC00] text-white shadow-sm shadow-[#F0DC00]/20'
-                                  : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:border-white/20'
+                                  ? 'bg-[#F0DC00] border-[#F0DC00] text-[#171512] shadow-sm'
+                                  : 'bg-[#FFFDF8] border-[rgba(35,30,22,0.1)] text-[#6F6A62] hover:text-[#171512] hover:bg-[#F8F3EA]'
                               }`}
                             >
                               <span className="block truncate">{c.name}</span>
-                              <span className="text-[10px] text-white/40 font-mono block">{t.home.membersCount(c.membersCount)}</span>
+                              <span className="text-[10px] text-[#8E887E] font-mono block">{t.home.membersCount(c.membersCount)}</span>
                             </button>
                           ))}
                           <button
@@ -363,12 +359,12 @@ export const CreatePartyView: React.FC = () => {
                             onClick={() => setSelectedCrewId('')}
                             className={`px-3 py-2.5 rounded-xl text-xs font-bold text-left border transition-all ${
                               selectedCrewId === ''
-                                ? 'bg-[#F0DC00]/20 border-[#F0DC00] text-white shadow-sm shadow-[#F0DC00]/20'
-                                : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:border-white/20'
+                                ? 'bg-[#F0DC00] border-[#F0DC00] text-[#171512] shadow-sm'
+                                : 'bg-[#FFFDF8] border-[rgba(35,30,22,0.1)] text-[#6F6A62] hover:text-[#171512] hover:bg-[#F8F3EA]'
                             }`}
                           >
                             <span className="block truncate">{t.createParty.noCrewOption}</span>
-                            <span className="text-[10px] text-white/40 font-mono block">Solo</span>
+                            <span className="text-[10px] text-[#8E887E] font-mono block">Solo</span>
                           </button>
                         </div>
                       </div>
@@ -384,16 +380,16 @@ export const CreatePartyView: React.FC = () => {
                         />
 
                         <div className="flex items-center justify-between mb-2.5">
-                          <label className="text-xs font-bold text-white/60 uppercase tracking-wider">
+                          <label className="text-xs font-bold text-[#6F6A62] uppercase tracking-wider">
                             {t.createParty.chooseCoverLabel}
                           </label>
                           <button
                             type="button"
                             onClick={() => coverInputRef.current?.click()}
                             disabled={isUploadingCover}
-                            className="px-3 py-1 rounded-full bg-[#F0DC00]/15 border border-[#F0DC00]/40 text-[#F0DC00] text-xs font-bold hover:bg-[#F0DC00]/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                            className="px-3 py-1 rounded-full bg-[#FFFDF8] border border-[rgba(35,30,22,0.12)] text-[#171512] text-xs font-bold hover:bg-[#F8F3EA] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
                           >
-                            <Camera className="w-3.5 h-3.5" />
+                            <Camera className="w-3.5 h-3.5 text-[#B8A700]" />
                             <span>
                               {isUploadingCover
                                 ? isEs
@@ -407,7 +403,7 @@ export const CreatePartyView: React.FC = () => {
                         </div>
 
                         {coverUploadError && (
-                          <div className="mb-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-xl">
+                          <div className="mb-2 text-xs text-rose-700 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl">
                             {coverUploadError}
                           </div>
                         )}
@@ -418,14 +414,14 @@ export const CreatePartyView: React.FC = () => {
                             onClick={() => coverInputRef.current?.click()}
                             className={`relative h-20 sm:h-24 rounded-2xl overflow-hidden cursor-pointer border-2 border-dashed flex flex-col items-center justify-center transition-all ${
                               isUploadingCover
-                                ? 'border-[#F0DC00] bg-[#F0DC00]/10 animate-pulse'
+                                ? 'border-[#171512] bg-[#F0DC00]/10 animate-pulse'
                                 : !SAMPLE_PARTY_COVERS.some((c) => c.url === selectedCover)
-                                ? 'border-[#F0DC00] bg-[#F0DC00]/15 shadow-[0_0_15px_rgba(240,220,0,0.3)]'
-                                : 'border-white/20 hover:border-[#F0DC00]/60 bg-white/5 hover:bg-white/10'
+                                ? 'border-[#171512] bg-[#F0DC00]/15 shadow-sm'
+                                : 'border-[rgba(35,30,22,0.15)] hover:border-[#171512] bg-[#FFFDF8]'
                             }`}
                           >
                             {isUploadingCover ? (
-                              <div className="w-5 h-5 border-2 border-[#F0DC00] border-t-transparent rounded-full animate-spin" />
+                              <div className="w-5 h-5 border-2 border-[#171512] border-t-transparent rounded-full animate-spin" />
                             ) : !SAMPLE_PARTY_COVERS.some((c) => c.url === selectedCover) ? (
                               <div className="relative w-full h-full">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -436,8 +432,8 @@ export const CreatePartyView: React.FC = () => {
                               </div>
                             ) : (
                               <>
-                                <Upload className="w-5 h-5 text-[#F0DC00] mb-1" />
-                                <span className="text-[10px] font-bold text-white/70 text-center leading-tight px-1">
+                                <Upload className="w-5 h-5 text-[#171512] mb-1" />
+                                <span className="text-[10px] font-bold text-[#6F6A62] text-center leading-tight px-1">
                                   {isEs ? 'Tu flyer' : 'Flyer'}
                                 </span>
                               </>
@@ -451,8 +447,8 @@ export const CreatePartyView: React.FC = () => {
                               onClick={() => setSelectedCover(cover.url)}
                               className={`relative h-20 sm:h-24 rounded-2xl overflow-hidden cursor-pointer border-2 transition-transform active:scale-95 ${
                                 selectedCover === cover.url
-                                  ? 'border-[#F0DC00] scale-105 shadow-[0_0_15px_rgba(240, 220, 0,0.3)]'
-                                  : 'border-white/10 opacity-70 hover:opacity-100'
+                                  ? 'border-[#171512] scale-105 shadow-md'
+                                  : 'border-transparent opacity-80 hover:opacity-100'
                               }`}
                             >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -470,16 +466,16 @@ export const CreatePartyView: React.FC = () => {
 
                   {step === 2 && (
                     <div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-[#F0DC00]">
+                      <span className="text-xs font-bold uppercase tracking-widest text-[#B8A700]">
                         {t.createParty.stepCount(2, 4).toUpperCase()}
                       </span>
-                      <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight mt-1 mb-6">
+                      <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight mt-1 mb-6">
                         {t.createParty.step2Title}
                       </h2>
 
                       <div className="space-y-5">
                         <div>
-                          <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
+                          <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2">
                             {t.createParty.dateLabel}
                           </label>
                           <div className="grid grid-cols-3 gap-2.5">
@@ -490,8 +486,8 @@ export const CreatePartyView: React.FC = () => {
                                 onClick={() => setDate(d)}
                                 className={`py-4 px-3 rounded-2xl text-xs sm:text-sm font-bold transition-all ${
                                   date === d
-                                    ? 'bg-[#F0DC00] text-black shadow-lg scale-[1.02]'
-                                    : 'liquid-glass-card text-white/80 hover:text-white border border-white/10'
+                                    ? 'bg-[#F0DC00] text-[#171512] shadow-sm scale-[1.02]'
+                                    : 'bg-[#FFFDF8] text-[#6F6A62] hover:text-[#171512] border border-[rgba(35,30,22,0.1)] shadow-sm'
                                 }`}
                               >
                                 {d === 'TONIGHT' ? (isEs ? 'ESTA NOCHE' : 'TONIGHT') : d === 'TOMORROW' ? (isEs ? 'MAÑANA' : 'TOMORROW') : (isEs ? 'VIERNES' : 'FRIDAY')}
@@ -501,7 +497,7 @@ export const CreatePartyView: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
+                          <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2">
                             {t.createParty.timeLabel}
                           </label>
                           <input
@@ -509,7 +505,7 @@ export const CreatePartyView: React.FC = () => {
                             value={time}
                             onChange={(e) => setTime(e.target.value)}
                             placeholder="e.g. 10:00 PM"
-                            className="w-full px-5 py-4 rounded-2xl liquid-glass-card text-white font-mono text-base outline-none border border-white/20 focus:border-[#F0DC00]"
+                            className="w-full px-5 py-4 rounded-2xl bg-[#FFFDF8] text-[#171512] font-mono text-base outline-none border border-[rgba(35,30,22,0.12)] focus:border-[#F0DC00] shadow-sm"
                           />
                         </div>
                       </div>
@@ -518,16 +514,16 @@ export const CreatePartyView: React.FC = () => {
 
                   {step === 3 && (
                     <div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-[#F0DC00]">
+                      <span className="text-xs font-bold uppercase tracking-widest text-[#B8A700]">
                         {t.createParty.stepCount(3, 4).toUpperCase()}
                       </span>
-                      <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight mt-1 mb-6">
+                      <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight mt-1 mb-6">
                         {t.createParty.step3Title}
                       </h2>
 
                       <div className="space-y-5">
                         <div>
-                          <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
+                          <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2">
                             {t.createParty.locationLabel}
                           </label>
                           <input
@@ -535,9 +531,9 @@ export const CreatePartyView: React.FC = () => {
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
                             placeholder={t.createParty.locationPlaceholder}
-                            className="w-full px-5 py-4 rounded-2xl liquid-glass-card text-white font-medium text-base outline-none border border-white/20 focus:border-[#F0DC00]"
+                            className="w-full px-5 py-4 rounded-2xl bg-[#FFFDF8] text-[#171512] font-medium text-base outline-none border border-[rgba(35,30,22,0.12)] focus:border-[#F0DC00] shadow-sm"
                           />
-                          <p className="mt-2 text-xs text-white/50">
+                          <p className="mt-2 text-xs text-[#8E887E]">
                             {isEs
                               ? 'La dirección exacta está cifrada offchain y solo se revela a miembros confirmados.'
                               : 'Exact address is encrypted offchain and only revealed to confirmed members.'}
@@ -545,7 +541,7 @@ export const CreatePartyView: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
+                          <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2">
                             {t.createParty.descriptionLabel}
                           </label>
                           <textarea
@@ -553,7 +549,7 @@ export const CreatePartyView: React.FC = () => {
                             onChange={(e) => setDescription(e.target.value)}
                             rows={3}
                             placeholder={t.createParty.descriptionPlaceholder}
-                            className="w-full px-4 py-3 rounded-2xl liquid-glass-card text-white text-sm outline-none border border-white/20 focus:border-[#F0DC00] resize-none"
+                            className="w-full px-4 py-3 rounded-2xl bg-[#FFFDF8] text-[#171512] text-sm outline-none border border-[rgba(35,30,22,0.12)] focus:border-[#F0DC00] resize-none shadow-sm"
                           />
                         </div>
                       </div>
@@ -562,20 +558,20 @@ export const CreatePartyView: React.FC = () => {
 
                   {step === 4 && (
                     <div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-[#F0DC00]">
+                      <span className="text-xs font-bold uppercase tracking-widest text-[#B8A700]">
                         {t.createParty.stepCount(4, 4).toUpperCase()}
                       </span>
-                      <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight mt-1 mb-2">
+                      <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight mt-1 mb-2">
                         {t.createParty.step4Title}
                       </h2>
-                      <p className="text-sm text-white/70 mb-6">
+                      <p className="text-sm text-[#6F6A62] mb-6">
                         {t.createParty.step4Subtitle}
                       </p>
 
                       {/* Summary Card Preview */}
-                      <GlassPanel level={2} className="p-5 mb-5 border border-white/20 relative overflow-hidden">
+                      <div className="p-5 mb-5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.1)] shadow-sm relative overflow-hidden">
                         <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-white/20">
+                          <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-[rgba(35,30,22,0.1)]">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={selectedCover}
@@ -584,19 +580,19 @@ export const CreatePartyView: React.FC = () => {
                             />
                           </div>
                           <div>
-                            <h4 className="font-display font-black text-xl text-white">
+                            <h4 className="font-display font-black text-xl text-[#171512]">
                               {partyName.trim() || (isEs ? 'Encuentro sin título' : 'Untitled Gathering')}
                             </h4>
-                            <p className="text-xs text-[#F0DC00] font-semibold mt-0.5">
+                            <p className="text-xs text-[#B8A700] font-semibold mt-0.5">
                               {date} · {time}
                             </p>
-                            <p className="text-xs text-white/60">{location}</p>
+                            <p className="text-xs text-[#6F6A62]">{location}</p>
                           </div>
                         </div>
-                      </GlassPanel>
+                      </div>
 
-                      <div className="p-4 rounded-2xl bg-[#F0DC00]/10 border border-[#F0DC00]/25 text-xs text-white/80 leading-relaxed flex items-center gap-2.5">
-                        <ShieldCheck className="w-5 h-5 text-[#F0DC00] shrink-0" />
+                      <div className="p-4 rounded-2xl bg-[#F0DC00]/15 border border-[#F0DC00]/30 text-xs text-[#171512] leading-relaxed flex items-center gap-2.5">
+                        <ShieldCheck className="w-5 h-5 text-[#B8A700] shrink-0" />
                         <span>
                           {isEs
                             ? 'Listo para desplegar. La tesorería de tu smart contract en Monad se inicializará automáticamente.'
@@ -614,7 +610,7 @@ export const CreatePartyView: React.FC = () => {
 
       {/* Footer Navigation */}
       {!createdParty && (
-        <div className="pt-6 flex items-center justify-between gap-3 w-full shrink-0 border-t border-white/10 mt-4">
+        <div className="pt-6 flex items-center justify-between gap-3 w-full shrink-0 border-t border-[rgba(35,30,22,0.08)] mt-4">
           {step > 1 ? (
             <GlassButton
               variant="subtle"

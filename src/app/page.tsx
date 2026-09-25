@@ -17,24 +17,46 @@ import { CrewDetailView } from '@/components/views/CrewDetailView';
 import { TabBar } from '@/components/navigation/TabBar';
 import { NewUserOnboardingModal } from '@/components/ui/NewUserOnboardingModal';
 import { usePrivySync } from '@/hooks/usePrivySync';
-import { isPrivyConfigured, isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
-import { isSupabaseConfigured } from '@/lib/supabase/client';
+import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
+import { useSwipeBack } from '@/hooks/useSwipeBack';
 
 const subscribe = () => () => {};
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
 export default function App() {
-  const { currentView, parties, currentPartyId, currentUser, setCurrentView } = usePartyStore();
+  const { currentView, parties, currentPartyId, currentUser, setCurrentView, theme } = usePartyStore();
   const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
 
   // Synchronize Privy auth & embedded wallet state across views
   const { ready } = usePrivySync();
 
+  // Mobile edge-swipe-to-go-back gesture
+  useSwipeBack();
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+    }
+  }, [theme]);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__partyStore = usePartyStore;
+
+      // Detect invite code from URL parameters (?code= or ?join=)
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code') || urlParams.get('join');
+        if (code && code.trim().length >= 4) {
+          const clean = code.trim().slice(0, 4).toUpperCase();
+          usePartyStore.getState().setPendingInviteCode(clean);
+          usePartyStore.getState().setCurrentView('join-party');
+        }
+      } catch {
+        // Query param parsing failed
+      }
     }
   }, []);
 
@@ -58,38 +80,37 @@ export default function App() {
 
   if (!mounted) {
     // Avoid hydration mismatch on initial render
-    return <div className="min-h-screen bg-[#15140f]" />;
+    return <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E]" />;
   }
 
   const activeParty = parties.find((p) => p.id === currentPartyId) || parties[0];
 
+  const isSplash = currentView === 'splash';
+
   return (
-    <div className="relative min-h-screen bg-[#15140f] text-[#FCFAF7] overflow-x-hidden flex flex-col justify-start">
-      {/* Ambient Desktop Backdrop Photography (Warm Blurred) */}
-      <div
-        className="fixed inset-0 hidden md:block opacity-25 bg-cover bg-center filter blur-3xl pointer-events-none scale-110"
-        style={{
-          backgroundImage: `url("${activeParty?.coverImage || 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1600&q=80'}")`,
-        }}
-      />
-      {/* Warm Ambient Radial Gradients */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-[10%] left-[15%] w-[450px] h-[450px] rounded-full bg-[#f0dc00]/10 filter blur-[90px]" />
-        <div className="absolute top-[40%] -right-[10%] w-[500px] h-[500px] rounded-full bg-[#ff8f9e]/8 filter blur-[100px]" />
-        <div className="absolute bottom-[5%] left-[20%] w-[400px] h-[400px] rounded-full bg-[#ffd65c]/10 filter blur-[80px]" />
-      </div>
+    <div
+      className="relative min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] overflow-x-hidden flex flex-col justify-start transition-colors duration-300"
+    >
+      {/* Ambient Desktop Backdrop Photography (Warm Blurred) - only on splash */}
+      {isSplash && (
+        <>
+          <div
+            className="fixed inset-0 hidden md:block opacity-25 bg-cover bg-center filter blur-3xl pointer-events-none scale-110"
+            style={{
+              backgroundImage: `url("${activeParty?.coverImage || 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1600&q=80'}")`,
+            }}
+          />
+          {/* Warm Ambient Radial Gradients */}
+          <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+            <div className="absolute -top-[10%] left-[15%] w-[450px] h-[450px] rounded-full bg-[#f0dc00]/10 filter blur-[90px]" />
+            <div className="absolute top-[40%] -right-[10%] w-[500px] h-[500px] rounded-full bg-[#ff8f9e]/8 filter blur-[100px]" />
+            <div className="absolute bottom-[5%] left-[20%] w-[400px] h-[400px] rounded-full bg-[#ffd65c]/10 filter blur-[80px]" />
+          </div>
+        </>
+      )}
 
       {/* Main Responsive View Container */}
       <div className="relative z-10 w-full min-h-screen flex flex-col justify-start">
-        {(isExplicitDevelopmentDemoMode() || !isPrivyConfigured() || !isSupabaseConfigured()) && (
-          <div role="status" className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-4xl rounded-xl border border-amber-300/25 bg-amber-300/10 px-4 py-2 text-center text-xs text-amber-100">
-            {isExplicitDevelopmentDemoMode()
-              ? 'Development demo mode — sample data and local changes are not real or persisted to a production database.'
-              : !isPrivyConfigured()
-              ? 'Sign-in is unavailable: configure the authentication provider. Demo fixtures are disabled.'
-              : 'Database access is unavailable. Invite joins need server-side authentication and an atomic invite-join service.'}
-          </div>
-        )}
         {currentView === 'splash' && <SplashView />}
         {currentView === 'home' && <HomeView />}
         {currentView === 'create-party' && <CreatePartyView />}

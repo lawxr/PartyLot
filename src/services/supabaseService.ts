@@ -9,6 +9,7 @@ import {
   PartyTask,
   User,
   CrewMember,
+  PartyMemory,
 } from '@/types';
 
 /**
@@ -353,6 +354,29 @@ export async function persistActivityToSupabase(activity: ActivityItem): Promise
 }
 
 /**
+ * Persists a new party memory/photo to Supabase
+ */
+export async function persistPartyMemoryToSupabase(memory: PartyMemory): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    await supabase.from('party_memories').insert({
+      id: memory.id,
+      party_id: memory.partyId,
+      image_url: memory.imageUrl,
+      caption: memory.caption || null,
+      uploaded_by_id: memory.uploadedById || null,
+      uploaded_by_name: memory.uploadedByName,
+      uploaded_by_avatar: memory.uploadedByAvatar || null,
+      created_at: memory.createdAt,
+    });
+  } catch (err) {
+    console.warn('Failed to persist party memory:', err);
+  }
+}
+
+/**
  * Subscribes to real-time changes on a specific party
  * Enables seamless live sync across two or more devices.
  */
@@ -401,6 +425,16 @@ export function subscribeToPartyRealtime(
         event: '*',
         schema: 'public',
         table: 'activities',
+        filter: `party_id=eq.${partyId}`,
+      },
+      () => onPartyChange()
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'party_memories',
         filter: `party_id=eq.${partyId}`,
       },
       () => onPartyChange()
@@ -652,9 +686,17 @@ export async function fetchPartiesFromDb(): Promise<Party[]> {
 
     if (partiesErr || !partiesData) return [];
 
-    const { data: membersData } = await supabase
-      .from('party_members')
-      .select('*');
+    const [{ data: membersData }, { data: usersData }] = await Promise.all([
+      supabase.from('party_members').select('*'),
+      supabase.from('users').select('id, handle, avatar'),
+    ]);
+
+    const userHandleMap = new Map<string, string>();
+    const userAvatarMap = new Map<string, string>();
+    (usersData || []).forEach((u) => {
+      if (u.handle) userHandleMap.set(u.id, u.handle);
+      if (u.avatar) userAvatarMap.set(u.id, u.avatar);
+    });
 
     const membersByParty: Record<string, Member[]> = {};
     (membersData || []).forEach((m) => {
@@ -664,11 +706,12 @@ export async function fetchPartiesFromDb(): Promise<Party[]> {
       membersByParty[m.party_id].push({
         id: m.user_id,
         name: m.name,
-        avatar: m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        avatar: userAvatarMap.get(m.user_id) || m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
         role: m.role as 'host' | 'guest',
         status: m.status as 'going' | 'maybe' | 'invited',
         nightsTogether: m.nights_together || 1,
         walletAddress: m.wallet_address || undefined,
+        handle: userHandleMap.get(m.user_id),
       });
     });
 
@@ -703,25 +746,43 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
   if (!supabase) return null;
 
   try {
-    const [partyRes, membersRes, expensesRes, transactionsRes, tasksRes, activitiesRes] = await Promise.all([
+    const [partyRes, membersRes, expensesRes, transactionsRes, tasksRes, activitiesRes, memoriesRes] = await Promise.all([
       supabase.from('parties').select('*').eq('id', partyId).single(),
       supabase.from('party_members').select('*').eq('party_id', partyId),
       supabase.from('expenses').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
       supabase.from('pot_transactions').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
       supabase.from('tasks').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
       supabase.from('activities').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
+      supabase.from('party_memories').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
     ]);
 
     if (!partyRes.data) return null;
 
+    const userIds = (membersRes.data || []).map((m) => m.user_id).filter(Boolean);
+    const userHandleMap = new Map<string, string>();
+    const userAvatarMap = new Map<string, string>();
+    if (userIds.length > 0) {
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, handle, avatar')
+        .in('id', userIds);
+      if (usersData) {
+        usersData.forEach((u) => {
+          if (u.handle) userHandleMap.set(u.id, u.handle);
+          if (u.avatar) userAvatarMap.set(u.id, u.avatar);
+        });
+      }
+    }
+
     const members: Member[] = (membersRes.data || []).map((m) => ({
       id: m.user_id,
       name: m.name,
-      avatar: m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      avatar: userAvatarMap.get(m.user_id) || m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
       role: m.role as 'host' | 'guest',
       status: m.status as 'going' | 'maybe' | 'invited',
       nightsTogether: m.nights_together || 1,
       walletAddress: m.wallet_address || undefined,
+      handle: userHandleMap.get(m.user_id),
     }));
 
     const expenses: Expense[] = (expensesRes.data || []).map((e) => ({
@@ -780,6 +841,17 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
       avatar: a.avatar || undefined,
     }));
 
+    const memories: PartyMemory[] = (memoriesRes.data || []).map((m) => ({
+      id: m.id,
+      partyId: m.party_id,
+      imageUrl: m.image_url,
+      caption: m.caption || undefined,
+      uploadedById: m.uploaded_by_id || undefined,
+      uploadedByName: m.uploaded_by_name || 'Anonymous',
+      uploadedByAvatar: m.uploaded_by_avatar || undefined,
+      createdAt: m.created_at,
+    }));
+
     const p = partyRes.data;
     const party: Party = {
       id: p.id,
@@ -799,7 +871,7 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
       members,
     };
 
-    return { party, members, expenses, transactions, tasks, activities };
+    return { party, members, expenses, transactions, tasks, activities, memories };
   } catch (err) {
     console.warn('Failed to fetch party details from Supabase:', err);
     return null;

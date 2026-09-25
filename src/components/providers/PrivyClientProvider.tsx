@@ -34,7 +34,7 @@ export const PrivyClientProvider: React.FC<PrivyClientProviderProps> = ({ childr
   const privyConfig = useMemo(
     () => ({
       appearance: {
-        theme: '#15140f' as const,
+        theme: 'light' as const,
         accentColor: '#F0DC00' as `#${string}`,
         showWalletLoginFirst: false,
         walletChainType: 'ethereum-only' as const,

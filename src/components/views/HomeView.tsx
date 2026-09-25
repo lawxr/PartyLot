@@ -1,17 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, MapPin, Clock } from 'lucide-react';
+import { Plus, MapPin, Calendar, Heart, Bell, ChevronRight } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
-import { AvatarStack } from '@/components/ui/AvatarStack';
-import { GlassPanel } from '@/components/ui/GlassPanel';
-import { GlassButton } from '@/components/ui/GlassButton';
 import { ActivityView } from '@/components/views/ActivityView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { CrewsView } from '@/components/views/CrewsView';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 
 export const HomeView: React.FC = () => {
   const {
@@ -21,8 +17,11 @@ export const HomeView: React.FC = () => {
     selectParty,
     setCurrentView,
     activeTab,
+    setActiveTab,
   } = usePartyStore();
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
+  const isEs = language === 'es';
+  const [isFavorited, setIsFavorited] = useState(false);
 
   // Handle active bottom tab views
   if (activeTab === 'crews') {
@@ -37,142 +36,221 @@ export const HomeView: React.FC = () => {
     return <ProfileView />;
   }
 
-  const formattedDate = new Date().toLocaleDateString(
-    language === 'es' ? 'es-ES' : 'en-US',
-    { weekday: 'long', month: 'short', day: 'numeric' }
-  );
+  // Hero party is the active or first party (e.g. 404 House)
+  const heroParty = parties[0] || {
+    id: 'p-404',
+    title: '404 House',
+    date: 'Today',
+    time: '9:00 PM',
+    location: 'Laureles',
+    coverImage: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80',
+    members: [],
+  };
 
   return (
-    <div className="min-h-screen bg-[#15140f] text-white pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
-      {/* Responsive Header */}
-      <header className="flex items-center justify-between py-4 mb-6 sm:mb-8 border-b border-white/10 pb-5">
+    <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-32 pt-2 px-4 sm:px-6 md:px-8 max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto safe-top select-none w-full transition-colors duration-200">
+      {/* Top Header: Brand Wordmark + Greeting + Notification Icon */}
+      <header className="flex items-center justify-between py-3 mb-2">
         <div>
-          <span className="text-xs uppercase tracking-wider text-white/50 font-semibold block mb-0.5 capitalize">
-            {formattedDate}
-          </span>
-          <h2 className="font-display font-extrabold text-2xl sm:text-4xl text-white tracking-tight">
-            {t.home.greeting(currentUser.name)}
-          </h2>
+          <h1 className="font-display font-black text-3xl sm:text-4xl text-[#171512] dark:text-white tracking-tight leading-none">
+            Partylot
+          </h1>
+          <p className="text-xs sm:text-sm font-semibold text-[#6F6A62] dark:text-[#A8A196] mt-1 flex items-center gap-1.5">
+            <span>👋</span>
+            <span>
+              {isEs ? `Buenas noches, ${currentUser.name || 'Law'}` : `Good evening, ${currentUser.name || 'Law'}`}
+            </span>
+          </p>
         </div>
 
         {/* Header Right Actions */}
-        <div className="flex items-center gap-3">
-          {/* Language Switch */}
-          <LanguageSwitch compact />
-
-          {/* Create Party Action (Desktop & Mobile) */}
-          <div className="hidden sm:block">
-            <GlassButton
-              variant="accent"
-              size="md"
-              onClick={() => setCurrentView('create-party')}
-              icon={<Plus className="w-4 h-4 text-black stroke-[3]" />}
-            >
-              {t.home.createParty}
-            </GlassButton>
-          </div>
+        <div className="flex items-center gap-2.5">
+          {/* Circular Glass Notification Bell with Yellow Unread Indicator */}
           <button
-            onClick={() => setCurrentView('create-party')}
-            className="sm:hidden w-10 h-10 rounded-full bg-[#F0DC00] text-black flex items-center justify-center font-bold shadow-[0_4px_16px_rgba(240,220,0,0.35)] active:scale-95 transition-transform shrink-0"
-            aria-label={t.home.createParty}
+            onClick={() => setActiveTab('activity')}
+            className="relative w-11 h-11 rounded-full glass-light dark:bg-white/10 flex items-center justify-center border border-white/80 dark:border-white/15 shadow-[0_4px_14px_rgba(65,48,25,0.08)] active:scale-95 transition-transform cursor-pointer"
+            aria-label="Activity notifications"
           >
-            <Plus className="w-5 h-5 stroke-[2.5]" />
+            <Bell className="w-5 h-5 text-[#171512] dark:text-white stroke-[2.2]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#F0DC00] border-2 border-[#F7F2E8] dark:border-[#12110E] absolute top-2 right-2.5" />
           </button>
 
-          {/* User Avatar */}
+          {/* Quick Create Action */}
           <button
-            onClick={() => setCurrentView('profile')}
-            className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white/20 p-0.5 liquid-glass-card shadow-lg active:scale-95 transition-transform flex items-center justify-center"
-            aria-label="Profile"
+            onClick={() => setCurrentView('create-party')}
+            className="w-11 h-11 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] flex items-center justify-center font-bold shadow-[0_4px_16px_rgba(240,220,0,0.3)] active:scale-95 transition-transform shrink-0 cursor-pointer"
+            aria-label="Create Party"
           >
-            {currentUser.avatar ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
-                className="w-full h-full object-cover rounded-full"
-              />
-            ) : (
-              <div className="w-full h-full rounded-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-display font-black text-sm">
-                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'G'}
-              </div>
-            )}
+            <Plus className="w-5 h-5 stroke-[2.5]" />
           </button>
         </div>
       </header>
 
-      {/* Main Section: YOUR PARTIES */}
-      <section className="mb-12">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h3 className="font-display font-extrabold text-lg sm:text-xl tracking-wide uppercase text-white/90">
-              {t.home.yourParties}
-            </h3>
-            <span className="text-xs text-white/50">{t.home.activeGatherings}</span>
+      {/* Main Party Card (Hero — Phone 1) */}
+      <section className="mb-6">
+        <motion.div
+          whileTap={{ scale: 0.985 }}
+          onClick={() => selectParty(heroParty.id)}
+          className="w-full aspect-[1.12/1] rounded-[28px] sm:rounded-[32px] relative overflow-hidden cursor-pointer shadow-[0_16px_44px_rgba(65,48,25,0.13)] border border-white/60 group"
+        >
+          {/* Background Photo */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={heroParty.coverImage}
+            alt={heroParty.title}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            loading="eager"
+            decoding="async"
+          />
+
+          {/* Soft Editorial Gradient Overlay (Only in the lower third as per DESIGN.md) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent pointer-events-none" />
+
+          {/* Top Pill Tags & Favorite Action */}
+          <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+            {/* Yellow Tonight Pill */}
+            <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-[#F0DC00] text-[#171512] font-display font-extrabold text-xs shadow-sm">
+              {isEs ? 'Esta noche' : 'Tonight'}
+            </span>
+
+            {/* Circular Glass Heart Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsFavorited(!isFavorited);
+              }}
+              className="w-10 h-10 rounded-full glass-light flex items-center justify-center text-white border border-white/60 shadow-sm active:scale-90 transition-transform cursor-pointer"
+              aria-label="Favorite party"
+            >
+              <Heart
+                className={`w-4 h-4 transition-colors ${
+                  isFavorited ? 'fill-[#F0DC00] text-[#F0DC00]' : 'text-white'
+                }`}
+              />
+            </button>
           </div>
 
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/10 text-white/80 border border-white/10">
-            {t.home.upcomingCount(parties.length)}
-          </span>
-        </div>
+          {/* Bottom Details Content */}
+          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 flex flex-col justify-end z-10">
+            <h2 className="font-display font-black text-3xl sm:text-4xl text-white tracking-tight leading-none mb-1.5 drop-shadow-md">
+              {heroParty.title}
+            </h2>
 
-        {/* Responsive Layout: Swipeable on mobile, Balanced 3-column Grid on desktop */}
-        <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 pb-3 pt-1">
-          {parties.map((party) => (
-            <motion.div
-              key={party.id}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => selectParty(party.id)}
-              className="snap-center shrink-0 w-[290px] sm:w-[320px] md:w-auto h-[440px] sm:h-[480px] lg:h-[500px] rounded-[32px] relative overflow-hidden cursor-pointer shadow-2xl group border border-white/15"
-            >
-              {/* Background Photo */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={party.coverImage}
-                alt={party.title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-white/90 font-medium mb-3">
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-[#F0DC00]" />
+                {heroParty.date} · {heroParty.time}
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1 truncate">
+                <MapPin className="w-3.5 h-3.5 text-[#F0DC00]" />
+                {heroParty.location.split('·')[0].trim()}
+              </span>
+            </div>
 
-              {/* Atmospheric Gradient Overlays */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent" />
-
-              {/* Top Pill Tags */}
-              <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full liquid-glass-nav text-xs font-bold text-[#F0DC00]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#F0DC00] animate-pulse" />
-                  {party.date}
-                </span>
-
-                <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-mono tracking-wider text-white/90 border border-white/10">
-                  CODE {party.code}
+            {/* Avatar Attendee Stack with Glass +12 Pill */}
+            <div className="flex items-center justify-between pt-2 border-t border-white/20">
+              <div className="flex items-center -space-x-2">
+                {(heroParty.members || []).slice(0, 5).map((m, idx) => (
+                  <div
+                    key={m.id || idx}
+                    className="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 bg-black/40"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'}
+                      alt={m.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+                <span className="px-2.5 py-1 rounded-full glass-light text-white text-[11px] font-bold border border-white/60 ml-2 shadow-sm">
+                  +12
                 </span>
               </div>
 
-              {/* Bottom Details Content */}
-              <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 lg:p-7 flex flex-col justify-end z-10">
-                <h4 className="bubble text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-none mb-2 drop-shadow-lg">
-                  {party.title}
-                </h4>
+              <span className="text-xs font-bold text-[#F0DC00] group-hover:translate-x-1 transition-transform">
+                {isEs ? 'Ver fiesta →' : 'View party →'}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      </section>
 
-                <div className="flex items-center gap-3 text-xs sm:text-sm text-white/80 font-medium mb-3">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-[#F0DC00]" />
-                    {party.time}
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1 truncate max-w-[180px]">
-                    <MapPin className="w-3.5 h-3.5 text-[#F0DC00]" />
-                    {party.location.split('·')[0]}
-                  </span>
+      {/* Your Crews Section (Phone 1 — 3 Horizontal Cards) */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-3 px-0.5">
+          <h3 className="font-display font-extrabold text-lg sm:text-xl text-[#171512] dark:text-white tracking-tight">
+            {isEs ? 'Tus crews' : 'Your crews'}
+          </h3>
+          <button
+            onClick={() => setActiveTab('crews')}
+            className="text-xs font-bold text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white flex items-center gap-0.5 transition-colors cursor-pointer"
+          >
+            <span>{isEs ? 'Ver todos' : 'See all'}</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* 3 Horizontal Cards Grid */}
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+          {crews.slice(0, 3).map((crew) => (
+            <motion.div
+              key={crew.id}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                usePartyStore.getState().selectCrew(crew.id);
+                setCurrentView('crew-detail');
+              }}
+              className="rounded-[20px] overflow-hidden bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 shadow-[0_6px_20px_rgba(65,48,25,0.06)] dark:shadow-[0_6px_20px_rgba(0,0,0,0.4)] hover:shadow-md transition-all cursor-pointer group flex flex-col"
+            >
+              {/* Top 65% Photo */}
+              <div className="h-24 sm:h-28 w-full overflow-hidden relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={crew.coverImage}
+                  alt={crew.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+
+              {/* Bottom 35% Warm White / Onyx Surface */}
+              <div className="p-2.5 bg-[#FFFDF8] dark:bg-[#1C1A16] flex flex-col justify-between flex-1">
+                <div>
+                  <h4 className="font-display font-bold text-xs sm:text-sm text-[#171512] dark:text-white truncate">
+                    {crew.name}
+                  </h4>
+                  <p className="text-[10px] sm:text-[11px] text-[#6F6A62] dark:text-[#A8A196] font-medium mt-0.5">
+                    {crew.membersCount} {isEs ? 'miembros' : 'members'}
+                  </p>
                 </div>
 
-                <div className="pt-3 border-t border-white/15 flex items-center justify-between">
-                  <AvatarStack members={party.members} size="sm" countLabel={t.home.going} />
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#F0DC00] group-hover:translate-x-1 transition-transform">
-                    {t.home.hostedBy(party.hostName)} →
-                  </span>
+                {/* Tiny Avatar Stack */}
+                <div className="flex items-center -space-x-1.5 mt-2 pt-1 border-t border-black/[0.05] dark:border-white/10">
+                  <div className="w-4 h-4 rounded-full overflow-hidden border border-white dark:border-[#1C1A16] bg-black/30">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80"
+                      alt="member"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="w-4 h-4 rounded-full overflow-hidden border border-white dark:border-[#1C1A16] bg-black/30">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=80&q=80"
+                      alt="member"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="w-4 h-4 rounded-full overflow-hidden border border-white dark:border-[#1C1A16] bg-black/30">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80"
+                      alt="member"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -180,46 +258,84 @@ export const HomeView: React.FC = () => {
         </div>
       </section>
 
-      {/* Crews Section: YOUR CREWS */}
-      <section className="mb-10">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-display font-extrabold text-lg sm:text-xl tracking-wide uppercase text-white/90">
-              {t.home.yourCrews}
-            </h3>
-            <span className="text-xs text-white/50">{t.home.permanentCircles}</span>
+      {/* Upcoming Section (Matching Design Phone 1) */}
+      <section className="mb-6">
+        <div className="flex items-center justify-between mb-3 px-0.5">
+          <h3 className="font-display font-extrabold text-lg sm:text-xl text-[#171512] dark:text-white tracking-tight">
+            {isEs ? 'Próximas fiestas' : 'Upcoming'}
+          </h3>
+          <button
+            onClick={() => setActiveTab('activity')}
+            className="text-xs font-bold text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white flex items-center gap-0.5 transition-colors cursor-pointer"
+          >
+            <span>{isEs ? 'Ver todas' : 'See all'}</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Upcoming Party Card */}
+        <motion.div
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            const nextParty = parties[1] || parties[0];
+            if (nextParty) selectParty(nextParty.id);
+          }}
+          className="rounded-[24px] p-3 sm:p-3.5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 shadow-[0_8px_24px_rgba(65,48,25,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:shadow-md transition-all cursor-pointer flex items-center gap-3.5 sm:gap-4"
+        >
+          {/* Square Photo with Date Overlay */}
+          <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-[18px] overflow-hidden relative shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80"
+              alt="Rooftop Dinner"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/35 flex flex-col items-center justify-center text-white text-center">
+              <span className="text-[10px] font-extrabold tracking-wider uppercase opacity-90 block leading-tight">
+                {isEs ? 'VIE' : 'FRI'}
+              </span>
+              <span className="text-xs font-black block leading-tight">
+                Sep 26
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {crews.map((crew) => (
-            <GlassPanel
-              key={crew.id}
-              level={2}
-              className="p-4 flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer group border border-white/10"
-            >
-              <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 relative border border-white/15">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={crew.coverImage}
-                  alt={crew.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-              </div>
+          {/* Details */}
+          <div className="flex-1 min-w-0">
+            <h4 className="font-display font-black text-sm sm:text-base text-[#171512] dark:text-white truncate">
+              Rooftop Dinner
+            </h4>
+            <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] font-semibold mt-0.5 mb-2 truncate">
+              8:00 PM · El Poblado
+            </p>
 
-              <div className="flex-1 min-w-0">
-                <h4 className="font-display font-bold text-base text-white truncate">
-                  {crew.name}
-                </h4>
-                <p className="text-xs text-white/60 flex items-center gap-2 mt-1">
-                  <span>{t.home.membersCount(crew.membersCount)}</span>
-                  <span>•</span>
-                  <span className="text-[#F0DC00]/90">{crew.lastActivity}</span>
-                </p>
-              </div>
-            </GlassPanel>
-          ))}
-        </div>
+            {/* Avatar Stack +6 */}
+            <div className="flex items-center -space-x-1.5">
+              {[
+                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80',
+                'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=80&q=80',
+                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80',
+                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80',
+              ].map((avatar, idx) => (
+                <div
+                  key={idx}
+                  className="w-5 h-5 rounded-full overflow-hidden border border-white dark:border-[#1C1A16] bg-black/20"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={avatar} alt="attendee" className="w-full h-full object-cover" />
+                </div>
+              ))}
+              <span className="text-[10px] font-bold text-[#8E887E] dark:text-[#A8A196] pl-2">
+                +6
+              </span>
+            </div>
+          </div>
+
+          {/* Right Arrow Chevron */}
+          <div className="text-[#8E887E] dark:text-[#A8A196] pr-1">
+            <ChevronRight className="w-5 h-5" />
+          </div>
+        </motion.div>
       </section>
     </div>
   );

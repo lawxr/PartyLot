@@ -329,7 +329,6 @@ export const PartyDetailView: React.FC = () => {
                 {isEs ? 'Bote de la fiesta' : 'Party Pot'}
               </span>
               <div className="flex items-center gap-1.5 mt-1 mb-0.5">
-                <TokenLogo token="usdc" size="sm" />
                 <span className="font-display font-black text-xl sm:text-[26px] text-[#161514] dark:text-white tracking-tight leading-none">
                   ${party?.potBalance !== undefined ? party.potBalance.toFixed(2) : '186.40'}
                 </span>

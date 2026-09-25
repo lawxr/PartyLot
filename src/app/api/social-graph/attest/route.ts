@@ -5,10 +5,8 @@ import { getServerSupabase } from '@/lib/supabase/server';
 import { MONAD_CONTRACT_ADDRESSES, SocialGraphABI } from '@/contracts';
 import { publicMonadClient, getMonadExplorerTxUrl, monadTestnet } from '@/lib/web3/monad';
 
-// Fallback deployer key from configuration if environment variable is not explicitly loaded
-const DEPLOYER_PRIVATE_KEY =
-  (process.env.MONAD_DEPLOYER_PRIVATE_KEY as `0x${string}`) ||
-  '0x1d997eba6837b93fad843164844e7ed2a4dbcba34492f6d2b28c58467cc8016b';
+import { checkRateLimit } from '@/lib/security/rateLimit';
+import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
 
 function resolveValidAddress(rawAddress?: string | null, userId?: string | null): `0x${string}` {
   if (rawAddress && rawAddress.startsWith('0x') && rawAddress.length === 42) {
@@ -21,9 +19,62 @@ function resolveValidAddress(rawAddress?: string | null, userId?: string | null)
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limiting against spamming social graph attestations
+  const clientIp =
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    'anonymous_client';
+
+  const rateLimit = checkRateLimit(`attest_${clientIp}`, {
+    limit: 20,
+    windowMs: 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'RATE_LIMIT_EXCEEDED', message: 'Too many attestation requests. Please wait a minute.' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
+
+  const deployerKey = process.env.MONAD_DEPLOYER_PRIVATE_KEY;
+  if (!deployerKey || !deployerKey.startsWith('0x') || deployerKey.length !== 66) {
+    return NextResponse.json(
+      { success: false, error: 'CONFIG_ERROR', message: 'Monad deployer private key is not configured securely on server.' },
+      { status: 500 }
+    );
+  }
+
+  const authHeader = request.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (token) {
+      try {
+        await verifyPrivyToken(token);
+      } catch (authErr) {
+        return NextResponse.json(
+          { success: false, error: 'UNAUTHORIZED', message: 'Invalid or expired authentication token.' },
+          { status: 401 }
+        );
+      }
+    }
+  } else if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { success: false, error: 'UNAUTHORIZED', message: 'Authentication required for attestations in production.' },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const { partyId, userAAddress, userBAddress, userAId, userBId, userAName, userBName } = body;
+
+    if (!partyId || (!userAAddress && !userAId) || (!userBAddress && !userBId)) {
+      return NextResponse.json(
+        { success: false, error: 'INVALID_INPUT', message: 'Party ID and both participant identifiers are required.' },
+        { status: 400 }
+      );
+    }
 
     const supabase = getServerSupabase();
 
@@ -58,7 +109,7 @@ export async function POST(request: NextRequest) {
     );
 
     // 3. Prepare Monad Testnet wallet client with deployer private key
-    const account = privateKeyToAccount(DEPLOYER_PRIVATE_KEY);
+    const account = privateKeyToAccount(deployerKey as `0x${string}`);
     const rpcUrl =
       process.env.NEXT_PUBLIC_MONAD_RPC_URL &&
       !process.env.NEXT_PUBLIC_MONAD_RPC_URL.includes('your-api-key')

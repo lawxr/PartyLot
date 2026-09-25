@@ -273,8 +273,7 @@ export const PartyPotView: React.FC = () => {
 
               {/* Balance Overlay over sphere */}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <div className="flex items-center gap-2 drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
-                  <TokenLogo token="usdc" size="lg" className="drop-shadow-lg" />
+                <div className="flex items-center justify-center drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
                   <span className="font-bubble text-5xl sm:text-6xl text-white tracking-tight">
                     ${party.potBalance.toFixed(2)}
                   </span>

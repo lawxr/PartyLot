@@ -5,9 +5,8 @@ import { getServerSupabase } from '@/lib/supabase/server';
 import { MONAD_CONTRACT_ADDRESSES, PartyTreasuryABI } from '@/contracts';
 import { publicMonadClient, getMonadExplorerTxUrl, monadTestnet } from '@/lib/web3/monad';
 
-const DEPLOYER_PRIVATE_KEY =
-  (process.env.MONAD_DEPLOYER_PRIVATE_KEY as `0x${string}`) ||
-  '0x1d997eba6837b93fad843164844e7ed2a4dbcba34492f6d2b28c58467cc8016b';
+import { checkRateLimit } from '@/lib/security/rateLimit';
+import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
 
 function resolveValidAddress(rawAddress?: string | null, identifier?: string | null): `0x${string}` {
   if (rawAddress && rawAddress.startsWith('0x') && rawAddress.length === 42) {
@@ -18,7 +17,58 @@ function resolveValidAddress(rawAddress?: string | null, identifier?: string | n
   return `0x${hash.slice(26, 66)}` as `0x${string}`;
 }
 
+const ALLOWED_ACTIONS = new Set(['deposit', 'reward', 'reimbursement', 'spend', 'rollover']);
+
 export async function POST(request: NextRequest) {
+  // Rate limiting against automated onchain draining / spam
+  const clientIp =
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    'anonymous_client';
+
+  const rateLimit = checkRateLimit(`treasury_action_${clientIp}`, {
+    limit: 15,
+    windowMs: 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'RATE_LIMIT_EXCEEDED', message: 'Too many treasury requests. Please wait a minute.' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
+
+  const deployerKey = process.env.MONAD_DEPLOYER_PRIVATE_KEY;
+  if (!deployerKey || !deployerKey.startsWith('0x') || deployerKey.length !== 66) {
+    return NextResponse.json(
+      { success: false, error: 'CONFIG_ERROR', message: 'Monad deployer private key is not configured securely on server.' },
+      { status: 500 }
+    );
+  }
+
+  // Authentication check
+  const authHeader = request.headers.get('authorization');
+  let authenticatedUserId: string | null = null;
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (token) {
+      try {
+        const verified = await verifyPrivyToken(token);
+        authenticatedUserId = verified.userId;
+      } catch (authErr) {
+        return NextResponse.json(
+          { success: false, error: 'UNAUTHORIZED', message: 'Invalid or expired authentication token.' },
+          { status: 401 }
+        );
+      }
+    }
+  } else if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { success: false, error: 'UNAUTHORIZED', message: 'Authentication required for treasury actions in production.' },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const {
@@ -34,8 +84,23 @@ export async function POST(request: NextRequest) {
       description,
     } = body;
 
+    if (!action || !ALLOWED_ACTIONS.has(action)) {
+      return NextResponse.json(
+        { success: false, error: 'INVALID_ACTION', message: `Action must be one of: ${Array.from(ALLOWED_ACTIONS).join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0 || numAmount > 1000000) {
+      return NextResponse.json(
+        { success: false, error: 'INVALID_AMOUNT', message: 'Amount must be a positive number up to 1,000,000.' },
+        { status: 400 }
+      );
+    }
+
     const supabase = getServerSupabase();
-    const account = privateKeyToAccount(DEPLOYER_PRIVATE_KEY);
+    const account = privateKeyToAccount(deployerKey as `0x${string}`);
     const rpcUrl =
       process.env.NEXT_PUBLIC_MONAD_RPC_URL &&
       !process.env.NEXT_PUBLIC_MONAD_RPC_URL.includes('your-api-key')
@@ -48,9 +113,8 @@ export async function POST(request: NextRequest) {
       transport: http(rpcUrl),
     });
 
-    const sender = resolveValidAddress(userAddress, userId);
+    const sender = resolveValidAddress(userAddress, authenticatedUserId || userId);
     const recipient = resolveValidAddress(recipientAddress, recipientName);
-    const numAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 10;
 
     let txHash: `0x${string}` | null = null;
     let blockNumber = 65050000;

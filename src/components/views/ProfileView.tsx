@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings,
@@ -14,21 +14,54 @@ import {
   LogOut,
   ShieldCheck,
   X,
-  Share2,
   Moon,
   Sun,
   Bell,
+  Search,
+  Lock,
+  Globe,
+  Calendar,
+  Eye,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { usePrivySync } from '@/hooks/usePrivySync';
-import { Member } from '@/types';
+import { Member, Party } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 import { EditProfileModal } from '@/components/ui/EditProfileModal';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
+import { INITIAL_MEMBERS, INITIAL_PARTIES } from '@/data/mockData';
+
+const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-3 h-3' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
+
+const TwitterIcon: React.FC<{ className?: string }> = ({ className = 'w-3 h-3' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 
 export const ProfileView: React.FC = () => {
-  const { currentUser, parties, crews, selectCrew, updateUser, theme, toggleTheme } = usePartyStore();
+  const {
+    currentUser,
+    parties,
+    crews,
+    selectCrew,
+    selectParty,
+    updateUser,
+    theme,
+    toggleTheme,
+    toggleStarUser,
+    isUserStarred,
+    attendedPartyIds,
+    addAttendedNight,
+  } = usePartyStore();
+
   const { logout: privyLogout } = usePrivySync();
   const { language } = useTranslation();
   const isEs = language === 'es';
@@ -36,50 +69,74 @@ export const ProfileView: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSeeAllPeopleOpen, setIsSeeAllPeopleOpen] = useState(false);
+  const [isAddNightOpen, setIsAddNightOpen] = useState(false);
   const [selectedConnectionMember, setSelectedConnectionMember] = useState<Member | null>(null);
   const [activeProfileTab, setActiveProfileTab] = useState<'nights' | 'crews' | 'photos'>('nights');
-  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [peopleSearch, setPeopleSearch] = useState('');
 
+  // Add Night Form State
+  const [newNightTitle, setNewNightTitle] = useState('');
+  const [newNightDate, setNewNightDate] = useState('');
+
+  const bannerInputRef = useRef<HTMLInputElement>(null);
   const activeAddress = currentUser.walletAddress;
 
-  // Handle banner cover change
-  const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsUploadingBanner(true);
-    try {
-      const { uploadImageFile } = await import('@/services/storageService');
-      const uploadedUrl = await uploadImageFile(file, 'banners');
-      await updateUser({ coverImage: uploadedUrl });
-    } catch (err) {
-      console.error('Failed to upload cover banner:', err);
-    } finally {
-      setIsUploadingBanner(false);
-      if (bannerInputRef.current) bannerInputRef.current.value = '';
-    }
-  };
+  // Real social network connections list
+  const peopleConnections: Member[] = useMemo(() => {
+    const list: Member[] = [];
+    const seen = new Set<string>();
 
-  // Derive authentic connections from parties and crews
-  const authenticMembersMap = new Map<string, Member>();
-  parties.forEach((p) => {
-    (p.members || []).forEach((m) => {
-      const isSelf =
-        (currentUser.id && m.id === currentUser.id) ||
-        (currentUser.name && m.name?.toLowerCase() === currentUser.name?.toLowerCase()) ||
-        (currentUser.walletAddress && m.walletAddress && m.walletAddress.toLowerCase() === currentUser.walletAddress.toLowerCase());
-      if (!isSelf && (m.id || m.name)) {
-        authenticMembersMap.set(m.id || m.name, m);
+    INITIAL_MEMBERS.forEach((m) => {
+      if (m.id !== currentUser.id && !seen.has(m.id)) {
+        seen.add(m.id);
+        list.push(m);
       }
     });
-  });
+
+    parties.forEach((p) => {
+      (p.members || []).forEach((m) => {
+        if (m.id !== currentUser.id && !seen.has(m.id)) {
+          seen.add(m.id);
+          list.push(m);
+        }
+      });
+    });
+
+    return list;
+  }, [currentUser.id, parties]);
+
+  const filteredPeople = useMemo(() => {
+    if (!peopleSearch.trim()) return peopleConnections;
+    const q = peopleSearch.toLowerCase();
+    return peopleConnections.filter(
+      (p) => p.name.toLowerCase().includes(q) || p.handle?.toLowerCase().includes(q)
+    );
+  }, [peopleConnections, peopleSearch]);
+
+  // Attended nights / events
+  const attendedPartiesList: Party[] = useMemo(() => {
+    const ids = attendedPartyIds || ['p-404', 'p-rooftop', 'p-hackathon'];
+    const found = parties.filter((p) => ids.includes(p.id));
+    if (found.length > 0) return found;
+    return INITIAL_PARTIES.slice(0, 3);
+  }, [parties, attendedPartyIds]);
 
   const handleCopyAddress = async () => {
-    if (!activeAddress) return;
-    await navigator.clipboard.writeText(activeAddress);
+    const toCopy = activeAddress || currentUser.id || 'usr_active';
+    await navigator.clipboard.writeText(toCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleAddCustomNight = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNightTitle.trim()) return;
+    const fakeId = `p-user-${Date.now()}`;
+    addAttendedNight(fakeId);
+    setNewNightTitle('');
+    setNewNightDate('');
+    setIsAddNightOpen(false);
   };
 
   return (
@@ -90,7 +147,17 @@ export const ProfileView: React.FC = () => {
         type="file"
         accept="image/jpeg,image/png,image/webp,image/gif"
         className="hidden"
-        onChange={handleBannerFileChange}
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          try {
+            const { uploadImageFile } = await import('@/services/storageService');
+            const uploadedUrl = await uploadImageFile(file, 'banners');
+            await updateUser({ coverImage: uploadedUrl });
+          } catch (err) {
+            console.error('Failed to upload cover banner:', err);
+          }
+        }}
       />
 
       {/* ============================================================== */}
@@ -101,54 +168,21 @@ export const ProfileView: React.FC = () => {
         <img
           src={currentUser.coverImage || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80'}
           alt="Profile Cover"
-          className="absolute inset-0 w-full h-full object-cover object-top"
+          className="absolute inset-0 w-full h-full object-cover object-top cursor-pointer"
+          onClick={() => bannerInputRef.current?.click()}
+          title={isEs ? 'Haz clic para cambiar la portada' : 'Click to change cover'}
           loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
 
-        {/* Change Banner Button (Top-Left) */}
-        <div className="absolute top-4 left-4 z-20">
-          <button
-            onClick={() => bannerInputRef.current?.click()}
-            disabled={isUploadingBanner}
-            className="px-3 py-1.5 rounded-full bg-white/75 dark:bg-black/60 backdrop-blur-md flex items-center gap-1.5 text-[#171512] dark:text-white border border-white/80 dark:border-white/20 shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
-            aria-label="Change banner photo"
-          >
-            <Camera className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span className="text-xs font-bold">
-              {isUploadingBanner ? (isEs ? 'Subiendo...' : 'Uploading...') : (isEs ? 'Cambiar portada' : 'Change banner')}
-            </span>
-          </button>
-        </div>
-
-        {/* Top-Right Controls */}
-        <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-          <button
-            onClick={async () => {
-              if (typeof navigator !== 'undefined' && navigator.share) {
-                try {
-                  await navigator.share({
-                    title: `${currentUser.name} on PartyLot`,
-                    url: window.location.href,
-                  });
-                } catch {
-                  // User cancelled share
-                }
-              } else {
-                handleCopyAddress();
-              }
-            }}
-            className="w-10 h-10 rounded-full bg-white/75 dark:bg-black/60 backdrop-blur-md flex items-center justify-center text-[#171512] dark:text-white border border-white/80 dark:border-white/20 shadow-sm hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-            aria-label="Share profile"
-          >
-            <Share2 className="w-4 h-4 stroke-[2.2]" />
-          </button>
+        {/* Clean Floating Settings Button (Top-Right Only, Exactly Like Reference) */}
+        <div className="absolute top-4 right-4 z-20">
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="w-10 h-10 rounded-full bg-white/75 dark:bg-black/60 backdrop-blur-md flex items-center justify-center text-[#171512] dark:text-white border border-white/80 dark:border-white/20 shadow-sm hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+            className="w-10 h-10 rounded-full bg-white/80 dark:bg-black/60 backdrop-blur-md flex items-center justify-center text-[#171512] dark:text-white border border-white/80 dark:border-white/20 shadow-md hover:scale-105 active:scale-95 transition-transform cursor-pointer"
             aria-label="Settings"
           >
-            <Settings className="w-4 h-4 stroke-[2.2]" />
+            <Settings className="w-4.5 h-4.5 stroke-[2.2]" />
           </button>
         </div>
       </div>
@@ -172,6 +206,7 @@ export const ProfileView: React.FC = () => {
             onClick={() => setIsEditProfileOpen(true)}
             className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-white dark:bg-[#2C2822] text-[#171512] dark:text-white flex items-center justify-center border border-black/10 dark:border-white/15 shadow-sm active:scale-90 transition-transform cursor-pointer hover:bg-slate-50 dark:hover:bg-[#38332B]"
             aria-label="Change photo"
+            title={isEs ? 'Cambiar foto de perfil' : 'Change profile photo'}
           >
             <Camera className="w-3.5 h-3.5 stroke-[2.2]" />
           </button>
@@ -180,7 +215,7 @@ export const ProfileView: React.FC = () => {
         {/* Name and Handle */}
         <div className="mb-3">
           <h2 className="font-display font-black text-2xl sm:text-3xl text-[#171512] dark:text-white tracking-tight leading-tight">
-            {currentUser.name}
+            {currentUser.name || 'Law'}
           </h2>
           <span className="text-xs sm:text-sm font-semibold text-[#8E887E] dark:text-[#A8A196] block mt-0.5">
             {currentUser.handle?.startsWith('@') ? currentUser.handle : `@${currentUser.handle || 'lawx'}`}
@@ -217,13 +252,52 @@ export const ProfileView: React.FC = () => {
 
         {/* Bio & Location */}
         <div className="mb-5">
-          <p className="text-xs sm:text-sm text-[#504437] dark:text-[#D1C9BE] font-medium mb-1.5">
+          <p className="text-xs sm:text-sm text-[#504437] dark:text-[#D1C9BE] font-medium mb-1.5 leading-relaxed">
             {currentUser.bio || 'Good food, better people.'}
           </p>
           <div className="flex items-center gap-1.5 text-xs text-[#8E887E] dark:text-[#A8A196] font-medium">
-            <MapPin className="w-3.5 h-3.5 stroke-[2.2]" />
+            <MapPin className="w-3.5 h-3.5 stroke-[2.2] shrink-0" />
             <span>{currentUser.location || 'Medellin, Colombia'}</span>
           </div>
+
+          {/* Social Links if present */}
+          {(currentUser.website || currentUser.instagram || currentUser.twitter) && (
+            <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+              {currentUser.website && (
+                <a
+                  href={currentUser.website.startsWith('http') ? currentUser.website : `https://${currentUser.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-semibold text-[#171512] dark:text-white hover:bg-black/10 transition-colors"
+                >
+                  <Globe className="w-3 h-3 text-[#F0DC00]" />
+                  <span>{currentUser.website.replace(/^https?:\/\//, '')}</span>
+                </a>
+              )}
+              {currentUser.instagram && (
+                <a
+                  href={`https://instagram.com/${currentUser.instagram.replace(/^@/, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-semibold text-[#171512] dark:text-white hover:bg-black/10 transition-colors"
+                >
+                  <InstagramIcon className="w-3 h-3 text-pink-500" />
+                  <span>@{currentUser.instagram.replace(/^@/, '')}</span>
+                </a>
+              )}
+              {currentUser.twitter && (
+                <a
+                  href={`https://twitter.com/${currentUser.twitter.replace(/^@/, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-semibold text-[#171512] dark:text-white hover:bg-black/10 transition-colors"
+                >
+                  <TwitterIcon className="w-3 h-3 text-sky-400" />
+                  <span>@{currentUser.twitter.replace(/^@/, '')}</span>
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Floating Translucent Glass Options Container */}
@@ -272,44 +346,52 @@ export const ProfileView: React.FC = () => {
           })}
         </nav>
 
-        {/* Tab 1: Horizontal Thumbnails (3 Photos + 1 Plus Card) */}
+        {/* ============================================================== */}
+        {/* TAB 1: NIGHTS (EVENTS ATTENDED)                                */}
+        {/* ============================================================== */}
         {activeProfileTab === 'nights' && (
           <div className="flex items-center gap-2.5 mb-6 overflow-x-auto no-scrollbar pb-1">
-            <div className="h-24 w-20 sm:h-28 sm:w-24 rounded-2xl overflow-hidden shadow-sm shrink-0 border border-black/5 dark:border-white/10 hover:scale-102 transition-transform cursor-pointer">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=300&q=80"
-                alt="Memory 1"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="h-24 w-20 sm:h-28 sm:w-24 rounded-2xl overflow-hidden shadow-sm shrink-0 border border-black/5 dark:border-white/10 hover:scale-102 transition-transform cursor-pointer">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&q=80"
-                alt="Memory 2"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="h-24 w-20 sm:h-28 sm:w-24 rounded-2xl overflow-hidden shadow-sm shrink-0 border border-black/5 dark:border-white/10 hover:scale-102 transition-transform cursor-pointer">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=300&q=80"
-                alt="Memory 3"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            {attendedPartiesList.map((party) => (
+              <div
+                key={party.id}
+                onClick={() => selectParty(party.id)}
+                className="h-26 w-22 sm:h-28 sm:w-24 rounded-2xl overflow-hidden shadow-sm shrink-0 border border-black/5 dark:border-white/10 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer relative group"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={party.coverImage}
+                  alt={party.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-1.5">
+                  <span className="text-[10px] font-bold text-white leading-tight truncate">
+                    {party.title}
+                  </span>
+                  <span className="text-[8px] text-[#F0DC00] font-medium">
+                    {party.date}
+                  </span>
+                </div>
+              </div>
+            ))}
+
+            {/* Dashed Add Night Squircle Button */}
             <button
-              onClick={() => setIsEditProfileOpen(true)}
-              className="h-24 w-20 sm:h-28 sm:w-24 rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-colors shrink-0 cursor-pointer"
-              aria-label="Add photo"
+              onClick={() => setIsAddNightOpen(true)}
+              className="h-26 w-22 sm:h-28 sm:w-24 rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-all shrink-0 cursor-pointer active:scale-95 group"
+              aria-label={isEs ? 'Registrar noche asistida' : 'Log attended night'}
+              title={isEs ? 'Registrar evento asistido' : 'Log attended event'}
             >
-              <Plus className="w-5 h-5 stroke-[2.2]" />
+              <Plus className="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform" />
+              <span className="text-[9px] font-bold mt-1">
+                {isEs ? 'Añadir' : 'Add'}
+              </span>
             </button>
           </div>
         )}
 
-        {/* Tab 2: Crews Carousel */}
+        {/* ============================================================== */}
+        {/* TAB 2: CREWS CAROUSEL                                          */}
+        {/* ============================================================== */}
         {activeProfileTab === 'crews' && (
           <div className="flex items-center gap-3 mb-6 overflow-x-auto no-scrollbar pb-1">
             {crews.map((crew) => (
@@ -335,7 +417,9 @@ export const ProfileView: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 3: Photos Gallery Grid */}
+        {/* ============================================================== */}
+        {/* TAB 3: PHOTOS GALLERY GRID                                     */}
+        {/* ============================================================== */}
         {activeProfileTab === 'photos' && (
           <div className="grid grid-cols-3 gap-2.5 mb-6">
             {[
@@ -363,14 +447,16 @@ export const ProfileView: React.FC = () => {
           </div>
         )}
 
-        {/* "Your people" Section */}
+        {/* ============================================================== */}
+        {/* "YOUR PEOPLE" SOCIAL FOLLOW SECTION                             */}
+        {/* ============================================================== */}
         <section>
           <div className="flex items-center justify-between mb-3 px-1">
             <h3 className="font-display font-extrabold text-base text-[#171512] dark:text-white tracking-tight">
               {isEs ? 'Tu gente' : 'Your people'}
             </h3>
             <button
-              onClick={() => setIsEditProfileOpen(true)}
+              onClick={() => setIsSeeAllPeopleOpen(true)}
               className="text-xs font-semibold text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white flex items-center gap-0.5 cursor-pointer"
             >
               <span>{isEs ? 'Ver todo' : 'See all'}</span>
@@ -378,111 +464,254 @@ export const ProfileView: React.FC = () => {
             </button>
           </div>
 
-          <div className="space-y-3">
-            {/* Row 1: Sofi */}
-            <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#F0DC00] p-0.5 shadow-sm shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80"
-                    alt="Sofi"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-                <div>
-                  <span className="font-bold text-sm text-[#171512] dark:text-white block">Sofi</span>
-                  <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
-                    12 {isEs ? 'noches juntos' : 'nights together'}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() =>
-                  setSelectedConnectionMember({
-                    id: 'u-sofi',
-                    name: 'Sofi',
-                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
-                  })
-                }
-                className="w-9 h-9 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
-                aria-label="Star Sofi"
-              >
-                <Star className="w-4 h-4 fill-current stroke-[1.5]" />
-              </button>
-            </div>
+          <div className="space-y-2.5">
+            {peopleConnections.slice(0, 3).map((person) => {
+              const starred = isUserStarred(person.id);
 
-            {/* Row 2: Ana */}
-            <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden border border-black/10 dark:border-white/15 shadow-sm shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80"
-                    alt="Ana"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-                <div>
-                  <span className="font-bold text-sm text-[#171512] dark:text-white block">Ana</span>
-                  <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
-                    9 {isEs ? 'noches juntos' : 'nights together'}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() =>
-                  setSelectedConnectionMember({
-                    id: 'u-ana',
-                    name: 'Ana',
-                    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80',
-                  })
-                }
-                className="w-9 h-9 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
-                aria-label="Star Ana"
-              >
-                <Star className="w-4 h-4 fill-current stroke-[1.5]" />
-              </button>
-            </div>
+              return (
+                <div
+                  key={person.id}
+                  className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors"
+                >
+                  <div
+                    onClick={() => setSelectedConnectionMember(person)}
+                    className="flex items-center gap-3 cursor-pointer flex-1"
+                  >
+                    <div className="w-12 h-12 rounded-full overflow-hidden border border-black/10 dark:border-white/15 shadow-sm shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={person.avatar}
+                        alt={person.name}
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    </div>
+                    <div>
+                      <span className="font-bold text-sm text-[#171512] dark:text-white block">
+                        {person.name}
+                      </span>
+                      <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+                        {person.nightsTogether || 8} {isEs ? 'noches juntos' : 'nights together'}
+                      </span>
+                    </div>
+                  </div>
 
-            {/* Row 3: Cam */}
-            <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden border border-black/10 dark:border-white/15 shadow-sm shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80"
-                    alt="Cam"
-                    className="w-full h-full object-cover rounded-full"
-                  />
+                  {/* REAL FOLLOW / STAR TOGGLE */}
+                  <motion.button
+                    onClick={() => toggleStarUser(person.id)}
+                    whileTap={{ scale: 0.85 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center shadow-sm cursor-pointer transition-colors duration-200 ${
+                      starred
+                        ? 'bg-[#F0DC00] text-[#171512]'
+                        : 'bg-black/5 dark:bg-white/10 hover:bg-black/10 text-[#8E887E] dark:text-[#A8A196]'
+                    }`}
+                    aria-label={`Follow ${person.name}`}
+                    title={starred ? (isEs ? 'Siguiendo (estrella)' : 'Following (starred)') : (isEs ? 'Seguir (dar estrella)' : 'Follow (star)')}
+                  >
+                    <Star
+                      className={`w-4 h-4 transition-transform ${
+                        starred ? 'fill-current stroke-[1.5] scale-105' : 'stroke-[2]'
+                      }`}
+                    />
+                  </motion.button>
                 </div>
-                <div>
-                  <span className="font-bold text-sm text-[#171512] dark:text-white block">Cam</span>
-                  <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
-                    8 {isEs ? 'noches juntos' : 'nights together'}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() =>
-                  setSelectedConnectionMember({
-                    id: 'u-cam',
-                    name: 'Cam',
-                    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
-                  })
-                }
-                className="w-9 h-9 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
-                aria-label="Star Cam"
-              >
-                <Star className="w-4 h-4 fill-current stroke-[1.5]" />
-              </button>
-            </div>
+              );
+            })}
           </div>
         </section>
       </div>
 
       {/* ============================================================== */}
-      {/* SETTINGS BOTTOM SHEET / MODAL                                  */}
+      {/* SEE ALL PEOPLE / CONNECTIONS MODAL                             */}
+      {/* ============================================================== */}
+      <AnimatePresence>
+        {isSeeAllPeopleOpen && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSeeAllPeopleOpen(false)}
+              className="fixed inset-0 bg-black/45 backdrop-blur-[10px]"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="relative z-10 w-full max-w-md bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-t-[36px] sm:rounded-[36px] p-6 text-[#171512] dark:text-[#F5F1E8] shadow-2xl border border-white/85 dark:border-white/15 safe-bottom max-h-[85vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-4 shrink-0">
+                <div>
+                  <h3 className="font-display font-extrabold text-lg text-[#171512] dark:text-white">
+                    {isEs ? 'Tu gente y amigos' : 'Your people & connections'}
+                  </h3>
+                  <span className="text-xs text-[#8E887E] dark:text-[#A8A196]">
+                    {peopleConnections.length} {isEs ? 'contactos en la fiesta' : 'party connections'}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsSeeAllPeopleOpen(false)}
+                  className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white hover:bg-black/10 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative flex items-center mb-4 shrink-0">
+                <Search className="absolute left-3.5 w-4 h-4 text-[#8E887E] dark:text-white/40" />
+                <input
+                  type="text"
+                  placeholder={isEs ? 'Buscar amigos...' : 'Search friends...'}
+                  value={peopleSearch}
+                  onChange={(e) => setPeopleSearch(e.target.value)}
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-black/10 dark:border-white/15 bg-black/[0.02] dark:bg-white/5 text-[#171512] dark:text-white font-medium text-xs focus:border-[#F0DC00] outline-none transition-colors"
+                />
+              </div>
+
+              {/* People List */}
+              <div className="space-y-2 overflow-y-auto flex-1 pr-1">
+                {filteredPeople.map((person) => {
+                  const starred = isUserStarred(person.id);
+
+                  return (
+                    <div
+                      key={person.id}
+                      className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors"
+                    >
+                      <div
+                        onClick={() => {
+                          setIsSeeAllPeopleOpen(false);
+                          setSelectedConnectionMember(person);
+                        }}
+                        className="flex items-center gap-3 cursor-pointer flex-1"
+                      >
+                        <div className="w-11 h-11 rounded-full overflow-hidden border border-black/10 dark:border-white/15 shadow-sm shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={person.avatar}
+                            alt={person.name}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        </div>
+                        <div>
+                          <span className="font-bold text-sm text-[#171512] dark:text-white block">
+                            {person.name}
+                          </span>
+                          <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+                            {person.nightsTogether || 5} {isEs ? 'noches juntos' : 'nights together'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <motion.button
+                        onClick={() => toggleStarUser(person.id)}
+                        whileTap={{ scale: 0.85 }}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center shadow-sm cursor-pointer transition-colors duration-200 ${
+                          starred
+                            ? 'bg-[#F0DC00] text-[#171512]'
+                            : 'bg-black/5 dark:bg-white/10 hover:bg-black/10 text-[#8E887E] dark:text-[#A8A196]'
+                        }`}
+                        aria-label={`Follow ${person.name}`}
+                      >
+                        <Star className={`w-4 h-4 ${starred ? 'fill-current stroke-[1.5]' : 'stroke-[2]'}`} />
+                      </motion.button>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ============================================================== */}
+      {/* ADD ATTENDED NIGHT MODAL                                       */}
+      {/* ============================================================== */}
+      <AnimatePresence>
+        {isAddNightOpen && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddNightOpen(false)}
+              className="fixed inset-0 bg-black/45 backdrop-blur-[10px]"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="relative z-10 w-full max-w-md bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-t-[36px] sm:rounded-[36px] p-6 text-[#171512] dark:text-[#F5F1E8] shadow-2xl border border-white/85 dark:border-white/15 safe-bottom"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display font-extrabold text-lg text-[#171512] dark:text-white">
+                  {isEs ? 'Registrar noche asistida' : 'Log Attended Night'}
+                </h3>
+                <button
+                  onClick={() => setIsAddNightOpen(false)}
+                  className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white hover:bg-black/10 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddCustomNight} className="space-y-4">
+                <div>
+                  <label className="block text-[11px] uppercase font-bold tracking-wider text-[#8E887E] dark:text-[#A8A196] mb-1">
+                    {isEs ? 'Nombre de la fiesta / evento' : 'Party / Event Name'}
+                  </label>
+                  <input
+                    type="text"
+                    value={newNightTitle}
+                    onChange={(e) => setNewNightTitle(e.target.value)}
+                    placeholder={isEs ? 'Ej: Rooftop Golden Hour' : 'e.g. Rooftop Golden Hour'}
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-black/10 dark:border-white/15 bg-black/[0.02] dark:bg-white/5 text-[#171512] dark:text-white font-medium text-sm focus:border-[#F0DC00] outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] uppercase font-bold tracking-wider text-[#8E887E] dark:text-[#A8A196] mb-1">
+                    {isEs ? 'Fecha' : 'Date'}
+                  </label>
+                  <div className="relative flex items-center">
+                    <Calendar className="absolute left-3.5 w-4 h-4 text-[#8E887E]" />
+                    <input
+                      type="text"
+                      value={newNightDate}
+                      onChange={(e) => setNewNightDate(e.target.value)}
+                      placeholder={isEs ? 'Ej: 24 Sep' : 'e.g. Sep 24'}
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-black/10 dark:border-white/15 bg-black/[0.02] dark:bg-white/5 text-[#171512] dark:text-white font-medium text-sm focus:border-[#F0DC00] outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddNightOpen(false)}
+                    className="flex-1 py-3 rounded-2xl bg-black/5 dark:bg-white/10 text-xs font-bold text-[#706B66] dark:text-white/80 cursor-pointer"
+                  >
+                    {isEs ? 'Cancelar' : 'Cancel'}
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 rounded-2xl bg-[#F0DC00] text-[#171512] text-xs font-bold hover:brightness-105 cursor-pointer shadow-sm"
+                  >
+                    {isEs ? 'Registrar noche' : 'Save Night'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ============================================================== */}
+      {/* SOCIAL NETWORK SETTINGS & PRIVACY MODAL                        */}
       {/* ============================================================== */}
       <AnimatePresence>
         {isSettingsOpen && (
@@ -499,19 +728,35 @@ export const ProfileView: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="relative z-10 w-full max-w-md bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-t-[36px] sm:rounded-[36px] p-6 text-[#171512] dark:text-[#F5F1E8] shadow-2xl border border-white/85 dark:border-white/15 safe-bottom transition-colors duration-200"
+              className="relative z-10 w-full max-w-md bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-t-[36px] sm:rounded-[36px] p-6 text-[#171512] dark:text-[#F5F1E8] shadow-2xl border border-white/85 dark:border-white/15 safe-bottom transition-colors duration-200 max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-display font-extrabold text-lg text-[#171512] dark:text-white">
-                  {isEs ? 'Configuración' : 'Settings'}
+                  {isEs ? 'Configuración y Privacidad' : 'Settings & Privacy'}
                 </h3>
                 <button
                   onClick={() => setIsSettingsOpen(false)}
                   className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 cursor-pointer"
+                  aria-label="Cerrar ajustes"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Direct Edit Profile Button */}
+              <button
+                onClick={() => {
+                  setIsSettingsOpen(false);
+                  setIsEditProfileOpen(true);
+                }}
+                className="w-full py-3 px-4 rounded-2xl bg-[#F0DC00]/15 border border-[#F0DC00]/40 text-[#171512] dark:text-[#F0DC00] font-bold text-xs flex items-center justify-between mb-4 cursor-pointer hover:bg-[#F0DC00]/25 transition-all"
+              >
+                <div className="flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-[#F0DC00]" />
+                  <span>{isEs ? 'Editar perfil completo' : 'Edit Full Profile'}</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#F0DC00]" />
+              </button>
 
               {/* Wallet Info */}
               {activeAddress && (
@@ -536,102 +781,236 @@ export const ProfileView: React.FC = () => {
                 </div>
               )}
 
-              {/* Dark Mode Toggle - STRICTLY ACCESSIBLE ONLY HERE */}
-              <div className="flex items-center justify-between py-3 border-b border-black/5 dark:border-white/10">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-[#F0DC00]">
-                    {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-[#171512] dark:text-white block">
-                      {isEs ? 'Modo oscuro' : 'Dark mode'}
-                    </span>
-                    <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
-                      {theme === 'dark' ? (isEs ? 'Activado' : 'Enabled') : (isEs ? 'Desactivado' : 'Disabled')}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={toggleTheme}
-                  className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 cursor-pointer flex items-center ${
-                    theme === 'dark' ? 'bg-[#F0DC00] justify-end' : 'bg-black/15 dark:bg-white/20 justify-start'
-                  }`}
-                  aria-label="Toggle dark mode"
-                >
-                  <motion.div
-                    layout
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className="w-5 h-5 rounded-full bg-white dark:bg-[#171512] shadow-sm flex items-center justify-center"
-                  >
-                    {theme === 'dark' ? (
-                      <Moon className="w-3 h-3 text-[#F0DC00]" />
-                    ) : (
-                      <Sun className="w-3 h-3 text-amber-500" />
-                    )}
-                  </motion.div>
-                </button>
-              </div>
-
-              {/* Notifications Toggle */}
-              <div className="flex items-center justify-between py-3 border-b border-black/5 dark:border-white/10">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-[#F0DC00]">
-                    <Bell className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-[#171512] dark:text-white block">
-                      {isEs ? 'Notificaciones' : 'Notifications'}
-                    </span>
-                    <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
-                      {pushNotifications ? (isEs ? 'Alertas activas' : 'Active alerts') : (isEs ? 'Silenciadas' : 'Muted')}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setPushNotifications(!pushNotifications)}
-                  className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 cursor-pointer flex items-center ${
-                    pushNotifications ? 'bg-[#F0DC00] justify-end' : 'bg-black/15 dark:bg-white/20 justify-start'
-                  }`}
-                  aria-label="Toggle notifications"
-                >
-                  <motion.div
-                    layout
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className="w-5 h-5 rounded-full bg-white dark:bg-[#171512] shadow-sm"
-                  />
-                </button>
-              </div>
-
-              {/* Language Switch */}
-              <div className="flex items-center justify-between py-3 border-b border-black/5 dark:border-white/10">
-                <span className="text-xs font-bold text-[#171512] dark:text-white">
-                  {isEs ? 'Idioma' : 'Language'}
+              {/* ========================================================== */}
+              {/* SOCIAL & PRIVACY SETTINGS (STANDARD SOCIAL CONTROLS)      */}
+              {/* ========================================================== */}
+              <div className="pt-2 pb-1">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-[#8E887E] dark:text-[#A8A196] block mb-2">
+                  {isEs ? 'Privacidad y Red Social' : 'Privacy & Social'}
                 </span>
-                <LanguageSwitch compact />
+
+                {/* Private Profile Toggle */}
+                <div className="flex items-center justify-between py-2.5 border-b border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                        {isEs ? 'Perfil privado' : 'Private profile'}
+                      </span>
+                      <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                        {currentUser.isPrivate
+                          ? (isEs ? 'Solo conexiones aprobadas' : 'Approved connections only')
+                          : (isEs ? 'Visible para todos' : 'Visible to everyone')}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => updateUser({ isPrivate: !currentUser.isPrivate })}
+                    className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 cursor-pointer flex items-center ${
+                      currentUser.isPrivate ? 'bg-[#F0DC00] justify-end' : 'bg-black/15 dark:bg-white/20 justify-start'
+                    }`}
+                    aria-label="Toggle private profile"
+                  >
+                    <motion.div
+                      layout
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className="w-5 h-5 rounded-full bg-white dark:bg-[#171512] shadow-sm"
+                    />
+                  </button>
+                </div>
+
+                {/* Show Attended Nights Toggle */}
+                <div className="flex items-center justify-between py-2.5 border-b border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white">
+                      <Eye className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                        {isEs ? 'Mostrar noches asistidas' : 'Show attended nights'}
+                      </span>
+                      <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                        {currentUser.showNights !== false
+                          ? (isEs ? 'Visible en tu perfil' : 'Visible on your profile')
+                          : (isEs ? 'Oculto' : 'Hidden')}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => updateUser({ showNights: currentUser.showNights === false ? true : false })}
+                    className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 cursor-pointer flex items-center ${
+                      currentUser.showNights !== false ? 'bg-[#F0DC00] justify-end' : 'bg-black/15 dark:bg-white/20 justify-start'
+                    }`}
+                    aria-label="Toggle show nights"
+                  >
+                    <motion.div
+                      layout
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className="w-5 h-5 rounded-full bg-white dark:bg-[#171512] shadow-sm"
+                    />
+                  </button>
+                </div>
+
+                {/* Allow Follows / Stars Toggle */}
+                <div className="flex items-center justify-between py-2.5 border-b border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-[#F0DC00]">
+                      <Star className="w-4 h-4 fill-current stroke-[1.5]" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                        {isEs ? 'Permitir que te sigan (estrella)' : 'Allow follows (stars)'}
+                      </span>
+                      <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                        {currentUser.allowFollows !== false
+                          ? (isEs ? 'Cualquiera puede seguirte' : 'Anyone can star/follow you')
+                          : (isEs ? 'Seguimientos deshabilitados' : 'Follows disabled')}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => updateUser({ allowFollows: currentUser.allowFollows === false ? true : false })}
+                    className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 cursor-pointer flex items-center ${
+                      currentUser.allowFollows !== false ? 'bg-[#F0DC00] justify-end' : 'bg-black/15 dark:bg-white/20 justify-start'
+                    }`}
+                    aria-label="Toggle allow follows"
+                  >
+                    <motion.div
+                      layout
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className="w-5 h-5 rounded-full bg-white dark:bg-[#171512] shadow-sm"
+                    />
+                  </button>
+                </div>
               </div>
 
-              {/* Account ID / Data Info (Real product, zero demo mentions) */}
-              <div className="flex items-center justify-between py-3 border-b border-black/5 dark:border-white/10">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              {/* ========================================================== */}
+              {/* NOTIFICATION PREFERENCES                                   */}
+              {/* ========================================================== */}
+              <div className="pt-2 pb-1">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-[#8E887E] dark:text-[#A8A196] block mb-2">
+                  {isEs ? 'Notificaciones' : 'Notifications'}
+                </span>
+
+                <div className="flex items-center justify-between py-2.5 border-b border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-[#F0DC00]">
+                      <Bell className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                        {isEs ? 'Invitaciones a fiestas' : 'Party invitations'}
+                      </span>
+                      <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                        {currentUser.notifyInvites !== false
+                          ? (isEs ? 'Alertas activas' : 'Active alerts')
+                          : (isEs ? 'Silenciadas' : 'Muted')}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-[#171512] dark:text-white block">
-                      {isEs ? 'ID de cuenta' : 'Account ID'}
-                    </span>
-                    <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
-                      {currentUser.id || 'usr_active'}
-                    </span>
-                  </div>
+                  <button
+                    onClick={() => updateUser({ notifyInvites: currentUser.notifyInvites === false ? true : false })}
+                    className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 cursor-pointer flex items-center ${
+                      currentUser.notifyInvites !== false ? 'bg-[#F0DC00] justify-end' : 'bg-black/15 dark:bg-white/20 justify-start'
+                    }`}
+                    aria-label="Toggle invite notifications"
+                  >
+                    <motion.div
+                      layout
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className="w-5 h-5 rounded-full bg-white dark:bg-[#171512] shadow-sm"
+                    />
+                  </button>
                 </div>
-                <button
-                  onClick={handleCopyAddress}
-                  className="px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-xs font-bold text-[#171512] dark:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? (isEs ? 'Copiado' : 'Copied') : (isEs ? 'Copiar' : 'Copy')}</span>
-                </button>
+              </div>
+
+              {/* ========================================================== */}
+              {/* APP PREFERENCES                                           */}
+              {/* ========================================================== */}
+              <div className="pt-2 pb-1">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-[#8E887E] dark:text-[#A8A196] block mb-2">
+                  {isEs ? 'Aplicación' : 'App Preferences'}
+                </span>
+
+                {/* Dark Mode Toggle - STRICTLY ACCESSIBLE ONLY HERE */}
+                <div className="flex items-center justify-between py-2.5 border-b border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-[#F0DC00]">
+                      {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                        {isEs ? 'Modo oscuro' : 'Dark mode'}
+                      </span>
+                      <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                        {theme === 'dark' ? (isEs ? 'Activado' : 'Enabled') : (isEs ? 'Desactivado (modo claro)' : 'Disabled (light mode)')}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={toggleTheme}
+                    className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 cursor-pointer flex items-center ${
+                      theme === 'dark' ? 'bg-[#F0DC00] justify-end' : 'bg-black/15 dark:bg-white/20 justify-start'
+                    }`}
+                    aria-label="Toggle dark mode"
+                  >
+                    <motion.div
+                      layout
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className="w-5 h-5 rounded-full bg-white dark:bg-[#171512] shadow-sm flex items-center justify-center"
+                    >
+                      {theme === 'dark' ? (
+                        <Moon className="w-3 h-3 text-[#F0DC00]" />
+                      ) : (
+                        <Sun className="w-3 h-3 text-amber-500" />
+                      )}
+                    </motion.div>
+                  </button>
+                </div>
+
+                {/* Language Switch */}
+                <div className="flex items-center justify-between py-2.5 border-b border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-[#F0DC00]">
+                      <Globe className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                        {isEs ? 'Idioma' : 'Language'}
+                      </span>
+                      <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                        {language === 'es' ? 'Español' : 'English'}
+                      </span>
+                    </div>
+                  </div>
+                  <LanguageSwitch compact />
+                </div>
+
+                {/* Account ID */}
+                <div className="flex items-center justify-between py-2.5 border-b border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                        {isEs ? 'ID de cuenta' : 'Account ID'}
+                      </span>
+                      <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                        {currentUser.id || 'usr_active'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleCopyAddress}
+                    className="px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-xs font-bold text-[#171512] dark:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copied ? (isEs ? 'Copiado' : 'Copied') : (isEs ? 'Copiar' : 'Copy')}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Logout Button */}

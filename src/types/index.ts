@@ -15,6 +15,15 @@ export interface User {
   isPrivyAuthenticated?: boolean;
   bio?: string;
   location?: string;
+  website?: string;
+  instagram?: string;
+  twitter?: string;
+  isPrivate?: boolean;
+  showNights?: boolean;
+  showCrews?: boolean;
+  allowFollows?: boolean;
+  notifyInvites?: boolean;
+  notifyFinances?: boolean;
 }
 
 export interface Member {

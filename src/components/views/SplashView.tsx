@@ -55,7 +55,7 @@ export const SplashView: React.FC = () => {
 
       {/* Top Floating Language Switch Bar */}
       <div className="relative z-20 w-full max-w-md mx-auto px-5 pt-4 flex items-center justify-end">
-        <LanguageSwitch compact />
+        <LanguageSwitch variant="glass" />
       </div>
 
       {/* Main Content Area */}

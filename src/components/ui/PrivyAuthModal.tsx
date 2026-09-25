@@ -6,7 +6,6 @@ import { ShieldCheck, Mail, Apple, Wallet, Sparkles } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { usePrivy } from '@privy-io/react-auth';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 import { isPrivyConfigured } from '@/lib/runtimeMode';
 
 interface PrivyAuthModalProps {
@@ -48,13 +47,12 @@ export const PrivyAuthModal: React.FC<PrivyAuthModalProps> = ({
         {/* Ambient Warm Golden Bokeh */}
         <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-[#F0DC00]/10 rounded-full blur-2xl pointer-events-none" />
 
-        {/* Top Header Row with Language Switch */}
-        <div className="flex items-center justify-between pb-1 px-1">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-[#F0DC00]">
+        {/* Top Header Badge */}
+        <div className="flex items-center justify-center pb-1">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-[#F0DC00]">
             <Sparkles className="w-3 h-3 text-[#F0DC00]" />
             <span>PARTYLOT AUTH</span>
           </div>
-          <LanguageSwitch compact />
         </div>
 
         <AnimatePresence mode="wait">

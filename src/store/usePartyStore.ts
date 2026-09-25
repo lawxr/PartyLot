@@ -222,6 +222,13 @@ interface PartyStoreState {
   loadPartyFromSupabase: (partyId: string) => Promise<void>;
   listenToActivePartyRealtime: (partyId: string) => () => void;
 
+  // Social Follow & Attended Nights
+  starredUserIds: string[];
+  toggleStarUser: (userId: string) => void;
+  isUserStarred: (userId: string) => boolean;
+  attendedPartyIds: string[];
+  addAttendedNight: (partyId: string) => void;
+
   // Reset
   resetToDefaults: () => void;
 }
@@ -252,6 +259,35 @@ export const usePartyStore = create<PartyStoreState>()(
           document.documentElement.classList.toggle('dark', nextTheme === 'dark');
         }
         set({ theme: nextTheme });
+      },
+      starredUserIds: ['u-sofi', 'u-ana', 'u-cam'],
+      toggleStarUser: (userId) => {
+        set((state) => {
+          const currentList = state.starredUserIds || [];
+          const isStarred = currentList.includes(userId);
+          const next = isStarred
+            ? currentList.filter((id) => id !== userId)
+            : [...currentList, userId];
+          return { starredUserIds: next };
+        });
+      },
+      isUserStarred: (userId) => {
+        return (get().starredUserIds || []).includes(userId);
+      },
+      attendedPartyIds: ['p-404', 'p-rooftop', 'p-hackathon'],
+      addAttendedNight: (partyId) => {
+        set((state) => {
+          const currentList = state.attendedPartyIds || [];
+          if (currentList.includes(partyId)) return state;
+          const next = [partyId, ...currentList];
+          return {
+            attendedPartyIds: next,
+            currentUser: {
+              ...state.currentUser,
+              gatheringsCount: (state.currentUser?.gatheringsCount || 0) + 1,
+            },
+          };
+        });
       },
       parties: demoMode ? INITIAL_PARTIES : [],
       currentPartyId: demoMode ? 'p-404' : '',
@@ -1325,6 +1361,8 @@ export const usePartyStore = create<PartyStoreState>()(
         currentPartyId: state.currentPartyId,
         language: state.language,
         theme: state.theme,
+        starredUserIds: state.starredUserIds,
+        attendedPartyIds: state.attendedPartyIds,
       }),
     }
   )

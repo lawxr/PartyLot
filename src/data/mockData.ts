@@ -13,16 +13,33 @@ export const CURRENT_USER: User = {
   balance: 48.50,
   bio: 'Good food, better people.',
   location: 'Medellin, Colombia',
+  website: 'https://partylot.xyz/lawx',
+  instagram: 'lawx',
+  twitter: 'lawx',
+  isPrivate: false,
+  showNights: true,
+  showCrews: true,
+  allowFollows: true,
+  notifyInvites: true,
+  notifyFinances: true,
 };
 
 export const INITIAL_MEMBERS: Member[] = [
   {
     id: 'u-law',
     name: 'Law',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
     role: 'host',
     status: 'going',
     nightsTogether: 24,
+  },
+  {
+    id: 'u-sofi',
+    name: 'Sofi',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+    role: 'guest',
+    status: 'going',
+    nightsTogether: 12,
   },
   {
     id: 'u-ana',
@@ -30,20 +47,20 @@ export const INITIAL_MEMBERS: Member[] = [
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
     role: 'guest',
     status: 'going',
-    nightsTogether: 12,
+    nightsTogether: 9,
+  },
+  {
+    id: 'u-cam',
+    name: 'Cam',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+    role: 'guest',
+    status: 'going',
+    nightsTogether: 8,
   },
   {
     id: 'u-carlos',
     name: 'Carlos',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-    role: 'guest',
-    status: 'going',
-    nightsTogether: 9,
-  },
-  {
-    id: 'u-sofi',
-    name: 'Sofi',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
     role: 'guest',
     status: 'going',
     nightsTogether: 7,
@@ -54,7 +71,7 @@ export const INITIAL_MEMBERS: Member[] = [
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
     role: 'guest',
     status: 'going',
-    nightsTogether: 15,
+    nightsTogether: 6,
   },
   {
     id: 'u-valen',
@@ -62,7 +79,8 @@ export const INITIAL_MEMBERS: Member[] = [
     avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
     role: 'guest',
     status: 'going',
-    nightsTogether: 6,
+    nightsTogether: 5,
+
   },
   {
     id: 'u-nico',

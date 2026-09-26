@@ -6,6 +6,7 @@ import { ArrowLeft, Users, Zap, XCircle } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { WHOS_MOST_LIKELY_QUESTIONS } from '@/data/mockData';
 
 export const WhosMostLikely: React.FC = () => {
   const { parties, currentPartyId, whosMostLikely, voteWhosMostLikely, setCurrentView, goBack } =
@@ -13,15 +14,19 @@ export const WhosMostLikely: React.FC = () => {
   const { language } = useTranslation();
   const isEs = language === 'es';
 
-  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [votedMemberId, setVotedMemberId] = useState<string | null>('u-sofi'); // Initially highlight Sofi as in Phone 4 reference
-
-  const currentQ = whosMostLikely[questionIndex % whosMostLikely.length] || {
-    id: 'wml-0',
-    question: "Who's most likely to dance on a table tonight?",
-    votes: { 'u-sofi': 3, 'u-ana': 1, 'u-cam': 1 },
+  const fallbackParty = {
+    id: 'demo-party',
+    title: 'Partylot',
+    members: [],
   };
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0] || fallbackParty;
+  const partyMembers = party.members || [];
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [votedMemberId, setVotedMemberId] = useState<string | null>('u-sofi');
+
+  const questions = whosMostLikely && whosMostLikely.length > 0 ? whosMostLikely : WHOS_MOST_LIKELY_QUESTIONS;
+  const currentQ = questions[questionIndex % questions.length] || WHOS_MOST_LIKELY_QUESTIONS[0];
+  const questionText = (isEs && currentQ.questionEs) ? currentQ.questionEs : currentQ.question;
 
   // Get party participants list (curated 6 friends for the 2x3 grid)
   const defaultFriends = [
@@ -59,12 +64,12 @@ export const WhosMostLikely: React.FC = () => {
 
   // Merge with actual party members if available, ensuring 6 slots
   const friendsToDisplay = defaultFriends.map((df) => {
-    const existing = party.members.find((m) => m.id === df.id || m.name.toLowerCase() === df.name.toLowerCase());
+    const existing = partyMembers.find((m) => m.id === df.id || m.name.toLowerCase() === df.name.toLowerCase());
     return existing ? { id: existing.id, name: existing.name, avatar: existing.avatar || df.avatar } : df;
   });
 
-  const totalQuestions = 10;
-  const currentStep = (questionIndex % totalQuestions) + 3; // Phone 4 shows "3 / 10"
+  const totalQuestions = questions.length;
+  const currentStep = (questionIndex % totalQuestions) + 1;
 
   const handleVote = (memberId: string) => {
     setVotedMemberId(memberId);
@@ -135,7 +140,7 @@ export const WhosMostLikely: React.FC = () => {
 
         {/* Question Text */}
         <h3 className="font-display font-extrabold text-xl sm:text-2xl text-[#171512] tracking-tight leading-snug max-w-xs sm:max-w-sm">
-          {currentQ.question}
+          {questionText}
         </h3>
       </motion.div>
 

@@ -35,7 +35,7 @@ export const RecapView: React.FC = () => {
     tasks,
   } = usePartyStore();
 
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
   const isEs = language === 'es';
 
   const defaultParty = parties[0];
@@ -56,7 +56,12 @@ export const RecapView: React.FC = () => {
     setIsAttesting(true);
     try {
       const addresses = party.members.map((m) => m.walletAddress || m.id);
-      const receipt = await recordGatheringOnchain(party.id, addresses);
+      const receipt = await recordGatheringOnchain(party.id, addresses, {
+        userAId: party.members[0]?.id,
+        userBId: party.members[1]?.id || party.members[0]?.id,
+        userAName: party.members[0]?.name,
+        userBName: party.members[1]?.name || 'Crew Member',
+      });
       setAttestationTxHash(receipt.txHash);
       confetti({
         particleCount: 80,

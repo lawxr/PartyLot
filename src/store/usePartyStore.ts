@@ -27,6 +27,7 @@ import {
   joinPartyWithInviteCode,
   persistExpenseToSupabase,
   persistActivityToSupabase,
+  persistPotTransactionToSupabase,
   persistCrewToSupabase,
   addMemberToCrewInDb,
   persistTaskToSupabase,
@@ -37,21 +38,25 @@ import {
   fetchActivitiesFromDb,
   fetchPollsFromDb,
   fetchGameSessionsFromDb,
-  persistPollToSupabase,
-  persistGameSessionToSupabase,
   syncUserDataToDb,
   subscribeToPartyRealtime,
   subscribeToTasksRealtime,
   persistPartyMemoryToSupabase,
-  fetchUserProfileFromDb,
 } from '@/services/supabaseService';
+import {
+  WHOS_MOST_LIKELY_QUESTIONS,
+  THIS_OR_THAT_QUESTIONS,
+  TRIVIA_QUESTIONS,
+} from '@/data/mockData';
 import { Language } from '@/lib/i18n/translations';
 import {
   FinancialActionResult,
+  ConnectedUserWallet,
   depositToPartyPotOnchain,
   distributeBountyOnchain,
   settleDamageOnchain,
   rolloverFundsOnchain,
+  getPartyPotBalanceOnchain,
   TreasuryReceipt,
 } from '@/services/treasury';
 import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
@@ -69,6 +74,7 @@ const signedOutUser: User = {
   peopleCount: 0,
   settlementsCount: 0,
   balance: 0,
+  isPrivyAuthenticated: false,
 };
 const volatileStorage: StateStorage = {
   getItem: () => null,
@@ -174,7 +180,12 @@ interface PartyStoreState {
   settleAllDebts: (partyId?: string) => Promise<FinancialActionResult>;
 
   // Party Pot Actions
-  addToPot: (partyId: string, amount: number, description?: string) => Promise<FinancialActionResult>;
+  addToPot: (
+    partyId: string,
+    amount: number,
+    description?: string,
+    options?: { wallet?: ConnectedUserWallet }
+  ) => Promise<FinancialActionResult>;
   spendFromPot: (partyId: string, amount: number, description: string) => Promise<FinancialActionResult>;
   rolloverPotToCrew: (partyId: string, crewId: string) => Promise<FinancialActionResult>;
 
@@ -302,9 +313,9 @@ export const usePartyStore = create<PartyStoreState>()(
       polls: [],
       activities: [],
       memories: [],
-      whosMostLikely: [],
-      thisOrThat: [],
-      trivia: [],
+      whosMostLikely: WHOS_MOST_LIKELY_QUESTIONS,
+      thisOrThat: THIS_OR_THAT_QUESTIONS,
+      trivia: TRIVIA_QUESTIONS,
       crewTrivia: [],
       activeGameId: 'whos-most-likely',
 
@@ -699,12 +710,11 @@ export const usePartyStore = create<PartyStoreState>()(
         const netBalances = calculateNetBalances(partyExpenses, party.members);
         const debtSettlements = computeDebtSettlements(netBalances, party.members);
 
-        let receipt: TreasuryReceipt | undefined;
-        try {
-          receipt = await settleDamageOnchain(party.id, debtSettlements, state.currentUser.walletAddress);
-        } catch (err) {
-          console.warn('Onchain settle fallback:', err);
+        if (debtSettlements.length === 0) {
+          return { status: 'available', message: 'No pending debts to settle' };
         }
+
+        const receipt = await settleDamageOnchain(party.id, debtSettlements, state.currentUser.walletAddress);
 
         const updatedExpenses = state.expenses.map((e) =>
           e.partyId === party.id ? { ...e, isSettled: true } : e
@@ -714,7 +724,7 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId: party.id,
           type: 'pot',
-          text: `⚡ Cuentas saldadas en Monad Testnet (${debtSettlements.length} pagos liquidados en USDC)`,
+          text: `⚡ Cuentas saldadas en Monad Testnet (${debtSettlements.length} pagos liquidados en MON)`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
         };
@@ -726,47 +736,52 @@ export const usePartyStore = create<PartyStoreState>()(
 
         return {
           status: 'available',
-          message: 'All debts settled successfully on Monad Testnet (USDC)',
+          message: 'All debts settled successfully on Monad Testnet (MON)',
           receipt,
         };
       },
 
-      addToPot: async (partyId: string, amount: number, description?: string) => {
+      addToPot: async (
+        partyId: string,
+        amount: number,
+        description?: string,
+        options?: { wallet?: ConnectedUserWallet }
+      ) => {
         const state = get();
-        const numAmount = Math.max(1, amount);
+        const numAmount = Math.max(0.0001, amount);
 
-        let receipt: TreasuryReceipt | undefined;
-        try {
-          receipt = await depositToPartyPotOnchain(partyId, numAmount, {
-            userAddress: state.currentUser.walletAddress,
-            userId: state.currentUser.id,
-            userName: state.currentUser.name,
-          });
-        } catch (err) {
-          console.warn('Onchain deposit fallback:', err);
-        }
+        const receipt = await depositToPartyPotOnchain(partyId, numAmount, {
+          wallet: options?.wallet,
+          userAddress: state.currentUser.walletAddress,
+          userId: state.currentUser.id,
+          userName: state.currentUser.name,
+          userAvatar: state.currentUser.avatar,
+        });
 
         const newTx: PotTransaction = {
           id: `tx-${Date.now()}`,
           partyId,
           amount: numAmount,
           type: 'add',
-          description: description || `Deposit into party pot via Monad Testnet (USDC)`,
+          description: description || `Deposit into party pot via Monad Testnet (MON)`,
           userName: state.currentUser.name,
           userAvatar: state.currentUser.avatar,
           timestamp: 'Just now',
-          txHash: receipt?.txHash,
+          txHash: receipt.txHash,
         };
 
+        const party = state.parties.find((p) => p.id === partyId);
+        const newBalance = Number(((party?.potBalance || 0) + numAmount).toFixed(4));
+
         const updatedParties = state.parties.map((p) =>
-          p.id === partyId ? { ...p, potBalance: (p.potBalance || 0) + numAmount } : p
+          p.id === partyId ? { ...p, potBalance: newBalance } : p
         );
 
         const newActivity: ActivityItem = {
           id: `act-${Date.now()}`,
           partyId,
           type: 'pot',
-          text: `💰 ${state.currentUser.name} aportó $${numAmount.toFixed(2)} USDC al Party Pot (Monad)`,
+          text: `💰 ${state.currentUser.name} aportó ${numAmount.toFixed(4)} MON al Party Pot (Monad)`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
         };
@@ -777,29 +792,29 @@ export const usePartyStore = create<PartyStoreState>()(
           activities: [newActivity, ...state.activities],
         });
 
+        if (!demoMode && partyId) {
+          persistPotTransactionToSupabase(newTx, newBalance).catch(() => {});
+          persistActivityToSupabase(newActivity).catch(() => {});
+        }
+
         return {
           status: 'available',
-          message: `$${numAmount.toFixed(2)} USDC deposited into Party Pot on Monad`,
+          message: `${numAmount.toFixed(4)} MON deposited into Party Pot on Monad`,
           receipt,
         };
       },
 
       spendFromPot: async (partyId: string, amount: number, description: string) => {
         const state = get();
-        const numAmount = Math.max(1, amount);
+        const numAmount = Math.max(0.0001, amount);
 
-        let receipt: TreasuryReceipt | undefined;
-        try {
-          receipt = await distributeBountyOnchain(
-            partyId,
-            state.currentUser.walletAddress || '0x0000000000000000000000000000000000000001',
-            numAmount,
-            description,
-            state.currentUser.name
-          );
-        } catch (err) {
-          console.warn('Onchain spend fallback:', err);
-        }
+        const receipt = await distributeBountyOnchain(
+          partyId,
+          state.currentUser.walletAddress || '0x0000000000000000000000000000000000000001',
+          numAmount,
+          description,
+          state.currentUser.name
+        );
 
         const newTx: PotTransaction = {
           id: `tx-${Date.now()}`,
@@ -810,18 +825,21 @@ export const usePartyStore = create<PartyStoreState>()(
           userName: state.currentUser.name,
           userAvatar: state.currentUser.avatar,
           timestamp: 'Just now',
-          txHash: receipt?.txHash,
+          txHash: receipt.txHash,
         };
 
+        const party = state.parties.find((p) => p.id === partyId);
+        const newBalance = Math.max(0, Number(((party?.potBalance || 0) - numAmount).toFixed(4)));
+
         const updatedParties = state.parties.map((p) =>
-          p.id === partyId ? { ...p, potBalance: Math.max(0, (p.potBalance || 0) - numAmount) } : p
+          p.id === partyId ? { ...p, potBalance: newBalance } : p
         );
 
         const newActivity: ActivityItem = {
           id: `act-${Date.now()}`,
           partyId,
           type: 'pot',
-          text: `💸 Gasto de $${numAmount.toFixed(2)} USDC pagado del Party Pot: "${description}"`,
+          text: `💸 Gasto de ${numAmount.toFixed(4)} MON pagado del Party Pot: "${description}"`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
         };
@@ -832,9 +850,14 @@ export const usePartyStore = create<PartyStoreState>()(
           activities: [newActivity, ...state.activities],
         });
 
+        if (!demoMode && partyId) {
+          persistPotTransactionToSupabase(newTx, newBalance).catch(() => {});
+          persistActivityToSupabase(newActivity).catch(() => {});
+        }
+
         return {
           status: 'available',
-          message: `$${numAmount.toFixed(2)} USDC reimbursement processed on Monad`,
+          message: `${numAmount.toFixed(4)} MON reimbursement processed on Monad`,
           receipt,
         };
       },
@@ -844,12 +867,7 @@ export const usePartyStore = create<PartyStoreState>()(
         const party = state.parties.find((p) => p.id === partyId) || state.parties[0];
         const currentBalance = party?.potBalance || 0;
 
-        let receipt: TreasuryReceipt | undefined;
-        try {
-          receipt = await rolloverFundsOnchain(partyId, crewId, currentBalance);
-        } catch (err) {
-          console.warn('Onchain rollover fallback:', err);
-        }
+        const receipt = await rolloverFundsOnchain(partyId, crewId, currentBalance);
 
         const newTx: PotTransaction = {
           id: `tx-${Date.now()}`,
@@ -860,7 +878,7 @@ export const usePartyStore = create<PartyStoreState>()(
           userName: state.currentUser.name,
           userAvatar: state.currentUser.avatar,
           timestamp: 'Just now',
-          txHash: receipt?.txHash,
+          txHash: receipt.txHash,
         };
 
         const updatedParties = state.parties.map((p) =>
@@ -871,7 +889,7 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId,
           type: 'pot',
-          text: `🔄 $${currentBalance.toFixed(2)} USDC transferidos para la próxima fiesta de la Crew (Monad)`,
+          text: `🔄 ${currentBalance.toFixed(2)} MON transferidos para la próxima fiesta de la Crew (Monad)`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
         };
@@ -884,7 +902,7 @@ export const usePartyStore = create<PartyStoreState>()(
 
         return {
           status: 'available',
-          message: `$${currentBalance.toFixed(2)} USDC rolled over on Monad`,
+          message: `${currentBalance.toFixed(2)} MON rolled over successfully on Monad`,
           receipt,
         };
       },
@@ -991,18 +1009,13 @@ export const usePartyStore = create<PartyStoreState>()(
         const task = state.tasks.find((t) => t.id === taskId);
         if (!task) return { status: 'available', message: 'Task not found' };
 
-        let receipt: TreasuryReceipt | undefined;
-        try {
-          receipt = await distributeBountyOnchain(
-            task.partyId,
-            state.currentUser.walletAddress || '0x0000000000000000000000000000000000000001',
-            task.rewardAmount,
-            `BOUNTY_${task.title.replace(/\s+/g, '_').toUpperCase()}`,
-            task.claimedByName
-          );
-        } catch (err) {
-          console.warn('Onchain task reward fallback:', err);
-        }
+        const receipt = await distributeBountyOnchain(
+          task.partyId,
+          state.currentUser.walletAddress || '0x0000000000000000000000000000000000000001',
+          task.rewardAmount,
+          `BOUNTY_${task.title.replace(/\s+/g, '_').toUpperCase()}`,
+          task.claimedByName
+        );
 
         const updatedTask: PartyTask = {
           ...task,
@@ -1025,7 +1038,7 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId: task.partyId,
           type: 'pot',
-          text: `🎯 Recompensa de $${task.rewardAmount.toFixed(2)} USDC pagada a ${task.claimedByName || 'Asistente'} por "${task.title}" (Monad)`,
+          text: `🎯 Recompensa de ${task.rewardAmount.toFixed(2)} MON pagada a ${task.claimedByName || 'Asistente'} por "${task.title}" (Monad)`,
           time: 'Just now',
           avatar: task.claimedByAvatar || state.currentUser.avatar,
         };
@@ -1040,7 +1053,7 @@ export const usePartyStore = create<PartyStoreState>()(
 
         return {
           status: 'available',
-          message: `Bounty of $${task.rewardAmount.toFixed(2)} USDC verified and paid on Monad`,
+          message: `Bounty of ${task.rewardAmount.toFixed(2)} MON verified and paid on Monad`,
           receipt,
         };
       },
@@ -1188,7 +1201,7 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId,
           type: 'game',
-          text: `🏆 ${member.name} ganó $${amount.toFixed(2)} USDC jugando a ${gameTitle}! (Monad)`,
+          text: `🏆 ${member.name} ganó ${amount.toFixed(2)} MON jugando a ${gameTitle}! (Monad)`,
           time: 'Just now',
           avatar: member.avatar,
         };
@@ -1200,7 +1213,7 @@ export const usePartyStore = create<PartyStoreState>()(
 
         return {
           status: 'available',
-          message: `Reward of $${amount.toFixed(2)} USDC sent to ${member.name} on Monad`,
+          message: `Reward of ${amount.toFixed(2)} MON sent to ${member.name} on Monad`,
           receipt,
         };
       },
@@ -1433,6 +1446,20 @@ export const usePartyStore = create<PartyStoreState>()(
         set({
           currentUser: signedOutUser,
           currentView: 'splash',
+          currentPartyId: '',
+          currentCrewId: null,
+          parties: [],
+          crews: [],
+          expenses: [],
+          transactions: [],
+          tasks: [],
+          polls: [],
+          activities: [],
+          memories: [],
+          whosMostLikely: [],
+          thisOrThat: [],
+          crewTrivia: [],
+          starredUserIds: [],
         });
       },
 
@@ -1472,6 +1499,20 @@ export const usePartyStore = create<PartyStoreState>()(
         const details = await fetchPartyDetailsFromDb(partyId);
         if (!details || !details.party) return;
 
+        // Verify onchain pot balance if party has onchain presence on Monad Testnet
+        let effectiveParty = details.party;
+        try {
+          const onchainBal = await getPartyPotBalanceOnchain(partyId);
+          if (onchainBal !== null) {
+            effectiveParty = {
+              ...details.party,
+              potBalance: onchainBal,
+            };
+          }
+        } catch (onchainErr) {
+          console.warn('Onchain pot balance check notice:', onchainErr);
+        }
+
         const [dbPolls, dbGameSessions] = await Promise.all([
           fetchPollsFromDb(partyId),
           fetchGameSessionsFromDb(partyId),
@@ -1479,8 +1520,8 @@ export const usePartyStore = create<PartyStoreState>()(
 
         set((s) => ({
           parties: s.parties.some((p) => p.id === partyId)
-            ? s.parties.map((p) => (p.id === partyId ? details.party : p))
-            : [details.party, ...s.parties],
+            ? s.parties.map((p) => (p.id === partyId ? effectiveParty : p))
+            : [effectiveParty, ...s.parties],
           currentPartyId: partyId,
           expenses: details.expenses.length > 0 ? details.expenses : s.expenses,
           transactions: details.transactions.length > 0 ? details.transactions : s.transactions,
@@ -1492,12 +1533,12 @@ export const usePartyStore = create<PartyStoreState>()(
 
         // Load game sessions into appropriate game state
         dbGameSessions.forEach((session) => {
-          if (session.gameType === 'whos-most-likely' && session.questions.length > 0) {
-            set({ whosMostLikely: session.questions });
-          } else if (session.gameType === 'this-or-that' && session.questions.length > 0) {
-            set({ thisOrThat: session.questions });
-          } else if (session.gameType === 'crew-trivia' && session.questions.length > 0) {
-            set({ crewTrivia: session.questions });
+          if (session.gameType === 'whos-most-likely' && Array.isArray(session.questions) && session.questions.length > 0) {
+            set({ whosMostLikely: session.questions as unknown as WhosMostLikelyQuestion[] });
+          } else if (session.gameType === 'this-or-that' && Array.isArray(session.questions) && session.questions.length > 0) {
+            set({ thisOrThat: session.questions as unknown as ThisOrThatQuestion[] });
+          } else if (session.gameType === 'crew-trivia' && Array.isArray(session.questions) && session.questions.length > 0) {
+            set({ crewTrivia: session.questions as unknown as TriviaQuestion[] });
           }
         });
       },
@@ -1527,9 +1568,9 @@ export const usePartyStore = create<PartyStoreState>()(
           polls: [],
           activities: [],
           memories: [],
-          whosMostLikely: [],
-          thisOrThat: [],
-          trivia: [],
+          whosMostLikely: WHOS_MOST_LIKELY_QUESTIONS,
+          thisOrThat: THIS_OR_THAT_QUESTIONS,
+          trivia: TRIVIA_QUESTIONS,
         });
       },
     }),
@@ -1547,6 +1588,8 @@ export const usePartyStore = create<PartyStoreState>()(
         transactions: state.transactions,
         tasks: state.tasks,
         polls: state.polls,
+        activities: state.activities,
+        memories: state.memories,
         currentPartyId: state.currentPartyId,
         language: state.language,
         theme: state.theme,

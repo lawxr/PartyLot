@@ -7,6 +7,7 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { THIS_OR_THAT_QUESTIONS } from '@/data/mockData';
 
 export const ThisOrThat: React.FC = () => {
   const { thisOrThat, voteThisOrThat } = usePartyStore();
@@ -14,10 +15,14 @@ export const ThisOrThat: React.FC = () => {
   const isEs = language === 'es';
   const [index, setIndex] = useState(0);
 
-  const currentQ = thisOrThat[index % thisOrThat.length];
-  const total = currentQ.votesA + currentQ.votesB;
-  const percentA = total > 0 ? Math.round((currentQ.votesA / total) * 100) : 50;
+  const questions = thisOrThat && thisOrThat.length > 0 ? thisOrThat : THIS_OR_THAT_QUESTIONS;
+  const currentQ = questions[index % questions.length] || THIS_OR_THAT_QUESTIONS[0];
+  const total = (currentQ.votesA || 0) + (currentQ.votesB || 0);
+  const percentA = total > 0 ? Math.round(((currentQ.votesA || 0) / total) * 100) : 50;
   const percentB = total > 0 ? 100 - percentA : 50;
+
+  const optionTextA = (isEs && currentQ.optionAEs) ? currentQ.optionAEs : currentQ.optionA;
+  const optionTextB = (isEs && currentQ.optionBEs) ? currentQ.optionBEs : currentQ.optionB;
 
   const handleVote = (choice: 'A' | 'B') => {
     voteThisOrThat(currentQ.id, choice);
@@ -53,7 +58,7 @@ export const ThisOrThat: React.FC = () => {
           onClick={() => handleVote('A')}
           className={`relative h-48 sm:h-56 rounded-3xl p-5 overflow-hidden flex flex-col justify-between cursor-pointer border transition-all ${
             currentQ.userVote === 'A'
-              ? 'border-[#F0DC00] shadow-[0_0_30px_rgba(240, 220, 0,0.3)] bg-gradient-to-b from-[#F0DC00]/20 to-black/60'
+              ? 'border-[#F0DC00] shadow-[0_0_30px_rgba(240,220,0,0.3)] bg-gradient-to-b from-[#F0DC00]/20 to-black/60'
               : 'liquid-glass-card hover:border-white/40'
           }`}
         >
@@ -68,7 +73,7 @@ export const ThisOrThat: React.FC = () => {
 
           <div className="my-auto">
             <h4 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight leading-tight">
-              {currentQ.optionA}
+              {optionTextA}
             </h4>
           </div>
 
@@ -94,7 +99,7 @@ export const ThisOrThat: React.FC = () => {
           onClick={() => handleVote('B')}
           className={`relative h-48 sm:h-56 rounded-3xl p-5 overflow-hidden flex flex-col justify-between cursor-pointer border transition-all ${
             currentQ.userVote === 'B'
-              ? 'border-[#F0DC00] shadow-[0_0_30px_rgba(240, 220, 0,0.3)] bg-gradient-to-b from-[#F0DC00]/20 to-black/60'
+              ? 'border-[#F0DC00] shadow-[0_0_30px_rgba(240,220,0,0.3)] bg-gradient-to-b from-[#F0DC00]/20 to-black/60'
               : 'liquid-glass-card hover:border-white/40'
           }`}
         >
@@ -109,7 +114,7 @@ export const ThisOrThat: React.FC = () => {
 
           <div className="my-auto">
             <h4 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight leading-tight">
-              {currentQ.optionB}
+              {optionTextB}
             </h4>
           </div>
 

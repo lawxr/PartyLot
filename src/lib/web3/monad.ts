@@ -85,6 +85,14 @@ export function getMonadExplorerAddressUrl(address: string): string {
 
 import { keccak256, toHex } from 'viem';
 
+export function toPartyBytes32(partyId: string): `0x${string}` {
+  if (!partyId) return `0x${'0'.repeat(64)}` as `0x${string}`;
+  if (partyId.startsWith('0x') && partyId.length === 66) {
+    return partyId as `0x${string}`;
+  }
+  return keccak256(toHex(partyId));
+}
+
 /**
  * Record a deposit into the group treasury smart contract
  */

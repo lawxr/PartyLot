@@ -20,10 +20,10 @@ const monadTestnet = defineChain({
 });
 
 async function main() {
-  const privateKey = (process.argv[2] || process.env.MONAD_DEPLOYER_PRIVATE_KEY) as `0x${string}`;
+  const privateKey = (process.env.MONAD_DEPLOYER_PRIVATE_KEY || process.argv[2]) as `0x${string}`;
 
-  if (!privateKey || !privateKey.startsWith('0x')) {
-    console.error('Error: Please provide a funded private key as argument or MONAD_DEPLOYER_PRIVATE_KEY env var.');
+  if (!privateKey || !privateKey.startsWith('0x') || privateKey.length !== 66) {
+    console.error('Error: Please provide a valid private key in MONAD_DEPLOYER_PRIVATE_KEY or as argument.');
     process.exit(1);
   }
 
@@ -50,53 +50,65 @@ async function main() {
   }
 
   const artifactsDir = path.join(process.cwd(), 'contracts', 'artifacts');
+  const deployAll = process.argv.includes('--all');
 
-  // 1. Deploy SocialGraph
-  console.log('Deploying SocialGraph...');
-  const socialGraphBin = fs.readFileSync(path.join(artifactsDir, 'contracts_SocialGraph_sol_SocialGraph.bin'), 'utf-8');
-  const socialGraphAbi = JSON.parse(fs.readFileSync(path.join(artifactsDir, 'contracts_SocialGraph_sol_SocialGraph.abi'), 'utf-8'));
-  const socialGraphHash = await walletClient.deployContract({
-    abi: socialGraphAbi,
-    bytecode: `0x${socialGraphBin}`,
-    args: [],
-  });
-  console.log(`SocialGraph deployment tx: ${socialGraphHash}`);
-  const socialGraphReceipt = await publicClient.waitForTransactionReceipt({ hash: socialGraphHash });
-  const socialGraphAddress = socialGraphReceipt.contractAddress;
-  console.log(`SocialGraph deployed at: ${socialGraphAddress}`);
+  let socialGraphAddress = process.env.NEXT_PUBLIC_SOCIAL_GRAPH_ADDRESS || '0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9';
+  let registryAddress = process.env.NEXT_PUBLIC_PARTY_REGISTRY_ADDRESS || '0xb7d922488daa522443ffe1627efc6d65825eebad';
 
-  // 2. Deploy PartyRegistry
-  console.log('Deploying PartyRegistry...');
-  const registryBin = fs.readFileSync(path.join(artifactsDir, 'contracts_PartyRegistry_sol_PartyRegistry.bin'), 'utf-8');
-  const registryAbi = JSON.parse(fs.readFileSync(path.join(artifactsDir, 'contracts_PartyRegistry_sol_PartyRegistry.abi'), 'utf-8'));
-  const registryHash = await walletClient.deployContract({
-    abi: registryAbi,
-    bytecode: `0x${registryBin}`,
-    args: [account.address],
-  });
-  console.log(`PartyRegistry deployment tx: ${registryHash}`);
-  const registryReceipt = await publicClient.waitForTransactionReceipt({ hash: registryHash });
-  const registryAddress = registryReceipt.contractAddress;
-  console.log(`PartyRegistry deployed at: ${registryAddress}`);
+  if (deployAll) {
+    // 1. Deploy SocialGraph
+    console.log('Deploying SocialGraph...');
+    const socialGraphBin = fs.readFileSync(path.join(artifactsDir, 'contracts_SocialGraph_sol_SocialGraph.bin'), 'utf-8').trim();
+    const socialGraphAbi = JSON.parse(fs.readFileSync(path.join(artifactsDir, 'contracts_SocialGraph_sol_SocialGraph.abi'), 'utf-8'));
+    const socialGraphHash = await walletClient.deployContract({
+      abi: socialGraphAbi,
+      bytecode: `0x${socialGraphBin}`,
+      args: [],
+    });
+    console.log(`SocialGraph deployment tx: ${socialGraphHash}`);
+    const socialGraphReceipt = await publicClient.waitForTransactionReceipt({ hash: socialGraphHash });
+    socialGraphAddress = socialGraphReceipt.contractAddress!;
+    console.log(`SocialGraph deployed at: ${socialGraphAddress}`);
 
-  // 3. Deploy PartyTreasury
-  console.log('Deploying PartyTreasury...');
-  const treasuryBin = fs.readFileSync(path.join(artifactsDir, 'contracts_PartyTreasury_sol_PartyTreasury.bin'), 'utf-8');
+    // 2. Deploy PartyRegistry
+    console.log('Deploying PartyRegistry...');
+    const registryBin = fs.readFileSync(path.join(artifactsDir, 'contracts_PartyRegistry_sol_PartyRegistry.bin'), 'utf-8').trim();
+    const registryAbi = JSON.parse(fs.readFileSync(path.join(artifactsDir, 'contracts_PartyRegistry_sol_PartyRegistry.abi'), 'utf-8'));
+    const registryHash = await walletClient.deployContract({
+      abi: registryAbi,
+      bytecode: `0x${registryBin}`,
+      args: [account.address],
+    });
+    console.log(`PartyRegistry deployment tx: ${registryHash}`);
+    const registryReceipt = await publicClient.waitForTransactionReceipt({ hash: registryHash });
+    registryAddress = registryReceipt.contractAddress!;
+    console.log(`PartyRegistry deployed at: ${registryAddress}`);
+  }
+
+  // 3. Deploy PartyTreasury Vault (Multi-Party Native MON)
+  console.log('Deploying PartyTreasury Vault...');
+  const treasuryBin = fs.readFileSync(path.join(artifactsDir, 'contracts_PartyTreasury_sol_PartyTreasury.bin'), 'utf-8').trim();
   const treasuryAbi = JSON.parse(fs.readFileSync(path.join(artifactsDir, 'contracts_PartyTreasury_sol_PartyTreasury.abi'), 'utf-8'));
   const treasuryHash = await walletClient.deployContract({
     abi: treasuryAbi,
     bytecode: `0x${treasuryBin}`,
-    args: [BigInt(404), account.address],
+    args: [],
   });
   console.log(`PartyTreasury deployment tx: ${treasuryHash}`);
   const treasuryReceipt = await publicClient.waitForTransactionReceipt({ hash: treasuryHash });
-  const treasuryAddress = treasuryReceipt.contractAddress;
+  const treasuryAddress = treasuryReceipt.contractAddress!;
   console.log(`PartyTreasury deployed at: ${treasuryAddress}`);
 
   console.log('\n--- DEPLOYMENT SUCCESSFUL ---');
   console.log(`NEXT_PUBLIC_PARTY_REGISTRY_ADDRESS=${registryAddress}`);
   console.log(`NEXT_PUBLIC_PARTY_TREASURY_ADDRESS=${treasuryAddress}`);
   console.log(`NEXT_PUBLIC_SOCIAL_GRAPH_ADDRESS=${socialGraphAddress}`);
+
+  return {
+    registryAddress,
+    treasuryAddress,
+    socialGraphAddress,
+  };
 }
 
 main().catch((err) => {

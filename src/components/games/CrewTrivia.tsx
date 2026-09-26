@@ -7,8 +7,8 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { GlassButton } from '@/components/ui/GlassButton';
 import confetti from 'canvas-confetti';
-import { getFinancialActionsUnavailableMessage } from '@/services/treasury';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { TRIVIA_QUESTIONS } from '@/data/mockData';
 
 export const CrewTrivia: React.FC = () => {
   const { trivia } = usePartyStore();
@@ -20,8 +20,13 @@ export const CrewTrivia: React.FC = () => {
   const [isAnswered, setIsAnswered] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
 
-  const totalRounds = trivia.length;
-  const currentQ = trivia[currentRound];
+  const questions = trivia && trivia.length > 0 ? trivia : TRIVIA_QUESTIONS;
+  const totalRounds = questions.length;
+  const currentQ = questions[currentRound % totalRounds] || TRIVIA_QUESTIONS[0];
+
+  const questionText = (isEs && currentQ.questionEs) ? currentQ.questionEs : currentQ.question;
+  const optionsList = (isEs && currentQ.optionsEs) ? currentQ.optionsEs : currentQ.options;
+  const explanationText = (isEs && currentQ.explanationEs) ? currentQ.explanationEs : currentQ.explanation;
 
   const handleSelectOption = (idx: number) => {
     if (isAnswered) return;
@@ -98,9 +103,14 @@ export const CrewTrivia: React.FC = () => {
             </span>
           </div>
 
-          <p role="status" className="mb-4 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-xs text-amber-100">
-            {getFinancialActionsUnavailableMessage(language)}
-          </p>
+          <div className="mb-4 flex items-center justify-center gap-2 rounded-2xl border border-[#836EF9]/30 bg-[#836EF9]/10 px-4 py-3 text-xs text-white/90">
+            <Sparkles className="w-4 h-4 text-[#F0DC00]" />
+            <span>
+              {isEs
+                ? '¡Demostraste tu conocimiento en la Crew!'
+                : 'You proved your trivia skills in the Crew!'}
+            </span>
+          </div>
 
           <GlassButton
             variant="glass"
@@ -144,13 +154,13 @@ export const CrewTrivia: React.FC = () => {
           {isEs ? 'HISTORIA Y TRIVIA DE LA CREW' : 'CREW LORE & TRIVIA'}
         </span>
         <h3 className="font-display font-black text-xl sm:text-2xl text-white tracking-tight mt-2 mb-2 leading-snug">
-          {currentQ.question}
+          {questionText}
         </h3>
       </GlassPanel>
 
       {/* Options List */}
       <div className="w-full space-y-2.5 mb-6">
-        {currentQ.options.map((option, idx) => {
+        {optionsList.map((option, idx) => {
           const isSelected = selectedOption === idx;
           const isCorrect = idx === currentQ.correctIndex;
 
@@ -200,7 +210,7 @@ export const CrewTrivia: React.FC = () => {
             className="w-full"
           >
             <div className="p-4 rounded-2xl bg-white/[0.06] border border-white/15 text-xs text-white/80 mb-4 leading-relaxed">
-              💡 <span className="font-bold text-white">{isEs ? 'Dato del lore:' : 'Lore check:'}</span> {currentQ.explanation}
+              💡 <span className="font-bold text-white">{isEs ? 'Dato del lore:' : 'Lore check:'}</span> {explanationText}
             </div>
 
             <GlassButton

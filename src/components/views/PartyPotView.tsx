@@ -11,8 +11,12 @@ import {
   ArrowRightLeft,
   CheckCircle2,
   ExternalLink,
+  AlertTriangle,
+  TrendingUp,
+  X,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
+import { useWallets } from '@privy-io/react-auth';
 import { TopNav } from '@/components/navigation/TopNav';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -21,32 +25,67 @@ import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
 import { PartyTasksBoard } from '@/components/party/PartyTasksBoard';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { MONAD_CONTRACT_ADDRESSES } from '@/contracts';
+import { useMonPrice } from '@/hooks/useMonPrice';
 import confetti from 'canvas-confetti';
+
+const fallbackParty = {
+  id: 'demo-party-monad',
+  title: 'Monad Launch Party',
+  date: 'Tonight',
+  time: '9:00 PM',
+  location: 'Monad HQ',
+  coverImage:
+    'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80',
+  potBalance: 0,
+  members: [
+    {
+      id: 'u-1',
+      name: 'Host',
+      role: 'host' as const,
+      avatar:
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
+    },
+    {
+      id: 'u-2',
+      name: 'Ana',
+      role: 'guest' as const,
+      avatar:
+        'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=100&q=80',
+    },
+  ],
+};
 
 export const PartyPotView: React.FC = () => {
   const { parties, currentPartyId, crews, transactions, addToPot, spendFromPot, rolloverPotToCrew } =
     usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
-  const defaultParty = parties[0];
-  const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0] || fallbackParty;
+  const partyMembers = party.members && party.members.length > 0 ? party.members : fallbackParty.members;
   const partyTransactions = transactions.filter((t) => t.partyId === party?.id);
 
   const associatedCrew = crews.find((c) => c.id === party?.crewId);
+
+  // Pyth Network Onchain MON/USD Price Feed
+  const { formatted: monPriceFormatted, formatUsd } = useMonPrice();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSpendOpen, setIsSpendOpen] = useState(false);
   const [isRewardOpen, setIsRewardOpen] = useState(false);
   const [isRolloverOpen, setIsRolloverOpen] = useState(false);
 
-  const [addAmount, setAddAmount] = useState('20');
-  const [spendAmount, setSpendAmount] = useState('15');
+  const { wallets } = useWallets();
+  const activeWallet = wallets.find((w) => w.walletClientType === 'privy') || wallets[0];
+
+  const [addAmount, setAddAmount] = useState('0.5');
+  const [spendAmount, setSpendAmount] = useState('0.2');
   const [spendDesc, setSpendDesc] = useState('');
-  const [rewardRecipient, setRewardRecipient] = useState(party.members[1]?.name || 'Ana');
+  const [rewardRecipient, setRewardRecipient] = useState(partyMembers[1]?.name || partyMembers[0]?.name || 'Ana');
   const [rewardRole, setRewardRole] = useState('OFFICIAL_DJ');
-  const [rewardAmount, setRewardAmount] = useState('10');
+  const [rewardAmount, setRewardAmount] = useState('0.1');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
+  const [txError, setTxError] = useState<string | null>(null);
 
   // Filter state for transactions
   const [txFilter, setTxFilter] = useState<'all' | 'add' | 'spend' | 'reward' | 'rollover'>('all');
@@ -59,11 +98,20 @@ export const PartyPotView: React.FC = () => {
   const handleAddFunds = async (e: React.FormEvent) => {
     e.preventDefault();
     const amount = parseFloat(addAmount);
-    if (isNaN(amount) || amount <= 0) return;
+    if (isNaN(amount) || amount <= 0) {
+      setTxError(isEs ? 'Ingresa un monto válido mayor a 0' : 'Enter a valid amount greater than 0');
+      return;
+    }
 
     setIsProcessing(true);
+    setTxError(null);
     try {
-      const res = await addToPot(party.id, amount, `Deposit into party pot (${amount} USDC on Monad)`);
+      const res = await addToPot(
+        party.id,
+        amount,
+        `Deposit into party pot (${amount} MON on Monad)`,
+        { wallet: activeWallet }
+      );
       if (res.receipt?.txHash) {
         setLastTxHash(res.receipt.txHash);
       }
@@ -74,8 +122,10 @@ export const PartyPotView: React.FC = () => {
         colors: ['#2775CA', '#836EF9', '#F0DC00'],
       });
       setIsAddOpen(false);
-    } catch (err) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al procesar el depósito en Monad';
       console.error('Error adding funds to pot:', err);
+      setTxError(msg);
     } finally {
       setIsProcessing(false);
     }
@@ -84,9 +134,25 @@ export const PartyPotView: React.FC = () => {
   const handleSpend = async (e: React.FormEvent) => {
     e.preventDefault();
     const amount = parseFloat(spendAmount);
-    if (isNaN(amount) || amount <= 0 || !spendDesc.trim()) return;
+    if (isNaN(amount) || amount <= 0) {
+      setTxError(isEs ? 'Ingresa un monto válido mayor a 0' : 'Enter a valid amount greater than 0');
+      return;
+    }
+    if (!spendDesc.trim()) {
+      setTxError(isEs ? 'Ingresa una descripción del gasto' : 'Enter an expense description');
+      return;
+    }
+    if (party.potBalance < amount) {
+      setTxError(
+        isEs
+          ? `Saldo insuficiente en el Pot (${party.potBalance.toFixed(2)} MON disponible). Aporta fondos antes de gastar.`
+          : `Insufficient pot balance (${party.potBalance.toFixed(2)} MON available). Add funds first before spending.`
+      );
+      return;
+    }
 
     setIsProcessing(true);
+    setTxError(null);
     try {
       const res = await spendFromPot(party.id, amount, spendDesc.trim());
       if (res.receipt?.txHash) {
@@ -94,8 +160,10 @@ export const PartyPotView: React.FC = () => {
       }
       setIsSpendOpen(false);
       setSpendDesc('');
-    } catch (err) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al deducir fondos del pot';
       console.error('Error spending from pot:', err);
+      setTxError(msg);
     } finally {
       setIsProcessing(false);
     }
@@ -104,9 +172,21 @@ export const PartyPotView: React.FC = () => {
   const handleDistributeReward = async (e: React.FormEvent) => {
     e.preventDefault();
     const amount = parseFloat(rewardAmount);
-    if (isNaN(amount) || amount <= 0) return;
+    if (isNaN(amount) || amount <= 0) {
+      setTxError(isEs ? 'Ingresa un monto válido mayor a 0' : 'Enter a valid amount greater than 0');
+      return;
+    }
+    if (party.potBalance < amount) {
+      setTxError(
+        isEs
+          ? `Saldo insuficiente en el Pot (${party.potBalance.toFixed(2)} MON disponible) para otorgar esta recompensa.`
+          : `Insufficient pot balance (${party.potBalance.toFixed(2)} MON available) to grant this reward.`
+      );
+      return;
+    }
 
     setIsProcessing(true);
+    setTxError(null);
     try {
       const res = await spendFromPot(
         party.id,
@@ -123,8 +203,10 @@ export const PartyPotView: React.FC = () => {
         colors: ['#F0DC00', '#2775CA'],
       });
       setIsRewardOpen(false);
-    } catch (err) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al otorgar la recompensa';
       console.error('Error distributing reward:', err);
+      setTxError(msg);
     } finally {
       setIsProcessing(false);
     }
@@ -133,6 +215,7 @@ export const PartyPotView: React.FC = () => {
   const handleRolloverConfirm = async () => {
     if (!associatedCrew || party.potBalance <= 0) return;
     setIsProcessing(true);
+    setTxError(null);
     try {
       const res = await rolloverPotToCrew(party.id, associatedCrew.id);
       if (res.receipt?.txHash) {
@@ -144,8 +227,10 @@ export const PartyPotView: React.FC = () => {
         origin: { y: 0.6 },
       });
       setIsRolloverOpen(false);
-    } catch (err) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al transferir a la Crew';
       console.error('Error rolling over pot:', err);
+      setTxError(msg);
     } finally {
       setIsProcessing(false);
     }
@@ -156,13 +241,13 @@ export const PartyPotView: React.FC = () => {
       <TopNav title={isEs ? 'TESORERÍA COMPARTIDA' : 'SHARED TREASURY'} />
 
       <main className="px-4 sm:px-6 md:px-8 max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-2 w-full">
-        {/* Monad Testnet Onchain Treasury Status Banner */}
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#836EF9]/30 bg-gradient-to-r from-[#836EF9]/10 via-[#2775CA]/10 to-transparent p-3.5 backdrop-blur-md shadow-xs">
+        {/* Monad Testnet Onchain Treasury & Pyth Oracle Status Banner */}
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#836EF9]/30 bg-gradient-to-r from-[#836EF9]/15 via-[#836EF9]/5 to-transparent p-3.5 backdrop-blur-md shadow-xs">
           <div className="flex items-center gap-2.5">
-            <TokenLogo token="usdc" size="md" />
+            <TokenLogo token="mon" size="md" />
             <div>
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#171512] dark:text-white">
-                <span>USDC Treasury · Monad Testnet</span>
+                <span>MON Treasury · Monad Testnet</span>
                 <span className="px-2 py-0.5 rounded-full bg-[#836EF9]/15 text-[#674FF4] dark:text-[#C4B5FD] text-[10px] font-mono font-bold">
                   Chain 10143
                 </span>
@@ -170,11 +255,17 @@ export const PartyPotView: React.FC = () => {
                   <CheckCircle2 className="w-3 h-3" /> Live
                 </span>
               </div>
-              <span className="text-[11px] text-[#635B50] dark:text-[#A8A196]">
-                {isEs
-                  ? 'Gas 100% patrocinado y confirmaciones en ~400ms'
-                  : '100% gas sponsored with ~400ms sub-second finality'}
-              </span>
+              <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                <span className="text-[11px] text-[#635B50] dark:text-[#A8A196]">
+                  {isEs
+                    ? 'Gas 100% patrocinado · Finalidad ~400ms'
+                    : '100% gas sponsored · ~400ms finality'}
+                </span>
+                <span className="text-[10px] font-mono text-[#674FF4] font-bold bg-[#836EF9]/15 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <TrendingUp className="w-2.5 h-2.5" />
+                  1 MON ≈ {monPriceFormatted} USD (Pyth Oracle)
+                </span>
+              </div>
             </div>
           </div>
           <a
@@ -187,6 +278,23 @@ export const PartyPotView: React.FC = () => {
             <ArrowUpRight className="w-3.5 h-3.5" />
           </a>
         </div>
+
+        {/* Real-time Monad Transaction Error Banner */}
+        {txError && (
+          <div className="mb-4 flex items-center justify-between p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs shadow-xs">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span className="font-medium">{txError}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setTxError(null)}
+              className="p-1 text-rose-500 hover:text-rose-800 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Real-time Monad Transaction Confirmation Toast */}
         {lastTxHash && (
@@ -214,7 +322,7 @@ export const PartyPotView: React.FC = () => {
               <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#B89600]">
                 {isEs ? 'POZO DEL GRUPO' : 'PARTY POT'}
               </span>
-              <CryptoBadge token="usdc" network="Monad" />
+              <CryptoBadge token="mon" network="Monad" />
             </div>
             <h2 className="font-bubble text-4xl sm:text-6xl text-[#171512] tracking-tight leading-none">
               PARTY POT
@@ -225,16 +333,27 @@ export const PartyPotView: React.FC = () => {
             <GlassButton
               variant="accent"
               size="md"
-              onClick={() => setIsAddOpen(true)}
+              onClick={() => {
+                setTxError(null);
+                setIsAddOpen(true);
+              }}
               icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
             >
-              {isEs ? 'Aportar USDC' : 'Add USDC'}
+              {isEs ? 'Aportar MON' : 'Add MON'}
             </GlassButton>
 
             <GlassButton
               variant="glass"
               size="md"
-              onClick={() => setIsRewardOpen(true)}
+              disabled={party.potBalance <= 0}
+              onClick={() => {
+                setTxError(null);
+                if (party.potBalance <= 0) {
+                  setTxError(isEs ? 'El pot no tiene saldo. Aporta fondos antes de premiar.' : 'Pot has no balance. Add funds first before rewarding.');
+                  return;
+                }
+                setIsRewardOpen(true);
+              }}
               icon={<Award className="w-4 h-4 text-[#171512]" />}
             >
               {isEs ? 'Recompensa' : 'Reward'}
@@ -243,7 +362,15 @@ export const PartyPotView: React.FC = () => {
             <GlassButton
               variant="glass"
               size="md"
-              onClick={() => setIsSpendOpen(true)}
+              disabled={party.potBalance <= 0}
+              onClick={() => {
+                setTxError(null);
+                if (party.potBalance <= 0) {
+                  setTxError(isEs ? 'El pot no tiene saldo. Aporta fondos antes de gastar.' : 'Pot has no balance. Add funds first before spending.');
+                  return;
+                }
+                setIsSpendOpen(true);
+              }}
               icon={<Minus className="w-4 h-4 text-[#171512]" />}
             >
               {isEs ? 'Gasto' : 'Spend'}
@@ -254,7 +381,10 @@ export const PartyPotView: React.FC = () => {
                 variant="glass"
                 size="md"
                 disabled={party.potBalance <= 0}
-                onClick={() => setIsRolloverOpen(true)}
+                onClick={() => {
+                  setTxError(null);
+                  setIsRolloverOpen(true);
+                }}
                 icon={<Landmark className="w-4 h-4 text-[#171512]" />}
               >
                 {isEs ? 'Transferir a Crew' : 'Transfer to Crew'}
@@ -275,19 +405,22 @@ export const PartyPotView: React.FC = () => {
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <div className="flex items-center justify-center drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
                   <span className="font-bubble text-5xl sm:text-6xl text-white tracking-tight">
-                    ${party.potBalance.toFixed(2)}
+                    {party.potBalance.toFixed(2)}
+                  </span>
+                  <span className="ml-2 font-display font-black text-2xl text-[#F0DC00]">
+                    MON
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 mt-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-black text-white tracking-wide border border-white/30">
-                    USDC
+                <div className="flex items-center gap-1.5 mt-1 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20">
+                  <span className="text-xs font-mono font-bold text-white">
+                    ≈ {formatUsd(party.potBalance)} USD
                   </span>
-                  <span className="text-[11px] font-bold text-white/90">
-                    · Monad Testnet
+                  <span className="text-[10px] text-amber-300 font-bold">
+                    · Pyth Oracle
                   </span>
                 </div>
-                <span className="text-xs font-semibold text-white/80 mt-1 drop-shadow-md">
-                  {isEs ? `${party.members.length} participantes` : `${party.members.length} participants`}
+                <span className="text-xs font-semibold text-white/80 mt-1.5 drop-shadow-md">
+                  {isEs ? `${partyMembers.length} participantes` : `${partyMembers.length} participants`}
                 </span>
               </div>
             </div>
@@ -347,9 +480,9 @@ export const PartyPotView: React.FC = () => {
                     {isEs ? 'SALDO DEL GRUPO (CREW)' : 'CREW TREASURY'}
                   </span>
                   <div className="flex items-center gap-1.5">
-                    <TokenLogo token="usdc" size="xs" />
+                    <TokenLogo token="mon" size="xs" />
                     <span className="font-mono text-xs font-bold text-[#171512]">
-                      ${(associatedCrew.treasuryBalance ?? 0).toFixed(2)} USDC
+                      ${(associatedCrew.treasuryBalance ?? 0).toFixed(2)} MON
                     </span>
                   </div>
                 </div>
@@ -368,8 +501,8 @@ export const PartyPotView: React.FC = () => {
                   >
                     <ArrowRightLeft className="w-3.5 h-3.5 text-[#B89600]" />
                     {isEs
-                      ? `Transferir $${party.potBalance.toFixed(2)} USDC a la Crew`
-                      : `Transfer $${party.potBalance.toFixed(2)} USDC to Crew`}
+                      ? `Transferir $${party.potBalance.toFixed(2)} MON a la Crew`
+                      : `Transfer $${party.potBalance.toFixed(2)} MON to Crew`}
                   </button>
                 )}
               </div>
@@ -437,7 +570,7 @@ export const PartyPotView: React.FC = () => {
                   {isEs ? 'MOVIMIENTOS EN MONAD' : 'MONAD POT TRANSACTIONS'}
                 </span>
                 <span className="text-xs text-[#8E887E]">
-                  {isEs ? 'Liquidación instantánea en USDC' : 'Instant settlement in USDC'}
+                  {isEs ? 'Liquidación instantánea en MON nativo' : 'Instant settlement in native MON'}
                 </span>
               </div>
               <span className="text-xs text-[#8C7300] font-mono font-bold">
@@ -505,7 +638,7 @@ export const PartyPotView: React.FC = () => {
 
                       <div className="text-right flex flex-col items-end">
                         <div className="flex items-center gap-1">
-                          <TokenLogo token="usdc" size="xs" />
+                          <TokenLogo token="mon" size="xs" />
                           <span
                             className={`font-display font-black text-lg sm:text-xl ${
                               isAdd
@@ -515,11 +648,14 @@ export const PartyPotView: React.FC = () => {
                                 : 'text-rose-600'
                             }`}
                           >
-                            {isAdd ? `+$${tx.amount.toFixed(2)}` : `-$${tx.amount.toFixed(2)}`}
+                            {isAdd ? `+${tx.amount.toFixed(2)}` : `-${tx.amount.toFixed(2)}`}
                           </span>
                         </div>
                         <span className="block text-[10px] text-[#8E887E] uppercase font-mono font-bold">
-                          USDC · Monad
+                          MON · Monad
+                        </span>
+                        <span className="block text-[10px] text-[#8E887E] font-mono">
+                          ≈ {formatUsd(tx.amount)} USD
                         </span>
                       </div>
                     </div>
@@ -547,20 +683,20 @@ export const PartyPotView: React.FC = () => {
       <BottomSheet
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
-        title={isEs ? 'Aportar al Party Pot (USDC)' : 'Add to Party Pot (USDC)'}
+        title={isEs ? 'Aportar al Party Pot (MON)' : 'Add to Party Pot (MON)'}
       >
         <form onSubmit={handleAddFunds} className="space-y-4">
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-[#2775CA]/10 to-[#836EF9]/10 border border-[#2775CA]/20">
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-[#836EF9]/15 to-[#836EF9]/5 border border-[#836EF9]/25">
             <div className="flex items-center gap-2">
-              <TokenLogo token="usdc" size="md" />
+              <TokenLogo token="mon" size="md" />
               <div>
-                <span className="text-xs font-bold text-[#171512] block">USDC on Monad</span>
+                <span className="text-xs font-bold text-[#171512] block">MON on Monad</span>
                 <span className="text-[10px] text-[#635B50]">
                   {isEs ? 'Gas 100% patrocinado (Cero comisiones)' : '100% gas sponsored (Zero fees)'}
                 </span>
               </div>
             </div>
-            <CryptoBadge token="usdc" network="Monad" showNetwork={false} />
+            <CryptoBadge token="mon" network="Monad" showNetwork={false} />
           </div>
 
           <div>
@@ -568,18 +704,21 @@ export const PartyPotView: React.FC = () => {
               {isEs ? 'Seleccionar monto rápido' : 'Select Preset Amount'}
             </label>
             <div className="grid grid-cols-4 gap-2">
-              {['10', '20', '50', '100'].map((preset) => (
+              {['0.1', '0.5', '1.0', '2.0'].map((preset) => (
                 <button
                   key={preset}
                   type="button"
                   onClick={() => setAddAmount(preset)}
-                  className={`py-3 rounded-2xl font-display font-black text-base transition-all cursor-pointer ${
+                  className={`py-2 px-1 rounded-2xl font-display font-black text-sm flex flex-col items-center justify-center transition-all cursor-pointer ${
                     addAmount === preset
                       ? 'bg-[#F0DC00] text-[#171512] shadow-md scale-105'
                       : 'bg-[#F7F2E8] text-[#171512] border border-[rgba(35,30,22,0.08)] hover:bg-[#EFE9DF]'
                   }`}
                 >
-                  +${preset}
+                  <span>+{preset} MON</span>
+                  <span className="text-[10px] font-mono font-normal opacity-75">
+                    ≈{formatUsd(Number(preset))}
+                  </span>
                 </button>
               ))}
             </div>
@@ -587,7 +726,7 @@ export const PartyPotView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {isEs ? 'Monto personalizado ($ USDC)' : 'Custom Amount ($ USDC)'}
+              {isEs ? 'Monto personalizado (MON)' : 'Custom Amount (MON)'}
             </label>
             <div className="relative">
               <input
@@ -598,8 +737,14 @@ export const PartyPotView: React.FC = () => {
                 className="w-full pl-12 pr-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
               />
               <div className="absolute left-3.5 top-1/2 -translate-y-1/2">
-                <TokenLogo token="usdc" size="sm" />
+                <TokenLogo token="mon" size="sm" />
               </div>
+            </div>
+            <div className="mt-1.5 flex items-center justify-between px-1 text-[11px] text-[#6F6A62]">
+              <span>{isEs ? 'Equivalente en dólares:' : 'USD equivalent:'}</span>
+              <span className="font-mono font-bold text-[#674FF4]">
+                ≈ {formatUsd(parseFloat(addAmount) || 0)} USD (Pyth Oracle)
+              </span>
             </div>
           </div>
 
@@ -613,7 +758,7 @@ export const PartyPotView: React.FC = () => {
             >
               {isProcessing
                 ? isEs ? 'Procesando en Monad...' : 'Confirming on Monad...'
-                : isEs ? `Aportar $${addAmount} USDC al Pot` : `Deposit $${addAmount} USDC to Pot`}
+                : isEs ? `Aportar ${addAmount} MON al Pot` : `Deposit ${addAmount} MON to Pot`}
             </GlassButton>
           </div>
         </form>
@@ -623,7 +768,7 @@ export const PartyPotView: React.FC = () => {
       <BottomSheet
         isOpen={isRewardOpen}
         onClose={() => setIsRewardOpen(false)}
-        title={isEs ? 'Recompensar Contribuidor (USDC)' : 'Reward Social Contributor'}
+        title={isEs ? 'Recompensar Contribuidor (MON)' : 'Reward Social Contributor (MON)'}
       >
         <form onSubmit={handleDistributeReward} className="space-y-4">
           <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between">
@@ -633,7 +778,7 @@ export const PartyPotView: React.FC = () => {
                 {isEs ? 'Recompensa social pagada del Pot' : 'Social reward paid from shared pot'}
               </span>
             </div>
-            <CryptoBadge token="usdc" network="Monad" showNetwork={false} />
+            <CryptoBadge token="mon" network="Monad" showNetwork={false} />
           </div>
 
           <div>
@@ -641,7 +786,7 @@ export const PartyPotView: React.FC = () => {
               {isEs ? 'Contribuidor' : 'Contributor'}
             </label>
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-              {party.members.map((m) => (
+              {partyMembers.map((m) => (
                 <button
                   key={m.id}
                   type="button"
@@ -686,7 +831,7 @@ export const PartyPotView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {isEs ? 'Monto de Recompensa ($ USDC)' : 'Reward Amount ($ USDC)'}
+              {isEs ? 'Monto de Recompensa (MON)' : 'Reward Amount (MON)'}
             </label>
             <div className="relative">
               <input
@@ -697,8 +842,14 @@ export const PartyPotView: React.FC = () => {
                 className="w-full pl-12 pr-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
               />
               <div className="absolute left-3.5 top-1/2 -translate-y-1/2">
-                <TokenLogo token="usdc" size="sm" />
+                <TokenLogo token="mon" size="sm" />
               </div>
+            </div>
+            <div className="mt-1.5 flex items-center justify-between px-1 text-[11px] text-[#6F6A62]">
+              <span>{isEs ? 'Equivalente en dólares:' : 'USD equivalent:'}</span>
+              <span className="font-mono font-bold text-[#674FF4]">
+                ≈ {formatUsd(parseFloat(rewardAmount) || 0)} USD (Pyth Oracle)
+              </span>
             </div>
           </div>
 
@@ -712,7 +863,7 @@ export const PartyPotView: React.FC = () => {
             >
               {isProcessing
                 ? isEs ? 'Enviando recompensa en Monad...' : 'Sending reward on Monad...'
-                : isEs ? `Pagar $${rewardAmount} USDC a ${rewardRecipient}` : `Send $${rewardAmount} USDC to ${rewardRecipient}`}
+                : isEs ? `Pagar ${rewardAmount} MON a ${rewardRecipient}` : `Send ${rewardAmount} MON to ${rewardRecipient}`}
             </GlassButton>
           </div>
         </form>
@@ -741,7 +892,7 @@ export const PartyPotView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {isEs ? 'Monto deducido ($ USDC)' : 'Deduction Amount ($ USDC)'}
+              {isEs ? 'Monto deducido (MON)' : 'Deduction Amount (MON)'}
             </label>
             <div className="relative">
               <input
@@ -753,8 +904,14 @@ export const PartyPotView: React.FC = () => {
                 className="w-full pl-12 pr-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
               />
               <div className="absolute left-3.5 top-1/2 -translate-y-1/2">
-                <TokenLogo token="usdc" size="sm" />
+                <TokenLogo token="mon" size="sm" />
               </div>
+            </div>
+            <div className="mt-1.5 flex items-center justify-between px-1 text-[11px] text-[#6F6A62]">
+              <span>{isEs ? 'Equivalente en dólares:' : 'USD equivalent:'}</span>
+              <span className="font-mono font-bold text-[#674FF4]">
+                ≈ {formatUsd(parseFloat(spendAmount) || 0)} USD (Pyth Oracle)
+              </span>
             </div>
           </div>
 
@@ -768,7 +925,7 @@ export const PartyPotView: React.FC = () => {
             >
               {isProcessing
                 ? isEs ? 'Registrando en Monad...' : 'Registering on Monad...'
-                : isEs ? `Deducir $${spendAmount} USDC del Pot` : `Deduct $${spendAmount} USDC from Pot`}
+                : isEs ? `Deducir ${spendAmount} MON del Pot` : `Deduct ${spendAmount} MON from Pot`}
             </GlassButton>
           </div>
         </form>
@@ -805,18 +962,20 @@ export const PartyPotView: React.FC = () => {
             <div className="p-4 rounded-2xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.08)] space-y-2">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-[#6F6A62]">{isEs ? 'Saldo actual del Pot' : 'Current Party Pot'}</span>
-                <span className="font-mono font-bold text-[#171512]">${party.potBalance.toFixed(2)} USDC</span>
+                <span className="font-mono font-bold text-[#171512]">
+                  {party.potBalance.toFixed(2)} MON <span className="text-[10px] text-[#6F6A62] font-normal">(≈ {formatUsd(party.potBalance)})</span>
+                </span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-[#6F6A62]">{isEs ? 'Tesorería Crew actual' : 'Current Crew Treasury'}</span>
                 <span className="font-mono font-bold text-[#171512]">
-                  ${(associatedCrew.treasuryBalance ?? 0).toFixed(2)} USDC
+                  {(associatedCrew.treasuryBalance ?? 0).toFixed(2)} MON <span className="text-[10px] text-[#6F6A62] font-normal">(≈ {formatUsd(associatedCrew.treasuryBalance ?? 0)})</span>
                 </span>
               </div>
               <div className="pt-2 border-t border-[rgba(35,30,22,0.08)] flex justify-between items-center text-sm font-bold">
                 <span className="text-[#8C7300]">{isEs ? 'Nuevo saldo de la Crew' : 'New Crew Treasury'}</span>
                 <span className="font-mono text-base text-[#8C7300]">
-                  ${((associatedCrew.treasuryBalance ?? 0) + party.potBalance).toFixed(2)} USDC
+                  {((associatedCrew.treasuryBalance ?? 0) + party.potBalance).toFixed(2)} MON <span className="text-xs text-[#8C7300]/80 font-normal">(≈ {formatUsd((associatedCrew.treasuryBalance ?? 0) + party.potBalance)})</span>
                 </span>
               </div>
             </div>
@@ -833,8 +992,8 @@ export const PartyPotView: React.FC = () => {
                 {isProcessing
                   ? isEs ? 'Transfiriendo en Monad...' : 'Transferring on Monad...'
                   : isEs
-                  ? `Confirmar transferencia de $${party.potBalance.toFixed(2)} USDC`
-                  : `Confirm transfer of $${party.potBalance.toFixed(2)} USDC`}
+                  ? `Confirmar transferencia de ${party.potBalance.toFixed(2)} MON`
+                  : `Confirm transfer of ${party.potBalance.toFixed(2)} MON`}
               </GlassButton>
             </div>
           </div>

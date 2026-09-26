@@ -7,7 +7,6 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { ActivityView } from '@/components/views/ActivityView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { CrewsView } from '@/components/views/CrewsView';
-import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const HomeView: React.FC = () => {

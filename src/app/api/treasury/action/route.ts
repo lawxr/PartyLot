@@ -256,6 +256,25 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       });
 
+      // Update parties table pot_balance
+      const partiesTable = supabase.from('parties');
+      if (typeof partiesTable?.select === 'function') {
+        const { data: currentParty } = await partiesTable
+          .select('pot_balance')
+          .eq('id', partyId)
+          .single();
+        const prevBal = Number(currentParty?.pot_balance) || 0;
+        const updatedBalance =
+          action === 'deposit'
+            ? prevBal + numAmount
+            : Math.max(0, prevBal - numAmount);
+        if (typeof partiesTable.update === 'function') {
+          await partiesTable
+            .update({ pot_balance: Number(updatedBalance.toFixed(4)) })
+            .eq('id', partyId);
+        }
+      }
+
       await supabase.from('activities').insert({
         id: `act-treasury-${Date.now()}`,
         party_id: partyId,

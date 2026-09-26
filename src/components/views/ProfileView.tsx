@@ -465,7 +465,7 @@ export const ProfileView: React.FC = () => {
                         {person.name}
                       </span>
                       <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
-                        {person.nightsTogether || 8} {isEs ? 'noches juntos' : 'nights together'}
+                        {person.nightsTogether ?? 1} {isEs ? 'noches juntos' : 'nights together'}
                       </span>
                     </div>
                   </div>

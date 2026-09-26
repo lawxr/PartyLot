@@ -39,6 +39,7 @@ export const PartyDetailView: React.FC = () => {
     parties,
     currentPartyId,
     memories,
+    activities,
     setCurrentView,
     setActiveTab,
     goBack,
@@ -56,6 +57,16 @@ export const PartyDetailView: React.FC = () => {
   const partyMemories = (memories || []).filter(
     (m) => m.partyId === party?.id || m.partyId === 'party_hackathon_demo' || m.partyId === 'p-404'
   );
+  const partyActivities = (activities || []).filter(
+    (a) =>
+      a.partyId === party?.id ||
+      a.partyId === 'party_hackathon_demo' ||
+      a.partyId === 'p-404' ||
+      !a.partyId
+  );
+  const partyMembers = (party?.members && party.members.length > 0)
+    ? party.members
+    : (defaultParty?.members || []);
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -297,34 +308,31 @@ export const PartyDetailView: React.FC = () => {
               </span>
             </div>
 
-            {/* Attendees Avatar Stack +12 */}
+            {/* Real Attendees Avatar Stack with Social Graph Modal trigger */}
             <div className="flex items-center -space-x-1.5">
-              {[
-                'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80',
-                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
-                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-                'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
-                'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=120&q=80',
-                'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=120&q=80',
-              ].map((avatar, idx) => (
-                <div
-                  key={idx}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 bg-black/40"
+              {partyMembers.slice(0, 7).map((m, idx) => (
+                <button
+                  key={m.id || idx}
+                  onClick={() => setSelectedMember(m)}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 bg-black/40 cursor-pointer hover:scale-115 hover:z-20 transition-transform relative group focus:outline-none"
+                  title={`${m.name} · ${m.nightsTogether || 1} ${isEs ? 'noches juntos' : 'nights together'}`}
+                  aria-label={`Ver vínculo social con ${m.name}`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={avatar}
-                    alt="Attendee"
+                    src={m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'}
+                    alt={m.name}
                     className="w-full h-full object-cover"
                   />
-                </div>
+                </button>
               ))}
-              <div className="pl-3">
-                <span className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-white text-[11px] font-bold border border-white/20 shadow-sm">
-                  +12
-                </span>
-              </div>
+              {partyMembers.length > 7 && (
+                <div className="pl-3">
+                  <span className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-white text-[11px] font-bold border border-white/20 shadow-sm">
+                    +{partyMembers.length - 7}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -384,29 +392,38 @@ export const PartyDetailView: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8 lg:items-start -mt-5 lg:mt-0">
             {/* Party Pot Summary Card (Directly below Quick Actions on mobile, right column on desktop) */}
             <article
-              aria-label="Bote de la fiesta"
+              aria-label={isEs ? 'Bote de la fiesta' : 'Party Pot'}
               className="lg:col-span-5 xl:col-span-4 lg:col-start-8 xl:col-start-9 lg:row-start-1 min-h-[108px] sm:min-h-[118px] grid grid-cols-[48px_1fr_auto] sm:grid-cols-[58px_1fr_auto] items-center gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-[32px] transition-all bg-white/50 dark:bg-[#1C1A16] border border-white/75 dark:border-white/10 shadow-[0_9px_20px_rgba(66,52,32,0.09)] dark:shadow-[0_9px_20px_rgba(0,0,0,0.45)] backdrop-blur-md"
             >
             <div
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-[#24201c] dark:text-[#F0DC00] bg-[#EEE9E1] dark:bg-white/10 shadow-inner shrink-0"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-[#24201c] dark:text-[#F0DC00] bg-[#EEE9E1] dark:bg-white/10 shadow-inner shrink-0 cursor-pointer"
+              onClick={() => setCurrentView('party-pot')}
               aria-hidden="true"
             >
               <Coins className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.35]" />
             </div>
-            <div className="min-w-0">
+            <div
+              className="min-w-0 cursor-pointer"
+              onClick={() => setCurrentView('party-pot')}
+            >
               <span className="text-xs sm:text-[14px] font-medium text-[#161514] dark:text-white tracking-tight block leading-none">
                 {isEs ? 'Bote de la fiesta' : 'Party Pot'}
               </span>
               <div className="flex items-center gap-1.5 mt-1 mb-0.5">
                 <span className="font-display font-black text-xl sm:text-[26px] text-[#161514] dark:text-white tracking-tight leading-none">
-                  ${party?.potBalance !== undefined ? party.potBalance.toFixed(2) : '186.40'}
+                  {(party?.potBalance ?? 0).toFixed(2)}
                 </span>
-                <span className="text-[10px] font-bold text-[#2775CA] bg-[#2775CA]/10 dark:bg-[#2775CA]/20 px-1.5 py-0.5 rounded-full">
-                  USDC
+                <span className="text-[10px] font-bold text-[#836EF9] bg-[#836EF9]/10 dark:bg-[#836EF9]/20 px-1.5 py-0.5 rounded-full">
+                  MON
                 </span>
+                {monPrice && (
+                  <span className="text-[11px] font-mono font-medium text-[#706B66] dark:text-[#A8A196]">
+                    (≈ ${((party?.potBalance ?? 0) * monPrice).toFixed(2)} USD)
+                  </span>
+                )}
               </div>
               <span className="text-[11px] sm:text-xs text-[#706B66] dark:text-[#A8A196] font-medium tracking-tight block truncate">
-                {isEs ? 'Compartido en Monad' : 'Shared on Monad'}
+                {isEs ? 'Tesoreria onchain en Monad Testnet' : 'Onchain treasury on Monad Testnet'}
               </span>
             </div>
 
@@ -418,7 +435,7 @@ export const PartyDetailView: React.FC = () => {
               style={{
                 background: 'linear-gradient(135deg, #FFE967, #FFCF1E)',
               }}
-              aria-label="Añadir dinero al bote"
+              aria-label={isEs ? 'Añadir dinero al bote' : 'Add money to party pot'}
             >
               <div className="w-4 h-4 rounded-full bg-[#191714] text-white flex items-center justify-center p-0.5">
                 <Plus className="w-2.5 h-2.5 stroke-[3] text-white" />
@@ -447,80 +464,70 @@ export const PartyDetailView: React.FC = () => {
 
             {/* Clean Activity Rows directly on warm cream background */}
             <div className="space-y-1">
-              {/* Row 1: Ana added $10 to the pot */}
-              <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="relative shrink-0 w-10 h-10">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-black/10 dark:border-white/10 bg-black/20">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80"
-                        alt="Ana"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#F0DC00] text-[#171512] text-[8px] font-black flex items-center justify-center border-2 border-white dark:border-[#1C1A16] shadow-sm">
-                      Bo
-                    </div>
-                  </div>
-                  <p className="text-xs sm:text-sm text-[#171512] dark:text-[#F5F1E8]">
-                    Ana {isEs ? 'aportó' : 'added'} <span className="font-bold text-[#171512] dark:text-white">$10</span> {isEs ? 'al pozo' : 'to the pot'}
-                  </p>
-                </div>
-                <span className="text-[11px] text-[#8E887E] dark:text-[#A8A196] font-medium shrink-0">
-                  2m ago
-                </span>
-              </div>
+              {partyActivities.length > 0 ? (
+                partyActivities.slice(0, 5).map((act) => {
+                  const getBadge = (type: string) => {
+                    switch (type) {
+                      case 'pot':
+                        return { bg: 'bg-[#F0DC00]', text: 'text-[#171512]', icon: '💰' };
+                      case 'game':
+                        return { bg: 'bg-purple-500', text: 'text-white', icon: '🎮' };
+                      case 'poll':
+                        return { bg: 'bg-blue-500', text: 'text-white', icon: '📊' };
+                      case 'join':
+                        return { bg: 'bg-emerald-500', text: 'text-white', icon: '👤' };
+                      case 'expense':
+                        return { bg: 'bg-amber-500', text: 'text-white', icon: '🧾' };
+                      default:
+                        return { bg: 'bg-[#F0DC00]', text: 'text-[#171512]', icon: '✨' };
+                    }
+                  };
+                  const badge = getBadge(act.type);
 
-              {/* Row 2: Sofi won Who's Most Likely */}
-              <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="relative shrink-0 w-10 h-10">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-black/10 dark:border-white/10 bg-black/20">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80"
-                        alt="Sofi"
-                        className="w-full h-full object-cover"
-                      />
+                  return (
+                    <div
+                      key={act.id}
+                      className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="relative shrink-0 w-10 h-10">
+                          <div className="w-10 h-10 rounded-full overflow-hidden border border-black/10 dark:border-white/10 bg-black/20 flex items-center justify-center">
+                            {act.avatar ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={act.avatar}
+                                alt="User"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-[#F0DC00]/30 text-[#171512] dark:text-white flex items-center justify-center font-display font-black text-sm">
+                                P
+                              </div>
+                            )}
+                          </div>
+                          <div
+                            className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full ${badge.bg} ${badge.text} text-[9px] font-black flex items-center justify-center border-2 border-white dark:border-[#1C1A16] shadow-sm`}
+                          >
+                            {badge.icon}
+                          </div>
+                        </div>
+                        <p className="text-xs sm:text-sm text-[#171512] dark:text-[#F5F1E8] truncate font-medium">
+                          {act.text}
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-[#8E887E] dark:text-[#A8A196] font-medium shrink-0 ml-2">
+                        {act.time}
+                      </span>
                     </div>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-purple-500 text-white text-[9px] font-black flex items-center justify-center border-2 border-white dark:border-[#1C1A16] shadow-sm">
-                      🎉
-                    </div>
-                  </div>
-                  <p className="text-xs sm:text-sm text-[#171512] dark:text-[#F5F1E8]">
-                    Sofi {isEs ? 'ganó' : 'won'} <span className="font-semibold text-[#171512] dark:text-white">Who&apos;s Most Likely</span>
-                  </p>
+                  );
+                })
+              ) : (
+                <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] text-center text-xs text-[#8E887E] dark:text-[#A8A196]">
+                  {isEs
+                    ? 'Sin actividad reciente todavía. ¡Sé el primero en aportar o jugar!'
+                    : 'No recent activity yet. Be the first to contribute or play!'}
                 </div>
-                <span className="text-[11px] text-[#8E887E] dark:text-[#A8A196] font-medium shrink-0">
-                  12m ago
-                </span>
-              </div>
-
-              {/* Row 3: Cam joined the party */}
-              <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="relative shrink-0 w-10 h-10">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-black/10 dark:border-white/10 bg-black/20">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80"
-                        alt="Cam"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-black flex items-center justify-center border-2 border-white dark:border-[#1C1A16] shadow-sm">
-                      👥
-                    </div>
-                  </div>
-                  <p className="text-xs sm:text-sm text-[#171512] dark:text-[#F5F1E8]">
-                    Cam {isEs ? 'se unió a la fiesta' : 'joined the party'}
-                  </p>
-                </div>
-                <span className="text-[11px] text-[#8E887E] dark:text-[#A8A196] font-medium shrink-0">
-                  28m ago
-                </span>
-              </div>
+              )}
             </div>
           </section>
 

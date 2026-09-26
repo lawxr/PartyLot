@@ -66,25 +66,25 @@ export const SplitView: React.FC = () => {
   // Calculations
   const netBalances = calculateNetBalances(partyExpenses, partyMembers);
   const settlements = computeDebtSettlements(netBalances, partyMembers);
-  const totalAmount = partyExpenses.reduce((sum, e) => sum + e.amount, 0) || 186.40;
+  const totalAmount = partyExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   // Category breakdown calculation
   const drinksTotal = partyExpenses
     .filter((e) => e.category === 'drinks')
-    .reduce((sum, e) => sum + e.amount, 0) || 103.00;
+    .reduce((sum, e) => sum + e.amount, 0);
 
   const snacksTotal = partyExpenses
     .filter((e) => e.category === 'food')
-    .reduce((sum, e) => sum + e.amount, 0) || 46.20;
+    .reduce((sum, e) => sum + e.amount, 0);
 
   const rideTotal = partyExpenses
     .filter((e) => e.category === 'transport')
-    .reduce((sum, e) => sum + e.amount, 0) || 37.20;
+    .reduce((sum, e) => sum + e.amount, 0);
 
-  const safeTotal = drinksTotal + snacksTotal + rideTotal || totalAmount || 186.40;
-  const drinksPercent = Math.round((drinksTotal / safeTotal) * 100) || 55;
-  const snacksPercent = Math.round((snacksTotal / safeTotal) * 100) || 25;
-  const ridePercent = Math.round((rideTotal / safeTotal) * 100) || 20;
+  const safeTotal = totalAmount > 0 ? totalAmount : 1;
+  const drinksPercent = totalAmount > 0 ? Math.round((drinksTotal / safeTotal) * 100) : 0;
+  const snacksPercent = totalAmount > 0 ? Math.round((snacksTotal / safeTotal) * 100) : 0;
+  const ridePercent = totalAmount > 0 ? Math.round((rideTotal / safeTotal) * 100) : 0;
 
   // Handle Create Expense
   const handleCreateExpense = (e: React.FormEvent) => {

@@ -1,5 +1,5 @@
 import type { DebtSettlement, PotTransaction } from '@/types';
-import { createWalletClient, custom, parseEther } from 'viem';
+import { createWalletClient, custom, parseEther, formatEther } from 'viem';
 import { monadTestnet, publicMonadClient, getMonadExplorerTxUrl, toPartyBytes32 } from '@/lib/web3/monad';
 import { MONAD_CONTRACT_ADDRESSES, PartyTreasuryABI } from '@/contracts';
 import { getSupabase } from '@/lib/supabase/client';
@@ -135,6 +135,18 @@ export async function depositToPartyPotOnchain(
             'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
           created_at: new Date().toISOString(),
         });
+
+        // Persist updated pot_balance on the party row
+        const { data: currentParty } = await supabase
+          .from('parties')
+          .select('pot_balance')
+          .eq('id', partyId)
+          .single();
+        const updatedBal = Number(((Number(currentParty?.pot_balance) || 0) + numAmount).toFixed(4));
+        await supabase
+          .from('parties')
+          .update({ pot_balance: updatedBal })
+          .eq('id', partyId);
 
         await supabase.from('activities').insert({
           id: `act-treasury-${Date.now()}`,
@@ -301,4 +313,27 @@ export async function rolloverFundsOnchain(
     token: (data.token as 'MON' | 'USDC') || 'MON',
     network: 'Monad Testnet',
   };
+}
+
+/**
+ * Reads the verified onchain pot balance for a party from PartyTreasury.sol on Monad Testnet.
+ */
+export async function getPartyPotBalanceOnchain(partyId: string): Promise<number | null> {
+  try {
+    const partyBytes = toPartyBytes32(partyId);
+    const data = await publicMonadClient.readContract({
+      address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
+      abi: PartyTreasuryABI,
+      functionName: 'getParty',
+      args: [partyBytes],
+    });
+    // getParty returns: [host, balance, totalDeposited, totalDistributed, exists]
+    if (data && data[4]) {
+      return Number(formatEther(data[1]));
+    }
+    return null;
+  } catch (err) {
+    console.warn('Could not read onchain pot balance:', err);
+    return null;
+  }
 }

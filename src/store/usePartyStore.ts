@@ -27,6 +27,7 @@ import {
   joinPartyWithInviteCode,
   persistExpenseToSupabase,
   persistActivityToSupabase,
+  persistPotTransactionToSupabase,
   persistCrewToSupabase,
   addMemberToCrewInDb,
   persistTaskToSupabase,
@@ -55,6 +56,7 @@ import {
   distributeBountyOnchain,
   settleDamageOnchain,
   rolloverFundsOnchain,
+  getPartyPotBalanceOnchain,
   TreasuryReceipt,
 } from '@/services/treasury';
 import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
@@ -768,15 +770,18 @@ export const usePartyStore = create<PartyStoreState>()(
           txHash: receipt.txHash,
         };
 
+        const party = state.parties.find((p) => p.id === partyId);
+        const newBalance = Number(((party?.potBalance || 0) + numAmount).toFixed(4));
+
         const updatedParties = state.parties.map((p) =>
-          p.id === partyId ? { ...p, potBalance: (p.potBalance || 0) + numAmount } : p
+          p.id === partyId ? { ...p, potBalance: newBalance } : p
         );
 
         const newActivity: ActivityItem = {
           id: `act-${Date.now()}`,
           partyId,
           type: 'pot',
-          text: `💰 ${state.currentUser.name} aportó ${numAmount.toFixed(2)} MON al Party Pot (Monad)`,
+          text: `💰 ${state.currentUser.name} aportó ${numAmount.toFixed(4)} MON al Party Pot (Monad)`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
         };
@@ -787,9 +792,14 @@ export const usePartyStore = create<PartyStoreState>()(
           activities: [newActivity, ...state.activities],
         });
 
+        if (!demoMode && partyId) {
+          persistPotTransactionToSupabase(newTx, newBalance).catch(() => {});
+          persistActivityToSupabase(newActivity).catch(() => {});
+        }
+
         return {
           status: 'available',
-          message: `${numAmount.toFixed(2)} MON deposited into Party Pot on Monad`,
+          message: `${numAmount.toFixed(4)} MON deposited into Party Pot on Monad`,
           receipt,
         };
       },
@@ -818,15 +828,18 @@ export const usePartyStore = create<PartyStoreState>()(
           txHash: receipt.txHash,
         };
 
+        const party = state.parties.find((p) => p.id === partyId);
+        const newBalance = Math.max(0, Number(((party?.potBalance || 0) - numAmount).toFixed(4)));
+
         const updatedParties = state.parties.map((p) =>
-          p.id === partyId ? { ...p, potBalance: Math.max(0, (p.potBalance || 0) - numAmount) } : p
+          p.id === partyId ? { ...p, potBalance: newBalance } : p
         );
 
         const newActivity: ActivityItem = {
           id: `act-${Date.now()}`,
           partyId,
           type: 'pot',
-          text: `💸 Gasto de ${numAmount.toFixed(2)} MON pagado del Party Pot: "${description}"`,
+          text: `💸 Gasto de ${numAmount.toFixed(4)} MON pagado del Party Pot: "${description}"`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
         };
@@ -837,9 +850,14 @@ export const usePartyStore = create<PartyStoreState>()(
           activities: [newActivity, ...state.activities],
         });
 
+        if (!demoMode && partyId) {
+          persistPotTransactionToSupabase(newTx, newBalance).catch(() => {});
+          persistActivityToSupabase(newActivity).catch(() => {});
+        }
+
         return {
           status: 'available',
-          message: `${numAmount.toFixed(2)} MON reimbursement processed on Monad`,
+          message: `${numAmount.toFixed(4)} MON reimbursement processed on Monad`,
           receipt,
         };
       },
@@ -1481,6 +1499,20 @@ export const usePartyStore = create<PartyStoreState>()(
         const details = await fetchPartyDetailsFromDb(partyId);
         if (!details || !details.party) return;
 
+        // Verify onchain pot balance if party has onchain presence on Monad Testnet
+        let effectiveParty = details.party;
+        try {
+          const onchainBal = await getPartyPotBalanceOnchain(partyId);
+          if (onchainBal !== null) {
+            effectiveParty = {
+              ...details.party,
+              potBalance: onchainBal,
+            };
+          }
+        } catch (onchainErr) {
+          console.warn('Onchain pot balance check notice:', onchainErr);
+        }
+
         const [dbPolls, dbGameSessions] = await Promise.all([
           fetchPollsFromDb(partyId),
           fetchGameSessionsFromDb(partyId),
@@ -1488,8 +1520,8 @@ export const usePartyStore = create<PartyStoreState>()(
 
         set((s) => ({
           parties: s.parties.some((p) => p.id === partyId)
-            ? s.parties.map((p) => (p.id === partyId ? details.party : p))
-            : [details.party, ...s.parties],
+            ? s.parties.map((p) => (p.id === partyId ? effectiveParty : p))
+            : [effectiveParty, ...s.parties],
           currentPartyId: partyId,
           expenses: details.expenses.length > 0 ? details.expenses : s.expenses,
           transactions: details.transactions.length > 0 ? details.transactions : s.transactions,
@@ -1556,6 +1588,8 @@ export const usePartyStore = create<PartyStoreState>()(
         transactions: state.transactions,
         tasks: state.tasks,
         polls: state.polls,
+        activities: state.activities,
+        memories: state.memories,
         currentPartyId: state.currentPartyId,
         language: state.language,
         theme: state.theme,

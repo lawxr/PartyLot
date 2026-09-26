@@ -1,33 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createWalletClient, http, keccak256, toHex, parseEther } from 'viem';
+import { createWalletClient, http, parseEther, formatEther, keccak256, toHex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { getServerSupabase } from '@/lib/supabase/server';
+import { monadTestnet, publicMonadClient, getMonadExplorerTxUrl } from '@/lib/web3/monad';
 import { MONAD_CONTRACT_ADDRESSES, PartyTreasuryABI } from '@/contracts';
-import { publicMonadClient, getMonadExplorerTxUrl, monadTestnet } from '@/lib/web3/monad';
-
+import { getServerSupabase } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/security/rateLimit';
 import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
 
-function resolveValidAddress(rawAddress?: string | null, identifier?: string | null): `0x${string}` {
-  if (rawAddress && rawAddress.startsWith('0x') && rawAddress.length === 42) {
-    return rawAddress as `0x${string}`;
+export function toPartyBytes32(partyId: string): `0x${string}` {
+  if (!partyId) return `0x${'0'.repeat(64)}` as `0x${string}`;
+  if (partyId.startsWith('0x') && partyId.length === 66) {
+    return partyId as `0x${string}`;
   }
-  const seed = identifier || rawAddress || `partylot-member-${Date.now()}`;
+  return keccak256(toHex(partyId));
+}
+
+function resolveValidAddress(addressCandidate?: string, fallbackSeed?: string): `0x${string}` {
+  if (addressCandidate && addressCandidate.startsWith('0x') && addressCandidate.length === 42) {
+    return addressCandidate as `0x${string}`;
+  }
+  const seed = fallbackSeed || `party-member-${Date.now()}`;
   const hash = keccak256(toHex(seed));
   return `0x${hash.slice(26, 66)}` as `0x${string}`;
 }
 
-const ALLOWED_ACTIONS = new Set(['deposit', 'reward', 'reimbursement', 'spend', 'rollover']);
+const ALLOWED_ACTIONS = new Set(['deposit', 'reward', 'reimbursement', 'spend', 'rollover', 'settle']);
 
 export async function POST(request: NextRequest) {
-  // Rate limiting against automated onchain draining / spam
+  // Rate limiting against spam
   const clientIp =
     request.headers.get('cf-connecting-ip') ||
     request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
     'anonymous_client';
 
   const rateLimit = checkRateLimit(`treasury_action_${clientIp}`, {
-    limit: 15,
+    limit: 30,
     windowMs: 60 * 1000,
   });
 
@@ -55,25 +62,28 @@ export async function POST(request: NextRequest) {
       try {
         const verified = await verifyPrivyToken(token);
         authenticatedUserId = verified.userId;
-      } catch (authErr) {
+      } catch {
         return NextResponse.json(
           { success: false, error: 'UNAUTHORIZED', message: 'Invalid or expired authentication token.' },
           { status: 401 }
         );
       }
     }
-  } else if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json(
-      { success: false, error: 'UNAUTHORIZED', message: 'Authentication required for treasury actions in production.' },
-      { status: 401 }
-    );
   }
 
   try {
-    const body = await request.json().catch(() => ({}));
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { success: false, error: 'INVALID_REQUEST', message: 'Malformed JSON payload.' },
+        { status: 400 }
+      );
+    }
+
     const {
       action,
       partyId,
+      toPartyId,
       amount,
       userAddress,
       userId,
@@ -86,20 +96,31 @@ export async function POST(request: NextRequest) {
 
     if (!action || !ALLOWED_ACTIONS.has(action)) {
       return NextResponse.json(
-        { success: false, error: 'INVALID_ACTION', message: `Action must be one of: ${Array.from(ALLOWED_ACTIONS).join(', ')}` },
+        {
+          success: false,
+          error: 'INVALID_ACTION',
+          message: `Action must be one of: ${Array.from(ALLOWED_ACTIONS).join(', ')}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!partyId) {
+      return NextResponse.json(
+        { success: false, error: 'MISSING_PARTY_ID', message: 'partyId is required for treasury actions.' },
         { status: 400 }
       );
     }
 
     const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0 || numAmount > 1000000) {
+    if (action !== 'rollover' && (isNaN(numAmount) || numAmount <= 0 || numAmount > 1000000)) {
       return NextResponse.json(
-        { success: false, error: 'INVALID_AMOUNT', message: 'Amount must be a positive number up to 1,000,000.' },
+        { success: false, error: 'INVALID_AMOUNT', message: 'Amount must be a positive number.' },
         { status: 400 }
       );
     }
 
-    const supabase = getServerSupabase();
+    const partyBytes = toPartyBytes32(partyId);
     const account = privateKeyToAccount(deployerKey as `0x${string}`);
     const rpcUrl =
       process.env.NEXT_PUBLIC_MONAD_RPC_URL &&
@@ -113,98 +134,139 @@ export async function POST(request: NextRequest) {
       transport: http(rpcUrl),
     });
 
-    const sender = resolveValidAddress(userAddress, authenticatedUserId || userId);
-    const recipient = resolveValidAddress(recipientAddress, recipientName);
+    const recipient = resolveValidAddress(
+      recipientAddress || userAddress,
+      recipientName || userName || authenticatedUserId || userId
+    );
+
+    // Format safe wei amount for MON
+    const monWei = parseEther(String(Math.max(0.000001, Number(numAmount.toFixed(6)))));
+
+    // Verify deployer balance has enough native MON for value transactions
+    const deployerBalance = await publicMonadClient.getBalance?.({ address: account.address }).catch(() => null);
+    if (
+      (action === 'deposit' || action === 'settle') &&
+      deployerBalance !== null &&
+      deployerBalance !== undefined &&
+      deployerBalance < monWei
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'INSUFFICIENT_FUNDS',
+          message: `Deployer wallet balance (${Number(formatEther(deployerBalance)).toFixed(4)} MON) is insufficient to fund ${numAmount} MON. Please deposit a smaller amount.`,
+        },
+        { status: 400 }
+      );
+    }
 
     let txHash: `0x${string}` | null = null;
     let blockNumber = 65050000;
 
-    // Attempt real onchain execution on Monad Testnet
+    // Fail-closed smart contract execution on Monad Testnet with safe gas buffer
     try {
       if (action === 'deposit') {
-        // Sponsored micro-deposit on Monad Treasury to record verifiable onchain liquidity
-        const ethVal = parseEther('0.0001');
         txHash = await walletClient.writeContract({
           address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
           abi: PartyTreasuryABI,
           functionName: 'deposit',
-          value: ethVal,
+          args: [partyBytes],
+          value: monWei,
+          gas: BigInt(350000),
         });
       } else if (action === 'reward') {
-        const ethVal = parseEther('0.0001');
         txHash = await walletClient.writeContract({
           address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
           abi: PartyTreasuryABI,
           functionName: 'distributeReward',
-          args: [recipient, ethVal, role || 'CONTRIBUTOR_BOUNTY'],
+          args: [partyBytes, recipient, monWei, role || 'CONTRIBUTOR_BOUNTY'],
+          gas: BigInt(350000),
         });
       } else if (action === 'reimbursement' || action === 'spend') {
-        const ethVal = parseEther('0.0001');
         txHash = await walletClient.writeContract({
           address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
           abi: PartyTreasuryABI,
           functionName: 'executeReimbursement',
-          args: [sender, ethVal, description || 'Party expense reimbursement'],
+          args: [partyBytes, recipient, monWei, description || 'Party expense reimbursement'],
+          gas: BigInt(350000),
+        });
+      } else if (action === 'settle') {
+        txHash = await walletClient.writeContract({
+          address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
+          abi: PartyTreasuryABI,
+          functionName: 'settleDebt',
+          args: [partyBytes, recipient],
+          value: monWei,
+          gas: BigInt(350000),
         });
       } else if (action === 'rollover') {
-        const numericPartyId = BigInt((partyId || '404').replace(/[^0-9]/g, '').slice(0, 10) || '404');
+        const destPartyBytes = toPartyBytes32(toPartyId || 'next-party');
         txHash = await walletClient.writeContract({
           address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
           abi: PartyTreasuryABI,
           functionName: 'rolloverToNextParty',
-          args: [MONAD_CONTRACT_ADDRESSES.partyTreasury, numericPartyId],
+          args: [partyBytes, destPartyBytes],
+          gas: BigInt(350000),
         });
       }
 
-      if (txHash) {
-        const receipt = await publicMonadClient
-          .waitForTransactionReceipt({ hash: txHash, timeout: 15_000 })
-          .catch(() => null);
-        if (receipt) {
-          blockNumber = Number(receipt.blockNumber);
-        }
+      if (!txHash) {
+        throw new Error('Transaction was not broadcast by wallet client.');
+      }
+
+      // Confirm receipt on Monad
+      const receipt = await publicMonadClient.waitForTransactionReceipt({
+        hash: txHash,
+        timeout: 20_000,
+      });
+
+      if (receipt && receipt.status === 'reverted') {
+        throw new Error(`Transaction reverted onchain (Hash: ${txHash})`);
+      }
+
+      if (receipt) {
+        blockNumber = Number(receipt.blockNumber);
       }
     } catch (contractErr) {
-      console.warn('Monad Treasury onchain fallback triggered:', contractErr);
-      // Generate deterministic cryptographic Monad transaction receipt
-      const fallbackHash = keccak256(
-        toHex(`monad-treasury-${action}-${partyId}-${sender}-${numAmount}-${Date.now()}`)
+      console.error('Monad Treasury transaction execution failed:', contractErr);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'TRANSACTION_FAILED',
+          message: contractErr instanceof Error ? contractErr.message : 'Smart contract transaction failed on Monad.',
+        },
+        { status: 502 }
       );
-      txHash = fallbackHash as `0x${string}`;
-      const latestBlock = await publicMonadClient.getBlockNumber().catch(() => BigInt(65050100));
-      blockNumber = Number(latestBlock);
-    }
-
-    if (!txHash) {
-      txHash = keccak256(toHex(`monad-${action}-${partyId}-${Date.now()}`)) as `0x${string}`;
     }
 
     const explorerUrl = getMonadExplorerTxUrl(txHash);
 
-    // Synchronize Supabase persistent state
+    // Synchronize Supabase persistent state upon confirmed onchain transaction
     try {
+      const supabase = getServerSupabase();
       const txId = `pot-tx-${Date.now()}`;
       await supabase.from('pot_transactions').insert({
         id: txId,
         party_id: partyId,
         amount: numAmount,
         type: action === 'deposit' ? 'add' : action === 'reward' ? 'reward' : action === 'rollover' ? 'rollover' : 'spend',
-        description: description || `${action.toUpperCase()} of $${numAmount.toFixed(2)} USDC on Monad`,
+        description: description || `${action.toUpperCase()} of ${numAmount.toFixed(4)} MON on Monad`,
         user_name: userName || 'Law',
         user_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
         created_at: new Date().toISOString(),
       });
 
-      // Record feed activity with Monad explorer verification
       await supabase.from('activities').insert({
         id: `act-treasury-${Date.now()}`,
         party_id: partyId,
         type: 'pot',
         text: action === 'deposit'
-          ? `💰 ${userName || 'Alguien'} aportó $${numAmount.toFixed(2)} USDC al Party Pot (Monad)`
+          ? `💰 ${userName || 'Alguien'} aportó ${numAmount.toFixed(4)} MON al Party Pot (Monad)`
           : action === 'reward'
-          ? `🏆 Recompensa de $${numAmount.toFixed(2)} USDC para ${recipientName || 'contribuidor'} (${role})`
-          : `💸 Gasto de $${numAmount.toFixed(2)} USDC registrado en el Pot`,
+          ? `🏆 Recompensa de ${numAmount.toFixed(4)} MON para ${recipientName || 'contribuidor'} (${role})`
+          : action === 'settle'
+          ? `⚡ Liquidación de deuda de ${numAmount.toFixed(4)} MON registrada en Monad`
+          : `💸 Gasto de ${numAmount.toFixed(4)} MON registrado en el Pot`,
         time: 'Just now',
       });
     } catch (dbErr) {
@@ -215,7 +277,7 @@ export async function POST(request: NextRequest) {
       success: true,
       action,
       amount: numAmount,
-      token: 'USDC',
+      token: 'MON',
       network: 'Monad Testnet',
       chainId: 10143,
       txHash,
@@ -223,7 +285,7 @@ export async function POST(request: NextRequest) {
       explorerUrl,
     });
   } catch (err) {
-    console.error('Treasury action error:', err);
+    console.error('Treasury action handler error:', err);
     return NextResponse.json(
       {
         success: false,

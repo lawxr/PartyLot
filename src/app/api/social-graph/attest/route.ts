@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (token) {
       try {
         await verifyPrivyToken(token);
-      } catch (authErr) {
+      } catch {
         return NextResponse.json(
           { success: false, error: 'UNAUTHORIZED', message: 'Invalid or expired authentication token.' },
           { status: 401 }

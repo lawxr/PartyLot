@@ -3,130 +3,203 @@ pragma solidity ^0.8.24;
 
 /**
  * @title PartyTreasury
- * @notice Verifiable onchain group treasury for Partylot gatherings.
- * @dev Supports member deposits, sponsored reimbursements, contribution rewards (DJ, Ice, Challenges),
- * and automatic rollover into subsequent crew gatherings. Compatible with ERC-4337 Account Abstraction.
+ * @notice Multi-party verifiable onchain group treasury on Monad Testnet.
+ * @dev Supports native MON deposits, host-approved social rewards, expense reimbursements,
+ * peer-to-peer debt settlements, and inter-party rollovers.
  */
 contract PartyTreasury {
-    struct ContributionReward {
-        address recipient;
-        uint256 amount;
-        string role; // e.g. "OFFICIAL_DJ", "ICE_RUNNER", "TRIVIA_WINNER"
-        uint256 timestamp;
+    struct PartyPot {
+        address host;
+        uint256 balance;
+        uint256 totalDeposited;
+        uint256 totalDistributed;
+        bool exists;
     }
 
-    struct Reimbursement {
-        address paidBy;
-        uint256 amount;
-        string description;
-        bool executed;
+    address public immutable owner;
+    uint256 private _locked = 1;
+
+    // Mapping from partyId (keccak256 hash of party UUID/slug) to PartyPot
+    mapping(bytes32 => PartyPot) public parties;
+    // Mapping from partyId => member address => total deposited
+    mapping(bytes32 => mapping(address => uint256)) public memberBalances;
+
+    event PartyRegistered(bytes32 indexed partyId, address indexed host);
+    event Deposited(bytes32 indexed partyId, address indexed member, uint256 amount, uint256 newBalance);
+    event RewardDistributed(bytes32 indexed partyId, address indexed recipient, uint256 amount, string role);
+    event ReimbursementClaimed(bytes32 indexed partyId, address indexed member, uint256 amount, string description);
+    event DebtSettled(bytes32 indexed partyId, address indexed debtor, address indexed creditor, uint256 amount);
+    event BalanceRolledOver(bytes32 indexed fromPartyId, bytes32 indexed toPartyId, uint256 amount);
+
+    modifier nonReentrant() {
+        require(_locked == 1, "REENTRANCY_GUARD");
+        _locked = 2;
+        _;
+        _locked = 1;
     }
 
-    address public immutable host;
-    uint256 public immutable partyId;
-    uint256 public totalDeposited;
-    uint256 public totalDistributed;
-    uint256 public rolloverBalance;
-
-    mapping(address => uint256) public memberBalances;
-    ContributionReward[] public rewards;
-    Reimbursement[] public reimbursements;
-
-    event Deposited(address indexed member, uint256 amount, uint256 newBalance);
-    event ReimbursementClaimed(address indexed member, uint256 amount, string description);
-    event RewardDistributed(address indexed recipient, uint256 amount, string role);
-    event BalanceRolledOver(uint256 amount, uint256 nextPartyId);
-
-    modifier onlyHost() {
-        require(msg.sender == host, "Only party host can authorize");
+    modifier onlyHostOrOwner(bytes32 partyId) {
+        address partyHost = parties[partyId].host;
+        require(
+            msg.sender == partyHost || msg.sender == owner,
+            "Only party host or contract owner authorized"
+        );
         _;
     }
 
-    constructor(uint256 _partyId, address _host) payable {
-        partyId = _partyId;
-        host = _host;
-        if (msg.value > 0) {
-            totalDeposited += msg.value;
-            memberBalances[_host] += msg.value;
-            emit Deposited(_host, msg.value, msg.value);
-        }
+    constructor() {
+        owner = msg.sender;
     }
 
     /**
-     * @notice Deposit funds into the shared party pot.
+     * @notice Register a party and define its host.
      */
-    function deposit() public payable {
-        require(msg.value > 0, "Deposit must be > 0");
-        memberBalances[msg.sender] += msg.value;
-        totalDeposited += msg.value;
+    function registerParty(bytes32 partyId, address host) external {
+        require(host != address(0), "Invalid host address");
+        require(!parties[partyId].exists, "Party already registered");
 
-        emit Deposited(msg.sender, msg.value, address(this).balance);
+        parties[partyId] = PartyPot({
+            host: host,
+            balance: 0,
+            totalDeposited: 0,
+            totalDistributed: 0,
+            exists: true
+        });
+
+        emit PartyRegistered(partyId, host);
     }
 
     /**
-     * @notice Distribute an economic reward for social contribution (DJ, winner, supplies).
+     * @notice Deposit native MON into a specific party pot.
+     */
+    function deposit(bytes32 partyId) public payable nonReentrant {
+        require(msg.value > 0, "Deposit must be > 0");
+
+        PartyPot storage pot = parties[partyId];
+        if (!pot.exists) {
+            pot.host = msg.sender;
+            pot.exists = true;
+            emit PartyRegistered(partyId, msg.sender);
+        }
+
+        pot.balance += msg.value;
+        pot.totalDeposited += msg.value;
+        memberBalances[partyId][msg.sender] += msg.value;
+
+        emit Deposited(partyId, msg.sender, msg.value, pot.balance);
+    }
+
+    /**
+     * @notice Distribute an economic reward for social contributions (DJ, challenges, trivia).
      */
     function distributeReward(
+        bytes32 partyId,
         address payable recipient,
         uint256 amount,
         string calldata role
-    ) external onlyHost {
-        require(amount <= address(this).balance, "Insufficient treasury balance");
+    ) external nonReentrant onlyHostOrOwner(partyId) {
         require(recipient != address(0), "Invalid recipient");
+        require(amount > 0, "Amount must be > 0");
 
-        rewards.push(ContributionReward({
-            recipient: recipient,
-            amount: amount,
-            role: role,
-            timestamp: block.timestamp
-        }));
+        PartyPot storage pot = parties[partyId];
+        require(pot.balance >= amount, "Insufficient treasury balance");
 
-        totalDistributed += amount;
+        pot.balance -= amount;
+        pot.totalDistributed += amount;
+
         (bool sent, ) = recipient.call{value: amount}("");
         require(sent, "Reward transfer failed");
 
-        emit RewardDistributed(recipient, amount, role);
+        emit RewardDistributed(partyId, recipient, amount, role);
     }
 
     /**
-     * @notice Execute an approved expense reimbursement from the shared pot.
+     * @notice Execute an approved expense reimbursement from the shared party pot.
      */
     function executeReimbursement(
+        bytes32 partyId,
         address payable member,
         uint256 amount,
         string calldata description
-    ) external onlyHost {
-        require(amount <= address(this).balance, "Insufficient treasury balance");
+    ) external nonReentrant onlyHostOrOwner(partyId) {
+        require(member != address(0), "Invalid member address");
+        require(amount > 0, "Amount must be > 0");
 
-        reimbursements.push(Reimbursement({
-            paidBy: member,
-            amount: amount,
-            description: description,
-            executed: true
-        }));
+        PartyPot storage pot = parties[partyId];
+        require(pot.balance >= amount, "Insufficient treasury balance");
 
-        totalDistributed += amount;
+        pot.balance -= amount;
+        pot.totalDistributed += amount;
+
         (bool sent, ) = member.call{value: amount}("");
         require(sent, "Reimbursement transfer failed");
 
-        emit ReimbursementClaimed(member, amount, description);
+        emit ReimbursementClaimed(partyId, member, amount, description);
     }
 
     /**
-     * @notice Roll over remaining funds to the next party treasury contract.
+     * @notice Settle peer-to-peer debts directly between members using native MON.
      */
-    function rolloverToNextParty(address payable nextTreasury, uint256 nextPartyId) external onlyHost {
-        uint256 remaining = address(this).balance;
+    function settleDebt(
+        bytes32 partyId,
+        address payable creditor
+    ) external payable nonReentrant {
+        require(msg.value > 0, "Payment must be > 0");
+        require(creditor != address(0), "Invalid creditor");
+        require(creditor != msg.sender, "Cannot settle debt with yourself");
+
+        (bool sent, ) = creditor.call{value: msg.value}("");
+        require(sent, "Debt settlement transfer failed");
+
+        emit DebtSettled(partyId, msg.sender, creditor, msg.value);
+    }
+
+    /**
+     * @notice Roll over remaining funds to the next party pot.
+     */
+    function rolloverToNextParty(
+        bytes32 fromPartyId,
+        bytes32 toPartyId
+    ) external nonReentrant onlyHostOrOwner(fromPartyId) {
+        require(fromPartyId != toPartyId, "Cannot rollover to same party");
+        PartyPot storage sourcePot = parties[fromPartyId];
+        uint256 remaining = sourcePot.balance;
         require(remaining > 0, "No funds to rollover");
 
-        rolloverBalance = remaining;
-        (bool sent, ) = nextTreasury.call{value: remaining}("");
-        require(sent, "Rollover transfer failed");
+        sourcePot.balance = 0;
 
-        emit BalanceRolledOver(remaining, nextPartyId);
+        PartyPot storage destPot = parties[toPartyId];
+        if (!destPot.exists) {
+            destPot.host = sourcePot.host;
+            destPot.exists = true;
+            emit PartyRegistered(toPartyId, sourcePot.host);
+        }
+
+        destPot.balance += remaining;
+        destPot.totalDeposited += remaining;
+
+        emit BalanceRolledOver(fromPartyId, toPartyId, remaining);
+    }
+
+    /**
+     * @notice Get party pot summary.
+     */
+    function getParty(bytes32 partyId)
+        external
+        view
+        returns (
+            address host,
+            uint256 balance,
+            uint256 totalDeposited,
+            uint256 totalDistributed,
+            bool exists
+        )
+    {
+        PartyPot memory pot = parties[partyId];
+        return (pot.host, pot.balance, pot.totalDeposited, pot.totalDistributed, pot.exists);
     }
 
     receive() external payable {
-        deposit();
+        // Fallback accepts MON
     }
 }

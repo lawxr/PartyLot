@@ -11,6 +11,7 @@ import {
   User,
   CrewMember,
   PartyMemory,
+  Poll,
 } from '@/types';
 
 /**
@@ -227,29 +228,9 @@ export async function persistPartyToSupabase(
 }
 
 /**
- * Persists an expense added to a party
+ * Persists an expense added to a party (delegated to features/expenses domain)
  */
-export async function persistExpenseToSupabase(expense: Expense): Promise<void> {
-  const supabase = getSupabase();
-  if (!supabase) return;
-
-  try {
-    await supabase.from('expenses').upsert({
-      id: expense.id,
-      party_id: expense.partyId,
-      description: expense.description,
-      amount: expense.amount,
-      paid_by_id: expense.paidById,
-      paid_by_name: expense.paidByName,
-      split_between_ids: expense.splitBetweenIds,
-      category: expense.category || 'general',
-      is_settled: expense.isSettled || false,
-      tx_hash: expense.txHash || null,
-    });
-  } catch (err) {
-    console.warn('Failed to persist expense:', err);
-  }
-}
+export { persistExpenseToSupabase } from '@/features/expenses';
 
 /**
  * Persists a Party Pot transaction and updates treasury balance
@@ -979,10 +960,19 @@ export async function fetchActivitiesFromDb(partyId?: string): Promise<ActivityI
   }
 }
 
+export interface GameSessionRecord {
+  id: string;
+  partyId: string;
+  gameType: string;
+  questions: unknown[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 /**
  * Fetches polls for a party from Supabase
  */
-export async function fetchPollsFromDb(partyId: string): Promise<any[]> {
+export async function fetchPollsFromDb(partyId: string): Promise<Poll[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
 
@@ -999,8 +989,8 @@ export async function fetchPollsFromDb(partyId: string): Promise<any[]> {
       id: p.id,
       partyId: p.party_id,
       question: p.question,
-      options: p.options,
-      createdById: p.created_by_id,
+      options: p.options || [],
+      totalVotes: (p.options || []).reduce((acc: number, opt: { votes?: number }) => acc + (opt.votes || 0), 0),
       createdAt: p.created_at,
     }));
   } catch (err) {
@@ -1012,7 +1002,7 @@ export async function fetchPollsFromDb(partyId: string): Promise<any[]> {
 /**
  * Persists a poll to Supabase
  */
-export async function persistPollToSupabase(poll: any): Promise<void> {
+export async function persistPollToSupabase(poll: Poll): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
 
@@ -1022,7 +1012,7 @@ export async function persistPollToSupabase(poll: any): Promise<void> {
       party_id: poll.partyId,
       question: poll.question,
       options: poll.options,
-      created_by_id: poll.createdById || null,
+      created_by_id: null,
     });
   } catch (err) {
     console.warn('Failed to persist poll to Supabase:', err);
@@ -1035,7 +1025,7 @@ export async function persistPollToSupabase(poll: any): Promise<void> {
 export async function fetchGameSessionsFromDb(
   partyId: string,
   gameType?: string
-): Promise<any[]> {
+): Promise<GameSessionRecord[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
 
@@ -1071,7 +1061,12 @@ export async function fetchGameSessionsFromDb(
 /**
  * Persists a game session to Supabase
  */
-export async function persistGameSessionToSupabase(session: any): Promise<void> {
+export async function persistGameSessionToSupabase(session: {
+  id: string;
+  partyId: string;
+  gameType: string;
+  questions?: unknown;
+}): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
 

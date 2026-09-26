@@ -35,7 +35,7 @@ export const RecapView: React.FC = () => {
     tasks,
   } = usePartyStore();
 
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
   const isEs = language === 'es';
 
   const defaultParty = parties[0];

@@ -18,8 +18,12 @@ import {
   MoreHorizontal,
   ChevronRight,
   Check,
+  Copy,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useWallets } from '@privy-io/react-auth';
+import { formatEther } from 'viem';
+import { publicMonadClient } from '@/lib/web3/monad';
 import { usePartyStore } from '@/store/usePartyStore';
 import { PartyInviteModal } from '@/components/ui/PartyInviteModal';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
@@ -28,6 +32,7 @@ import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
 import { Member, PartyMemory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { uploadImageFile } from '@/services/storageService';
+import { useMonPrice } from '@/hooks/useMonPrice';
 
 export const PartyDetailView: React.FC = () => {
   const {
@@ -64,10 +69,36 @@ export const PartyDetailView: React.FC = () => {
 
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
 
+  const { price: monPrice } = useMonPrice();
+
   // Phone 3 Party Pot Sheet state
+  const { wallets } = useWallets();
+  const activeWallet = wallets.find((w) => w.walletClientType === 'privy') || wallets[0];
+  const [userBalance, setUserBalance] = useState<string | null>(null);
   const [isPotSheetOpen, setIsPotSheetOpen] = useState(false);
-  const [potAmount, setPotAmount] = useState<number>(10);
+  const [potAmount, setPotAmount] = useState<number>(0.5);
   const [isPotSubmitting, setIsPotSubmitting] = useState(false);
+  const [potError, setPotError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!activeWallet?.address) {
+      return;
+    }
+
+    publicMonadClient
+      .getBalance({ address: activeWallet.address as `0x${string}` })
+      .then((b) => {
+        if (isMounted) setUserBalance(formatEther(b));
+      })
+      .catch(() => {
+        if (isMounted) setUserBalance(null);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeWallet?.address]);
 
   const quickActions = [
     { id: 'play', label: isEs ? 'Juegos' : 'Games', icon: Gamepad2, onClick: () => setCurrentView('games') },
@@ -116,8 +147,45 @@ export const PartyDetailView: React.FC = () => {
   const handleAddToPot = async () => {
     if (!party?.id) return;
     setIsPotSubmitting(true);
+    setPotError(null);
     try {
-      await addToPot(party.id, potAmount, `Deposit of $${potAmount} USDC on Monad`);
+      await addToPot(
+        party.id,
+        potAmount,
+        `Deposit of ${potAmount} MON on Monad Testnet`,
+        { wallet: activeWallet }
+      );
+      confetti({
+        particleCount: 60,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#2775CA', '#836EF9', '#F0DC00'],
+      });
+      setIsPotSheetOpen(false);
+      if (activeWallet?.address) {
+        publicMonadClient
+          .getBalance({ address: activeWallet.address as `0x${string}` })
+          .then((b) => setUserBalance(formatEther(b)))
+          .catch(() => {});
+      }
+    } catch (err) {
+      console.error('Error adding to party pot:', err);
+      setPotError(err instanceof Error ? err.message : 'Failed to deposit into Monad Treasury.');
+    } finally {
+      setIsPotSubmitting(false);
+    }
+  };
+
+  const handleSponsoredDemoDeposit = async () => {
+    if (!party?.id) return;
+    setIsPotSubmitting(true);
+    setPotError(null);
+    try {
+      await addToPot(
+        party.id,
+        potAmount,
+        `Demo Sponsor deposit of ${potAmount} MON on Monad Testnet`
+      );
       confetti({
         particleCount: 60,
         spread: 70,
@@ -126,7 +194,8 @@ export const PartyDetailView: React.FC = () => {
       });
       setIsPotSheetOpen(false);
     } catch (err) {
-      console.error('Error adding to party pot:', err);
+      console.error('Sponsored demo deposit error:', err);
+      setPotError(err instanceof Error ? err.message : 'Failed to deposit with demo sponsor.');
     } finally {
       setIsPotSubmitting(false);
     }
@@ -566,9 +635,9 @@ export const PartyDetailView: React.FC = () => {
                 <X className="w-4 h-4" />
               </button>
 
-              {/* Coins Circle Icon */}
+              {/* MON Circle Icon */}
               <div className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center border border-white/80 dark:border-white/15 shadow-sm mb-3">
-                <Coins className="w-6 h-6 text-[#171512] dark:text-[#F0DC00] stroke-[2.2]" />
+                <TokenLogo token="mon" size="lg" />
               </div>
 
               {/* Title & Editorial Subtitle */}
@@ -581,35 +650,48 @@ export const PartyDetailView: React.FC = () => {
                   : 'Help cover drinks, snacks and whatever makes tonight legendary.'}
               </p>
 
-              {/* Amount Stepper (- $10 +) */}
-              <div className="flex items-center justify-center gap-6 mb-6 w-full">
-                {/* Minus Button */}
-                <button
-                  type="button"
-                  onClick={() => setPotAmount((prev) => Math.max(1, prev - 5))}
-                  className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 flex items-center justify-center text-2xl font-bold text-[#171512] dark:text-white active:scale-90 transition-transform cursor-pointer"
-                >
-                  <Minus className="w-5 h-5 stroke-[2.5]" />
-                </button>
+              {/* Amount Stepper (- 0.5 MON +) */}
+              <div className="flex flex-col items-center justify-center mb-6 w-full">
+                <div className="flex items-center justify-center gap-6">
+                  {/* Minus Button */}
+                  <button
+                    type="button"
+                    onClick={() => setPotAmount((prev) => Math.max(0.05, Number((prev - 0.1).toFixed(2))))}
+                    className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 flex items-center justify-center text-2xl font-bold text-[#171512] dark:text-white active:scale-90 transition-transform cursor-pointer"
+                  >
+                    <Minus className="w-5 h-5 stroke-[2.5]" />
+                  </button>
 
-                {/* Amount Value */}
-                <div className="font-display font-extrabold text-5xl sm:text-6xl text-[#171512] dark:text-white tracking-tight select-none">
-                  ${potAmount}
+                  {/* Amount Value */}
+                  <div className="flex items-baseline gap-1.5 select-none">
+                    <span className="font-display font-extrabold text-5xl sm:text-6xl text-[#171512] dark:text-white tracking-tight">
+                      {potAmount}
+                    </span>
+                    <span className="font-display font-bold text-xl text-[#836EF9]">
+                      MON
+                    </span>
+                  </div>
+
+                  {/* Plus Button */}
+                  <button
+                    type="button"
+                    onClick={() => setPotAmount((prev) => Number((prev + 0.1).toFixed(2)))}
+                    className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 flex items-center justify-center text-2xl font-bold text-[#171512] dark:text-white active:scale-90 transition-transform cursor-pointer"
+                  >
+                    <Plus className="w-5 h-5 stroke-[2.5]" />
+                  </button>
                 </div>
 
-                {/* Plus Button */}
-                <button
-                  type="button"
-                  onClick={() => setPotAmount((prev) => prev + 5)}
-                  className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 flex items-center justify-center text-2xl font-bold text-[#171512] dark:text-white active:scale-90 transition-transform cursor-pointer"
-                >
-                  <Plus className="w-5 h-5 stroke-[2.5]" />
-                </button>
+                {monPrice !== null && (
+                  <span className="text-xs font-mono font-semibold text-[#6F6A62] dark:text-[#A8A196] mt-2">
+                    ≈ ${(potAmount * monPrice).toFixed(2)} USD
+                  </span>
+                )}
               </div>
 
-              {/* Preset Amounts Pills ($5, $10, $20, $50) */}
+              {/* Preset Amounts Pills (0.1, 0.25, 0.5, 1.0 MON) */}
               <div className="grid grid-cols-4 gap-2.5 w-full mb-6">
-                {[5, 10, 20, 50].map((preset) => (
+                {[0.1, 0.25, 0.5, 1.0].map((preset) => (
                   <button
                     key={preset}
                     type="button"
@@ -620,31 +702,106 @@ export const PartyDetailView: React.FC = () => {
                         : 'bg-black/5 dark:bg-white/10 text-[#171512] dark:text-white border border-black/5 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/15'
                     }`}
                   >
-                    ${preset}
+                    {preset} MON
                   </button>
                 ))}
               </div>
 
-              {/* Payment Source Selection Row (USDC · Monad Testnet) */}
-              <div className="w-full p-3 rounded-2xl bg-white/70 dark:bg-white/5 border border-black/[0.06] dark:border-white/10 flex items-center justify-between mb-6 shadow-sm">
+              {/* Payment Source Selection Row (MON · Monad Testnet) */}
+              <div className="w-full p-3 rounded-2xl bg-white/70 dark:bg-white/5 border border-black/[0.06] dark:border-white/10 flex items-center justify-between mb-3 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <TokenLogo token="usdc" size="md" />
+                  <TokenLogo token="mon" size="md" />
                   <div className="text-left">
                     <div className="flex items-center gap-1.5">
                       <span className="font-display font-bold text-xs text-[#171512] dark:text-white block">
-                        USDC · Monad Testnet
+                        MON nativo · Monad Testnet
                       </span>
                       <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#836EF9]/15 text-[#674FF4] font-bold">
                         10143
                       </span>
                     </div>
                     <span className="text-[10px] text-[#6F6A62] dark:text-[#A8A196] font-medium block">
-                      {isEs ? 'Gas 100% patrocinado · ~400ms' : '100% sponsored gas · ~400ms'}
+                      {isEs ? 'Gas patrocinado · Monad Treasury' : 'Sponsored gas · Monad Treasury'}
                     </span>
                   </div>
                 </div>
-                <CryptoBadge token="usdc" network="Monad" showNetwork={false} />
+                <CryptoBadge token="mon" network="Monad" showNetwork={false} />
               </div>
+
+              {/* User Connected Wallet Status Card */}
+              {activeWallet ? (
+                <div className="w-full p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/10 mb-4 text-left">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#6F6A62] dark:text-[#A8A196]">
+                      {isEs ? 'Firmando con tu billetera:' : 'Signing with your wallet:'}
+                    </span>
+                    <span className="font-mono font-bold text-[#171512] dark:text-white">
+                      {activeWallet.address.slice(0, 6)}...{activeWallet.address.slice(-4)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
+                    <span className="text-[#6F6A62] dark:text-[#A8A196]">
+                      {isEs ? 'Saldo en tu wallet:' : 'Wallet balance:'}
+                    </span>
+                    <span className="font-mono font-bold text-[#836EF9]">
+                      {userBalance !== null ? `${Number(userBalance).toFixed(4)} MON` : '...'}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 mb-4 text-xs text-amber-700 dark:text-amber-300 text-left">
+                  {isEs
+                    ? 'Inicia sesión con Privy para conectar tu billetera y firmar tus propios aportes.'
+                    : 'Log in with Privy to connect your wallet and sign your own deposits.'}
+                </div>
+              )}
+
+              {/* Insufficient User Balance Banner with Faucet and Demo Sponsor */}
+              {userBalance !== null && Number(userBalance) < potAmount && (
+                <div className="w-full p-3.5 mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs text-left leading-relaxed">
+                  <p className="font-bold mb-1">
+                    {isEs
+                      ? `Saldo insuficiente en tu wallet (${Number(userBalance).toFixed(4)} MON)`
+                      : `Insufficient balance in your wallet (${Number(userBalance).toFixed(4)} MON)`}
+                  </p>
+                  <p className="text-[11px] opacity-80 mb-3">
+                    {isEs
+                      ? 'Para firmar con tus propios fondos necesitas MON de prueba en Monad Testnet.'
+                      : 'To sign with your own funds you need testnet MON on Monad.'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeWallet?.address) {
+                          navigator.clipboard.writeText(activeWallet.address);
+                          alert(isEs ? 'Dirección copiada para el Faucet de Monad' : 'Address copied for Monad Faucet');
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 text-[11px] font-bold cursor-pointer transition-colors flex items-center gap-1.5"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>{isEs ? 'Copiar Dirección Faucet' : 'Copy Faucet Address'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSponsoredDemoDeposit}
+                      disabled={isPotSubmitting}
+                      className="px-3 py-1.5 rounded-xl bg-[#836EF9]/20 hover:bg-[#836EF9]/30 text-[#674FF4] dark:text-[#A78BFA] text-[11px] font-bold cursor-pointer transition-colors"
+                    >
+                      {isEs ? 'Usar Faucet Demo (Patrocinado)' : 'Use Demo Faucet Sponsor'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Alert Banner */}
+              {potError && (
+                <div className="w-full p-3 mb-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 dark:text-rose-400 text-xs text-left leading-relaxed">
+                  <strong className="block mb-0.5">{isEs ? 'Error en la transacción:' : 'Transaction error:'}</strong>
+                  {potError}
+                </div>
+              )}
 
               {/* Primary Yellow CTA Button */}
               <button

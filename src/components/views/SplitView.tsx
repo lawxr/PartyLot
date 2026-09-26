@@ -15,35 +15,18 @@ import {
   Crown,
   Plus,
   Receipt,
-  Sparkles,
-  ArrowRight,
-  ShieldCheck,
-  Share2,
-  DollarSign,
-  Sliders,
-  CheckCircle2,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
-import { BottomSheet } from '@/components/ui/BottomSheet';
-import { GlassButton } from '@/components/ui/GlassButton';
-import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
-import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
-import { ExpenseCategory, Member } from '@/types';
+import {
+  AddExpenseSheet,
+  SettleDebtsSheet,
+  SplitOptionsMenu,
+  calculateNetBalances,
+  computeDebtSettlements,
+} from '@/features/expenses';
+import type { ExpenseCategory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import confetti from 'canvas-confetti';
-
-interface CategoryMeta {
-  id: ExpenseCategory;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-}
-
-const CATEGORIES: CategoryMeta[] = [
-  { id: 'drinks', label: 'Drinks', icon: Wine, color: 'text-[#171512] bg-[#FFE600]' },
-  { id: 'food', label: 'Snacks', icon: Pizza, color: 'text-[#E06000] bg-[#FF8A00]/20' },
-  { id: 'transport', label: 'Ride', icon: Car, color: 'text-[#6B46C1] bg-[#EDE5FF]' },
-];
 
 export const SplitView: React.FC = () => {
   const { parties, currentPartyId, expenses, addExpense, settleAllDebts, goBack, currentUser } = usePartyStore();
@@ -63,7 +46,6 @@ export const SplitView: React.FC = () => {
   const [isSettleOpen, setIsSettleOpen] = useState(false);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [isSettling, setIsSettling] = useState(false);
-  const [selectedMemberDetail, setSelectedMemberDetail] = useState<Member | null>(null);
 
   // Add Expense Form state
   const [desc, setDesc] = useState('');
@@ -409,11 +391,7 @@ export const SplitView: React.FC = () => {
             {defaultMockMembers.map((member) => (
               <div
                 key={member.id}
-                onClick={() => {
-                  const m = partyMembers.find((p) => p.id === member.id);
-                  if (m) setSelectedMemberDetail(m);
-                }}
-                className="bg-[#FFFDF8] rounded-[22px] p-3 sm:p-3.5 border border-[rgba(35,30,22,0.06)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex items-center justify-between hover:bg-white transition-all cursor-pointer"
+                className="bg-[#FFFDF8] rounded-[22px] p-3 sm:p-3.5 border border-[rgba(35,30,22,0.06)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex items-center justify-between"
               >
                 {/* Member Avatar + Name */}
                 <div className="flex items-center gap-3">
@@ -708,298 +686,40 @@ export const SplitView: React.FC = () => {
         </div>
       </div>
 
-      {/* BottomSheet: Options Menu */}
-      <BottomSheet
+      {/* Options Menu Sheet */}
+      <SplitOptionsMenu
         isOpen={isOptionsOpen}
         onClose={() => setIsOptionsOpen(false)}
-        title={t.split.optionsTitle}
-      >
-        <div className="space-y-3">
-          <button
-            type="button"
-            onClick={() => {
-              setIsOptionsOpen(false);
-              setIsAddOpen(true);
-            }}
-            className="w-full p-3.5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between text-left hover:bg-[#F7F2E8] transition-all cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#F0DC00]/20 flex items-center justify-center text-[#171512]">
-                <Plus className="w-5 h-5 stroke-[2.5]" />
-              </div>
-              <div>
-                <span className="font-bold text-sm text-[#171512] block">
-                  {t.split.addExpense}
-                </span>
-                <span className="text-xs text-[#8A8173]">
-                  {isEs ? 'Registra una factura pagada por alguien' : 'Log a bill paid by someone'}
-                </span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-[#999187]" />
-          </button>
+        onOpenAddExpense={() => setIsAddOpen(true)}
+        onOpenSettle={() => setIsSettleOpen(true)}
+      />
 
-          <button
-            type="button"
-            onClick={() => {
-              setIsOptionsOpen(false);
-              setIsSettleOpen(true);
-            }}
-            className="w-full p-3.5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between text-left hover:bg-[#F7F2E8] transition-all cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#2775CA]/20 to-[#836EF9]/20 flex items-center justify-center text-[#2775CA]">
-                <TokenLogo token="usdc" size="sm" />
-              </div>
-              <div>
-                <span className="font-bold text-sm text-[#171512] block">
-                  {t.split.settleOnMonad}
-                </span>
-                <span className="text-xs text-[#8A8173]">
-                  {t.split.settleSubtitle}
-                </span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-[#999187]" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (navigator.clipboard) {
-                navigator.clipboard.writeText(window.location.href);
-                confetti({ particleCount: 30, spread: 45 });
-                setIsOptionsOpen(false);
-              }
-            }}
-            className="w-full p-3.5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between text-left hover:bg-[#F7F2E8] transition-all cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#FAF7F2] flex items-center justify-center text-[#171512]">
-                <Share2 className="w-5 h-5 text-[#8A8173]" />
-              </div>
-              <div>
-                <span className="font-bold text-sm text-[#171512] block">
-                  {t.split.copyShareLink}
-                </span>
-                <span className="text-xs text-[#8A8173]">
-                  {isEs ? 'Envía este desglose a tu grupo' : 'Send this split to the group'}
-                </span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-[#999187]" />
-          </button>
-        </div>
-      </BottomSheet>
-
-      {/* BottomSheet: + Add Expense */}
-      <BottomSheet
+      {/* Add Expense Sheet */}
+      <AddExpenseSheet
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
-        title={t.split.addExpense}
-      >
-        <form onSubmit={handleCreateExpense} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {t.split.categoryLabel}
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {CATEGORIES.map((cat) => {
-                const IconComponent = cat.icon;
-                const isSelected = category === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setCategory(cat.id)}
-                    className={`flex items-center gap-1.5 p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-[#F0DC00] bg-[#FFF5C0] text-[#171512]'
-                        : 'border-[rgba(35,30,22,0.08)] bg-[#F7F2E8] text-[#6F6A62] hover:text-[#171512]'
-                    }`}
-                  >
-                    <IconComponent className="w-3.5 h-3.5 text-[#B89600]" />
-                    <span className="truncate">{cat.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+        partyMembers={partyMembers}
+        paidById={paidById}
+        setPaidById={setPaidById}
+        splitBetween={splitBetween}
+        toggleSplitMember={toggleSplitMember}
+        desc={desc}
+        setDesc={setDesc}
+        amount={amount}
+        setAmount={setAmount}
+        category={category}
+        setCategory={setCategory}
+        onSubmit={handleCreateExpense}
+      />
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {t.split.descLabel}
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Cocktails, Artisanal Pizza, Uber XL..."
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] placeholder-[#999187] text-base font-semibold outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {t.split.amountLabel}
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-display font-black text-xl text-[#8E887E]">
-                $
-              </span>
-              <input
-                type="number"
-                step="0.01"
-                required
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-9 pr-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {t.split.paidByLabel}
-            </label>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-              {partyMembers.map((member) => (
-                <button
-                  key={member.id}
-                  type="button"
-                  onClick={() => setPaidById(member.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                    paidById === member.id
-                      ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
-                      : 'bg-[#F7F2E8] text-[#6F6A62] border border-[rgba(35,30,22,0.08)]'
-                  }`}
-                >
-                  <div className="w-5 h-5 rounded-full overflow-hidden bg-[#EFEAE2]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
-                  </div>
-                  <span>{member.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5 flex justify-between">
-              <span>{t.split.splitBetweenLabel}</span>
-              <span className="text-[#B89600] font-bold">{splitBetween.length} selected</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
-              {partyMembers.map((member) => {
-                const isSelected = splitBetween.includes(member.id);
-                return (
-                  <button
-                    key={member.id}
-                    type="button"
-                    onClick={() => toggleSplitMember(member.id)}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-[#F0DC00] bg-[#FFF5C0] text-[#171512]'
-                        : 'border-[rgba(35,30,22,0.08)] bg-[#F7F2E8] text-[#6F6A62]'
-                    }`}
-                  >
-                    <div className="w-5 h-5 rounded-full overflow-hidden bg-[#EFEAE2] shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
-                    </div>
-                    <span className="truncate">{member.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <GlassButton
-              variant="accent"
-              size="lg"
-              fullWidth
-              type="submit"
-            >
-              {t.split.splitButton}
-            </GlassButton>
-          </div>
-        </form>
-      </BottomSheet>
-
-      {/* BottomSheet: Request / Settle Payments (Monad USDC) */}
-      <BottomSheet
+      {/* Settle Debts Sheet */}
+      <SettleDebtsSheet
         isOpen={isSettleOpen}
-        onClose={() => {
-          if (!isSettling) setIsSettleOpen(false);
-        }}
-        title={t.split.settleTitle}
-      >
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-[#2775CA]/10 via-[#836EF9]/10 to-transparent border border-[#2775CA]/20">
-            <div className="flex items-center gap-2.5">
-              <TokenLogo token="usdc" size="md" />
-              <div>
-                <span className="text-xs font-bold text-[#171512] block">
-                  {t.split.settleEngineBadge}
-                </span>
-                <span className="text-[10px] text-[#6F6A62]">
-                  {t.split.settleEngineDesc}
-                </span>
-              </div>
-            </div>
-            <CryptoBadge token="usdc" network="Monad" showNetwork={false} />
-          </div>
-
-          <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
-            {realDebtorsList.length > 0 ? (
-              realDebtorsList.map((member, i) => (
-                <div
-                  key={`settle-${member.id}-${i}`}
-                  className="p-3.5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between shadow-2xs"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-full overflow-hidden bg-[#EFEAE2]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <span className="font-bold text-xs text-[#171512] block">{member.name}</span>
-                      <span className="text-[10px] text-rose-600 font-semibold">{member.subtitle}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <TokenLogo token="usdc" size="xs" />
-                    <span className="font-display font-black text-base text-[#171512]">
-                      {member.amount}
-                    </span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="p-4 text-center text-sm text-[#8A8173]">
-                {isEs ? 'No hay deudas pendientes' : 'No pending debts'}
-              </div>
-            )}
-          </div>
-
-          <div className="pt-2 space-y-2">
-            <GlassButton
-              variant="accent"
-              size="lg"
-              fullWidth
-              disabled={isSettling || realDebtorsList.length === 0}
-              onClick={handleSettleOnchain}
-            >
-              {isSettling
-                ? t.split.settling
-                : t.split.confirmSettle(realDebtorsList.length || 4)}
-            </GlassButton>
-          </div>
-        </div>
-      </BottomSheet>
+        onClose={() => setIsSettleOpen(false)}
+        isSettling={isSettling}
+        debtorsList={realDebtorsList}
+        onSettle={handleSettleOnchain}
+      />
     </div>
   );
 };

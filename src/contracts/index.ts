@@ -7,10 +7,61 @@ export const MONAD_CONTRACT_ADDRESSES = {
   partyRegistry: (process.env.NEXT_PUBLIC_PARTY_REGISTRY_ADDRESS ||
     '0xb7d922488daa522443ffe1627efc6d65825eebad') as `0x${string}`,
   partyTreasury: (process.env.NEXT_PUBLIC_PARTY_TREASURY_ADDRESS ||
-    '0x838ef69f8904af767e3ec8d04737417106225e6a') as `0x${string}`,
+    '0x13ed67e844496095c0f44c914f89e30ef190db2c') as `0x${string}`,
   socialGraph: (process.env.NEXT_PUBLIC_SOCIAL_GRAPH_ADDRESS ||
     '0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9') as `0x${string}`,
+  pythOracle: (process.env.NEXT_PUBLIC_PYTH_ORACLE_ADDRESS ||
+    '0x2880aB155794e7179c9eE2e38200202908C17B43') as `0x${string}`,
 };
+
+export const PYTH_FEEDS = {
+  monUsd: '0x31491744e2dbf6df7fcf4ac0820d18a609b49076d45066d3568424e62f686cd1' as `0x${string}`,
+};
+
+export const PythOracleABI = [
+  {
+    inputs: [{ internalType: 'bytes32', name: 'id', type: 'bytes32' }],
+    name: 'getPriceUnsafe',
+    outputs: [
+      {
+        components: [
+          { internalType: 'int64', name: 'price', type: 'int64' },
+          { internalType: 'uint64', name: 'conf', type: 'uint64' },
+          { internalType: 'int32', name: 'expo', type: 'int32' },
+          { internalType: 'uint256', name: 'publishTime', type: 'uint256' },
+        ],
+        internalType: 'struct PythStructs.Price',
+        name: 'price',
+        type: 'tuple',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'bytes32', name: 'id', type: 'bytes32' },
+      { internalType: 'uint256', name: 'age', type: 'uint256' },
+    ],
+    name: 'getPriceNoOlderThan',
+    outputs: [
+      {
+        components: [
+          { internalType: 'int64', name: 'price', type: 'int64' },
+          { internalType: 'uint64', name: 'conf', type: 'uint64' },
+          { internalType: 'int32', name: 'expo', type: 'int32' },
+          { internalType: 'uint256', name: 'publishTime', type: 'uint256' },
+        ],
+        internalType: 'struct PythStructs.Price',
+        name: 'price',
+        type: 'tuple',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
+
 
 export const PartyRegistryABI = [
   {
@@ -115,19 +166,13 @@ export const PartyRegistryABI = [
 ] as const;
 
 export const PartyTreasuryABI = [
-  {
-    inputs: [
-      { internalType: 'uint256', name: '_partyId', type: 'uint256' },
-      { internalType: 'address', name: '_host', type: 'address' },
-    ],
-    stateMutability: 'payable',
-    type: 'constructor',
-  },
+  { inputs: [], stateMutability: 'nonpayable', type: 'constructor' },
   {
     anonymous: false,
     inputs: [
+      { indexed: true, internalType: 'bytes32', name: 'fromPartyId', type: 'bytes32' },
+      { indexed: true, internalType: 'bytes32', name: 'toPartyId', type: 'bytes32' },
       { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
-      { indexed: false, internalType: 'uint256', name: 'nextPartyId', type: 'uint256' },
     ],
     name: 'BalanceRolledOver',
     type: 'event',
@@ -135,6 +180,18 @@ export const PartyTreasuryABI = [
   {
     anonymous: false,
     inputs: [
+      { indexed: true, internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { indexed: true, internalType: 'address', name: 'debtor', type: 'address' },
+      { indexed: true, internalType: 'address', name: 'creditor', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'DebtSettled',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
       { indexed: true, internalType: 'address', name: 'member', type: 'address' },
       { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
       { indexed: false, internalType: 'uint256', name: 'newBalance', type: 'uint256' },
@@ -145,6 +202,16 @@ export const PartyTreasuryABI = [
   {
     anonymous: false,
     inputs: [
+      { indexed: true, internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { indexed: true, internalType: 'address', name: 'host', type: 'address' },
+    ],
+    name: 'PartyRegistered',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
       { indexed: true, internalType: 'address', name: 'member', type: 'address' },
       { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
       { indexed: false, internalType: 'string', name: 'description', type: 'string' },
@@ -155,6 +222,7 @@ export const PartyTreasuryABI = [
   {
     anonymous: false,
     inputs: [
+      { indexed: true, internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
       { indexed: true, internalType: 'address', name: 'recipient', type: 'address' },
       { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
       { indexed: false, internalType: 'string', name: 'role', type: 'string' },
@@ -163,7 +231,7 @@ export const PartyTreasuryABI = [
     type: 'event',
   },
   {
-    inputs: [],
+    inputs: [{ internalType: 'bytes32', name: 'partyId', type: 'bytes32' }],
     name: 'deposit',
     outputs: [],
     stateMutability: 'payable',
@@ -171,6 +239,7 @@ export const PartyTreasuryABI = [
   },
   {
     inputs: [
+      { internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
       { internalType: 'address payable', name: 'recipient', type: 'address' },
       { internalType: 'uint256', name: 'amount', type: 'uint256' },
       { internalType: 'string', name: 'role', type: 'string' },
@@ -182,6 +251,7 @@ export const PartyTreasuryABI = [
   },
   {
     inputs: [
+      { internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
       { internalType: 'address payable', name: 'member', type: 'address' },
       { internalType: 'uint256', name: 'amount', type: 'uint256' },
       { internalType: 'string', name: 'description', type: 'string' },
@@ -192,14 +262,23 @@ export const PartyTreasuryABI = [
     type: 'function',
   },
   {
-    inputs: [],
-    name: 'host',
-    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    inputs: [{ internalType: 'bytes32', name: 'partyId', type: 'bytes32' }],
+    name: 'getParty',
+    outputs: [
+      { internalType: 'address', name: 'host', type: 'address' },
+      { internalType: 'uint256', name: 'balance', type: 'uint256' },
+      { internalType: 'uint256', name: 'totalDeposited', type: 'uint256' },
+      { internalType: 'uint256', name: 'totalDistributed', type: 'uint256' },
+      { internalType: 'bool', name: 'exists', type: 'bool' },
+    ],
     stateMutability: 'view',
     type: 'function',
   },
   {
-    inputs: [{ internalType: 'address', name: '', type: 'address' }],
+    inputs: [
+      { internalType: 'bytes32', name: '', type: 'bytes32' },
+      { internalType: 'address', name: '', type: 'address' },
+    ],
     name: 'memberBalances',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
@@ -207,46 +286,38 @@ export const PartyTreasuryABI = [
   },
   {
     inputs: [],
-    name: 'partyId',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    name: 'owner',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
     stateMutability: 'view',
     type: 'function',
   },
   {
-    inputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-    name: 'reimbursements',
+    inputs: [{ internalType: 'bytes32', name: '', type: 'bytes32' }],
+    name: 'parties',
     outputs: [
-      { internalType: 'address', name: 'paidBy', type: 'address' },
-      { internalType: 'uint256', name: 'amount', type: 'uint256' },
-      { internalType: 'string', name: 'description', type: 'string' },
-      { internalType: 'bool', name: 'executed', type: 'bool' },
+      { internalType: 'address', name: 'host', type: 'address' },
+      { internalType: 'uint256', name: 'balance', type: 'uint256' },
+      { internalType: 'uint256', name: 'totalDeposited', type: 'uint256' },
+      { internalType: 'uint256', name: 'totalDistributed', type: 'uint256' },
+      { internalType: 'bool', name: 'exists', type: 'bool' },
     ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-    name: 'rewards',
-    outputs: [
-      { internalType: 'address', name: 'recipient', type: 'address' },
-      { internalType: 'uint256', name: 'amount', type: 'uint256' },
-      { internalType: 'string', name: 'role', type: 'string' },
-      { internalType: 'uint256', name: 'timestamp', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'rolloverBalance',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
     type: 'function',
   },
   {
     inputs: [
-      { internalType: 'address payable', name: 'nextTreasury', type: 'address' },
-      { internalType: 'uint256', name: 'nextPartyId', type: 'uint256' },
+      { internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { internalType: 'address', name: 'host', type: 'address' },
+    ],
+    name: 'registerParty',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'bytes32', name: 'fromPartyId', type: 'bytes32' },
+      { internalType: 'bytes32', name: 'toPartyId', type: 'bytes32' },
     ],
     name: 'rolloverToNextParty',
     outputs: [],
@@ -254,17 +325,13 @@ export const PartyTreasuryABI = [
     type: 'function',
   },
   {
-    inputs: [],
-    name: 'totalDeposited',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'totalDistributed',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-    stateMutability: 'view',
+    inputs: [
+      { internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { internalType: 'address payable', name: 'creditor', type: 'address' },
+    ],
+    name: 'settleDebt',
+    outputs: [],
+    stateMutability: 'payable',
     type: 'function',
   },
   {

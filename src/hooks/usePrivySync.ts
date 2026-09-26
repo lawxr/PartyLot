@@ -38,6 +38,13 @@ export function usePrivySync() {
     if (globalSyncedKey === syncKey) {
       return;
     }
+
+    // Reset previous user's cached private data if switching authenticated accounts
+    const initialStore = usePartyStore.getState();
+    if (initialStore.currentUser.isPrivyAuthenticated && initialStore.currentUser.id !== user.id) {
+      initialStore.resetUserSession();
+    }
+
     globalSyncedKey = syncKey;
 
     let isSubscribed = true;

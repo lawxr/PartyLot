@@ -193,6 +193,7 @@ export type GameId = 'whos-most-likely' | 'this-or-that' | 'crew-trivia';
 export interface WhosMostLikelyQuestion {
   id: string;
   question: string;
+  questionEs?: string;
   votes: Record<string, number>; // memberId -> count
 }
 
@@ -200,6 +201,8 @@ export interface ThisOrThatQuestion {
   id: string;
   optionA: string;
   optionB: string;
+  optionAEs?: string;
+  optionBEs?: string;
   votesA: number;
   votesB: number;
   userVote?: 'A' | 'B';
@@ -208,9 +211,12 @@ export interface ThisOrThatQuestion {
 export interface TriviaQuestion {
   id: string;
   question: string;
+  questionEs?: string;
   options: string[];
+  optionsEs?: string[];
   correctIndex: number;
   explanation: string;
+  explanationEs?: string;
 }
 
 export interface PartyRecapData {

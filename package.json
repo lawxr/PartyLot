@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "release:check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
   },
   "dependencies": {
     "@privy-io/react-auth": "^3.45.0",
@@ -34,7 +38,8 @@
     "eslint-config-next": "16.3.6",
     "puppeteer-core": "^25.11.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.1"
   },
   "packageManager": "pnpm@11.15.0",
   "overrides": {

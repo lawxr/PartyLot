@@ -234,30 +234,24 @@ export const HomeView: React.FC = () => {
 
                   {/* Tiny Avatar Stack */}
                   <div className="flex items-center -space-x-1.5 mt-2 pt-1 border-t border-black/[0.05] dark:border-white/10 lg:mt-1 lg:pt-0.5 lg:border-t-0">
-                    <div className="w-4 h-4 rounded-full overflow-hidden border border-white dark:border-[#1C1A16] bg-black/30">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80"
-                        alt="member"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="w-4 h-4 rounded-full overflow-hidden border border-white dark:border-[#1C1A16] bg-black/30">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=80&q=80"
-                        alt="member"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="w-4 h-4 rounded-full overflow-hidden border border-white dark:border-[#1C1A16] bg-black/30">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80"
-                        alt="member"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    {(crew.members && crew.members.length > 0 ? crew.members.slice(0, 3) : []).map((m, idx) => (
+                      <div
+                        key={m.id || idx}
+                        className="w-4 h-4 rounded-full overflow-hidden border border-white dark:border-[#1C1A16] bg-black/30"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80'}
+                          alt={m.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                    {(crew.membersCount || 0) > 3 && (
+                      <span className="text-[9px] font-bold text-[#8E887E] dark:text-[#A8A196] pl-1.5">
+                        +{crew.membersCount - 3}
+                      </span>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -281,68 +275,81 @@ export const HomeView: React.FC = () => {
           </div>
 
           {/* Upcoming Party Card */}
-          <motion.div
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              const nextParty = parties[1] || parties[0];
-              if (nextParty) selectParty(nextParty.id);
-            }}
-            className="rounded-[24px] p-3 sm:p-3.5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 shadow-[0_8px_24px_rgba(65,48,25,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:shadow-md transition-all cursor-pointer flex items-center gap-3.5 sm:gap-4"
-          >
-            {/* Square Photo with Date Overlay */}
-            <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-[18px] overflow-hidden relative shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80"
-                alt="Rooftop Dinner"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/35 flex flex-col items-center justify-center text-white text-center">
-                <span className="text-[10px] font-extrabold tracking-wider uppercase opacity-90 block leading-tight">
-                  {isEs ? 'VIE' : 'FRI'}
-                </span>
-                <span className="text-xs font-black block leading-tight">
-                  Sep 26
-                </span>
-              </div>
-            </div>
+          {(() => {
+            const nextParty = parties[1] || parties[0];
+            if (!nextParty) {
+              return (
+                <div
+                  onClick={() => setCurrentView('create-party')}
+                  className="rounded-[24px] p-5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-dashed border-black/15 dark:border-white/15 text-center cursor-pointer hover:border-[#F0DC00] transition-colors"
+                >
+                  <p className="font-bold text-sm text-[#171512] dark:text-white">
+                    {isEs ? 'No hay fiestas próximas. ¡Crea una!' : 'No upcoming parties. Create one!'}
+                  </p>
+                </div>
+              );
+            }
 
-            {/* Details */}
-            <div className="flex-1 min-w-0">
-              <h4 className="font-display font-black text-sm sm:text-base text-[#171512] dark:text-white truncate">
-                Rooftop Dinner
-              </h4>
-              <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] font-semibold mt-0.5 mb-2 truncate">
-                8:00 PM · El Poblado
-              </p>
-
-              {/* Avatar Stack +6 */}
-              <div className="flex items-center -space-x-1.5">
-                {[
-                  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80',
-                  'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=80&q=80',
-                  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80',
-                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80',
-                ].map((avatar, idx) => (
-                  <div
-                    key={idx}
-                    className="w-5 h-5 rounded-full overflow-hidden border border-white dark:border-[#1C1A16] bg-black/20"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={avatar} alt="attendee" className="w-full h-full object-cover" />
+            return (
+              <motion.div
+                whileTap={{ scale: 0.98 }}
+                onClick={() => selectParty(nextParty.id)}
+                className="rounded-[24px] p-3 sm:p-3.5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 shadow-[0_8px_24px_rgba(65,48,25,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:shadow-md transition-all cursor-pointer flex items-center gap-3.5 sm:gap-4"
+              >
+                {/* Square Photo with Date Overlay */}
+                <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-[18px] overflow-hidden relative shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={nextParty.coverImage || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80'}
+                    alt={nextParty.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white text-center p-1">
+                    <span className="text-[10px] font-extrabold tracking-wider uppercase opacity-90 block leading-tight">
+                      {nextParty.date}
+                    </span>
                   </div>
-                ))}
-                <span className="text-[10px] font-bold text-[#8E887E] dark:text-[#A8A196] pl-2">
-                  +6
-                </span>
-              </div>
-            </div>
+                </div>
 
-            {/* Right Arrow Chevron */}
-            <div className="text-[#8E887E] dark:text-[#A8A196] pr-1">
-              <ChevronRight className="w-5 h-5" />
-            </div>
-          </motion.div>
+                {/* Details */}
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-display font-black text-sm sm:text-base text-[#171512] dark:text-white truncate">
+                    {nextParty.title}
+                  </h4>
+                  <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] font-semibold mt-0.5 mb-2 truncate">
+                    {nextParty.time} · {nextParty.location}
+                  </p>
+
+                  {/* Avatar Stack */}
+                  <div className="flex items-center -space-x-1.5">
+                    {(nextParty.members || []).slice(0, 4).map((m, idx) => (
+                      <div
+                        key={m.id || idx}
+                        className="w-5 h-5 rounded-full overflow-hidden border border-white dark:border-[#1C1A16] bg-black/20"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80'}
+                          alt={m.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                    {(nextParty.members || []).length > 4 && (
+                      <span className="text-[10px] font-bold text-[#8E887E] dark:text-[#A8A196] pl-2">
+                        +{nextParty.members.length - 4}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Arrow Chevron */}
+                <div className="text-[#8E887E] dark:text-[#A8A196] pr-1">
+                  <ChevronRight className="w-5 h-5" />
+                </div>
+              </motion.div>
+            );
+          })()}
         </section>
       </div>
     </div>

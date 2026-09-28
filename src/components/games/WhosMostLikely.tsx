@@ -22,18 +22,28 @@ export const WhosMostLikely: React.FC = () => {
   const party = parties.find((p) => p.id === currentPartyId) || parties[0] || fallbackParty;
   const partyMembers = party.members || [];
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [votedMemberId, setVotedMemberId] = useState<string | null>('u-sofi');
+  const [votedMemberId, setVotedMemberId] = useState<string | null>(null);
 
   const questions = whosMostLikely && whosMostLikely.length > 0 ? whosMostLikely : WHOS_MOST_LIKELY_QUESTIONS;
   const currentQ = questions[questionIndex % questions.length] || WHOS_MOST_LIKELY_QUESTIONS[0];
   const questionText = (isEs && currentQ.questionEs) ? currentQ.questionEs : currentQ.question;
 
-  // Get party participants list (curated 6 friends for the 2x3 grid)
-  const defaultFriends = [
+  // Curated fallback friends if party members are still loading or fewer than needed
+  const fallbackFriends = [
     {
-      id: 'u-ana',
-      name: 'Ana',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+      id: 'u-law',
+      name: 'Law',
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
+    },
+    {
+      id: 'u-valen-test',
+      name: 'Valen',
+      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
+    },
+    {
+      id: 'test-user',
+      name: 'Carlos',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
     },
     {
       id: 'u-sofi',
@@ -46,27 +56,20 @@ export const WhosMostLikely: React.FC = () => {
       avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80',
     },
     {
-      id: 'u-valen',
-      name: 'Valen',
-      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
-    },
-    {
-      id: 'u-diego',
-      name: 'Diego',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
-    },
-    {
-      id: 'u-sara',
-      name: 'Sara',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      id: 'u-ana',
+      name: 'Ana',
+      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
     },
   ];
 
-  // Merge with actual party members if available, ensuring 6 slots
-  const friendsToDisplay = defaultFriends.map((df) => {
-    const existing = partyMembers.find((m) => m.id === df.id || m.name.toLowerCase() === df.name.toLowerCase());
-    return existing ? { id: existing.id, name: existing.name, avatar: existing.avatar || df.avatar } : df;
-  });
+  // Prioritize real party members
+  const friendsToDisplay = partyMembers.length >= 2
+    ? partyMembers.slice(0, 6).map((m) => ({
+        id: m.id,
+        name: m.name,
+        avatar: m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      }))
+    : fallbackFriends;
 
   const totalQuestions = questions.length;
   const currentStep = (questionIndex % totalQuestions) + 1;
@@ -150,7 +153,7 @@ export const WhosMostLikely: React.FC = () => {
       <div className="grid grid-cols-3 gap-y-5 gap-x-4 my-2 px-2">
         {friendsToDisplay.map((friend) => {
           const isSelected = votedMemberId === friend.id;
-          const votesCount = currentQ.votes[friend.id] || (isSelected ? 3 : 0);
+          const votesCount = currentQ.votes?.[friend.id] || (isSelected ? 1 : 0);
 
           return (
             <motion.div

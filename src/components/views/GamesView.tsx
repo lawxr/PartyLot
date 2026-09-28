@@ -20,10 +20,10 @@ export const GamesView: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-28 pt-2 transition-colors">
+    <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-28 pt-2 transition-colors">
       <main className="px-4 sm:px-6 max-w-lg md:max-w-xl mx-auto w-full">
         {/* Game switcher */}
-        <div className="flex justify-center gap-1.5 p-1 rounded-full glass-strong border border-black/10 mb-4 max-w-xs mx-auto shadow-sm">
+        <div className="flex justify-center gap-1.5 p-1 rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 mb-4 max-w-xs mx-auto shadow-sm">
           {games.map((g) => {
             const isActive = activeGameId === g.id;
             return (
@@ -33,7 +33,7 @@ export const GamesView: React.FC = () => {
                 className={`py-1.5 px-3 rounded-full text-xs font-display font-bold shrink-0 transition-all cursor-pointer ${
                   isActive
                     ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
-                    : 'text-[#6F6A62] hover:text-[#171512]'
+                    : 'text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white'
                 }`}
               >
                 <span>{g.label}</span>

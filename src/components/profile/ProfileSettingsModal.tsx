@@ -17,6 +17,9 @@ import {
   Moon,
   Sun,
   LogOut,
+  Activity,
+  Shield,
+  FileText,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { usePrivySync } from '@/hooks/usePrivySync';
@@ -343,6 +346,75 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                   {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copied ? (isEs ? 'Copiado' : 'Copied') : (isEs ? 'Copiar' : 'Copy')}</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Legal & Platform Transparency */}
+            <div className="pt-2 pb-1 border-t border-black/5 dark:border-white/10 mt-1">
+              <span className="text-[10px] uppercase font-mono tracking-widest text-[#8E887E] dark:text-[#A8A196] block mb-2">
+                {isEs ? 'Transparencia & Legal' : 'Transparency & Legal'}
+              </span>
+
+              <div className="space-y-1">
+                <a
+                  href="/stats"
+                  className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-[#F0DC00]/20 flex items-center justify-center text-[#B89600] dark:text-[#F0DC00]">
+                      <Activity className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                        {isEs ? 'Métricas & Stats del Proyecto' : 'Project Stats & Metrics'}
+                      </span>
+                      <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                        {isEs ? 'Actividad y contratos en Monad' : 'Activity and Monad contracts'}
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[#8E887E] dark:text-[#A8A196]" />
+                </a>
+
+                <a
+                  href="/privacy"
+                  className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white">
+                      <Shield className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                        {isEs ? 'Tratamiento de Datos y Privacidad' : 'Data Treatment & Privacy'}
+                      </span>
+                      <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                        {isEs ? 'Habeas Data, GDPR y Cookies' : 'GDPR, privacy & cookies'}
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[#8E887E] dark:text-[#A8A196]" />
+                </a>
+
+                <a
+                  href="/terms"
+                  className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white">
+                      <FileText className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#171512] dark:text-white block">
+                        {isEs ? 'Términos y Condiciones' : 'Terms of Service'}
+                      </span>
+                      <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196]">
+                        {isEs ? 'Condiciones de uso y no custodia' : 'Usage and non-custodial terms'}
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[#8E887E] dark:text-[#A8A196]" />
+                </a>
               </div>
             </div>
 

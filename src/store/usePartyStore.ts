@@ -42,6 +42,7 @@ import {
   subscribeToPartyRealtime,
   subscribeToTasksRealtime,
   persistPartyMemoryToSupabase,
+  persistGameSessionToSupabase,
 } from '@/services/supabaseService';
 import {
   WHOS_MOST_LIKELY_QUESTIONS,
@@ -1146,6 +1147,16 @@ export const usePartyStore = create<PartyStoreState>()(
             return q;
           });
 
+          const currentPartyId = state.currentPartyId || state.parties[0]?.id;
+          if (currentPartyId) {
+            persistGameSessionToSupabase({
+              id: `gs-${currentPartyId}-wml`,
+              partyId: currentPartyId,
+              gameType: 'whos-most-likely',
+              questions: updated,
+            });
+          }
+
           return { whosMostLikely: updated };
         });
       },
@@ -1156,13 +1167,24 @@ export const usePartyStore = create<PartyStoreState>()(
             if (q.id === questionId) {
               return {
                 ...q,
-                votesA: choice === 'A' ? q.votesA + 1 : q.votesA,
-                votesB: choice === 'B' ? q.votesB + 1 : q.votesB,
+                votesA: choice === 'A' ? (q.votesA || 0) + 1 : (q.votesA || 0),
+                votesB: choice === 'B' ? (q.votesB || 0) + 1 : (q.votesB || 0),
                 userVote: choice,
               };
             }
             return q;
           });
+
+          const currentPartyId = state.currentPartyId || state.parties[0]?.id;
+          if (currentPartyId) {
+            persistGameSessionToSupabase({
+              id: `gs-${currentPartyId}-tot`,
+              partyId: currentPartyId,
+              gameType: 'this-or-that',
+              questions: updated,
+            });
+          }
+
           return { thisOrThat: updated };
         });
       },
@@ -1605,8 +1627,6 @@ export function useHydrateStore() {
   const hydrateFromSupabase = usePartyStore((state) => state.hydrateFromSupabase);
   
   useEffect(() => {
-    if (!demoMode) {
-      hydrateFromSupabase();
-    }
+    hydrateFromSupabase();
   }, [hydrateFromSupabase]);
 }

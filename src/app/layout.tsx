@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { PrivyClientProvider } from "@/components/providers/PrivyClientProvider";
+import { CookieConsentBanner } from "@/components/ui/CookieConsentBanner";
 
 export const metadata: Metadata = {
   title: "PARTYLOT — Plan Your Party",
@@ -40,6 +41,7 @@ export default function RootLayout({
         <div className="grain" aria-hidden="true" />
         <PrivyClientProvider>
           {children}
+          <CookieConsentBanner />
         </PrivyClientProvider>
       </body>
     </html>

@@ -28,7 +28,7 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { PartyInviteModal } from '@/components/ui/PartyInviteModal';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
 import { GlassButton } from '@/components/ui/GlassButton';
-import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
+import { TokenLogo, CryptoBadge, MonadLogo } from '@/components/ui/TokenLogo';
 import { Member, PartyMemory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { uploadImageFile } from '@/services/storageService';
@@ -416,7 +416,8 @@ export const PartyDetailView: React.FC = () => {
                 <span className="font-display font-black text-xl sm:text-[26px] text-[#161514] dark:text-white tracking-tight leading-none">
                   {(party?.potBalance ?? 0).toFixed(2)}
                 </span>
-                <span className="text-[10px] font-bold text-[#836EF9] bg-[#836EF9]/10 dark:bg-[#836EF9]/20 px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold text-[#836EF9] bg-[#836EF9]/10 dark:bg-[#836EF9]/20 px-1.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                  <MonadLogo size="xs" className="w-2.5 h-2.5" />
                   MON
                 </span>
                 {monPrice && (

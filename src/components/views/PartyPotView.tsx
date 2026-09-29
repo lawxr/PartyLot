@@ -27,6 +27,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { MONAD_CONTRACT_ADDRESSES } from '@/contracts';
 import { useMonPrice } from '@/hooks/useMonPrice';
 import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
+import { UsdcLogo, MonadLogo } from '@/components/ui/TokenLogo';
 
 export const PartyPotView: React.FC = () => {
   const {
@@ -406,26 +407,27 @@ export const PartyPotView: React.FC = () => {
           </div>
         )}
 
-        {/* 3 Action Squircles (Add, Withdraw, QR Code) */}
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-6">
+        {/* 3 Action Tabs inside Unified Capsule Container (Matching Design Reference Mockup) */}
+        <div className="rounded-[28px] sm:rounded-[32px] bg-white dark:bg-[#1E1B17] p-2 shadow-[0_4px_20px_rgba(65,48,25,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.35)] border border-black/[0.04] dark:border-white/10 grid grid-cols-3 gap-1.5 sm:gap-2 mb-6">
           {/* 1. Add */}
           <button
+            type="button"
             onClick={() => {
               setActiveTab('add');
               setTxError(null);
             }}
-            className={`py-3.5 px-3 rounded-[24px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-3.5 px-2 rounded-[22px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'add'
-                ? 'bg-[#F0DC00] text-[#171512] font-bold shadow-xs scale-[1.02]'
-                : 'bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[#736C61] dark:text-[#A8A196] hover:bg-white dark:hover:bg-white/10'
+                ? 'bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-bold shadow-none'
+                : 'bg-transparent text-[#736C61] dark:text-[#A8A196] hover:bg-black/[0.03] dark:hover:bg-white/5 font-medium'
             }`}
           >
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                activeTab === 'add' ? 'border border-[#171512]' : 'border border-current'
+              className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                activeTab === 'add' ? 'border-[1.8px] border-[#161514]' : 'border-[1.8px] border-current'
               }`}
             >
-              <Plus className="w-3.5 h-3.5 stroke-[2.8]" />
+              <Plus className="w-3 h-3 stroke-[3]" />
             </div>
             <span className="text-xs font-bold leading-none tracking-tight">
               {isEs ? 'Añadir' : 'Add'}
@@ -434,23 +436,18 @@ export const PartyPotView: React.FC = () => {
 
           {/* 2. Withdraw */}
           <button
+            type="button"
             onClick={() => {
               setActiveTab('withdraw');
               setTxError(null);
             }}
-            className={`py-3.5 px-3 rounded-[24px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-3.5 px-2 rounded-[22px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'withdraw'
-                ? 'bg-[#F0DC00] text-[#171512] font-bold shadow-xs scale-[1.02]'
-                : 'bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[#736C61] dark:text-[#A8A196] hover:bg-white dark:hover:bg-white/10'
+                ? 'bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-bold shadow-none'
+                : 'bg-transparent text-[#736C61] dark:text-[#A8A196] hover:bg-black/[0.03] dark:hover:bg-white/5 font-medium'
             }`}
           >
-            <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                activeTab === 'withdraw' ? 'border border-[#171512]' : 'border border-current'
-              }`}
-            >
-              <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />
-            </div>
+            <ArrowUp className="w-5 h-5 stroke-[2.4]" />
             <span className="text-xs font-bold leading-none tracking-tight">
               {isEs ? 'Retirar' : 'Withdraw'}
             </span>
@@ -458,14 +455,15 @@ export const PartyPotView: React.FC = () => {
 
           {/* 3. QR Code */}
           <button
+            type="button"
             onClick={() => {
               setActiveTab('qr');
               setTxError(null);
             }}
-            className={`py-3.5 px-3 rounded-[24px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-3.5 px-2 rounded-[22px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'qr'
-                ? 'bg-[#F0DC00] text-[#171512] font-bold shadow-xs scale-[1.02]'
-                : 'bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[#736C61] dark:text-[#A8A196] hover:bg-white dark:hover:bg-white/10'
+                ? 'bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-bold shadow-none'
+                : 'bg-transparent text-[#736C61] dark:text-[#A8A196] hover:bg-black/[0.03] dark:hover:bg-white/5 font-medium'
             }`}
           >
             <QrCode className="w-5 h-5 stroke-[2.2]" />
@@ -510,10 +508,10 @@ export const PartyPotView: React.FC = () => {
                         key={amt}
                         type="button"
                         onClick={() => handleSelectSuggested(amt)}
-                        className={`py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer text-center ${
+                        className={`py-3 rounded-[22px] sm:rounded-[26px] text-xs sm:text-sm font-bold transition-all cursor-pointer text-center ${
                           isSelected
-                            ? 'bg-[#F0DC00] text-[#171512] shadow-xs scale-[1.02]'
-                            : 'bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[#171512] dark:text-white hover:bg-white dark:hover:bg-white/10'
+                            ? 'bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-black shadow-[0_2px_12px_rgba(240,220,0,0.3)]'
+                            : 'bg-white dark:bg-[#1E1B17] text-[#171512] dark:text-white shadow-[0_2px_8px_rgba(65,48,25,0.03)] border border-black/[0.04] dark:border-white/10 hover:border-black/15'
                         }`}
                       >
                         ${amt}
@@ -541,30 +539,24 @@ export const PartyPotView: React.FC = () => {
               )}
             </div>
 
-            {/* Token & Network Selector Card */}
+            {/* Token & Network Selector Card with Official Circle USDC & Monad SVGs */}
             <div className="relative">
               <div
                 onClick={() => setIsTokenSelectorOpen(!isTokenSelectorOpen)}
-                className="p-3.5 sm:p-4 rounded-2xl bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-xs flex items-center justify-between cursor-pointer hover:border-black/15 transition-all"
+                className="p-3.5 sm:p-4 rounded-[24px] sm:rounded-[28px] bg-white dark:bg-[#1E1B17] border border-black/[0.04] dark:border-white/10 shadow-[0_4px_16px_rgba(65,48,25,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] flex items-center justify-between cursor-pointer hover:border-black/15 transition-all"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3.5">
                   {selectedToken === 'USDC' ? (
-                    <div className="w-10 h-10 rounded-full bg-[#2775CA] flex items-center justify-center text-white shrink-0 shadow-sm">
-                      <div className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs">
-                        $
-                      </div>
-                    </div>
+                    <UsdcLogo size="xl" className="w-10 h-10 shrink-0" />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-[#836EF9] flex items-center justify-center text-white shrink-0 shadow-sm font-bold text-xs">
-                      MON
-                    </div>
+                    <MonadLogo size="xl" className="w-10 h-10 shrink-0" />
                   )}
                   <div>
                     <span className="font-bold text-sm text-[#171512] dark:text-white block leading-tight">
                       {selectedToken === 'USDC' ? 'USDC · Base' : 'MON · Monad Testnet'}
                     </span>
                     <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block mt-0.5">
-                      {isEs ? 'Rápido, gas patrocinado' : 'Fast, low fees'}
+                      {isEs ? 'Rápido, comisiones bajas' : 'Fast, low fees'}
                     </span>
                   </div>
                 </div>
@@ -598,9 +590,7 @@ export const PartyPotView: React.FC = () => {
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-full bg-[#2775CA] text-white flex items-center justify-center text-[10px] font-bold">
-                          $
-                        </div>
+                        <UsdcLogo size="lg" className="w-6 h-6" />
                         <span>USDC · Base Network</span>
                       </div>
                       {selectedToken === 'USDC' && <Check className="w-4 h-4 text-[#171512] dark:text-white" />}
@@ -619,9 +609,7 @@ export const PartyPotView: React.FC = () => {
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-full bg-[#836EF9] text-white flex items-center justify-center text-[10px] font-bold">
-                          M
-                        </div>
+                        <MonadLogo size="lg" className="w-6 h-6" />
                         <span>MON · Monad Testnet</span>
                       </div>
                       {selectedToken === 'MON' && <Check className="w-4 h-4 text-[#171512] dark:text-white" />}
@@ -636,10 +624,10 @@ export const PartyPotView: React.FC = () => {
               whileTap={{ scale: 0.98 }}
               onClick={handleAddFunds}
               disabled={isProcessing}
-              className="w-full py-4 rounded-full bg-[#F0DC00] text-[#171512] font-display font-black text-sm sm:text-base tracking-tight shadow-md hover:scale-[1.01] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-4 rounded-full bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-display font-black text-sm sm:text-base tracking-tight shadow-[0_6px_20px_rgba(240,220,0,0.35)] hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isProcessing ? (
-                <div className="w-5 h-5 border-2 border-[#171512] border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-[#161514] border-t-transparent rounded-full animate-spin" />
               ) : (
                 <span>
                   {isEs
@@ -787,10 +775,10 @@ export const PartyPotView: React.FC = () => {
                           decoding="async"
                         />
                         <div
-                          className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white shadow-xs ${
+                          className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white dark:border-[#181613] shadow-xs ${
                             isDeposit
-                              ? 'bg-[#F0DC00] text-[#171512]'
-                              : 'bg-rose-500 text-white'
+                              ? 'bg-[#FFE600] text-[#161514]'
+                              : 'bg-[#FFCCD5] text-[#900B22]'
                           }`}
                         >
                           {isDeposit ? '+' : '-'}

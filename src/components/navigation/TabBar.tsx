@@ -27,50 +27,56 @@ export const TabBar: React.FC = () => {
         aria-label="Main Navigation"
         className="pointer-events-auto liquid-glass-nav rounded-[36px] px-2.5 sm:px-3 py-1.5 sm:py-2 flex items-center max-w-sm sm:max-w-md w-full justify-around"
       >
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive =
-            (currentView === 'home' && activeTab === tab.id) ||
-            (currentView === 'profile' && tab.id === 'profile');
+        <div role="tablist" aria-label="Main Sections" className="flex items-center w-full justify-around">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive =
+              (currentView === 'home' && activeTab === tab.id) ||
+              (currentView === 'profile' && tab.id === 'profile');
 
-          return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                if (currentView !== 'home') {
-                  setCurrentView('home');
-                }
-                setActiveTab(tab.id);
-              }}
-              className="relative py-2 px-3.5 sm:px-4.5 rounded-[24px] flex flex-col items-center justify-center transition-transform active:scale-95 cursor-pointer"
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="activeTabBadge"
-                  className="absolute inset-0 rounded-[24px]"
-                  style={{
-                    background: 'linear-gradient(145deg, #FFE973, #FFCE18 68%, #F8BF0A)',
-                    boxShadow:
-                      '0 0 20px rgba(255, 212, 41, 0.5), 0 4px 12px rgba(235, 179, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.75)',
-                  }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                />
-              )}
-              <Icon
-                className={`relative z-10 w-5 h-5 transition-colors duration-200 ${
-                  isActive ? 'text-[#171512] stroke-[2.2]' : 'text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white'
-                }`}
-              />
-              <span
-                className={`relative z-10 text-[10px] mt-0.5 tracking-tight font-semibold transition-colors ${
-                  isActive ? 'text-[#171512] font-bold' : 'text-[#6F6A62] dark:text-[#A8A196]'
-                }`}
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={isActive}
+                aria-label={tab.label}
+                tabIndex={0}
+                onClick={() => {
+                  if (currentView !== 'home') {
+                    setCurrentView('home');
+                  }
+                  setActiveTab(tab.id);
+                }}
+                className="relative py-2 px-3.5 sm:px-4.5 rounded-[24px] flex flex-col items-center justify-center transition-transform active:scale-95 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#F0DC00] focus-visible:outline-offset-2"
               >
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTabBadge"
+                    className="absolute inset-0 rounded-[24px]"
+                    style={{
+                      background: 'linear-gradient(145deg, #FFE973, #FFCE18 68%, #F8BF0A)',
+                      boxShadow:
+                        '0 0 20px rgba(255, 212, 41, 0.5), 0 4px 12px rgba(235, 179, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.75)',
+                    }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <Icon
+                  className={`relative z-10 w-5 h-5 transition-colors duration-200 ${
+                    isActive ? 'text-[#171512] stroke-[2.2]' : 'text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white'
+                  }`}
+                />
+                <span
+                  className={`relative z-10 text-[10px] mt-0.5 tracking-tight font-semibold transition-colors ${
+                    isActive ? 'text-[#171512] font-bold' : 'text-[#6F6A62] dark:text-[#A8A196]'
+                  }`}
+                >
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );

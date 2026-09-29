@@ -32,22 +32,22 @@ export const SplitOptionsMenu: React.FC<SplitOptionsMenuProps> = ({
             onClose();
             onOpenAddExpense();
           }}
-          className="w-full p-3.5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between text-left hover:bg-[#F7F2E8] transition-all cursor-pointer"
+          className="w-full p-3.5 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-[rgba(35,30,22,0.08)] dark:border-white/10 flex items-center justify-between text-left hover:bg-[#F7F2E8] dark:hover:bg-white/10 transition-all cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#F0DC00]/20 flex items-center justify-center text-[#171512]">
+            <div className="w-9 h-9 rounded-xl bg-[#F0DC00]/20 flex items-center justify-center text-[#171512] dark:text-[#F0DC00]">
               <Plus className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div>
-              <span className="font-bold text-sm text-[#171512] block">
+              <span className="font-bold text-sm text-[#171512] dark:text-white block">
                 {t.split.addExpense}
               </span>
-              <span className="text-xs text-[#8A8173]">
+              <span className="text-xs text-[#8A8173] dark:text-[#A8A196]">
                 {isEs ? 'Registra una factura pagada por alguien' : 'Log a bill paid by someone'}
               </span>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#999187]" />
+          <ChevronRight className="w-4 h-4 text-[#999187] dark:text-[#A8A196]" />
         </button>
 
         <button
@@ -56,20 +56,20 @@ export const SplitOptionsMenu: React.FC<SplitOptionsMenuProps> = ({
             onClose();
             onOpenSettle();
           }}
-          className="w-full p-3.5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between text-left hover:bg-[#F7F2E8] transition-all cursor-pointer"
+          className="w-full p-3.5 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-[rgba(35,30,22,0.08)] dark:border-white/10 flex items-center justify-between text-left hover:bg-[#F7F2E8] dark:hover:bg-white/10 transition-all cursor-pointer"
         >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#2775CA]/20 to-[#836EF9]/20 flex items-center justify-center text-[#2775CA]">
               <TokenLogo token="usdc" size="sm" />
             </div>
             <div>
-              <span className="font-bold text-sm text-[#171512] block">
+              <span className="font-bold text-sm text-[#171512] dark:text-white block">
                 {t.split.settleOnMonad}
               </span>
-              <span className="text-xs text-[#8A8173]">{t.split.settleSubtitle}</span>
+              <span className="text-xs text-[#8A8173] dark:text-[#A8A196]">{t.split.settleSubtitle}</span>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#999187]" />
+          <ChevronRight className="w-4 h-4 text-[#999187] dark:text-[#A8A196]" />
         </button>
 
         <button
@@ -81,22 +81,22 @@ export const SplitOptionsMenu: React.FC<SplitOptionsMenuProps> = ({
               onClose();
             }
           }}
-          className="w-full p-3.5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between text-left hover:bg-[#F7F2E8] transition-all cursor-pointer"
+          className="w-full p-3.5 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-[rgba(35,30,22,0.08)] dark:border-white/10 flex items-center justify-between text-left hover:bg-[#F7F2E8] dark:hover:bg-white/10 transition-all cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#FAF7F2] flex items-center justify-center text-[#171512]">
-              <Share2 className="w-5 h-5 text-[#8A8173]" />
+            <div className="w-9 h-9 rounded-xl bg-[#FAF7F2] dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white">
+              <Share2 className="w-5 h-5 text-[#8A8173] dark:text-[#A8A196]" />
             </div>
             <div>
-              <span className="font-bold text-sm text-[#171512] block">
+              <span className="font-bold text-sm text-[#171512] dark:text-white block">
                 {t.split.copyShareLink}
               </span>
-              <span className="text-xs text-[#8A8173]">
+              <span className="text-xs text-[#8A8173] dark:text-[#A8A196]">
                 {isEs ? 'Envía este desglose a tu grupo' : 'Send this split to the group'}
               </span>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#999187]" />
+          <ChevronRight className="w-4 h-4 text-[#999187] dark:text-[#A8A196]" />
         </button>
       </div>
     </BottomSheet>

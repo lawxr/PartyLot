@@ -17,7 +17,7 @@ Undefined CSS tokens in shared buttons, fictitious actionable content on Home, s
 ## Tasks
 - [x] T1 — Fix `.accent-button` / `.pill-outline` to use defined tokens (`--party-yellow`, `--text-primary`/`--foreground`). Route: inline.
 - [x] T2 — Remove Home fictitious hero party and hardcoded `+12` counter; add a useful empty state wired to create/join. Audit visible actions that do nothing. Route: delegated (multi-file).
-- [ ] T3 — Consolidate glass classes and replace hardcoded hex colors/radii in views with semantic tokens. Route: delegated (4+ files).
+- [x] T3 — Consolidate glass classes and replace hardcoded hex colors/radii in views with semantic tokens. Route: delegated (4+ files).
 
 ## Acceptance criteria
 - A new account understands what to do and never mistakes sample content for real activity.
@@ -27,4 +27,5 @@ Undefined CSS tokens in shared buttons, fictitious actionable content on Home, s
 ## Progress / evidence
 - Findings verified: `--yellow`/`--ink` undefined (globals.css:417-446); Home fallback hero `p-404` (HomeView.tsx:42).
 - T1 executed in commit `eceedc4`: `--party-yellow` & `--on-party-yellow` applied to `.accent-button` and `.pill-outline`.
-- T2 executed: Home empty state wired to `create-party` & `join-party`; dynamic member count and fallback implemented; upcoming party deduplicated; unused lint warnings resolved.
+- T2 executed in commit `e58d762`: Home empty state wired to `create-party` & `join-party`; dynamic member count and fallback implemented; upcoming party deduplicated; unused lint warnings resolved.
+- T3 executed: Added semantic `.split-hero-card` to globals.css; added full dark mode tokens and accessible keyboard/ARIA semantics across TabBar, SplashView, SplitView, BottomSheet, AddExpenseSheet, SettleDebtsSheet, and SplitOptionsMenu.

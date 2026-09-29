@@ -59,7 +59,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
     <BottomSheet isOpen={isOpen} onClose={onClose} title={t.split.addExpense}>
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196] mb-1.5">
             {t.split.categoryLabel}
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -73,8 +73,8 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                   onClick={() => setCategory(cat.id)}
                   className={`flex items-center gap-1.5 p-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                     isSelected
-                      ? 'border-[#F0DC00] bg-[#FFF5C0] text-[#171512]'
-                      : 'border-[rgba(35,30,22,0.08)] bg-[#F7F2E8] text-[#6F6A62] hover:text-[#171512]'
+                      ? 'border-[#F0DC00] bg-[#FFF5C0] dark:bg-[#F0DC00]/20 text-[#171512] dark:text-[#F0DC00]'
+                      : 'border-[rgba(35,30,22,0.08)] dark:border-white/10 bg-[#F7F2E8] dark:bg-white/5 text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white'
                   }`}
                 >
                   <IconComponent className="w-3.5 h-3.5 text-[#B89600]" />
@@ -86,7 +86,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196] mb-1.5">
             {t.split.descLabel}
           </label>
           <input
@@ -95,16 +95,16 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             placeholder="e.g. Cocktails, Artisanal Pizza, Uber XL..."
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] placeholder-[#999187] text-base font-semibold outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
+            className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-white placeholder-[#999187] dark:placeholder-[#6F6A62] text-base font-semibold outline-none border border-[rgba(35,30,22,0.1)] dark:border-white/15 focus:border-[#F0DC00]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196] mb-1.5">
             {t.split.amountLabel}
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-display font-black text-xl text-[#8E887E]">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-display font-black text-xl text-[#8E887E] dark:text-[#A8A196]">
               $
             </span>
             <input
@@ -114,13 +114,13 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
               placeholder="0.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full pl-9 pr-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
+              className="w-full pl-9 pr-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-white font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] dark:border-white/15 focus:border-[#F0DC00]"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196] mb-1.5">
             {t.split.paidByLabel}
           </label>
           <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
@@ -132,7 +132,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                 className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
                   paidById === member.id
                     ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
-                    : 'bg-[#F7F2E8] text-[#6F6A62] border border-[rgba(35,30,22,0.08)]'
+                    : 'bg-[#F7F2E8] dark:bg-white/5 text-[#6F6A62] dark:text-[#A8A196] border border-[rgba(35,30,22,0.08)] dark:border-white/10'
                 }`}
               >
                 <div className="w-5 h-5 rounded-full overflow-hidden bg-[#EFEAE2]">
@@ -146,7 +146,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5 flex justify-between">
+          <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196] mb-1.5 flex justify-between">
             <span>{t.split.splitBetweenLabel}</span>
             <span className="text-[#B89600] font-bold">{splitBetween.length} selected</span>
           </label>
@@ -160,8 +160,8 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                   onClick={() => toggleSplitMember(member.id)}
                   className={`flex items-center gap-2 p-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                     isSelected
-                      ? 'border-[#F0DC00] bg-[#FFF5C0] text-[#171512]'
-                      : 'border-[rgba(35,30,22,0.08)] bg-[#F7F2E8] text-[#6F6A62]'
+                      ? 'border-[#F0DC00] bg-[#FFF5C0] dark:bg-[#F0DC00]/20 text-[#171512] dark:text-[#F0DC00]'
+                      : 'border-[rgba(35,30,22,0.08)] dark:border-white/10 bg-[#F7F2E8] dark:bg-white/5 text-[#6F6A62] dark:text-[#A8A196]'
                   }`}
                 >
                   <div className="w-5 h-5 rounded-full overflow-hidden bg-[#EFEAE2] shrink-0">

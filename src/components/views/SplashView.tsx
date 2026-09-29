@@ -69,8 +69,17 @@ export const SplashView: React.FC = () => {
         >
           {/* Left card */}
           <div
+            role="button"
+            tabIndex={0}
+            aria-label={`${t.splash.newYorkJam}, Miami`}
             onClick={handleGetStarted}
-            className="group absolute left-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform -rotate-6 hover:-rotate-2 hover:scale-105 hover:z-30 shadow-xl hover:shadow-[0_16px_40px_rgba(0,0,0,0.8)] border border-white/20 hover:border-white/50 overflow-hidden cursor-pointer transition-all duration-300 active:scale-95"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleGetStarted();
+              }
+            }}
+            className="group absolute left-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform -rotate-6 hover:-rotate-2 hover:scale-105 hover:z-30 shadow-xl hover:shadow-[0_16px_40px_rgba(0,0,0,0.8)] border border-white/20 hover:border-white/50 overflow-hidden cursor-pointer transition-all duration-300 active:scale-95 focus-visible:outline-2 focus-visible:outline-[#F0DC00] focus-visible:outline-offset-2"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -112,8 +121,17 @@ export const SplashView: React.FC = () => {
 
           {/* Right card */}
           <div
+            role="button"
+            tabIndex={0}
+            aria-label={`${t.splash.rooftopParty}, Jersey`}
             onClick={handleGetStarted}
-            className="group absolute right-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform rotate-6 hover:rotate-2 hover:scale-105 hover:z-30 shadow-xl hover:shadow-[0_16px_40px_rgba(0,0,0,0.8)] border border-white/20 hover:border-white/50 overflow-hidden cursor-pointer transition-all duration-300 active:scale-95"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleGetStarted();
+              }
+            }}
+            className="group absolute right-2 w-[160px] h-[140px] rounded-2xl liquid-glass-card p-3 flex flex-col justify-end transform rotate-6 hover:rotate-2 hover:scale-105 hover:z-30 shadow-xl hover:shadow-[0_16px_40px_rgba(0,0,0,0.8)] border border-white/20 hover:border-white/50 overflow-hidden cursor-pointer transition-all duration-300 active:scale-95 focus-visible:outline-2 focus-visible:outline-[#F0DC00] focus-visible:outline-offset-2"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -155,8 +173,17 @@ export const SplashView: React.FC = () => {
 
           {/* Center card */}
           <div
+            role="button"
+            tabIndex={0}
+            aria-label={`${t.splash.cocktailsNight}, New York`}
             onClick={handleGetStarted}
-            className="group relative z-10 w-[190px] h-[160px] rounded-2xl liquid-glass-card p-3.5 flex flex-col justify-end shadow-2xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.9)] border border-white/30 hover:border-white/60 transform hover:scale-105 hover:z-30 overflow-hidden cursor-pointer transition-all duration-300 active:scale-95"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleGetStarted();
+              }
+            }}
+            className="group relative z-10 w-[190px] h-[160px] rounded-2xl liquid-glass-card p-3.5 flex flex-col justify-end shadow-2xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.9)] border border-white/30 hover:border-white/60 transform hover:scale-105 hover:z-30 overflow-hidden cursor-pointer transition-all duration-300 active:scale-95 focus-visible:outline-2 focus-visible:outline-[#F0DC00] focus-visible:outline-offset-2"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

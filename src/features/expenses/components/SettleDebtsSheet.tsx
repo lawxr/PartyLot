@@ -45,10 +45,10 @@ export const SettleDebtsSheet: React.FC<SettleDebtsSheetProps> = ({
           <div className="flex items-center gap-2.5">
             <TokenLogo token="usdc" size="md" />
             <div>
-              <span className="text-xs font-bold text-[#171512] block">
+              <span className="text-xs font-bold text-[#171512] dark:text-white block">
                 {t.split.settleEngineBadge}
               </span>
-              <span className="text-[10px] text-[#6F6A62]">
+              <span className="text-[10px] text-[#6F6A62] dark:text-[#A8A196]">
                 {t.split.settleEngineDesc}
               </span>
             </div>
@@ -61,28 +61,28 @@ export const SettleDebtsSheet: React.FC<SettleDebtsSheetProps> = ({
             debtorsList.map((member, i) => (
               <div
                 key={`settle-${member.id}-${i}`}
-                className="p-3.5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] flex items-center justify-between shadow-2xs"
+                className="p-3.5 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-[rgba(35,30,22,0.08)] dark:border-white/10 flex items-center justify-between shadow-2xs"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full overflow-hidden bg-[#EFEAE2]">
+                  <div className="w-7 h-7 rounded-full overflow-hidden bg-[#EFEAE2] dark:bg-white/10">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <span className="font-bold text-xs text-[#171512] block">{member.name}</span>
-                    <span className="text-[10px] text-rose-600 font-semibold">{member.subtitle}</span>
+                    <span className="font-bold text-xs text-[#171512] dark:text-white block">{member.name}</span>
+                    <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold">{member.subtitle}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <TokenLogo token="usdc" size="xs" />
-                  <span className="font-display font-black text-base text-[#171512]">
+                  <span className="font-display font-black text-base text-[#171512] dark:text-white">
                     {member.amount}
                   </span>
                 </div>
               </div>
             ))
           ) : (
-            <div className="p-4 text-center text-sm text-[#8A8173]">
+            <div className="p-4 text-center text-sm text-[#8A8173] dark:text-[#A8A196]">
               {isEs ? 'No hay deudas pendientes' : 'No pending debts'}
             </div>
           )}

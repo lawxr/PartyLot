@@ -193,6 +193,18 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
+.split-hero-card {
+  background: linear-gradient(135deg, rgba(255, 252, 245, 0.96) 0%, rgba(250, 242, 227, 0.92) 50%, rgba(246, 228, 194, 0.88) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 10px 32px rgba(200, 160, 80, 0.11);
+}
+
+.dark .split-hero-card {
+  background: linear-gradient(135deg, #262118 0%, #1D1914 50%, #171410 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
 .dark .glass-light {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
   border: 1px solid rgba(255, 255, 255, 0.14);

@@ -45,6 +45,7 @@ export const PartyPotView: React.FC = () => {
     spendFromPot,
     rolloverPotToCrew,
     setCurrentView,
+    theme,
   } = usePartyStore();
 
   const { language } = useTranslation();
@@ -60,6 +61,36 @@ export const PartyPotView: React.FC = () => {
 
   // Active Tab: 'add' | 'withdraw' | 'qr'
   const [activeTab, setActiveTab] = useState<'add' | 'withdraw' | 'qr'>('add');
+
+  const potActions = [
+    {
+      id: 'add' as const,
+      label: isEs ? 'Añadir' : 'Add',
+      icon: Plus,
+      onClick: () => {
+        setActiveTab('add');
+        setTxError(null);
+      },
+    },
+    {
+      id: 'withdraw' as const,
+      label: isEs ? 'Retirar' : 'Withdraw',
+      icon: ArrowUp,
+      onClick: () => {
+        setActiveTab('withdraw');
+        setTxError(null);
+      },
+    },
+    {
+      id: 'qr' as const,
+      label: isEs ? 'Código QR' : 'QR Code',
+      icon: QrCode,
+      onClick: () => {
+        setActiveTab('qr');
+        setTxError(null);
+      },
+    },
+  ];
 
   // Suggested Amount Selected
   const [selectedSuggested, setSelectedSuggested] = useState<number | null>(10);
@@ -301,11 +332,11 @@ export const PartyPotView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-28 select-none relative transition-colors duration-200">
+    <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-28 select-none relative transition-colors duration-200">
       {/* ============================================================== */}
       {/* 1. HERO COVER SECTION (MATCHING DESIGN REFERENCE)               */}
       {/* ============================================================== */}
-      <div className="relative h-80 sm:h-96 md:h-[420px] w-full max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto overflow-hidden">
+      <div className="relative h-[390px] sm:h-[430px] md:h-[460px] w-full max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto overflow-hidden">
         {/* Cover Photo Optimized */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -340,8 +371,8 @@ export const PartyPotView: React.FC = () => {
           </button>
         </div>
 
-        {/* Content Overlaid at Bottom of Photo */}
-        <div className="absolute bottom-9 inset-x-5 sm:inset-x-6 z-20 text-white">
+        {/* Content Overlaid at Bottom of Photo (Sitting directly above the floating navigation pill) */}
+        <div className="absolute bottom-16 sm:bottom-18 inset-x-5 sm:inset-x-6 z-20 text-white">
           <span className="text-white/85 text-xs sm:text-sm font-semibold tracking-tight block">
             {isEs ? 'Bote de la fiesta' : 'Party Pot'}
           </span>
@@ -361,8 +392,8 @@ export const PartyPotView: React.FC = () => {
               : `shared by ${partyMembers.length} people`}
           </p>
 
-          {/* Overlapping Avatars Row */}
-          <div className="flex items-center -space-x-2 mt-3">
+          {/* Overlapping Avatars Row (Directly above the floating capsule bar) */}
+          <div className="flex items-center -space-x-2 mt-2.5">
             {partyMembers.slice(0, 8).map((m, idx) => (
               <div
                 key={m.id || idx}
@@ -389,169 +420,154 @@ export const PartyPotView: React.FC = () => {
       {/* ============================================================== */}
       {/* 2. MAIN CARD SURFACE (LIQUID GLASS / WARM IVORY)               */}
       {/* ============================================================== */}
-      <div className="relative -mt-6 z-20 rounded-t-[38px] bg-[#FAF7F2] dark:bg-[#161412] border-t border-white/80 dark:border-white/10 px-4 sm:px-6 pt-5 pb-20 shadow-[0_-16px_48px_rgba(65,48,25,0.08)] dark:shadow-[0_-16px_48px_rgba(0,0,0,0.6)] max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full transition-colors">
-        {/* iOS 27 Liquid Glass Real-time Web3 Error / Notice Banner */}
-        <AnimatePresence>
-          {txError && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.98 }}
-              transition={{ type: 'spring', stiffness: 450, damping: 30 }}
-              className={`mb-5 p-3.5 sm:p-4 rounded-[26px] backdrop-blur-2xl border transition-all ${
-                txError.isUserRejection
-                  ? 'bg-amber-500/[0.08] dark:bg-amber-400/[0.12] border-amber-500/25 dark:border-amber-400/30 text-[#171512] dark:text-[#FBF8F2] shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_1px_rgba(255,255,255,0.7)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)]'
-                  : 'bg-rose-500/[0.08] dark:bg-rose-500/[0.14] border-rose-500/25 dark:border-rose-400/30 text-[#171512] dark:text-[#FBF8F2] shadow-[0_8px_30px_rgba(244,63,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.7)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)]'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-xs ${
-                      txError.isUserRejection
-                        ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
-                        : 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
-                    }`}
+      <div className="relative -mt-6 md:-mt-8 z-20 rounded-t-[34px] md:rounded-t-[38px] bg-[#F7F2E8] dark:bg-[#12110E] px-4 sm:px-6 pt-0 pb-20 shadow-[0_-12px_40px_rgba(65,48,25,0.08)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5)] max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full transition-colors duration-200">
+        {/* Floating Action Tabs Pill Container: Exactly matching PartyDetailView aesthetics and position ("arribita del borde y asi") */}
+        <nav
+          aria-label={isEs ? 'Acciones del bote' : 'Party Pot Actions'}
+          className="relative -top-8 md:-top-10 h-[86px] sm:h-[90px] md:h-[96px] max-w-md sm:max-w-lg md:max-w-2xl mx-auto grid grid-cols-3 gap-1.5 sm:gap-2 p-1.5 sm:p-2.5 rounded-[36px] transition-all select-none bg-[rgba(250,248,243,0.85)] dark:bg-[rgba(24,22,19,0.88)] border border-white/90 dark:border-white/15 shadow-[0_12px_32px_rgba(71,55,35,0.12),inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-2xl z-30"
+        >
+          {potActions.map((action) => {
+            const Icon = action.icon;
+            const isActive = activeTab === action.id;
+
+            return (
+              <motion.button
+                key={action.id}
+                onClick={action.onClick}
+                whileTap={{ scale: 0.94 }}
+                style={
+                  isActive
+                    ? {
+                        background: 'linear-gradient(145deg, #FFE973, #FFCE18 68%, #F8BF0A)',
+                        boxShadow:
+                          '0 0 24px rgba(255, 212, 41, 0.55), 0 6px 14px rgba(235, 179, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.75)',
+                      }
+                    : {
+                        background:
+                          theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.48)',
+                        boxShadow:
+                          theme === 'dark'
+                            ? '0 3px 9px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)'
+                            : '0 3px 9px rgba(74, 56, 35, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.92)',
+                      }
+                }
+                className={`flex flex-col items-center justify-center gap-1 min-w-0 rounded-[26px] transition-all duration-200 cursor-pointer text-[#161514] dark:text-[#F5F1E8] ${
+                  isActive ? 'font-bold' : 'font-medium'
+                }`}
+                aria-label={action.label}
+              >
+                <Icon className={`w-5 h-5 sm:w-5.5 sm:h-5.5 ${isActive ? 'stroke-[2.5]' : 'stroke-[2.2]'}`} />
+                <span className="text-[11px] sm:text-[12px] tracking-tight leading-none">
+                  {action.label}
+                </span>
+              </motion.button>
+            );
+          })}
+        </nav>
+
+        {/* Content Wrapper (Offset below the floating navigation capsule) */}
+        <div className="relative -mt-4 sm:-mt-5">
+          {/* iOS 27 Liquid Glass Real-time Web3 Error / Notice Banner */}
+          <AnimatePresence>
+            {txError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                className={`mb-5 p-3.5 sm:p-4 rounded-[26px] backdrop-blur-2xl border transition-all ${
+                  txError.isUserRejection
+                    ? 'bg-amber-500/[0.08] dark:bg-amber-400/[0.12] border-amber-500/25 dark:border-amber-400/30 text-[#171512] dark:text-[#FBF8F2] shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_1px_rgba(255,255,255,0.7)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)]'
+                    : 'bg-rose-500/[0.08] dark:bg-rose-500/[0.14] border-rose-500/25 dark:border-rose-400/30 text-[#171512] dark:text-[#FBF8F2] shadow-[0_8px_30px_rgba(244,63,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.7)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)]'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-xs ${
+                        txError.isUserRejection
+                          ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                          : 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
+                      }`}
+                    >
+                      {txError.isUserRejection ? (
+                        <AlertCircle className="w-4 h-4 stroke-[2.5]" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 stroke-[2.5]" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-display font-bold text-xs sm:text-sm block leading-tight">
+                        {txError.title}
+                      </span>
+                      <p className="text-[11px] sm:text-xs text-[#706B66] dark:text-[#A8A196] font-medium mt-0.5 leading-relaxed">
+                        {txError.message}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setTxError(null)}
+                    className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 flex items-center justify-center text-[#706B66] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-colors cursor-pointer shrink-0"
+                    aria-label="Dismiss error"
                   >
-                    {txError.isUserRejection ? (
-                      <AlertCircle className="w-4 h-4 stroke-[2.5]" />
-                    ) : (
-                      <AlertTriangle className="w-4 h-4 stroke-[2.5]" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <span className="font-display font-bold text-xs sm:text-sm block leading-tight">
-                      {txError.title}
-                    </span>
-                    <p className="text-[11px] sm:text-xs text-[#706B66] dark:text-[#A8A196] font-medium mt-0.5 leading-relaxed">
-                      {txError.message}
-                    </p>
-                  </div>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setTxError(null)}
-                  className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 flex items-center justify-center text-[#706B66] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-colors cursor-pointer shrink-0"
-                  aria-label="Dismiss error"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                {/* Collapsible Technical Details for Developer Tracing (Cleanly Truncated) */}
+                {txError.technicalDetails && !txError.isUserRejection && (
+                  <div className="mt-2.5 pt-2 border-t border-black/5 dark:border-white/10">
+                    <details className="text-[10px] text-[#8E887E] dark:text-[#A8A196] font-mono">
+                      <summary className="cursor-pointer hover:underline font-sans font-semibold">
+                        {isEs ? 'Detalles técnicos' : 'Technical details'}
+                      </summary>
+                      <pre className="mt-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 text-[9px] overflow-x-auto whitespace-pre-wrap break-all max-h-24">
+                        {txError.technicalDetails}
+                      </pre>
+                    </details>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Real-time Monad Transaction Confirmation Toast */}
+          {lastTxHash && (
+            <div className="mb-4 flex items-center justify-between p-3.5 rounded-[22px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs backdrop-blur-xl shadow-xs">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  {isEs
+                    ? 'Transacción confirmada en Monad Testnet'
+                    : 'Transaction confirmed on Monad Testnet'}
+                </span>
               </div>
-
-              {/* Collapsible Technical Details for Developer Tracing (Cleanly Truncated) */}
-              {txError.technicalDetails && !txError.isUserRejection && (
-                <div className="mt-2.5 pt-2 border-t border-black/5 dark:border-white/10">
-                  <details className="text-[10px] text-[#8E887E] dark:text-[#A8A196] font-mono">
-                    <summary className="cursor-pointer hover:underline font-sans font-semibold">
-                      {isEs ? 'Detalles técnicos' : 'Technical details'}
-                    </summary>
-                    <pre className="mt-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 text-[9px] overflow-x-auto whitespace-pre-wrap break-all max-h-24">
-                      {txError.technicalDetails}
-                    </pre>
-                  </details>
-                </div>
-              )}
-            </motion.div>
+              <a
+                href={`https://testnet.monadexplorer.com/tx/${lastTxHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono underline font-bold flex items-center gap-1 text-[#674FF4]"
+              >
+                <span>{lastTxHash.slice(0, 8)}...</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           )}
-        </AnimatePresence>
-
-        {/* Real-time Monad Transaction Confirmation Toast */}
-        {lastTxHash && (
-          <div className="mb-4 flex items-center justify-between p-3.5 rounded-[22px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs backdrop-blur-xl shadow-xs">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>
-                {isEs
-                  ? 'Transacción confirmada en Monad Testnet'
-                  : 'Transaction confirmed on Monad Testnet'}
-              </span>
-            </div>
-            <a
-              href={`https://testnet.monadexplorer.com/tx/${lastTxHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono underline font-bold flex items-center gap-1 text-[#674FF4]"
-            >
-              <span>{lastTxHash.slice(0, 8)}...</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-        )}
-
-        {/* 3 Action Tabs inside Unified Capsule Container (Matching Design Reference Mockup) */}
-        <div className="rounded-[28px] sm:rounded-[32px] bg-white/90 dark:bg-[#1E1B17]/90 backdrop-blur-xl border border-white/80 dark:border-white/10 shadow-[0_4px_24px_rgba(70,52,28,0.05),inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.08)] p-1.5 sm:p-2 grid grid-cols-3 gap-1 sm:gap-2 mb-6">
-          {/* 1. Add */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('add');
-              setTxError(null);
-            }}
-            className={`py-3.5 px-2 rounded-[22px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              activeTab === 'add'
-                ? 'bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-bold shadow-none'
-                : 'bg-transparent text-[#736C61] dark:text-[#A8A196] hover:bg-black/[0.03] dark:hover:bg-white/5 font-medium'
-            }`}
-          >
-            <div
-              className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                activeTab === 'add' ? 'border-[1.8px] border-[#161514]' : 'border-[1.8px] border-current'
-              }`}
-            >
-              <Plus className="w-3 h-3 stroke-[3]" />
-            </div>
-            <span className="text-xs font-bold leading-none tracking-tight">
-              {isEs ? 'Añadir' : 'Add'}
-            </span>
-          </button>
-
-          {/* 2. Withdraw */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('withdraw');
-              setTxError(null);
-            }}
-            className={`py-3.5 px-2 rounded-[22px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              activeTab === 'withdraw'
-                ? 'bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-bold shadow-none'
-                : 'bg-transparent text-[#736C61] dark:text-[#A8A196] hover:bg-black/[0.03] dark:hover:bg-white/5 font-medium'
-            }`}
-          >
-            <ArrowUp className="w-5 h-5 stroke-[2.4]" />
-            <span className="text-xs font-bold leading-none tracking-tight">
-              {isEs ? 'Retirar' : 'Withdraw'}
-            </span>
-          </button>
-
-          {/* 3. QR Code */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('qr');
-              setTxError(null);
-            }}
-            className={`py-3.5 px-2 rounded-[22px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              activeTab === 'qr'
-                ? 'bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-bold shadow-none'
-                : 'bg-transparent text-[#736C61] dark:text-[#A8A196] hover:bg-black/[0.03] dark:hover:bg-white/5 font-medium'
-            }`}
-          >
-            <QrCode className="w-5 h-5 stroke-[2.2]" />
-            <span className="text-xs font-bold leading-none tracking-tight">
-              {isEs ? 'Código QR' : 'QR Code'}
-            </span>
-          </button>
-        </div>
 
         {/* ============================================================== */}
-        {/* TAB A: ADD TO POT (DEFAULT & PRIMARY USER FLOW)                */}
+        {/* TAB WORKSPACE CARD (MATCHING PARTY DETAIL LIQUID GLASS FINISH) */}
         {/* ============================================================== */}
-        {activeTab === 'add' && (
-          <div className="space-y-4 mb-6">
-            {/* Suggested Amounts Label & Pills */}
-            <div>
+        <section
+          aria-label={isEs ? 'Panel de acción del bote' : 'Pot action panel'}
+          className="rounded-[32px] bg-white/55 dark:bg-[#1C1A16] border border-white/80 dark:border-white/10 shadow-[0_9px_20px_rgba(66,52,32,0.08)] dark:shadow-[0_9px_20px_rgba(0,0,0,0.45)] backdrop-blur-md p-4 sm:p-5 mb-6"
+        >
+          {/* TAB A: ADD TO POT (DEFAULT & PRIMARY USER FLOW) */}
+          {activeTab === 'add' && (
+            <div className="space-y-4">
+              {/* Suggested Amounts Label & Pills */}
+              <div>
               <div className="flex items-center justify-between mb-2 px-1">
                 <span className="font-bold text-xs sm:text-sm text-[#171512] dark:text-white">
                   {isEs ? 'Montos sugeridos' : 'Suggested amounts'}
@@ -807,12 +823,16 @@ export const PartyPotView: React.FC = () => {
             </button>
           </div>
         )}
+      </section>
 
-        {/* ============================================================== */}
-        {/* 3. RECENT ACTIVITY LIST (MATCHING DESIGN REFERENCE)            */}
-        {/* ============================================================== */}
-        <div>
-          <div className="flex items-center justify-between mb-3 px-1">
+      {/* ============================================================== */}
+      {/* 3. RECENT ACTIVITY CARD (MATCHING PARTY DETAIL LIQUID GLASS)   */}
+      {/* ============================================================== */}
+      <section
+        aria-label={isEs ? 'Historial del bote' : 'Pot history'}
+        className="rounded-[32px] bg-white/55 dark:bg-[#1C1A16] border border-white/80 dark:border-white/10 shadow-[0_9px_20px_rgba(66,52,32,0.08)] dark:shadow-[0_9px_20px_rgba(0,0,0,0.45)] backdrop-blur-md p-4 sm:p-5"
+      >
+        <div className="flex items-center justify-between mb-3 px-1">
             <h3 className="font-display font-extrabold text-sm sm:text-base text-[#171512] dark:text-white tracking-tight">
               {isEs ? 'Actividad reciente' : 'Recent activity'}
             </h3>
@@ -975,8 +995,9 @@ export const PartyPotView: React.FC = () => {
               ))
             )}
           </div>
-        </div>
+        </section>
       </div>
+    </div>
 
       {/* ============================================================== */}
       {/* 4. OPTIONS MENU MODAL                                          */}

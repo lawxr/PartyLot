@@ -1,145 +1,108 @@
-# PARTYLOT — The Night Belongs to the Group
+# PartyLot — The Night Belongs to the Group
 
-> **Social-first, verifiable private group party application on Monad.**  
-> Built for the **Monad Metropolis Hackathon**.
+PartyLot is a mobile-first social app for friends organizing private gatherings and recurring crews. Hosts coordinate invitations, activities, shared memories, and expenses; Monad Testnet is used for native-MON treasury actions where an onchain record is useful.
 
-PARTYLOT is a mobile-first social party app designed for real-world private gatherings, house parties, and recurring crews. Inspired by Apple iOS 27, visionOS **Liquid Glass**, and candid night/flash photography, Partylot completely removes Web3 friction while providing real, verifiable onchain ownership.
+> Built for the Monad Metropolis Hackathon. The recommended fit is **Track 03: Social** because the core product is group coordination and shared experiences; registration/submission status is not verified here.
 
----
+## What it does
 
-## ⚡ Product Thesis: Social First, Blockchain Second
+- Create private gatherings and invite guests with a short code.
+- Organize recurring crews, activities, polls, and shared memories.
+- Track expenses and balances for a gathering.
+- Contribute native MON to a party treasury on Monad Testnet.
 
-Most Web3 social applications fail because they build crypto dashboards masquerading as consumer apps. 
+The intended audience is hosts and guests coordinating small, private social events. PartyLot is social-first; the treasury is a supporting feature, not a general-purpose finance product.
 
-In PARTYLOT:
-1. **Nobody needs to know what Monad, a seed phrase, gas, or a transaction hash is.**
-2. **Silent Embedded Wallets via Privy + Pimlico**: Users tap *"Continue with Apple"* or *"Continue with Google"*. In the background, an ERC-4337 Smart Account is provisioned with passkey authorization.
-3. **100% Sponsored Gas**: Pimlico acts as the Paymaster on Monad testnet. Every deposit, vote, game payout, and reimbursement has zero gas fees for guests.
-4. **Human Language for Financial Actions**:
-   - `Add $10 to Party Pot` (not `approve() + transfer()`)
-   - `Pay Ana $8.40` (not `call(0x18...)`)
-   - `Reward DJ Law $10` (not `mintReward()`)
+## Architecture and stack
 
----
-
-## 💎 The Onchain Primitives: Verifiable Ownership
-
-The blockchain is only invoked where economic ownership, transparency, and portability truly matter:
-
-```
-┌────────────────────────────────────────────────────────┐
-│                   ONCHAIN BOUNDARY                     │
-├──────────────────────────┬─────────────────────────────┤
-│ ONCHAIN (Monad Testnet)  │ OFFCHAIN (Private / Fast)   │
-├──────────────────────────┼─────────────────────────────┤
-│ • Crew & Party Treasury  │ • Fullscreen Party Photos   │
-│ • Economic Contributions │ • Ephemeral Chat / Messages │
-│ • Contribution Rewards   │ • Exact Secret Addresses    │
-│ • Pairwise Settlements   │ • Ephemeral Game Questions  │
-│ • Rollover Balances      │ • Real-time Typing States   │
-│ • Shared-Experience Graph│ • 4-Letter Short Codes (8F4K│
-└──────────────────────────┴─────────────────────────────┘
+```text
+Next.js app (React / TypeScript)
+  ├─ Zustand client state and responsive views
+  ├─ Privy authentication and embedded-wallet integration
+  ├─ Supabase persistence, SQL migrations, and realtime data
+  └─ Viem → Monad Testnet PartyTreasury (native MON)
+       ├─ Connected-wallet contract calls
+       └─ Optional server route /api/treasury/action
 ```
 
-### 1. `PartyTreasury.sol` — Social Participation $\rightarrow$ Economic Stake
-A shared group treasury contract where members pool funds for food, drinks, and rides.
-- **Sponsored Reimbursements**: Instant payback for members who fronted cash (e.g. `$82 Sourdough Pizza`).
-- **Contribution Rewards**: Direct bounties from the pot for social contributions:
-  - `OFFICIAL_DJ` ($10 prize for non-stop aux mastery)
-  - `ICE_RUNNER` ($5 prize for saving the ice supply)
-  - `GAME_WINNER` ($10 reward for crew trivia victory)
-- **Automatic Rollover**: Leftover pot automatically rolls over to the next gathering's treasury.
+The main stack is Next.js 16, React 19, TypeScript, Tailwind CSS 4, and Zustand. Authentication is integrated through Privy; Supabase provides persistence and realtime services; Viem is used for Monad Testnet calls. See [`package.json`](package.json), [`src/app`](src/app), [`src/services`](src/services), and [`contracts`](contracts).
 
-### 2. `PartyRegistry.sol` — EIP-712 Cryptographic Invite Permits
-- **Brute-Force Protection**: Short 4-character codes (`8F4K`) have only $36^4 \approx 1.67\text{M}$ combinations and can be brute-forced in seconds on high-throughput chains like Monad (10,000 TPS).
-- **Architecture**: `8F4K` is strictly an offchain human UX shortcut. An authorized relayer maps it to a high-entropy secret and signs a typed **EIP-712 permit** with expiration and nonce. Guests execute `joinPartyWithPermit()` via sponsored UserOp without ever exposing or checking codes onchain.
+### Network and treasury scope
 
-### 3. `SocialGraph.sol` — Shared-Experience Graph
-- **No Vanity Follower Counts**: Replaces follow/unfollow dynamics with verifiable co-presence:
-  - `Ana: 12 nights together`
-  - `Carlos: 9 nights together`
-  - `71 lifetime settlements completed`
-- **Portable Crew Reputation**: Crews retain their shared history, game records, and treasury lineage even if Partylot frontend changes.
+The current contract integration targets **Monad Testnet, chain ID 10143**, and the treasury accepts native MON. A connected wallet submits the contract transaction directly and needs testnet MON for value and gas. When the client does not provide a wallet, the server route uses the configured `MONAD_DEPLOYER_PRIVATE_KEY` account; that account must be funded. This is not a documented ERC-4337/Pimlico-sponsored flow.
 
----
+The interface contains a token selector, but the current treasury contract path is native-MON-only; do not interpret the selector or USD conversion as proof of an ERC-20 USDC transfer.
 
-## 🚀 Deployed Smart Contracts (Monad Testnet)
+The following are **configured source defaults**, not independently verified deployment claims:
 
-All smart contracts are compiled, deployed, and live on **Monad Testnet (Chain ID: 10143)**:
+| Contract | Configured address | Network |
+| --- | --- | --- |
+| PartyTreasury | `0x13ed67e844496095c0f44c914f89e30ef190db2c` | Monad Testnet |
+| PartyRegistry | `0xb7d922488daa522443ffe1627efc6d65825eebad` | Monad Testnet |
+| SocialGraph | `0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9` | Monad Testnet |
 
-| Contract | Address | Explorer Link |
-|---|---|---|
-| **SocialGraph** | `0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9` | [View on Monad Explorer](https://testnet.monadexplorer.com/address/0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9) |
-| **PartyRegistry** | `0xb7d922488daa522443ffe1627efc6d65825eebad` | [View on Monad Explorer](https://testnet.monadexplorer.com/address/0xb7d922488daa522443ffe1627efc6d65825eebad) |
-| **PartyTreasury** | `0x838ef69f8904af767e3ec8d04737417106225e6a` | [View on Monad Explorer](https://testnet.monadexplorer.com/address/0x838ef69f8904af767e3ec8d04737417106225e6a) |
-| **Deployer** | `0xc3aDb792001E9bd82ff54D4E226eC5882017f4be` | [View on Monad Explorer](https://testnet.monadexplorer.com/address/0xc3aDb792001E9bd82ff54D4E226eC5882017f4be) |
+These defaults are defined in [`src/contracts/index.ts`](src/contracts/index.ts). Verify each address and the exact transaction on a block explorer before presenting a live demo. No Mainnet deployment is documented here.
 
----
+## Run locally
 
-## 🛠️ Metropolis Infrastructure Stack
+### Requirements
 
-We leverage official Metropolis hackathon partner infrastructure:
+- Node.js **22.13 or newer** (meets the installed Next.js and pnpm package engine requirements).
+- pnpm **11.15.0** (the version declared by this repository's `packageManager`).
 
-- **QuickNode (Build Plan)**: High-performance Monad Testnet RPC endpoint and stream listeners.
-- **Tenderly Pro**: Pre-execution transaction simulation engine ensuring 0% reverts before submitting sponsored UserOps to the Paymaster.
-- **Envio (HyperIndex)**: Sub-second event indexer pipeline ingesting `Deposited`, `RewardDistributed`, and `GatheringRecorded` events to power the live activity feed without RPC polling.
-- **Privy & Pimlico**: Embedded passkey smart accounts and ERC-4337 transaction sponsorship.
+### Install and start
 
----
-
-## 📱 Visual Design: Apple iOS 27 Liquid Glass
-
-- **Tier 1 (Navigation & Bars)**: `liquid-glass-nav` with `backdrop-filter: blur(28px) saturate(190%)` and specular top border highlights.
-- **Tier 2 (Cards & Actions)**: `liquid-glass-card` with dynamic inner reflections and ambient blur.
-- **Tier 3 (Modals & Sheets)**: `liquid-glass-modal` with tactile drag handles, spring physics, and safe-area padding.
-- **Display Typography**: Google Fonts `Fredoka` & `Syne` for chunky, rounded, retro editorial poster titles.
-- **UI Typography**: `Plus Jakarta Sans` for clean data, amounts, and dates.
-- **Color Discipline**: Base obsidian (`#050505`), warm flash photography, and accent lime (`#E9FF32`) reserved strictly for active states and confirmed actions.
-
----
-
-## 🕹️ 3 Fully Playable Minigames
-
-1. **Who's Most Likely**: Anonymous avatar voting for group members with animated progress bars, real-time percentages, and crown spotlight.
-2. **This or That**: Split-screen duel choices with live ratio bar animations.
-3. **Crew Lore Trivia**: 5-round customizable trivia quiz with timer, lore check explanations, and winner podium screen.
-
----
-
-## 🏃 Getting Started
-
-### Prerequisites
-- Node.js 18+ or 20+
-- pnpm (recommended) or npm
-
-### Installation
 ```bash
 git clone https://github.com/lawxr/PartyLot.git
 cd PartyLot
 pnpm install
-```
-
-### Development Server
-```bash
+cp .env.example .env.local
+# Edit .env.local and configure the integrations you intend to use.
 pnpm dev
 ```
-Open [http://localhost:3000](http://localhost:3000) on your mobile browser or emulator (iPhone dimensions 393 x 852 recommended).
 
-### Production Build
+Open [http://localhost:3000](http://localhost:3000).
+
+`NEXT_PUBLIC_PARTYLOT_DEMO_MODE=true` enables the development-only demo/auth-gate behavior; it is ignored in production. This flag does not configure Privy, Supabase, or Monad, and by itself does not demonstrate authenticated persistence or create a Monad transaction. Test each integration with its own configuration.
+
+### Configure integrations
+
+Use [`.env.example`](.env.example) as the variable inventory and replace its placeholders with values for your own services. Do not commit `.env.local` or expose server-only secrets.
+
+- **Authentication:** configure `NEXT_PUBLIC_PRIVY_APP_ID` and server-side `PRIVY_APP_SECRET` for Privy login and token verification.
+- **Persistence:** configure the Supabase URL and anon key; server routes also use the service-role key. Apply the SQL migrations in [`supabase/migrations`](supabase/migrations) to your Supabase project in filename order before relying on persisted features.
+- **Monad:** configure a Testnet RPC URL if needed. Direct wallet transactions require a connected wallet on Monad Testnet. The server relay requires a funded `MONAD_DEPLOYER_PRIVATE_KEY`; keep it server-side.
+
+Other entries in `.env.example` describe optional integrations. Their presence in the template is not evidence that a feature is active or required for the core flow.
+
+### Build and checks
+
 ```bash
+pnpm typecheck
+pnpm lint
+pnpm test
 pnpm build
+pnpm start
 ```
 
----
+`pnpm start` serves the production build locally. No hosting provider or automated application deployment workflow is configured in this repository; configure the selected host's environment variables separately. Contract deployment is also not turnkey: [`scripts/deploy.ts`](scripts/deploy.ts) expects compiled artifacts under `contracts/artifacts`, which are not included as tracked files.
 
-## 🏆 Real Partylot Night — Pilot Validation Plan
+## AI assistance disclosure
 
-For the 20% Traction criterion:
-- Host an authentic **Partylot Night** with 10–20 friends in Medellín.
-- Real flow tested:
-  1. Host generates private room with code `8F4K`.
-  2. 14 friends join via Apple/Google login (zero gas paid).
-  3. Crew plays 3 rounds of trivia and votes on midnight food order.
-  4. Pool $186 in Party Pot; payout $10 bounty to DJ Law.
-  5. Settle pizza bill via greedy two-pointer damage calculator.
-  6. Generate and export the official **Event Recap Dossier**.
+OpenAI Codex was used for repository analysis and editing this README. This statement covers this documentation task only; maintainers must confirm and disclose any AI tools used elsewhere in the project's development before submission.
+
+## License and third-party credits
+
+No repository-wide license is currently declared. The MIT SPDX headers in Solidity files apply to those contract sources only; they do not license the application as a whole. Maintainers must select an appropriate whole-repository license to meet the hackathon open-source requirement. A complete audit of third-party fonts, photos, and other assets and their attribution requirements remains outstanding.
+
+## Metropolis submission checklist
+
+Submission window: **September 1–October 13, 2026**; deadline: **October 13, 2026 at 23:59 ET**.
+
+- [ ] Confirm the repository is public and that its complete source and history are accessible to reviewers.
+- [ ] Publish a video of **3 minutes or less** showing real app operation and a successful Monad transaction; no video link is currently included here.
+- [ ] Verify deployed contract addresses and demo transaction hashes on the relevant Monad explorer, then record the exact evidence here.
+- [ ] Disclose any pre-existing foundation accurately. Local commit dates alone do not establish code provenance.
+- [ ] Confirm the project's full AI-tool usage and update the disclosure above if needed.
+- [ ] Choose and add an OSI-approved license for the whole repository, and complete the third-party asset attribution review.
+- [ ] Confirm the final track choice; **Track 03: Social** is a recommendation, not a submitted selection.

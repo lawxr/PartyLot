@@ -10,6 +10,11 @@ import {
   ChevronRight,
   Star,
   Globe,
+  Users,
+  Zap,
+  ArrowRightLeft,
+  Trophy,
+  Calendar,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { Member, Party } from '@/types';
@@ -19,6 +24,7 @@ import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
 import { ProfilePeopleModal } from '@/components/profile/ProfilePeopleModal';
 import { ProfileAddNightModal } from '@/components/profile/ProfileAddNightModal';
 import { ProfileSettingsModal } from '@/components/profile/ProfileSettingsModal';
+import { CreateCrewModal } from '@/components/ui/CreateCrewModal';
 
 const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-3 h-3' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -47,6 +53,11 @@ export const ProfileView: React.FC = () => {
     isUserStarred,
     attendedPartyIds,
     addAttendedNight,
+    createParty,
+    setActiveGame,
+    setCurrentView,
+    whosMostLikely,
+    thisOrThat,
   } = usePartyStore();
 
   const { language } = useTranslation();
@@ -57,8 +68,9 @@ export const ProfileView: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSeeAllPeopleOpen, setIsSeeAllPeopleOpen] = useState(false);
   const [isAddNightOpen, setIsAddNightOpen] = useState(false);
+  const [isCreateCrewOpen, setIsCreateCrewOpen] = useState(false);
   const [selectedConnectionMember, setSelectedConnectionMember] = useState<Member | null>(null);
-  const [activeProfileTab, setActiveProfileTab] = useState<'nights' | 'crews' | 'photos'>('nights');
+  const [activeProfileTab, setActiveProfileTab] = useState<'nights' | 'crews' | 'games'>('nights');
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const activeAddress = currentUser.walletAddress;
@@ -80,12 +92,16 @@ export const ProfileView: React.FC = () => {
     return list;
   }, [currentUser.id, parties]);
 
-  // Attended nights / events
+  // Attended nights / events (real gatherings hosted, joined, or attended)
   const attendedPartiesList: Party[] = useMemo(() => {
-    const ids = attendedPartyIds || [];
-    const found = parties.filter((p) => ids.includes(p.id));
-    return found;
-  }, [parties, attendedPartyIds]);
+    const ids = new Set(attendedPartyIds || []);
+    return parties.filter(
+      (p) =>
+        ids.has(p.id) ||
+        p.hostId === currentUser.id ||
+        (p.members || []).some((m) => m.id === currentUser.id)
+    );
+  }, [parties, attendedPartyIds, currentUser.id]);
 
   const handleCopyAddress = async () => {
     const toCopy = activeAddress || currentUser.id || 'usr_active';
@@ -94,9 +110,18 @@ export const ProfileView: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleAddCustomNight = () => {
-    const fakeId = `p-user-${Date.now()}`;
-    addAttendedNight(fakeId);
+  const handleAddCustomNight = (title: string, date: string) => {
+    const created = createParty({
+      title: title || (isEs ? 'Noche de Fiesta' : 'Party Night'),
+      date: date || (isEs ? 'Hoy' : 'Tonight'),
+      time: '10:00 PM',
+      location: currentUser.location || (isEs ? 'Medellín' : 'Local'),
+      description: isEs ? 'Noche registrada en mi perfil.' : 'Night logged from my profile.',
+      coverImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
+    });
+    if (created?.id) {
+      addAttendedNight(created.id);
+    }
   };
 
   return (
@@ -244,12 +269,12 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
 
-          {/* 3 Stats Columns */}
+          {/* 3 Stats Columns (Real Metrics Only) */}
           <div className="md:col-span-5 lg:col-span-4 md:mt-6">
             <div className="grid grid-cols-3 divide-x divide-[#EFE8DD] dark:divide-white/10 text-center my-4 md:my-0 py-2 md:py-4 border-y md:border border-[#EFE8DD] dark:border-white/10 md:rounded-2xl md:bg-black/[0.02] md:dark:bg-white/[0.03]">
               <div>
                 <span className="font-display font-black text-xl sm:text-2xl text-[#171512] dark:text-white block">
-                  {currentUser.gatheringsCount || 24}
+                  {attendedPartiesList.length || currentUser.gatheringsCount || 0}
                 </span>
                 <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
                   {isEs ? 'noches' : 'nights'}
@@ -257,7 +282,7 @@ export const ProfileView: React.FC = () => {
               </div>
               <div>
                 <span className="font-display font-black text-xl sm:text-2xl text-[#171512] dark:text-white block">
-                  {crews.length || 8}
+                  {crews.length}
                 </span>
                 <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
                   crews
@@ -265,7 +290,7 @@ export const ProfileView: React.FC = () => {
               </div>
               <div>
                 <span className="font-display font-black text-xl sm:text-2xl text-[#171512] dark:text-white block">
-                  {currentUser.gamesCount || 142}
+                  {currentUser.gamesCount || (whosMostLikely.some((q) => Object.keys(q.votes || {}).length > 0) ? 1 : 0)}
                 </span>
                 <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
                   {isEs ? 'juegos' : 'games'}
@@ -284,7 +309,7 @@ export const ProfileView: React.FC = () => {
             [
               { id: 'nights', label: isEs ? 'Noches' : 'Nights' },
               { id: 'crews', label: 'Crews' },
-              { id: 'photos', label: isEs ? 'Fotos' : 'Photos' },
+              { id: 'games', label: isEs ? 'Juegos' : 'Games' },
             ] as const
           ).map((tab) => {
             const isActive = activeProfileTab === tab.id;
@@ -325,42 +350,67 @@ export const ProfileView: React.FC = () => {
         {/* TAB 1: NIGHTS (EVENTS ATTENDED)                                */}
         {/* ============================================================== */}
         {activeProfileTab === 'nights' && (
-          <div className="flex items-center gap-2.5 mb-6 overflow-x-auto no-scrollbar pb-1 md:grid md:grid-cols-4 lg:grid-cols-5 md:gap-3.5 md:overflow-visible">
-            {attendedPartiesList.map((party) => (
-              <div
-                key={party.id}
-                onClick={() => selectParty(party.id)}
-                className="h-26 w-22 sm:h-28 sm:w-24 md:h-36 md:w-full rounded-2xl overflow-hidden shadow-sm shrink-0 border border-black/5 dark:border-white/10 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer relative group"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={party.coverImage}
-                  alt={party.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-1.5 md:p-2.5">
-                  <span className="text-[10px] md:text-xs font-bold text-white leading-tight truncate">
-                    {party.title}
-                  </span>
-                  <span className="text-[8px] md:text-[10px] text-[#F0DC00] font-medium">
-                    {party.date}
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div>
+            {attendedPartiesList.length > 0 ? (
+              <div className="flex items-center gap-2.5 mb-6 overflow-x-auto no-scrollbar pb-1 md:grid md:grid-cols-4 lg:grid-cols-5 md:gap-3.5 md:overflow-visible">
+                {attendedPartiesList.map((party) => (
+                  <div
+                    key={party.id}
+                    onClick={() => selectParty(party.id)}
+                    className="h-28 w-24 sm:h-32 sm:w-26 md:h-36 md:w-full rounded-2xl overflow-hidden shadow-xs shrink-0 border border-black/5 dark:border-white/10 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer relative group bg-[#EFEAE2] dark:bg-[#1F1C18]"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={party.coverImage}
+                      alt={party.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-2 md:p-2.5">
+                      <span className="text-[11px] md:text-xs font-bold text-white leading-tight truncate">
+                        {party.title}
+                      </span>
+                      <span className="text-[9px] md:text-[10px] text-[#F0DC00] font-semibold mt-0.5">
+                        {party.date}
+                      </span>
+                    </div>
+                  </div>
+                ))}
 
-            {/* Dashed Add Night Squircle Button */}
-            <button
-              onClick={() => setIsAddNightOpen(true)}
-              className="h-26 w-22 sm:h-28 sm:w-24 md:h-36 md:w-full rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-all shrink-0 cursor-pointer active:scale-95 group"
-              aria-label={isEs ? 'Registrar noche asistida' : 'Log attended night'}
-              title={isEs ? 'Registrar evento asistido' : 'Log attended event'}
-            >
-              <Plus className="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform" />
-              <span className="text-[9px] md:text-xs font-bold mt-1">
-                {isEs ? 'Añadir' : 'Add'}
-              </span>
-            </button>
+                {/* Dashed Add Night Squircle Button */}
+                <button
+                  onClick={() => setIsAddNightOpen(true)}
+                  className="h-28 w-24 sm:h-32 sm:w-26 md:h-36 md:w-full rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-all shrink-0 cursor-pointer active:scale-95 group"
+                  aria-label={isEs ? 'Registrar noche asistida' : 'Log attended night'}
+                  title={isEs ? 'Registrar evento asistido' : 'Log attended event'}
+                >
+                  <Plus className="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] md:text-xs font-bold mt-1">
+                    {isEs ? 'Añadir' : 'Add'}
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <div className="p-7 rounded-[26px] bg-[#FFFDF8] dark:bg-[#1A1815] border border-black/5 dark:border-white/10 shadow-xs text-center flex flex-col items-center justify-center mb-6">
+                <div className="w-12 h-12 rounded-full bg-[#FAF7F2] dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-center justify-center text-[#B89600] mb-3">
+                  <Calendar className="w-6 h-6 stroke-[1.8]" />
+                </div>
+                <h4 className="font-display font-bold text-base text-[#171512] dark:text-white mb-1">
+                  {isEs ? 'Sin noches registradas aún' : 'No nights logged yet'}
+                </h4>
+                <p className="text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs leading-relaxed mb-4">
+                  {isEs
+                    ? 'Las fiestas a las que asistas o crees se guardarán automáticamente en tu historial de noches.'
+                    : 'Gatherings you attend or host will be saved here in your profile history.'}
+                </p>
+                <button
+                  onClick={() => setIsAddNightOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#F0DC00] text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  {isEs ? 'Registrar primera noche' : 'Log first night'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -368,57 +418,163 @@ export const ProfileView: React.FC = () => {
         {/* TAB 2: CREWS CAROUSEL                                          */}
         {/* ============================================================== */}
         {activeProfileTab === 'crews' && (
-          <div className="flex items-center gap-3 mb-6 overflow-x-auto no-scrollbar pb-1">
-            {crews.map((crew) => (
-              <div
-                key={crew.id}
-                onClick={() => selectCrew(crew.id)}
-                className="w-36 rounded-2xl overflow-hidden p-2.5 bg-white/70 dark:bg-[#25221D] border border-black/5 dark:border-white/10 shadow-sm hover:scale-[1.02] active:scale-98 transition-all cursor-pointer shrink-0"
-              >
-                <div className="h-20 w-full rounded-xl overflow-hidden mb-2 relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={crew.coverImage}
-                    alt={crew.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <h4 className="font-bold text-xs text-[#171512] dark:text-white truncate">{crew.name}</h4>
-                <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196] font-medium block">
-                  {crew.membersCount} {isEs ? 'miembros' : 'members'}
-                </span>
+          <div>
+            {crews.length > 0 ? (
+              <div className="flex items-center gap-3 mb-6 overflow-x-auto no-scrollbar pb-1">
+                {crews.map((crew) => (
+                  <div
+                    key={crew.id}
+                    onClick={() => selectCrew(crew.id)}
+                    className="w-40 rounded-2xl overflow-hidden p-2.5 bg-white/70 dark:bg-[#25221D] border border-black/5 dark:border-white/10 shadow-xs hover:scale-[1.02] active:scale-98 transition-all cursor-pointer shrink-0 group"
+                  >
+                    <div className="h-24 w-full rounded-xl overflow-hidden mb-2 relative bg-[#EFEAE2] dark:bg-[#1A1815]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={crew.coverImage}
+                        alt={crew.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {crew.ownerId === currentUser.id && (
+                        <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] uppercase tracking-wider">
+                          {isEs ? 'Líder' : 'Owner'}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-bold text-xs text-[#171512] dark:text-white truncate">{crew.name}</h4>
+                    <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196] font-medium block mt-0.5">
+                      {crew.membersCount} {isEs ? 'miembros' : 'members'}
+                    </span>
+                  </div>
+                ))}
+
+                {/* Add Crew Button */}
+                <button
+                  onClick={() => setIsCreateCrewOpen(true)}
+                  className="w-40 h-[156px] rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-all shrink-0 cursor-pointer active:scale-95 group"
+                  aria-label={isEs ? 'Crear crew' : 'Create crew'}
+                >
+                  <Plus className="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] md:text-xs font-bold mt-1">
+                    {isEs ? 'Crear Crew' : 'Create Crew'}
+                  </span>
+                </button>
               </div>
-            ))}
+            ) : (
+              <div className="p-7 rounded-[26px] bg-[#FFFDF8] dark:bg-[#1A1815] border border-black/5 dark:border-white/10 shadow-xs text-center flex flex-col items-center justify-center mb-6">
+                <div className="w-12 h-12 rounded-full bg-[#FAF7F2] dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-center justify-center text-[#B89600] mb-3">
+                  <Users className="w-6 h-6 stroke-[1.8]" />
+                </div>
+                <h4 className="font-display font-bold text-base text-[#171512] dark:text-white mb-1">
+                  {isEs ? 'Sin crews aún' : 'No crews yet'}
+                </h4>
+                <p className="text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs leading-relaxed mb-4">
+                  {isEs
+                    ? 'Crea un grupo de confianza con tus amigos más cercanos para compartir fiestas, fondos y recuerdos.'
+                    : 'Create a private crew with your close friends to share parties, pots, and memories.'}
+                </p>
+                <button
+                  onClick={() => setIsCreateCrewOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#F0DC00] text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  {isEs ? 'Crear primer crew' : 'Create first crew'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {/* ============================================================== */}
-        {/* TAB 3: PHOTOS GALLERY GRID                                     */}
+        {/* TAB 3: GAMES (MINIGAMES & REALTIME PARTY SESSIONS)              */}
         {/* ============================================================== */}
-        {activeProfileTab === 'photos' && (
-          <div className="grid grid-cols-3 gap-2.5 mb-6">
-            {[
-              'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=400&q=80',
-              'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=400&q=80',
-              'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
-              'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=400&q=80',
-              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80',
-            ].map((imgSrc, idx) => (
-              <div
-                key={idx}
-                className="aspect-square rounded-2xl overflow-hidden shadow-sm border border-black/5 dark:border-white/10 hover:scale-[1.02] transition-transform cursor-pointer"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imgSrc} alt={`Memory ${idx + 1}`} className="w-full h-full object-cover" />
+        {activeProfileTab === 'games' && (
+          <div className="space-y-3 mb-6">
+            {/* Game 1: Who's Most Likely */}
+            <div className="p-4 rounded-[24px] bg-white/70 dark:bg-[#1E1B17] border border-black/5 dark:border-white/10 shadow-xs flex items-center justify-between gap-3.5 hover:border-black/15 transition-all">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#FFF5C0] dark:bg-[#F0DC00]/15 border border-[#F0DC00]/40 flex items-center justify-center text-[#B89600] shrink-0">
+                  <Zap className="w-6 h-6 fill-[#F0DC00]" />
+                </div>
+                <div className="text-left">
+                  <h4 className="font-display font-bold text-sm sm:text-base text-[#171512] dark:text-white leading-tight">
+                    {isEs ? '¿Quién es más probable?' : "Who's Most Likely?"}
+                  </h4>
+                  <p className="text-xs text-[#8E887E] dark:text-[#A8A196] mt-0.5 line-clamp-1">
+                    {isEs ? 'Vota por quién encaja en cada situación' : 'Vote on who fits each prompt best'}
+                  </p>
+                  <span className="text-[10px] font-semibold text-[#B89600] mt-1 inline-block">
+                    {whosMostLikely.length} {isEs ? 'preguntas disponibles' : 'prompts available'}
+                  </span>
+                </div>
               </div>
-            ))}
-            <button
-              onClick={() => setIsEditProfileOpen(true)}
-              className="aspect-square rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-colors cursor-pointer"
-              aria-label="Add photo"
-            >
-              <Plus className="w-5 h-5 stroke-[2.2]" />
-            </button>
+              <button
+                onClick={() => {
+                  setActiveGame('whos-most-likely');
+                  setCurrentView('games');
+                }}
+                className="px-4 py-2 rounded-full bg-[#F0DC00] text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0"
+              >
+                {isEs ? 'Jugar' : 'Play'}
+              </button>
+            </div>
+
+            {/* Game 2: This or That */}
+            <div className="p-4 rounded-[24px] bg-white/70 dark:bg-[#1E1B17] border border-black/5 dark:border-white/10 shadow-xs flex items-center justify-between gap-3.5 hover:border-black/15 transition-all">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#EDE9FE] dark:bg-[#836EF9]/15 border border-[#836EF9]/30 flex items-center justify-center text-[#674FF4] shrink-0">
+                  <ArrowRightLeft className="w-6 h-6 stroke-[2]" />
+                </div>
+                <div className="text-left">
+                  <h4 className="font-display font-bold text-sm sm:text-base text-[#171512] dark:text-white leading-tight">
+                    This or That
+                  </h4>
+                  <p className="text-xs text-[#8E887E] dark:text-[#A8A196] mt-0.5 line-clamp-1">
+                    {isEs ? 'Desliza estilo cartas y compara votos' : 'Swipe card-style and compare votes'}
+                  </p>
+                  <span className="text-[10px] font-semibold text-[#674FF4] mt-1 inline-block">
+                    {thisOrThat.length} {isEs ? 'tarjetas interactivas' : 'interactive cards'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveGame('this-or-that');
+                  setCurrentView('games');
+                }}
+                className="px-4 py-2 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0"
+              >
+                {isEs ? 'Jugar' : 'Play'}
+              </button>
+            </div>
+
+            {/* Game 3: Lore & Trivia */}
+            <div className="p-4 rounded-[24px] bg-white/70 dark:bg-[#1E1B17] border border-black/5 dark:border-white/10 shadow-xs flex items-center justify-between gap-3.5 hover:border-black/15 transition-all">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#D1FAE5] dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/50 flex items-center justify-center text-emerald-700 dark:text-emerald-300 shrink-0">
+                  <Trophy className="w-6 h-6 stroke-[2]" />
+                </div>
+                <div className="text-left">
+                  <h4 className="font-display font-bold text-sm sm:text-base text-[#171512] dark:text-white leading-tight">
+                    {isEs ? 'Trivia de la Crew' : 'Crew Trivia'}
+                  </h4>
+                  <p className="text-xs text-[#8E887E] dark:text-[#A8A196] mt-0.5 line-clamp-1">
+                    {isEs ? 'Demuestra quién conoce más anécdotas' : 'Compete on crew memories and history'}
+                  </p>
+                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 mt-1 inline-block">
+                    5 {isEs ? 'rondas competitivas' : 'competitive rounds'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveGame('crew-trivia');
+                  setCurrentView('games');
+                }}
+                className="px-4 py-2 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0"
+              >
+                {isEs ? 'Jugar' : 'Play'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -523,6 +679,12 @@ export const ProfileView: React.FC = () => {
       <EditProfileModal
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
+      />
+
+      {/* Create Crew Modal */}
+      <CreateCrewModal
+        isOpen={isCreateCrewOpen}
+        onClose={() => setIsCreateCrewOpen(false)}
       />
 
       {/* Shared Experience Mutual Chemistry Modal */}

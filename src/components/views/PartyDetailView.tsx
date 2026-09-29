@@ -115,7 +115,7 @@ export const PartyDetailView: React.FC = () => {
   const quickActions = [
     { id: 'play', label: isEs ? 'Juegos' : 'Games', icon: Gamepad2, onClick: () => setCurrentView('games') },
     { id: 'split', label: 'Split', icon: Receipt, onClick: () => setCurrentView('split') },
-    { id: 'pot', label: 'Pot', icon: Coins, onClick: () => setIsPotSheetOpen(true) },
+    { id: 'pot', label: 'Pot', icon: Coins, onClick: () => setCurrentView('party-pot') },
     { id: 'poll', label: isEs ? 'Votar' : 'Poll', icon: BarChart3, onClick: () => setCurrentView('polls') },
   ];
 

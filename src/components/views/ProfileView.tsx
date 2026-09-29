@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings,
   Camera,
@@ -15,7 +15,10 @@ import {
   ArrowRightLeft,
   Trophy,
   Calendar,
+  Gamepad2,
+  X,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { usePartyStore } from '@/store/usePartyStore';
 import { Member, Party } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -54,10 +57,11 @@ export const ProfileView: React.FC = () => {
     attendedPartyIds,
     addAttendedNight,
     createParty,
-    setActiveGame,
     setCurrentView,
     whosMostLikely,
     thisOrThat,
+    memories,
+    addPartyMemory,
   } = usePartyStore();
 
   const { language } = useTranslation();
@@ -69,10 +73,20 @@ export const ProfileView: React.FC = () => {
   const [isSeeAllPeopleOpen, setIsSeeAllPeopleOpen] = useState(false);
   const [isAddNightOpen, setIsAddNightOpen] = useState(false);
   const [isCreateCrewOpen, setIsCreateCrewOpen] = useState(false);
+  const [isGameStatsModalOpen, setIsGameStatsModalOpen] = useState(false);
   const [selectedConnectionMember, setSelectedConnectionMember] = useState<Member | null>(null);
-  const [activeProfileTab, setActiveProfileTab] = useState<'nights' | 'crews' | 'games'>('nights');
+  const [activeProfileTab, setActiveProfileTab] = useState<'nights' | 'crews' | 'photos'>('nights');
+  const [selectedPhoto, setSelectedPhoto] = useState<{
+    id: string;
+    imageUrl: string;
+    caption?: string;
+    createdAt?: string;
+    sourceTitle?: string;
+  } | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const activeAddress = currentUser.walletAddress;
 
   // Real social network connections list
@@ -103,6 +117,105 @@ export const ProfileView: React.FC = () => {
     );
   }, [parties, attendedPartyIds, currentUser.id]);
 
+  // Real social gaming stats & reputation
+  const gameStats = useMemo(() => {
+    const wmlVotes = whosMostLikely.reduce((acc, q) => {
+      if (!q.votes) return acc;
+      const hasVoted = Boolean(q.votes[currentUser.id] && q.votes[currentUser.id] > 0);
+      return acc + (hasVoted ? 1 : 0);
+    }, 0);
+
+    const totChoices = thisOrThat.reduce((acc, card) => {
+      const hasChosen = card.userVote !== undefined;
+      return acc + (hasChosen ? 1 : 0);
+    }, 0);
+
+    const explicitGames = currentUser.gamesCount || 0;
+    const totalPlays = Math.max(explicitGames, wmlVotes + totChoices);
+
+    let tierTitle = isEs ? 'Listo para Jugar' : 'Ready to Play';
+    let tierBadge = '🎲';
+    let tierColor = 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/30';
+
+    if (totalPlays >= 10) {
+      tierTitle = isEs ? 'Leyenda de la Fiesta' : 'Party Legend';
+      tierBadge = '👑';
+      tierColor = 'text-amber-500 bg-amber-500/10 border-amber-500/40';
+    } else if (totalPlays >= 4) {
+      tierTitle = isEs ? 'Alma de la Fiesta' : 'Party MVP';
+      tierBadge = '⚡';
+      tierColor = 'text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/40';
+    } else if (totalPlays >= 1) {
+      tierTitle = isEs ? 'Jugador Activo' : 'Active Player';
+      tierBadge = '🎉';
+      tierColor = 'text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/40';
+    }
+
+    return {
+      totalPlays,
+      wmlVotes,
+      totChoices,
+      tierTitle,
+      tierBadge,
+      tierColor,
+    };
+  }, [currentUser, whosMostLikely, thisOrThat, isEs]);
+
+  // Real social photos aggregate (memories, crew memories, and gathering covers)
+  const profilePhotos = useMemo(() => {
+    const items: {
+      id: string;
+      imageUrl: string;
+      caption?: string;
+      createdAt?: string;
+      sourceTitle?: string;
+    }[] = [];
+    const seenUrls = new Set<string>();
+
+    (memories || []).forEach((mem) => {
+      if (mem.imageUrl && !seenUrls.has(mem.imageUrl)) {
+        seenUrls.add(mem.imageUrl);
+        items.push({
+          id: mem.id,
+          imageUrl: mem.imageUrl,
+          caption: mem.caption,
+          createdAt: mem.createdAt,
+          sourceTitle: mem.uploadedByName,
+        });
+      }
+    });
+
+    (crews || []).forEach((c) => {
+      (c.memories || []).forEach((cm) => {
+        if (cm.imageUrl && !seenUrls.has(cm.imageUrl)) {
+          seenUrls.add(cm.imageUrl);
+          items.push({
+            id: cm.id,
+            imageUrl: cm.imageUrl,
+            caption: cm.caption,
+            createdAt: cm.uploadedAt,
+            sourceTitle: c.name,
+          });
+        }
+      });
+    });
+
+    attendedPartiesList.forEach((p) => {
+      if (p.coverImage && !seenUrls.has(p.coverImage)) {
+        seenUrls.add(p.coverImage);
+        items.push({
+          id: `party-cover-${p.id}`,
+          imageUrl: p.coverImage,
+          caption: p.title,
+          createdAt: p.date,
+          sourceTitle: p.title,
+        });
+      }
+    });
+
+    return items;
+  }, [memories, crews, attendedPartiesList]);
+
   const handleCopyAddress = async () => {
     const toCopy = activeAddress || currentUser.id || 'usr_active';
     await navigator.clipboard.writeText(toCopy);
@@ -121,6 +234,30 @@ export const ProfileView: React.FC = () => {
     });
     if (created?.id) {
       addAttendedNight(created.id);
+    }
+  };
+
+  const handleUploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    try {
+      const { uploadImageFile } = await import('@/services/storageService');
+      const uploadedUrl = await uploadImageFile(file, 'profile-photos');
+      await addPartyMemory({
+        imageUrl: uploadedUrl,
+        caption: isEs ? 'Recuerdo de perfil' : 'Profile memory',
+      });
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.6 },
+      });
+    } catch (err) {
+      console.error('Failed to upload profile photo:', err);
+    } finally {
+      setIsUploadingPhoto(false);
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -288,15 +425,64 @@ export const ProfileView: React.FC = () => {
                   crews
                 </span>
               </div>
-              <div>
-                <span className="font-display font-black text-xl sm:text-2xl text-[#171512] dark:text-white block">
-                  {currentUser.gamesCount || (whosMostLikely.some((q) => Object.keys(q.votes || {}).length > 0) ? 1 : 0)}
-                </span>
-                <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+              <div
+                onClick={() => setIsGameStatsModalOpen(true)}
+                className="cursor-pointer group hover:bg-black/[0.04] dark:hover:bg-white/[0.04] rounded-xl transition-colors py-1"
+                title={isEs ? 'Ver estadísticas de juego' : 'View gaming stats'}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <span className="font-display font-black text-xl sm:text-2xl text-[#171512] dark:text-white block group-hover:text-[#B89600] transition-colors">
+                    {gameStats.totalPlays}
+                  </span>
+                  <span className="text-xs group-hover:scale-110 transition-transform">{gameStats.tierBadge}</span>
+                </div>
+                <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block group-hover:text-[#171512] dark:group-hover:text-white transition-colors">
                   {isEs ? 'juegos' : 'games'}
                 </span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Party Gaming Social Reputation Card */}
+        <div className="mb-6 p-3.5 sm:p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div
+            onClick={() => setIsGameStatsModalOpen(true)}
+            className="flex items-center gap-3 cursor-pointer flex-1"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-[#FFF5C0] dark:bg-[#F0DC00]/15 border border-[#F0DC00]/40 flex items-center justify-center text-xl shrink-0">
+              {gameStats.tierBadge}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-display font-bold text-sm text-[#171512] dark:text-white">
+                  {gameStats.tierTitle}
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${gameStats.tierColor}`}>
+                  {gameStats.totalPlays} {isEs ? 'partidas' : 'plays'}
+                </span>
+              </div>
+              <p className="text-xs text-[#8E887E] dark:text-[#A8A196] mt-0.5 line-clamp-1">
+                {gameStats.totalPlays > 0
+                  ? `${gameStats.wmlVotes} ${isEs ? 'votos en Quién es Más' : 'votes in Whos Most'} · ${gameStats.totChoices} ${isEs ? 'en This or That' : 'in This or That'}`
+                  : (isEs ? 'Participa en juegos de fiesta para subir tu reputación' : 'Play party games to raise your reputation')}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+            <button
+              onClick={() => setIsGameStatsModalOpen(true)}
+              className="text-xs font-semibold text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white px-2.5 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              {isEs ? 'Ver stats' : 'View stats'}
+            </button>
+            <button
+              onClick={() => setCurrentView('games')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+            >
+              <Gamepad2 className="w-3.5 h-3.5" />
+              <span>{isEs ? 'Jugar' : 'Play'}</span>
+            </button>
           </div>
         </div>
 
@@ -309,7 +495,7 @@ export const ProfileView: React.FC = () => {
             [
               { id: 'nights', label: isEs ? 'Noches' : 'Nights' },
               { id: 'crews', label: 'Crews' },
-              { id: 'games', label: isEs ? 'Juegos' : 'Games' },
+              { id: 'photos', label: isEs ? 'Fotos' : 'Photos' },
             ] as const
           ).map((tab) => {
             const isActive = activeProfileTab === tab.id;
@@ -485,96 +671,97 @@ export const ProfileView: React.FC = () => {
         )}
 
         {/* ============================================================== */}
-        {/* TAB 3: GAMES (MINIGAMES & REALTIME PARTY SESSIONS)              */}
+        {/* TAB 3: PHOTOS (SOCIAL PROFILE REPERTOIRE & MEMORIES)           */}
         {/* ============================================================== */}
-        {activeProfileTab === 'games' && (
-          <div className="space-y-3 mb-6">
-            {/* Game 1: Who's Most Likely */}
-            <div className="p-4 rounded-[24px] bg-white/70 dark:bg-[#1E1B17] border border-black/5 dark:border-white/10 shadow-xs flex items-center justify-between gap-3.5 hover:border-black/15 transition-all">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-[#FFF5C0] dark:bg-[#F0DC00]/15 border border-[#F0DC00]/40 flex items-center justify-center text-[#B89600] shrink-0">
-                  <Zap className="w-6 h-6 fill-[#F0DC00]" />
-                </div>
-                <div className="text-left">
-                  <h4 className="font-display font-bold text-sm sm:text-base text-[#171512] dark:text-white leading-tight">
-                    {isEs ? '¿Quién es más probable?' : "Who's Most Likely?"}
-                  </h4>
-                  <p className="text-xs text-[#8E887E] dark:text-[#A8A196] mt-0.5 line-clamp-1">
-                    {isEs ? 'Vota por quién encaja en cada situación' : 'Vote on who fits each prompt best'}
-                  </p>
-                  <span className="text-[10px] font-semibold text-[#B89600] mt-1 inline-block">
-                    {whosMostLikely.length} {isEs ? 'preguntas disponibles' : 'prompts available'}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setActiveGame('whos-most-likely');
-                  setCurrentView('games');
-                }}
-                className="px-4 py-2 rounded-full bg-[#F0DC00] text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0"
-              >
-                {isEs ? 'Jugar' : 'Play'}
-              </button>
-            </div>
+        {activeProfileTab === 'photos' && (
+          <div>
+            {/* Hidden Photo File Input for Uploading */}
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleUploadPhoto}
+            />
 
-            {/* Game 2: This or That */}
-            <div className="p-4 rounded-[24px] bg-white/70 dark:bg-[#1E1B17] border border-black/5 dark:border-white/10 shadow-xs flex items-center justify-between gap-3.5 hover:border-black/15 transition-all">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-[#EDE9FE] dark:bg-[#836EF9]/15 border border-[#836EF9]/30 flex items-center justify-center text-[#674FF4] shrink-0">
-                  <ArrowRightLeft className="w-6 h-6 stroke-[2]" />
-                </div>
-                <div className="text-left">
-                  <h4 className="font-display font-bold text-sm sm:text-base text-[#171512] dark:text-white leading-tight">
-                    This or That
-                  </h4>
-                  <p className="text-xs text-[#8E887E] dark:text-[#A8A196] mt-0.5 line-clamp-1">
-                    {isEs ? 'Desliza estilo cartas y compara votos' : 'Swipe card-style and compare votes'}
-                  </p>
-                  <span className="text-[10px] font-semibold text-[#674FF4] mt-1 inline-block">
-                    {thisOrThat.length} {isEs ? 'tarjetas interactivas' : 'interactive cards'}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setActiveGame('this-or-that');
-                  setCurrentView('games');
-                }}
-                className="px-4 py-2 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0"
-              >
-                {isEs ? 'Jugar' : 'Play'}
-              </button>
-            </div>
+            {profilePhotos.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
+                {profilePhotos.map((photo) => (
+                  <div
+                    key={photo.id}
+                    onClick={() => setSelectedPhoto(photo)}
+                    className="aspect-square rounded-2xl overflow-hidden shadow-xs border border-black/5 dark:border-white/10 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer relative group bg-[#EFEAE2] dark:bg-[#1F1C18]"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photo.imageUrl}
+                      alt={photo.caption || 'Memory'}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 sm:p-2.5">
+                      {photo.caption && (
+                        <span className="text-[10px] sm:text-xs font-bold text-white leading-tight truncate">
+                          {photo.caption}
+                        </span>
+                      )}
+                      {photo.createdAt && (
+                        <span className="text-[9px] text-[#F0DC00] font-semibold mt-0.5">
+                          {photo.createdAt}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
 
-            {/* Game 3: Lore & Trivia */}
-            <div className="p-4 rounded-[24px] bg-white/70 dark:bg-[#1E1B17] border border-black/5 dark:border-white/10 shadow-xs flex items-center justify-between gap-3.5 hover:border-black/15 transition-all">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-[#D1FAE5] dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/50 flex items-center justify-center text-emerald-700 dark:text-emerald-300 shrink-0">
-                  <Trophy className="w-6 h-6 stroke-[2]" />
-                </div>
-                <div className="text-left">
-                  <h4 className="font-display font-bold text-sm sm:text-base text-[#171512] dark:text-white leading-tight">
-                    {isEs ? 'Trivia de la Crew' : 'Crew Trivia'}
-                  </h4>
-                  <p className="text-xs text-[#8E887E] dark:text-[#A8A196] mt-0.5 line-clamp-1">
-                    {isEs ? 'Demuestra quién conoce más anécdotas' : 'Compete on crew memories and history'}
-                  </p>
-                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 mt-1 inline-block">
-                    5 {isEs ? 'rondas competitivas' : 'competitive rounds'}
-                  </span>
-                </div>
+                {/* Dashed Add Photo Button */}
+                <button
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                  className="aspect-square rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-all cursor-pointer active:scale-95 group"
+                  aria-label={isEs ? 'Añadir foto' : 'Add photo'}
+                  title={isEs ? 'Subir foto a tu perfil' : 'Upload photo to profile'}
+                >
+                  {isUploadingPhoto ? (
+                    <div className="w-5 h-5 border-2 border-[#171512] dark:border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Plus className="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform" />
+                      <span className="text-[10px] sm:text-xs font-bold mt-1">
+                        {isEs ? 'Añadir' : 'Add'}
+                      </span>
+                    </>
+                  )}
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  setActiveGame('crew-trivia');
-                  setCurrentView('games');
-                }}
-                className="px-4 py-2 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0"
-              >
-                {isEs ? 'Jugar' : 'Play'}
-              </button>
-            </div>
+            ) : (
+              <div className="p-7 rounded-[26px] bg-[#FFFDF8] dark:bg-[#1A1815] border border-black/5 dark:border-white/10 shadow-xs text-center flex flex-col items-center justify-center mb-6">
+                <div className="w-12 h-12 rounded-full bg-[#FAF7F2] dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-center justify-center text-[#B89600] mb-3">
+                  <Camera className="w-6 h-6 stroke-[1.8]" />
+                </div>
+                <h4 className="font-display font-bold text-base text-[#171512] dark:text-white mb-1">
+                  {isEs ? 'Sin fotos en tu perfil aún' : 'No photos in your profile yet'}
+                </h4>
+                <p className="text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs leading-relaxed mb-4">
+                  {isEs
+                    ? 'Comparte recuerdos y fotos de las fiestas con tus amigos para construir tu galería social.'
+                    : 'Share photos and party memories with your friends to build your social profile gallery.'}
+                </p>
+                <button
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#F0DC00] text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+                >
+                  {isUploadingPhoto ? (
+                    <div className="w-4 h-4 border-2 border-[#171512] border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span>{isEs ? 'Subir primera foto' : 'Upload first photo'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -695,6 +882,152 @@ export const ProfileView: React.FC = () => {
           onClose={() => setSelectedConnectionMember(null)}
         />
       )}
+
+      {/* Photo Lightbox Modal */}
+      <AnimatePresence>
+        {selectedPhoto && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute inset-0 bg-black/90 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              className="relative w-full max-w-lg rounded-3xl overflow-hidden border border-white/20 bg-black/85 shadow-2xl z-10"
+            >
+              <button
+                onClick={() => setSelectedPhoto(null)}
+                className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="max-h-[70vh] overflow-hidden bg-black flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={selectedPhoto.imageUrl}
+                  alt={selectedPhoto.caption || 'Profile photo'}
+                  className="w-full h-full object-contain max-h-[70vh]"
+                />
+              </div>
+              <div className="p-4 border-t border-white/10 flex items-center justify-between">
+                <div>
+                  {selectedPhoto.caption && (
+                    <p className="text-sm font-bold text-white mb-0.5">
+                      {selectedPhoto.caption}
+                    </p>
+                  )}
+                  <span className="text-xs text-white/50">
+                    {selectedPhoto.sourceTitle ? `${selectedPhoto.sourceTitle} · ` : ''}
+                    {selectedPhoto.createdAt || (isEs ? 'Recuerdo' : 'Memory')}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Game Stats & Social Gaming Reputation Modal */}
+      <AnimatePresence>
+        {isGameStatsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsGameStatsModalOpen(false)}
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-md rounded-3xl bg-[#FFFDF8] dark:bg-[#1E1B17] border border-black/10 dark:border-white/15 p-6 shadow-2xl z-10 text-[#171512] dark:text-white"
+            >
+              <button
+                onClick={() => setIsGameStatsModalOpen(false)}
+                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-3.5 mb-5">
+                <div className="w-12 h-12 rounded-2xl bg-[#FFF5C0] dark:bg-[#F0DC00]/15 border border-[#F0DC00]/40 flex items-center justify-center text-2xl">
+                  {gameStats.tierBadge}
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-lg sm:text-xl leading-tight">
+                    {gameStats.tierTitle}
+                  </h3>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full border inline-block mt-0.5 ${gameStats.tierColor}`}>
+                    {gameStats.totalPlays} {isEs ? 'partidas y votos en total' : 'total games & votes'}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-[#8E887E] dark:text-[#A8A196] leading-relaxed mb-4">
+                {isEs
+                  ? 'Tus estadísticas reflejan tu actividad en minijuegos de fiesta y votaciones en vivo con tus amigos.'
+                  : 'Your stats reflect your activity in live party minigames and crew voting.'}
+              </p>
+
+              {/* Detailed Breakdown */}
+              <div className="space-y-2.5 mb-6">
+                <div className="p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Zap className="w-4 h-4 text-[#B89600]" />
+                    <span className="text-xs font-bold">
+                      {isEs ? '¿Quién es más probable?' : "Who's Most Likely?"}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-[#B89600]">
+                    {gameStats.wmlVotes} {isEs ? 'votos' : 'votes'}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <ArrowRightLeft className="w-4 h-4 text-[#674FF4]" />
+                    <span className="text-xs font-bold">This or That</span>
+                  </div>
+                  <span className="text-xs font-bold text-[#674FF4]">
+                    {gameStats.totChoices} {isEs ? 'elecciones' : 'choices'}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Trophy className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-bold">
+                      {isEs ? 'Trivia de Crew' : 'Crew Trivia'}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-600">
+                    5 {isEs ? 'rondas activas' : 'active rounds'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setIsGameStatsModalOpen(false);
+                  setCurrentView('games');
+                }}
+                className="w-full py-3 rounded-2xl bg-[#F0DC00] text-[#171512] font-bold text-xs shadow-md hover:scale-[1.01] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Gamepad2 className="w-4 h-4" />
+                <span>{isEs ? 'Abrir Hub de Juegos' : 'Open Game Hub'}</span>
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

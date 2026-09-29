@@ -33,6 +33,7 @@ import { Member, PartyMemory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { uploadImageFile } from '@/services/storageService';
 import { useMonPrice } from '@/hooks/useMonPrice';
+import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
 
 export const PartyDetailView: React.FC = () => {
   const {
@@ -265,7 +266,7 @@ export const PartyDetailView: React.FC = () => {
           {/* Background Image: Bright, Candid Party Photography */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={party?.coverImage || defaultParty.coverImage}
+            src={getCoverUrl(party?.coverImage || defaultParty.coverImage, 900)}
             alt={party?.title || defaultParty.title}
             className="absolute inset-0 w-full h-full object-cover object-center"
             loading="eager"
@@ -298,9 +299,10 @@ export const PartyDetailView: React.FC = () => {
               <div className="w-6 h-6 rounded-full overflow-hidden border border-white shrink-0 shadow-sm">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=120&q=80"
+                  src={getAvatarUrl("https://images.unsplash.com/photo-1506794778202-cad84cf45f1d", 64)}
                   alt="Law"
                   className="w-full h-full object-cover"
+                  decoding="async"
                 />
               </div>
               <span className="text-xs sm:text-sm font-semibold text-white">
@@ -320,9 +322,10 @@ export const PartyDetailView: React.FC = () => {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'}
+                    src={getAvatarUrl(m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb', 72)}
                     alt={m.name}
                     className="w-full h-full object-cover"
+                    decoding="async"
                   />
                 </button>
               ))}
@@ -495,9 +498,11 @@ export const PartyDetailView: React.FC = () => {
                             {act.avatar ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img
-                                src={act.avatar}
+                                src={getAvatarUrl(act.avatar, 80)}
                                 alt="User"
                                 className="w-full h-full object-cover"
+                                decoding="async"
+                                loading="lazy"
                               />
                             ) : (
                               <div className="w-full h-full bg-[#F0DC00]/30 text-[#171512] dark:text-white flex items-center justify-center font-display font-black text-sm">

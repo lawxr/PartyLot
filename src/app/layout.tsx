@@ -12,7 +12,8 @@ export const metadata: Metadata = {
       { url: "/icon.svg", type: "image/svg+xml" },
     ],
     shortcut: "/favicon.svg",
-    apple: "/icon.svg",
+    // iOS ignores SVG touch icons; serve a PNG.
+    apple: "/apple-touch-icon.png",
   },
   appleWebApp: {
     capable: true,
@@ -37,6 +38,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="bg-[#F7F2E8] text-[#171512]">
+      <head>
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+      </head>
       <body className="min-h-screen bg-[#F7F2E8] text-[#171512] font-ui antialiased selection:bg-[#F0DC00] selection:text-[#171512] relative">
         <div className="grain" aria-hidden="true" />
         <PrivyClientProvider>

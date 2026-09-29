@@ -7,8 +7,9 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Organiza fiestas, divide gastos, maneja tesorería onchain',
     start_url: '/',
     display: 'standalone',
-    background_color: '#0A0D12',
-    theme_color: '#836EF9',
+    // Brand espresso, matching the icon tile.
+    background_color: '#15140F',
+    theme_color: '#15140F',
     orientation: 'portrait',
     icons: [
       {
@@ -20,6 +21,13 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
+      },
+      {
+        // Full-bleed tile with the mark inside the safe zone, so it survives OS masks.
+        src: '/icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
       },
     ],
   };

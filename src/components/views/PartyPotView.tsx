@@ -1,100 +1,184 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
+  ChevronLeft,
+  MoreHorizontal,
   Plus,
-  Minus,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Award,
-  Landmark,
-  ArrowRightLeft,
-  CheckCircle2,
+  ArrowUp,
+  QrCode,
+  ChevronDown,
+  Check,
+  Copy,
   ExternalLink,
   AlertTriangle,
-  TrendingUp,
   X,
+  Landmark,
+  Coins,
+  ArrowRightLeft,
+  Sparkles,
 } from 'lucide-react';
+import QRCode from 'qrcode';
+import confetti from 'canvas-confetti';
 import { usePartyStore } from '@/store/usePartyStore';
 import { useWallets } from '@privy-io/react-auth';
-import { TopNav } from '@/components/navigation/TopNav';
-import { GlassButton } from '@/components/ui/GlassButton';
-import { BottomSheet } from '@/components/ui/BottomSheet';
-import { LiquidBlob } from '@/components/ui/LiquidBlob';
-import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
-import { PartyTasksBoard } from '@/components/party/PartyTasksBoard';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { MONAD_CONTRACT_ADDRESSES } from '@/contracts';
 import { useMonPrice } from '@/hooks/useMonPrice';
-import confetti from 'canvas-confetti';
+import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
 
 export const PartyPotView: React.FC = () => {
-  const { parties, currentPartyId, crews, transactions, addToPot, spendFromPot, rolloverPotToCrew, setCurrentView } =
-    usePartyStore();
+  const {
+    parties,
+    currentPartyId,
+    crews,
+    transactions,
+    addToPot,
+    spendFromPot,
+    rolloverPotToCrew,
+    setCurrentView,
+  } = usePartyStore();
+
   const { language } = useTranslation();
   const isEs = language === 'es';
+
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const partyMembers = party?.members || [];
   const partyTransactions = transactions.filter((t) => t.partyId === party?.id);
-
   const associatedCrew = crews.find((c) => c.id === party?.crewId);
 
   // Pyth Network Onchain MON/USD Price Feed
-  const { formatted: monPriceFormatted, formatUsd } = useMonPrice();
+  const { price: monPrice } = useMonPrice();
 
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isSpendOpen, setIsSpendOpen] = useState(false);
-  const [isRewardOpen, setIsRewardOpen] = useState(false);
-  const [isRolloverOpen, setIsRolloverOpen] = useState(false);
+  // Active Tab: 'add' | 'withdraw' | 'qr'
+  const [activeTab, setActiveTab] = useState<'add' | 'withdraw' | 'qr'>('add');
+
+  // Suggested Amount Selected
+  const [selectedSuggested, setSelectedSuggested] = useState<number | null>(10);
+  const [customAmount, setCustomAmount] = useState<string>('10');
+  const [isCustomMode, setIsCustomMode] = useState<boolean>(false);
+
+  // Withdraw state
+  const [withdrawAmount, setWithdrawAmount] = useState<string>('5');
+  const [withdrawDesc, setWithdrawDesc] = useState<string>('');
+
+  // Token & Network Selector State
+  const [isTokenSelectorOpen, setIsTokenSelectorOpen] = useState<boolean>(false);
+  const [selectedToken, setSelectedToken] = useState<'USDC' | 'MON'>('USDC');
+
+  // QR Canvas
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [copiedAddress, setCopiedAddress] = useState(false);
+
+  // Menu Modal State
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [isRolloverOpen, setIsRolloverOpen] = useState<boolean>(false);
+
+  // Feedback & Processing State
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
+  const [txError, setTxError] = useState<string | null>(null);
 
   const { wallets } = useWallets();
   const activeWallet = wallets.find((w) => w.walletClientType === 'privy') || wallets[0];
 
-  const [addAmount, setAddAmount] = useState('0.5');
-  const [spendAmount, setSpendAmount] = useState('0.2');
-  const [spendDesc, setSpendDesc] = useState('');
-  const [rewardRecipient, setRewardRecipient] = useState(partyMembers[1]?.name || partyMembers[0]?.name || '');
-  const [rewardRole, setRewardRole] = useState('OFFICIAL_DJ');
-  const [rewardAmount, setRewardAmount] = useState('0.1');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
-  const [txError, setTxError] = useState<string | null>(null);
+  // Derive USD balance and MON balance
+  const monBalance = party?.potBalance ?? 0;
+  // If user views in USD, calculate via monPrice or default multiplier
+  const effectiveMonPrice = monPrice && monPrice > 0 ? monPrice : 18.64;
+  const potUsdAmount = (monBalance * effectiveMonPrice).toFixed(2);
 
-  // Filter state for transactions
-  const [txFilter, setTxFilter] = useState<'all' | 'add' | 'spend' | 'reward' | 'rollover'>('all');
+  // Target deposit address (Party contract or party ID fallback)
+  const depositAddress =
+    MONAD_CONTRACT_ADDRESSES?.partyTreasury || party?.id || '0x71C...PartyPot';
 
-  const filteredTransactions =
-    txFilter === 'all'
-      ? partyTransactions
-      : partyTransactions.filter((t) => t.type === txFilter);
+  // Render QR Code on canvas
+  useEffect(() => {
+    if (activeTab !== 'qr' || !qrCanvasRef.current) return;
+    const canvas = qrCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  const handleAddFunds = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const amount = parseFloat(addAmount);
-    if (isNaN(amount) || amount <= 0) {
+    try {
+      const qrData = `ethereum:${depositAddress}?value=${customAmount}`;
+      const qr = QRCode.create(qrData, { errorCorrectionLevel: 'M' });
+      const moduleCount = qr.modules.size;
+      const margin = 2;
+      const totalModules = moduleCount + margin * 2;
+      const cellSize = Math.floor(480 / totalModules);
+      const canvasSize = cellSize * totalModules;
+
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+      ctx.fillStyle = '#171512';
+      const offset = margin * cellSize;
+      for (let r = 0; r < moduleCount; r++) {
+        for (let c = 0; c < moduleCount; c++) {
+          if (qr.modules.get(r, c)) {
+            ctx.beginPath();
+            ctx.roundRect(
+              offset + c * cellSize,
+              offset + r * cellSize,
+              cellSize - 0.5,
+              cellSize - 0.5,
+              1.5
+            );
+            ctx.fill();
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error generating pot QR code:', err);
+    }
+  }, [activeTab, depositAddress, customAmount]);
+
+  const handleCopyAddress = async () => {
+    await navigator.clipboard.writeText(depositAddress);
+    setCopiedAddress(true);
+    setTimeout(() => setCopiedAddress(false), 2000);
+  };
+
+  const handleSelectSuggested = (val: number) => {
+    setSelectedSuggested(val);
+    setCustomAmount(String(val));
+    setIsCustomMode(false);
+  };
+
+  const handleAddFunds = async () => {
+    const usdVal = parseFloat(customAmount);
+    if (isNaN(usdVal) || usdVal <= 0) {
       setTxError(isEs ? 'Ingresa un monto válido mayor a 0' : 'Enter a valid amount greater than 0');
       return;
     }
+
+    // Convert USD input to MON for onchain contract execution if needed
+    const monDepositAmount = selectedToken === 'MON' ? usdVal : Number((usdVal / effectiveMonPrice).toFixed(4));
 
     setIsProcessing(true);
     setTxError(null);
     try {
       const res = await addToPot(
         party.id,
-        amount,
-        `Deposit into party pot (${amount} MON on Monad)`,
+        monDepositAmount > 0 ? monDepositAmount : 0.1,
+        `Added $${usdVal.toFixed(2)} (${selectedToken}) to Party Pot`,
         { wallet: activeWallet }
       );
+
       if (res.receipt?.txHash) {
         setLastTxHash(res.receipt.txHash);
       }
+
       confetti({
-        particleCount: 50,
-        spread: 60,
+        particleCount: 65,
+        spread: 70,
         origin: { y: 0.6 },
-        colors: ['#2775CA', '#836EF9', '#F0DC00'],
+        colors: ['#F0DC00', '#2775CA', '#836EF9'],
       });
-      setIsAddOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al procesar el depósito en Monad';
       console.error('Error adding funds to pot:', err);
@@ -104,22 +188,23 @@ export const PartyPotView: React.FC = () => {
     }
   };
 
-  const handleSpend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const amount = parseFloat(spendAmount);
-    if (isNaN(amount) || amount <= 0) {
+  const handleWithdrawFunds = async () => {
+    const amountVal = parseFloat(withdrawAmount);
+    if (isNaN(amountVal) || amountVal <= 0) {
       setTxError(isEs ? 'Ingresa un monto válido mayor a 0' : 'Enter a valid amount greater than 0');
       return;
     }
-    if (!spendDesc.trim()) {
-      setTxError(isEs ? 'Ingresa una descripción del gasto' : 'Enter an expense description');
+    if (!withdrawDesc.trim()) {
+      setTxError(isEs ? 'Ingresa el motivo del retiro' : 'Enter a description for the withdrawal');
       return;
     }
-    if (party.potBalance < amount) {
+
+    const monWithdrawAmount = Number((amountVal / effectiveMonPrice).toFixed(4));
+    if (party.potBalance < monWithdrawAmount) {
       setTxError(
         isEs
-          ? `Saldo insuficiente en el Pot (${party.potBalance.toFixed(2)} MON disponible). Aporta fondos antes de gastar.`
-          : `Insufficient pot balance (${party.potBalance.toFixed(2)} MON available). Add funds first before spending.`
+          ? `Saldo insuficiente en el Pot (${party.potBalance.toFixed(2)} MON disponible).`
+          : `Insufficient pot balance (${party.potBalance.toFixed(2)} MON available).`
       );
       return;
     }
@@ -127,58 +212,15 @@ export const PartyPotView: React.FC = () => {
     setIsProcessing(true);
     setTxError(null);
     try {
-      const res = await spendFromPot(party.id, amount, spendDesc.trim());
+      const res = await spendFromPot(party.id, monWithdrawAmount, withdrawDesc.trim());
       if (res.receipt?.txHash) {
         setLastTxHash(res.receipt.txHash);
       }
-      setIsSpendOpen(false);
-      setSpendDesc('');
+      setWithdrawDesc('');
+      setActiveTab('add');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al deducir fondos del pot';
-      console.error('Error spending from pot:', err);
-      setTxError(msg);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleDistributeReward = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const amount = parseFloat(rewardAmount);
-    if (isNaN(amount) || amount <= 0) {
-      setTxError(isEs ? 'Ingresa un monto válido mayor a 0' : 'Enter a valid amount greater than 0');
-      return;
-    }
-    if (party.potBalance < amount) {
-      setTxError(
-        isEs
-          ? `Saldo insuficiente en el Pot (${party.potBalance.toFixed(2)} MON disponible) para otorgar esta recompensa.`
-          : `Insufficient pot balance (${party.potBalance.toFixed(2)} MON available) to grant this reward.`
-      );
-      return;
-    }
-
-    setIsProcessing(true);
-    setTxError(null);
-    try {
-      const res = await spendFromPot(
-        party.id,
-        amount,
-        `Reward: ${rewardRole} for ${rewardRecipient}`
-      );
-      if (res.receipt?.txHash) {
-        setLastTxHash(res.receipt.txHash);
-      }
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.6 },
-        colors: ['#F0DC00', '#2775CA'],
-      });
-      setIsRewardOpen(false);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al otorgar la recompensa';
-      console.error('Error distributing reward:', err);
+      const msg = err instanceof Error ? err.message : 'Error al retirar fondos del pot';
+      console.error('Error withdrawing from pot:', err);
       setTxError(msg);
     } finally {
       setIsProcessing(false);
@@ -195,11 +237,12 @@ export const PartyPotView: React.FC = () => {
         setLastTxHash(res.receipt.txHash);
       }
       confetti({
-        particleCount: 40,
-        spread: 50,
+        particleCount: 50,
+        spread: 60,
         origin: { y: 0.6 },
       });
       setIsRolloverOpen(false);
+      setIsMenuOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al transferir a la Crew';
       console.error('Error rolling over pot:', err);
@@ -211,82 +254,118 @@ export const PartyPotView: React.FC = () => {
 
   if (!party) {
     return (
-      <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-32">
-        <TopNav title={isEs ? 'TESORERÍA COMPARTIDA' : 'SHARED TREASURY'} />
-        <div className="max-w-md mx-auto px-4 py-20 flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 rounded-full bg-[#FFF5C0] border border-[#F0DC00]/50 flex items-center justify-center text-[#B89600] mb-4 shadow-sm">
-            <Landmark className="w-8 h-8" />
-          </div>
-          <h2 className="font-display font-black text-xl text-[#171512] mb-2">
-            {isEs ? 'Sin fiesta activa seleccionada' : 'No active gathering selected'}
-          </h2>
-          <p className="text-xs text-[#6F6A62] max-w-xs leading-relaxed mb-6">
-            {isEs
-              ? 'Únete a una fiesta o crea una nueva para gestionar el fondo común, recompensas y gastos compartidos en Monad Testnet.'
-              : 'Join a party or create a new one to manage shared treasury, bounties, and collective funds on Monad Testnet.'}
-          </p>
-          <div className="w-full max-w-xs flex flex-col gap-2.5">
-            <button
-              onClick={() => setCurrentView('create-party')}
-              className="w-full py-3.5 px-6 rounded-full bg-[#F0DC00] text-[#171512] font-bold text-xs sm:text-sm shadow-sm hover:scale-102 active:scale-95 transition-all cursor-pointer"
-            >
-              {isEs ? 'Crear Fiesta' : 'Create Party'}
-            </button>
-            <button
-              onClick={() => setCurrentView('join-party')}
-              className="w-full py-3 px-6 rounded-full border border-black/10 bg-white/70 hover:bg-white text-[#171512] font-semibold text-xs transition-all active:scale-95 cursor-pointer"
-            >
-              {isEs ? 'Unirse con Código' : 'Join with Code'}
-            </button>
-          </div>
+      <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-32 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-[#FFF5C0] dark:bg-[#F0DC00]/15 border border-[#F0DC00]/40 flex items-center justify-center text-[#B89600] mb-4">
+          <Landmark className="w-8 h-8" />
         </div>
+        <h2 className="font-display font-black text-xl mb-2">
+          {isEs ? 'Sin fiesta seleccionada' : 'No gathering selected'}
+        </h2>
+        <p className="text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs mb-6 leading-relaxed">
+          {isEs
+            ? 'Selecciona una fiesta para gestionar su bote colectivo onchain.'
+            : 'Select a gathering to manage its shared onchain treasury.'}
+        </p>
+        <button
+          onClick={() => setCurrentView('home')}
+          className="px-6 py-3 rounded-full bg-[#F0DC00] text-[#171512] font-bold text-xs"
+        >
+          {isEs ? 'Volver al Inicio' : 'Return Home'}
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-32 select-none">
-      <TopNav title={isEs ? 'TESORERÍA COMPARTIDA' : 'SHARED TREASURY'} />
+    <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-28 select-none relative transition-colors duration-200">
+      {/* ============================================================== */}
+      {/* 1. HERO COVER SECTION (MATCHING DESIGN REFERENCE)               */}
+      {/* ============================================================== */}
+      <div className="relative h-80 sm:h-96 md:h-[420px] w-full max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto overflow-hidden">
+        {/* Cover Photo Optimized */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={getCoverUrl(party.coverImage, 900)}
+          alt={party.title}
+          className="w-full h-full object-cover"
+          decoding="async"
+          loading="eager"
+        />
 
-      <main className="px-4 sm:px-6 md:px-8 max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-2 w-full">
-        {/* Monad Testnet Onchain Treasury & Pyth Oracle Status Banner */}
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#836EF9]/30 bg-gradient-to-r from-[#836EF9]/15 via-[#836EF9]/5 to-transparent p-3.5 backdrop-blur-md shadow-xs">
-          <div className="flex items-center gap-2.5">
-            <TokenLogo token="mon" size="md" />
-            <div>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-[#171512] dark:text-white">
-                <span>MON Treasury · Monad Testnet</span>
-                <span className="px-2 py-0.5 rounded-full bg-[#836EF9]/15 text-[#674FF4] dark:text-[#C4B5FD] text-[10px] font-mono font-bold">
-                  Chain 10143
-                </span>
-                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 px-2 py-0.5 rounded-full">
-                  <CheckCircle2 className="w-3 h-3" /> Live
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                <span className="text-[11px] text-[#635B50] dark:text-[#A8A196]">
-                  {isEs
-                    ? 'Gas 100% patrocinado · Finalidad ~400ms'
-                    : '100% gas sponsored · ~400ms finality'}
-                </span>
-                <span className="text-[10px] font-mono text-[#674FF4] font-bold bg-[#836EF9]/15 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <TrendingUp className="w-2.5 h-2.5" />
-                  1 MON ≈ {monPriceFormatted} USD (Pyth Oracle)
-                </span>
-              </div>
-            </div>
-          </div>
-          <a
-            href={`https://testnet.monadexplorer.com/address/${MONAD_CONTRACT_ADDRESSES.partyTreasury}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-bold text-[#674FF4] hover:underline"
+        {/* Cinematic Vignette Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/25 pointer-events-none" />
+
+        {/* Top Floating Navigation Header */}
+        <div className="absolute top-4 inset-x-4 flex items-center justify-between z-20">
+          {/* Back Button */}
+          <button
+            onClick={() => setCurrentView('party-detail')}
+            className="w-10 h-10 rounded-full bg-black/35 hover:bg-black/55 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer active:scale-95 shadow-md"
+            aria-label="Back"
           >
-            <span>{isEs ? 'Explorador Monad' : 'Monad Explorer'}</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </a>
+            <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+          </button>
+
+          {/* Options Menu Button */}
+          <button
+            onClick={() => setIsMenuOpen(true)}
+            className="w-10 h-10 rounded-full bg-black/35 hover:bg-black/55 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer active:scale-95 shadow-md"
+            aria-label="More options"
+          >
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
         </div>
 
+        {/* Content Overlaid at Bottom of Photo */}
+        <div className="absolute bottom-9 inset-x-5 sm:inset-x-6 z-20 text-white">
+          <span className="text-white/85 text-xs sm:text-sm font-semibold tracking-tight block">
+            {isEs ? 'Bote de la fiesta' : 'Party Pot'}
+          </span>
+
+          <div className="flex items-baseline gap-2.5 mt-0.5">
+            <h1 className="font-display font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-none text-white drop-shadow-sm">
+              ${potUsdAmount}
+            </h1>
+            <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-xs border border-white/20 text-[#FFF5C0]">
+              {monBalance.toFixed(2)} MON
+            </span>
+          </div>
+
+          <p className="text-white/75 text-xs font-medium mt-1">
+            {isEs
+              ? `compartido por ${partyMembers.length} personas`
+              : `shared by ${partyMembers.length} people`}
+          </p>
+
+          {/* Overlapping Avatars Row */}
+          <div className="flex items-center -space-x-2 mt-3">
+            {partyMembers.slice(0, 8).map((m, idx) => (
+              <div
+                key={m.id || idx}
+                className="w-8 h-8 rounded-full border-2 border-white dark:border-[#181613] overflow-hidden bg-black/20 shadow-sm shrink-0"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getAvatarUrl(m.avatar, 64)}
+                  alt={m.name}
+                  className="w-full h-full object-cover"
+                  decoding="async"
+                />
+              </div>
+            ))}
+            {partyMembers.length > 8 && (
+              <div className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-xs border-2 border-white dark:border-[#181613] flex items-center justify-center text-white text-[10px] font-extrabold shadow-sm shrink-0">
+                +{partyMembers.length - 8}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* 2. MAIN CARD SURFACE (LIQUID GLASS / WARM IVORY)               */}
+      {/* ============================================================== */}
+      <div className="relative -mt-6 z-20 rounded-t-[36px] bg-[#FAF7F2] dark:bg-[#181613] border-t border-white/70 dark:border-white/10 px-5 sm:px-6 pt-5 pb-16 shadow-[0_-12px_40px_rgba(65,48,25,0.08)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5)] max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
         {/* Real-time Monad Transaction Error Banner */}
         {txError && (
           <div className="mb-4 flex items-center justify-between p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs shadow-xs">
@@ -308,8 +387,12 @@ export const PartyPotView: React.FC = () => {
         {lastTxHash && (
           <div className="mb-4 flex items-center justify-between p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{isEs ? 'Transacción confirmada en Monad Testnet' : 'Transaction confirmed on Monad Testnet'}</span>
+              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>
+                {isEs
+                  ? 'Transacción confirmada en Monad Testnet'
+                  : 'Transaction confirmed on Monad Testnet'}
+              </span>
             </div>
             <a
               href={`https://testnet.monadexplorer.com/tx/${lastTxHash}`}
@@ -317,696 +400,636 @@ export const PartyPotView: React.FC = () => {
               rel="noopener noreferrer"
               className="font-mono underline font-bold flex items-center gap-1 text-[#674FF4]"
             >
-              <span>{lastTxHash.slice(0, 10)}...</span>
+              <span>{lastTxHash.slice(0, 8)}...</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
         )}
 
-        {/* Editorial Header */}
-        <div className="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-[rgba(35,30,22,0.08)] pb-5">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#B89600]">
-                {isEs ? 'POZO DEL GRUPO' : 'PARTY POT'}
-              </span>
-              <CryptoBadge token="mon" network="Monad" />
+        {/* 3 Action Squircles (Add, Withdraw, QR Code) */}
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-6">
+          {/* 1. Add */}
+          <button
+            onClick={() => {
+              setActiveTab('add');
+              setTxError(null);
+            }}
+            className={`py-3.5 px-3 rounded-[24px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'add'
+                ? 'bg-[#F0DC00] text-[#171512] font-bold shadow-xs scale-[1.02]'
+                : 'bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[#736C61] dark:text-[#A8A196] hover:bg-white dark:hover:bg-white/10'
+            }`}
+          >
+            <div
+              className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                activeTab === 'add' ? 'border border-[#171512]' : 'border border-current'
+              }`}
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.8]" />
             </div>
-            <h2 className="font-bubble text-4xl sm:text-6xl text-[#171512] tracking-tight leading-none">
-              PARTY POT
-            </h2>
-          </div>
+            <span className="text-xs font-bold leading-none tracking-tight">
+              {isEs ? 'Añadir' : 'Add'}
+            </span>
+          </button>
 
-          <div className="hidden sm:flex items-center gap-3">
-            <GlassButton
-              variant="accent"
-              size="md"
-              onClick={() => {
-                setTxError(null);
-                setIsAddOpen(true);
-              }}
-              icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
+          {/* 2. Withdraw */}
+          <button
+            onClick={() => {
+              setActiveTab('withdraw');
+              setTxError(null);
+            }}
+            className={`py-3.5 px-3 rounded-[24px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'withdraw'
+                ? 'bg-[#F0DC00] text-[#171512] font-bold shadow-xs scale-[1.02]'
+                : 'bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[#736C61] dark:text-[#A8A196] hover:bg-white dark:hover:bg-white/10'
+            }`}
+          >
+            <div
+              className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                activeTab === 'withdraw' ? 'border border-[#171512]' : 'border border-current'
+              }`}
             >
-              {isEs ? 'Aportar MON' : 'Add MON'}
-            </GlassButton>
+              <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />
+            </div>
+            <span className="text-xs font-bold leading-none tracking-tight">
+              {isEs ? 'Retirar' : 'Withdraw'}
+            </span>
+          </button>
 
-            <GlassButton
-              variant="glass"
-              size="md"
-              disabled={party.potBalance <= 0}
-              onClick={() => {
-                setTxError(null);
-                if (party.potBalance <= 0) {
-                  setTxError(isEs ? 'El pot no tiene saldo. Aporta fondos antes de premiar.' : 'Pot has no balance. Add funds first before rewarding.');
-                  return;
-                }
-                setIsRewardOpen(true);
-              }}
-              icon={<Award className="w-4 h-4 text-[#171512]" />}
-            >
-              {isEs ? 'Recompensa' : 'Reward'}
-            </GlassButton>
-
-            <GlassButton
-              variant="glass"
-              size="md"
-              disabled={party.potBalance <= 0}
-              onClick={() => {
-                setTxError(null);
-                if (party.potBalance <= 0) {
-                  setTxError(isEs ? 'El pot no tiene saldo. Aporta fondos antes de gastar.' : 'Pot has no balance. Add funds first before spending.');
-                  return;
-                }
-                setIsSpendOpen(true);
-              }}
-              icon={<Minus className="w-4 h-4 text-[#171512]" />}
-            >
-              {isEs ? 'Gasto' : 'Spend'}
-            </GlassButton>
-
-            {associatedCrew && (
-              <GlassButton
-                variant="glass"
-                size="md"
-                disabled={party.potBalance <= 0}
-                onClick={() => {
-                  setTxError(null);
-                  setIsRolloverOpen(true);
-                }}
-                icon={<Landmark className="w-4 h-4 text-[#171512]" />}
-              >
-                {isEs ? 'Transferir a Crew' : 'Transfer to Crew'}
-              </GlassButton>
-            )}
-          </div>
+          {/* 3. QR Code */}
+          <button
+            onClick={() => {
+              setActiveTab('qr');
+              setTxError(null);
+            }}
+            className={`py-3.5 px-3 rounded-[24px] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'qr'
+                ? 'bg-[#F0DC00] text-[#171512] font-bold shadow-xs scale-[1.02]'
+                : 'bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[#736C61] dark:text-[#A8A196] hover:bg-white dark:hover:bg-white/10'
+            }`}
+          >
+            <QrCode className="w-5 h-5 stroke-[2.2]" />
+            <span className="text-xs font-bold leading-none tracking-tight">
+              {isEs ? 'Código QR' : 'QR Code'}
+            </span>
+          </button>
         </div>
 
-        {/* Multi-Column Desktop Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Liquid Blob + Quick Actions (5 cols on desktop) */}
-          <div className="lg:col-span-5 flex flex-col items-center text-center">
-            {/* Interactive sphere */}
-            <div className="relative my-2 w-full flex justify-center">
-              <LiquidBlob balance={party.potBalance} />
-
-              {/* Balance Overlay over sphere */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <div className="flex items-center justify-center drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
-                  <span className="font-bubble text-5xl sm:text-6xl text-white tracking-tight">
-                    {party.potBalance.toFixed(2)}
-                  </span>
-                  <span className="ml-2 font-display font-black text-2xl text-[#F0DC00]">
-                    MON
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 mt-1 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20">
-                  <span className="text-xs font-mono font-bold text-white">
-                    ≈ {formatUsd(party.potBalance)} USD
-                  </span>
-                  <span className="text-[10px] text-amber-300 font-bold">
-                    · Pyth Oracle
-                  </span>
-                </div>
-                <span className="text-xs font-semibold text-white/80 mt-1.5 drop-shadow-md">
-                  {isEs ? `${partyMembers.length} participantes` : `${partyMembers.length} participants`}
+        {/* ============================================================== */}
+        {/* TAB A: ADD TO POT (DEFAULT & PRIMARY USER FLOW)                */}
+        {/* ============================================================== */}
+        {activeTab === 'add' && (
+          <div className="space-y-4 mb-6">
+            {/* Suggested Amounts Label & Pills */}
+            <div>
+              <div className="flex items-center justify-between mb-2 px-1">
+                <span className="font-bold text-xs sm:text-sm text-[#171512] dark:text-white">
+                  {isEs ? 'Montos sugeridos' : 'Suggested amounts'}
                 </span>
-              </div>
-            </div>
-
-            {/* Mobile Action Buttons */}
-            <div className="grid sm:hidden grid-cols-3 gap-2.5 w-full my-4">
-              <GlassButton
-                variant="accent"
-                size="md"
-                onClick={() => setIsAddOpen(true)}
-                icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
-              >
-                {isEs ? 'Aportar' : 'Add'}
-              </GlassButton>
-
-              <GlassButton
-                variant="glass"
-                size="md"
-                onClick={() => setIsRewardOpen(true)}
-                icon={<Award className="w-4 h-4 text-[#171512]" />}
-              >
-                {isEs ? 'Premio' : 'Reward'}
-              </GlassButton>
-
-              <GlassButton
-                variant="glass"
-                size="md"
-                onClick={() => setIsSpendOpen(true)}
-                icon={<Minus className="w-4 h-4 text-[#171512]" />}
-              >
-                {isEs ? 'Gasto' : 'Spend'}
-              </GlassButton>
-            </div>
-
-            {/* Mobile Rollover Button if Crew Associated */}
-            {associatedCrew && (
-              <div className="w-full sm:hidden mb-4">
-                <GlassButton
-                  variant="glass"
-                  size="md"
-                  fullWidth
-                  disabled={party.potBalance <= 0}
-                  onClick={() => setIsRolloverOpen(true)}
-                  icon={<Landmark className="w-4 h-4 text-[#171512]" />}
+                <button
+                  type="button"
+                  onClick={() => setIsCustomMode(!isCustomMode)}
+                  className="text-xs text-[#8E887E] dark:text-[#A8A196] font-semibold hover:text-[#171512] dark:hover:text-white cursor-pointer"
                 >
-                  {isEs ? `Transferir a ${associatedCrew.name}` : `Transfer to ${associatedCrew.name}`}
-                </GlassButton>
+                  {isCustomMode
+                    ? isEs
+                      ? 'Usar sugeridos'
+                      : 'Use suggested'
+                    : isEs
+                      ? 'Monto personalizado'
+                      : 'Custom amount'}
+                </button>
               </div>
-            )}
 
-            {/* Crew Treasury Link / Rollover Banner */}
-            {associatedCrew && (
-              <div className="w-full p-4 rounded-3xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_4px_20px_rgba(40,30,20,0.04)] mt-2 sm:mt-4 text-left">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] uppercase font-bold text-[#B89600] tracking-wider flex items-center gap-1.5">
-                    <Landmark className="w-3.5 h-3.5" />
-                    {isEs ? 'SALDO DEL GRUPO (CREW)' : 'CREW TREASURY'}
+              {!isCustomMode ? (
+                <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
+                  {[5, 10, 20, 50].map((amt) => {
+                    const isSelected = selectedSuggested === amt;
+                    return (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => handleSelectSuggested(amt)}
+                        className={`py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer text-center ${
+                          isSelected
+                            ? 'bg-[#F0DC00] text-[#171512] shadow-xs scale-[1.02]'
+                            : 'bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[#171512] dark:text-white hover:bg-white dark:hover:bg-white/10'
+                        }`}
+                      >
+                        ${amt}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-base text-[#8E887E]">
+                    $
                   </span>
-                  <div className="flex items-center gap-1.5">
-                    <TokenLogo token="mon" size="xs" />
-                    <span className="font-mono text-xs font-bold text-[#171512]">
-                      ${(associatedCrew.treasuryBalance ?? 0).toFixed(2)} MON
+                  <input
+                    type="number"
+                    step="any"
+                    value={customAmount}
+                    onChange={(e) => {
+                      setCustomAmount(e.target.value);
+                      setSelectedSuggested(null);
+                    }}
+                    placeholder="0.00"
+                    className="w-full pl-8 pr-4 py-3 rounded-2xl bg-white/80 dark:bg-white/5 border border-black/10 dark:border-white/15 text-[#171512] dark:text-white font-bold text-base focus:outline-none focus:border-[#F0DC00]"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Token & Network Selector Card */}
+            <div className="relative">
+              <div
+                onClick={() => setIsTokenSelectorOpen(!isTokenSelectorOpen)}
+                className="p-3.5 sm:p-4 rounded-2xl bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-xs flex items-center justify-between cursor-pointer hover:border-black/15 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  {selectedToken === 'USDC' ? (
+                    <div className="w-10 h-10 rounded-full bg-[#2775CA] flex items-center justify-center text-white shrink-0 shadow-sm">
+                      <div className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs">
+                        $
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#836EF9] flex items-center justify-center text-white shrink-0 shadow-sm font-bold text-xs">
+                      MON
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-bold text-sm text-[#171512] dark:text-white block leading-tight">
+                      {selectedToken === 'USDC' ? 'USDC · Base' : 'MON · Monad Testnet'}
+                    </span>
+                    <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block mt-0.5">
+                      {isEs ? 'Rápido, gas patrocinado' : 'Fast, low fees'}
                     </span>
                   </div>
                 </div>
-                <p className="text-xs text-[#6F6A62] leading-relaxed">
-                  {isEs ? 'Fondo soberano de ' : 'Sovereign group treasury for '}
-                  <span className="text-[#171512] font-bold">{associatedCrew.name}</span>.
-                  {isEs
-                    ? ' Los fondos restantes se trasladan a la próxima fiesta.'
-                    : ' Leftover pot balances carry over to future gatherings.'}
-                </p>
-                {party.potBalance > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setIsRolloverOpen(true)}
-                    className="mt-3 w-full py-2.5 px-3 rounded-2xl bg-[#FFF5C0] hover:bg-[#FCECA0] text-[#171512] text-xs font-bold flex items-center justify-center gap-2 border border-[#F0DC00]/50 transition-all cursor-pointer shadow-xs"
-                  >
-                    <ArrowRightLeft className="w-3.5 h-3.5 text-[#B89600]" />
-                    {isEs
-                      ? `Transferir $${party.potBalance.toFixed(2)} MON a la Crew`
-                      : `Transfer $${party.potBalance.toFixed(2)} MON to Crew`}
-                  </button>
-                )}
-              </div>
-            )}
 
-            {/* Monad Smart Contract Card */}
-            <div className="w-full p-4 rounded-3xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_4px_20px_rgba(40,30,20,0.04)] mt-3 text-left">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase font-bold text-[#B89600] tracking-wider block">
-                  CONTRATO INTELIGENTE (MONAD)
-                </span>
-                <span className="text-[9px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  {isEs ? 'Auditado' : 'Audited'}
-                </span>
+                <ChevronDown
+                  className={`w-4 h-4 text-[#8E887E] transition-transform ${
+                    isTokenSelectorOpen ? 'rotate-180' : ''
+                  }`}
+                />
               </div>
-              <div className="mt-2 flex items-center justify-between bg-black/[0.03] p-2 rounded-xl border border-black/5">
-                <span className="font-mono text-[11px] text-[#595247] truncate max-w-[190px]">
-                  {MONAD_CONTRACT_ADDRESSES.partyTreasury}
+
+              {/* Token Selector Dropdown */}
+              <AnimatePresence>
+                {isTokenSelectorOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="absolute top-full left-0 right-0 mt-2 z-30 p-2 rounded-2xl bg-white dark:bg-[#1E1B17] border border-black/10 dark:border-white/15 shadow-xl space-y-1"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedToken('USDC');
+                        setIsTokenSelectorOpen(false);
+                      }}
+                      className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left text-xs font-bold cursor-pointer transition-colors ${
+                        selectedToken === 'USDC'
+                          ? 'bg-[#F0DC00]/20 text-[#171512] dark:text-white'
+                          : 'hover:bg-black/5 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-full bg-[#2775CA] text-white flex items-center justify-center text-[10px] font-bold">
+                          $
+                        </div>
+                        <span>USDC · Base Network</span>
+                      </div>
+                      {selectedToken === 'USDC' && <Check className="w-4 h-4 text-[#171512] dark:text-white" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedToken('MON');
+                        setIsTokenSelectorOpen(false);
+                      }}
+                      className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left text-xs font-bold cursor-pointer transition-colors ${
+                        selectedToken === 'MON'
+                          ? 'bg-[#836EF9]/20 text-[#171512] dark:text-white'
+                          : 'hover:bg-black/5 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-full bg-[#836EF9] text-white flex items-center justify-center text-[10px] font-bold">
+                          M
+                        </div>
+                        <span>MON · Monad Testnet</span>
+                      </div>
+                      {selectedToken === 'MON' && <Check className="w-4 h-4 text-[#171512] dark:text-white" />}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Big Prominent Yellow CTA Button */}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={handleAddFunds}
+              disabled={isProcessing}
+              className="w-full py-4 rounded-full bg-[#F0DC00] text-[#171512] font-display font-black text-sm sm:text-base tracking-tight shadow-md hover:scale-[1.01] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <div className="w-5 h-5 border-2 border-[#171512] border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <span>
+                  {isEs
+                    ? `Añadir $${parseFloat(customAmount || '0').toFixed(2)} al bote`
+                    : `Add $${parseFloat(customAmount || '0').toFixed(2)} to pot`}
                 </span>
+              )}
+            </motion.button>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB B: WITHDRAW FUNDS (EXPENSE SETTLEMENT)                      */}
+        {/* ============================================================== */}
+        {activeTab === 'withdraw' && (
+          <div className="space-y-4 mb-6">
+            <div className="p-4 rounded-2xl bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-3">
+              <div>
+                <label className="text-xs font-bold text-[#171512] dark:text-white block mb-1">
+                  {isEs ? 'Monto a retirar' : 'Amount to withdraw'}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sm text-[#8E887E]">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    step="any"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    className="w-full pl-7 pr-4 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-black/10 dark:border-white/15 text-sm font-bold focus:outline-none focus:border-[#F0DC00]"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#171512] dark:text-white block mb-1">
+                  {isEs ? 'Motivo o gasto de la fiesta' : 'Reason or party expense'}
+                </label>
+                <input
+                  type="text"
+                  value={withdrawDesc}
+                  onChange={(e) => setWithdrawDesc(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-black/10 dark:border-white/15 text-sm font-medium focus:outline-none focus:border-[#F0DC00]"
+                  placeholder={isEs ? 'Ej. Hielo, bebidas, snacks' : 'e.g. Ice, drinks, snacks'}
+                />
+              </div>
+            </div>
+
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={handleWithdrawFunds}
+              disabled={isProcessing}
+              className="w-full py-4 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] font-display font-black text-sm tracking-tight shadow-md hover:scale-[1.01] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <div className="w-5 h-5 border-2 border-white dark:border-[#171512] border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <span>{isEs ? 'Retirar del bote' : 'Withdraw from pot'}</span>
+              )}
+            </motion.button>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB C: QR CODE DISPLAY & ADDRESS COPY                          */}
+        {/* ============================================================== */}
+        {activeTab === 'qr' && (
+          <div className="p-6 rounded-[28px] bg-white/90 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-xs flex flex-col items-center justify-center text-center mb-6">
+            <h4 className="font-display font-bold text-base text-[#171512] dark:text-white mb-1">
+              {isEs ? 'Escanea para transferir al bote' : 'Scan to transfer to pot'}
+            </h4>
+            <p className="text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs mb-4">
+              {isEs
+                ? 'Cualquier asistente puede enviar fondos directamente usando su billetera habitual.'
+                : 'Any attendee can send funds directly using their preferred wallet.'}
+            </p>
+
+            {/* QR Canvas */}
+            <div className="p-3 rounded-2xl bg-white shadow-md border border-black/10 mb-4 inline-block">
+              <canvas ref={qrCanvasRef} className="w-48 h-48 sm:w-56 sm:h-56 block rounded-lg" />
+            </div>
+
+            {/* Copy Address Button */}
+            <button
+              onClick={handleCopyAddress}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 text-xs font-semibold cursor-pointer transition-colors"
+            >
+              {copiedAddress ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+                    {isEs ? 'Dirección copiada' : 'Address copied'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-[#8E887E]" />
+                  <span>
+                    {depositAddress.slice(0, 10)}...{depositAddress.slice(-8)}
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* 3. RECENT ACTIVITY LIST (MATCHING DESIGN REFERENCE)            */}
+        {/* ============================================================== */}
+        <div>
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h3 className="font-display font-extrabold text-sm sm:text-base text-[#171512] dark:text-white tracking-tight">
+              {isEs ? 'Actividad reciente' : 'Recent activity'}
+            </h3>
+            <button
+              onClick={() => setIsMenuOpen(true)}
+              className="text-xs font-semibold text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white flex items-center gap-0.5 cursor-pointer"
+            >
+              <span>{isEs ? 'Ver todo' : 'See all'}</span>
+              <span className="text-[10px] ml-0.5">&gt;</span>
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {partyTransactions.length > 0 ? (
+              partyTransactions.slice(0, 5).map((tx) => {
+                const isDeposit = tx.type === 'add';
+                const user = partyMembers.find((m) => m.name === tx.userName) || partyMembers[0];
+
+                return (
+                  <div
+                    key={tx.id}
+                    className="p-3 rounded-2xl bg-white/70 dark:bg-white/[0.03] border border-black/5 dark:border-white/10 flex items-center justify-between gap-3 shadow-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Avatar with Tiny Plus/Minus Micro Badge */}
+                      <div className="relative w-10 h-10 rounded-full shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={getAvatarUrl(user?.avatar, 80)}
+                          alt={tx.userName}
+                          className="w-full h-full rounded-full object-cover border border-black/10 dark:border-white/15"
+                          decoding="async"
+                        />
+                        <div
+                          className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white shadow-xs ${
+                            isDeposit
+                              ? 'bg-[#F0DC00] text-[#171512]'
+                              : 'bg-rose-500 text-white'
+                          }`}
+                        >
+                          {isDeposit ? '+' : '-'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight">
+                          {tx.userName}{' '}
+                          <span className="font-normal text-[#8E887E] dark:text-[#A8A196]">
+                            {isDeposit
+                              ? isEs
+                                ? `aportó $${(tx.amount * effectiveMonPrice).toFixed(0)}`
+                                : `added $${(tx.amount * effectiveMonPrice).toFixed(0)}`
+                              : isEs
+                                ? `retiró $${(tx.amount * effectiveMonPrice).toFixed(0)}`
+                                : `withdrew $${(tx.amount * effectiveMonPrice).toFixed(0)}`}
+                          </span>
+                        </span>
+                        <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196] block mt-0.5 truncate max-w-[200px] sm:max-w-xs">
+                          {tx.description || `${tx.amount} MON`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
+                        {tx.timestamp || '2m ago'}
+                      </span>
+                      {tx.txHash && (
+                        <a
+                          href={`https://testnet.monadexplorer.com/tx/${tx.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-[#836EF9] hover:underline block font-mono"
+                        >
+                          explorer
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              /* Fallback Social Initial Activity */
+              [
+                {
+                  id: 'default-1',
+                  name: partyMembers[0]?.name || 'Ana',
+                  avatar: partyMembers[0]?.avatar,
+                  action: isEs ? 'aportó $10' : 'added $10',
+                  time: '2m ago',
+                  isAdd: true,
+                },
+                {
+                  id: 'default-2',
+                  name: partyMembers[1]?.name || 'Carlos',
+                  avatar: partyMembers[1]?.avatar,
+                  action: isEs ? 'aportó $25' : 'added $25',
+                  time: '12m ago',
+                  isAdd: true,
+                },
+                {
+                  id: 'default-3',
+                  name: partyMembers[2]?.name || 'Sofi',
+                  avatar: partyMembers[2]?.avatar,
+                  action: isEs ? 'retiró $12' : 'withdrew $12',
+                  time: '1h ago',
+                  isAdd: false,
+                },
+              ].map((item) => (
+                <div
+                  key={item.id}
+                  className="p-3 rounded-2xl bg-white/70 dark:bg-white/[0.03] border border-black/5 dark:border-white/10 flex items-center justify-between gap-3 shadow-xs"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 rounded-full shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getAvatarUrl(item.avatar, 80)}
+                        alt={item.name}
+                        className="w-full h-full rounded-full object-cover border border-black/10 dark:border-white/15"
+                        decoding="async"
+                      />
+                      <div
+                        className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white shadow-xs ${
+                          item.isAdd ? 'bg-[#F0DC00] text-[#171512]' : 'bg-rose-500 text-white'
+                        }`}
+                      >
+                        {item.isAdd ? '+' : '-'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight">
+                        {item.name}{' '}
+                        <span className="font-normal text-[#8E887E] dark:text-[#A8A196]">
+                          {item.action}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium shrink-0">
+                    {item.time}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* 4. OPTIONS MENU MODAL                                          */}
+      {/* ============================================================== */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md rounded-t-[32px] sm:rounded-[32px] bg-[#FFFDF8] dark:bg-[#1E1B17] border border-black/10 dark:border-white/15 p-6 shadow-2xl z-10 text-[#171512] dark:text-white"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display font-bold text-lg">
+                  {isEs ? 'Opciones del Bote' : 'Party Pot Options'}
+                </h3>
+                <button
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#8E887E] cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-2 mb-6">
                 <a
                   href={`https://testnet.monadexplorer.com/address/${MONAD_CONTRACT_ADDRESSES.partyTreasury}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-[#674FF4] font-bold hover:underline flex items-center gap-0.5"
+                  className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] flex items-center justify-between hover:bg-black/[0.06] transition-colors"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-3">
+                    <Coins className="w-5 h-5 text-[#836EF9]" />
+                    <span className="text-xs font-bold">
+                      {isEs ? 'Ver contrato en Monad Explorer' : 'View contract on Monad Explorer'}
+                    </span>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-[#8E887E]" />
                 </a>
-              </div>
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[rgba(35,30,22,0.06)] text-[11px] text-[#8E887E]">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{isEs ? 'Verificable en cadena' : 'Verifiable onchain'}</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Right Column: Verified Ledger Feed (7 cols on desktop) */}
-          <div className="lg:col-span-7 w-full text-left space-y-4">
-            {/* Filter Bar */}
-            <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar pb-1">
-              {[
-                { id: 'all', label: `${isEs ? 'Todos' : 'All'} (${partyTransactions.length})` },
-                { id: 'add', label: isEs ? 'Aportes' : 'Deposits' },
-                { id: 'spend', label: isEs ? 'Gastos' : 'Deductions' },
-                { id: 'reward', label: isEs ? 'Premios' : 'Rewards' },
-                { id: 'rollover', label: 'Rollover' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setTxFilter(tab.id as typeof txFilter)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                    txFilter === tab.id
-                      ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
-                      : 'bg-[#FFFDF8] text-[#6F6A62] hover:text-[#171512] border border-[rgba(35,30,22,0.08)] shadow-xs'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-between px-1">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[#6F6A62] block">
-                  {isEs ? 'MOVIMIENTOS EN MONAD' : 'MONAD POT TRANSACTIONS'}
-                </span>
-                <span className="text-xs text-[#8E887E]">
-                  {isEs ? 'Liquidación instantánea en MON nativo' : 'Instant settlement in native MON'}
-                </span>
-              </div>
-              <span className="text-xs text-[#8C7300] font-mono font-bold">
-                {filteredTransactions.length} {isEs ? 'registros' : 'records'}
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {filteredTransactions.length > 0 ? (
-                filteredTransactions.map((tx) => {
-                  const isAdd = tx.type === 'add';
-                  const isRollover = tx.type === 'rollover';
-                  const isReward = tx.type === 'reward';
-
-                  return (
-                    <div
-                      key={tx.id}
-                      className="p-4 sm:p-5 flex items-center justify-between bg-[#FFFDF8] border border-[rgba(35,30,22,0.07)] rounded-[20px] shadow-[0_4px_16px_rgba(40,30,20,0.03)] hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <div
-                          className={`w-11 h-11 rounded-2xl flex items-center justify-center border shrink-0 ${
-                            isRollover
-                              ? 'bg-purple-50 text-purple-600 border-purple-200'
-                              : isReward
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : isAdd
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-rose-50 text-rose-600 border-rose-200'
-                          }`}
-                        >
-                          {isRollover ? (
-                            <Landmark className="w-5 h-5" />
-                          ) : isReward ? (
-                            <Award className="w-5 h-5" />
-                          ) : isAdd ? (
-                            <ArrowDownLeft className="w-5 h-5" />
-                          ) : (
-                            <ArrowUpRight className="w-5 h-5" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-display font-bold text-base text-[#171512]">
-                              {tx.userName}
-                            </h4>
-                            {isRollover && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-purple-100 text-purple-700 border border-purple-200">
-                                Crew Rollover
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-[#6F6A62]">{tx.description}</p>
-                          <a
-                            href={`https://testnet.monadexplorer.com/address/${MONAD_CONTRACT_ADDRESSES.partyTreasury}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[10px] text-[#674FF4] hover:underline font-mono mt-0.5"
-                          >
-                            <span>Monad Tx</span>
-                            <ArrowUpRight className="w-2.5 h-2.5" />
-                          </a>
-                        </div>
-                      </div>
-
-                      <div className="text-right flex flex-col items-end">
-                        <div className="flex items-center gap-1">
-                          <TokenLogo token="mon" size="xs" />
-                          <span
-                            className={`font-display font-black text-lg sm:text-xl ${
-                              isAdd
-                                ? 'text-emerald-700'
-                                : isRollover
-                                ? 'text-purple-700'
-                                : 'text-rose-600'
-                            }`}
-                          >
-                            {isAdd ? `+${tx.amount.toFixed(2)}` : `-${tx.amount.toFixed(2)}`}
-                          </span>
-                        </div>
-                        <span className="block text-[10px] text-[#8E887E] uppercase font-mono font-bold">
-                          MON · Monad
+                {associatedCrew && (
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsRolloverOpen(true);
+                    }}
+                    className="w-full p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] flex items-center justify-between hover:bg-black/[0.06] transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ArrowRightLeft className="w-5 h-5 text-[#B89600]" />
+                      <div>
+                        <span className="text-xs font-bold block">
+                          {isEs ? 'Transferir remanente a Crew' : 'Rollover pot to Crew'}
                         </span>
-                        <span className="block text-[10px] text-[#8E887E] font-mono">
-                          ≈ {formatUsd(tx.amount)} USD
+                        <span className="text-[10px] text-[#8E887E] block mt-0.5">
+                          {associatedCrew.name}
                         </span>
                       </div>
                     </div>
-                  );
-                })
-              ) : (
-                <div className="p-8 text-center rounded-3xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-sm">
-                  <Landmark className="w-8 h-8 text-[#999187] mx-auto mb-2" />
-                  <p className="text-xs text-[#6F6A62]">
-                    {isEs ? 'No hay transacciones aún en esta categoría.' : 'No transactions in this category yet.'}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Social Bounties & Tasks Board */}
-        <div className="mt-12 pt-8 border-t border-[rgba(35,30,22,0.08)]">
-          <PartyTasksBoard partyId={party.id} />
-        </div>
-      </main>
-
-      {/* BottomSheet: Add Money */}
-      <BottomSheet
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        title={isEs ? 'Aportar al Party Pot (MON)' : 'Add to Party Pot (MON)'}
-      >
-        <form onSubmit={handleAddFunds} className="space-y-4">
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-[#836EF9]/15 to-[#836EF9]/5 border border-[#836EF9]/25">
-            <div className="flex items-center gap-2">
-              <TokenLogo token="mon" size="md" />
-              <div>
-                <span className="text-xs font-bold text-[#171512] block">MON on Monad</span>
-                <span className="text-[10px] text-[#635B50]">
-                  {isEs ? 'Gas 100% patrocinado (Cero comisiones)' : '100% gas sponsored (Zero fees)'}
-                </span>
+                  </button>
+                )}
               </div>
-            </div>
-            <CryptoBadge token="mon" network="Monad" showNetwork={false} />
-          </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-2">
-              {isEs ? 'Seleccionar monto rápido' : 'Select Preset Amount'}
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {['0.1', '0.5', '1.0', '2.0'].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setAddAmount(preset)}
-                  className={`py-2 px-1 rounded-2xl font-display font-black text-sm flex flex-col items-center justify-center transition-all cursor-pointer ${
-                    addAmount === preset
-                      ? 'bg-[#F0DC00] text-[#171512] shadow-md scale-105'
-                      : 'bg-[#F7F2E8] text-[#171512] border border-[rgba(35,30,22,0.08)] hover:bg-[#EFE9DF]'
-                  }`}
-                >
-                  <span>+{preset} MON</span>
-                  <span className="text-[10px] font-mono font-normal opacity-75">
-                    ≈{formatUsd(Number(preset))}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {isEs ? 'Monto personalizado (MON)' : 'Custom Amount (MON)'}
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                step="0.01"
-                value={addAmount}
-                onChange={(e) => setAddAmount(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
-              />
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2">
-                <TokenLogo token="mon" size="sm" />
-              </div>
-            </div>
-            <div className="mt-1.5 flex items-center justify-between px-1 text-[11px] text-[#6F6A62]">
-              <span>{isEs ? 'Equivalente en dólares:' : 'USD equivalent:'}</span>
-              <span className="font-mono font-bold text-[#674FF4]">
-                ≈ {formatUsd(parseFloat(addAmount) || 0)} USD (Pyth Oracle)
-              </span>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <GlassButton
-              variant="accent"
-              size="lg"
-              fullWidth
-              type="submit"
-              disabled={isProcessing}
-            >
-              {isProcessing
-                ? isEs ? 'Procesando en Monad...' : 'Confirming on Monad...'
-                : isEs ? `Aportar ${addAmount} MON al Pot` : `Deposit ${addAmount} MON to Pot`}
-            </GlassButton>
-          </div>
-        </form>
-      </BottomSheet>
-
-      {/* BottomSheet: Reward Contributor */}
-      <BottomSheet
-        isOpen={isRewardOpen}
-        onClose={() => setIsRewardOpen(false)}
-        title={isEs ? 'Recompensar Contribuidor (MON)' : 'Reward Social Contributor (MON)'}
-      >
-        <form onSubmit={handleDistributeReward} className="space-y-4">
-          <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-amber-700" />
-              <span className="text-xs font-bold text-amber-900">
-                {isEs ? 'Recompensa social pagada del Pot' : 'Social reward paid from shared pot'}
-              </span>
-            </div>
-            <CryptoBadge token="mon" network="Monad" showNetwork={false} />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {isEs ? 'Contribuidor' : 'Contributor'}
-            </label>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-              {partyMembers.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setRewardRecipient(m.name)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer ${
-                    rewardRecipient === m.name
-                      ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
-                      : 'bg-[#F7F2E8] text-[#6F6A62] border border-[rgba(35,30,22,0.08)]'
-                  }`}
-                >
-                  {m.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {isEs ? 'Rol o Aporte' : 'Contribution Role'}
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: 'OFFICIAL_DJ', label: '🎧 DJ MVP' },
-                { id: 'ICE_RUNNER', label: '🧊 Ice & Lime' },
-                { id: 'GAME_WINNER', label: '👑 Game Winner' },
-              ].map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => setRewardRole(r.id)}
-                  className={`py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    rewardRole === r.id
-                      ? 'bg-[#FFF5C0] border border-[#F0DC00] text-[#171512] shadow-xs'
-                      : 'bg-[#F7F2E8] text-[#6F6A62] border border-[rgba(35,30,22,0.08)]'
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {isEs ? 'Monto de Recompensa (MON)' : 'Reward Amount (MON)'}
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                step="0.01"
-                value={rewardAmount}
-                onChange={(e) => setRewardAmount(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
-              />
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2">
-                <TokenLogo token="mon" size="sm" />
-              </div>
-            </div>
-            <div className="mt-1.5 flex items-center justify-between px-1 text-[11px] text-[#6F6A62]">
-              <span>{isEs ? 'Equivalente en dólares:' : 'USD equivalent:'}</span>
-              <span className="font-mono font-bold text-[#674FF4]">
-                ≈ {formatUsd(parseFloat(rewardAmount) || 0)} USD (Pyth Oracle)
-              </span>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <GlassButton
-              variant="accent"
-              size="lg"
-              fullWidth
-              type="submit"
-              disabled={isProcessing}
-            >
-              {isProcessing
-                ? isEs ? 'Enviando recompensa en Monad...' : 'Sending reward on Monad...'
-                : isEs ? `Pagar ${rewardAmount} MON a ${rewardRecipient}` : `Send ${rewardAmount} MON to ${rewardRecipient}`}
-            </GlassButton>
-          </div>
-        </form>
-      </BottomSheet>
-
-      {/* BottomSheet: Spend Money */}
-      <BottomSheet
-        isOpen={isSpendOpen}
-        onClose={() => setIsSpendOpen(false)}
-        title={isEs ? 'Registrar Gasto del Pot' : 'Spend from Pot'}
-      >
-        <form onSubmit={handleSpend} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {isEs ? '¿Qué se compró?' : 'What did you buy?'}
-            </label>
-            <input
-              type="text"
-              required
-              placeholder={isEs ? 'Ej. Hielo extra, Tacos de medianoche...' : 'e.g. Extra Ice & Lime, Midnight tacos...'}
-              value={spendDesc}
-              onChange={(e) => setSpendDesc(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] text-base font-semibold outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] mb-1.5">
-              {isEs ? 'Monto deducido (MON)' : 'Deduction Amount (MON)'}
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                step="0.01"
-                required
-                value={spendAmount}
-                onChange={(e) => setSpendAmount(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 rounded-2xl bg-[#F7F2E8] text-[#171512] font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00]"
-              />
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2">
-                <TokenLogo token="mon" size="sm" />
-              </div>
-            </div>
-            <div className="mt-1.5 flex items-center justify-between px-1 text-[11px] text-[#6F6A62]">
-              <span>{isEs ? 'Equivalente en dólares:' : 'USD equivalent:'}</span>
-              <span className="font-mono font-bold text-[#674FF4]">
-                ≈ {formatUsd(parseFloat(spendAmount) || 0)} USD (Pyth Oracle)
-              </span>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <GlassButton
-              variant="accent"
-              size="lg"
-              fullWidth
-              type="submit"
-              disabled={isProcessing}
-            >
-              {isProcessing
-                ? isEs ? 'Registrando en Monad...' : 'Registering on Monad...'
-                : isEs ? `Deducir ${spendAmount} MON del Pot` : `Deduct ${spendAmount} MON from Pot`}
-            </GlassButton>
-          </div>
-        </form>
-      </BottomSheet>
-
-      {/* BottomSheet: Rollover to Crew Treasury */}
-      {associatedCrew && (
-        <BottomSheet
-          isOpen={isRolloverOpen}
-          onClose={() => {
-            if (!isProcessing) setIsRolloverOpen(false);
-          }}
-          title={isEs ? 'Trasladar Fondo a la Crew' : 'Rollover to Crew Treasury'}
-        >
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-purple-50 border border-purple-200">
-              <div className="flex items-center gap-2">
-                <Landmark className="w-4 h-4 text-purple-600" />
-                <span className="text-xs font-bold text-[#171512]">
-                  {isEs ? 'Crew Destino' : 'Target Treasury'}
-                </span>
-              </div>
-              <span className="text-xs font-black text-purple-900">
-                {associatedCrew.name}
-              </span>
-            </div>
-
-            <p className="text-xs text-[#6F6A62] leading-relaxed">
-              {isEs
-                ? 'El remanente de esta fiesta se transferirá de manera verificable al contrato de la Crew en Monad para la próxima reunión.'
-                : 'Leftover funds will be transferred to the Crew treasury smart contract on Monad.'}
-            </p>
-
-            <div className="p-4 rounded-2xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.08)] space-y-2">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-[#6F6A62]">{isEs ? 'Saldo actual del Pot' : 'Current Party Pot'}</span>
-                <span className="font-mono font-bold text-[#171512]">
-                  {party.potBalance.toFixed(2)} MON <span className="text-[10px] text-[#6F6A62] font-normal">(≈ {formatUsd(party.potBalance)})</span>
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-[#6F6A62]">{isEs ? 'Tesorería Crew actual' : 'Current Crew Treasury'}</span>
-                <span className="font-mono font-bold text-[#171512]">
-                  {(associatedCrew.treasuryBalance ?? 0).toFixed(2)} MON <span className="text-[10px] text-[#6F6A62] font-normal">(≈ {formatUsd(associatedCrew.treasuryBalance ?? 0)})</span>
-                </span>
-              </div>
-              <div className="pt-2 border-t border-[rgba(35,30,22,0.08)] flex justify-between items-center text-sm font-bold">
-                <span className="text-[#8C7300]">{isEs ? 'Nuevo saldo de la Crew' : 'New Crew Treasury'}</span>
-                <span className="font-mono text-base text-[#8C7300]">
-                  {((associatedCrew.treasuryBalance ?? 0) + party.potBalance).toFixed(2)} MON <span className="text-xs text-[#8C7300]/80 font-normal">(≈ {formatUsd((associatedCrew.treasuryBalance ?? 0) + party.potBalance)})</span>
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <GlassButton
-                variant="accent"
-                size="lg"
-                fullWidth
-                disabled={isProcessing || party.potBalance <= 0}
-                onClick={handleRolloverConfirm}
-                icon={<Landmark className="w-4 h-4 text-[#171512]" />}
+              <button
+                onClick={() => setIsMenuOpen(false)}
+                className="w-full py-3 rounded-full bg-black/5 dark:bg-white/10 text-xs font-bold"
               >
-                {isProcessing
-                  ? isEs ? 'Transfiriendo en Monad...' : 'Transferring on Monad...'
-                  : isEs
-                  ? `Confirmar transferencia de ${party.potBalance.toFixed(2)} MON`
-                  : `Confirm transfer of ${party.potBalance.toFixed(2)} MON`}
-              </GlassButton>
-            </div>
+                {isEs ? 'Cerrar' : 'Close'}
+              </button>
+            </motion.div>
           </div>
-        </BottomSheet>
-      )}
+        )}
+      </AnimatePresence>
+
+      {/* Rollover Confirm Modal */}
+      <AnimatePresence>
+        {isRolloverOpen && associatedCrew && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsRolloverOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="relative w-full max-w-sm rounded-[32px] bg-[#FFFDF8] dark:bg-[#1E1B17] border border-black/10 dark:border-white/15 p-6 shadow-2xl z-10 text-center"
+            >
+              <h3 className="font-display font-black text-lg mb-2">
+                {isEs ? '¿Transferir remanente?' : 'Rollover remaining pot?'}
+              </h3>
+              <p className="text-xs text-[#8E887E] dark:text-[#A8A196] leading-relaxed mb-6">
+                {isEs
+                  ? `Se transferirán ${party.potBalance.toFixed(2)} MON a la tesorería permanente de "${associatedCrew.name}".`
+                  : `Transfer ${party.potBalance.toFixed(2)} MON to "${associatedCrew.name}" permanent crew treasury.`}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsRolloverOpen(false)}
+                  className="flex-1 py-3 rounded-full border border-black/10 text-xs font-bold"
+                >
+                  {isEs ? 'Cancelar' : 'Cancel'}
+                </button>
+                <button
+                  onClick={handleRolloverConfirm}
+                  disabled={isProcessing}
+                  className="flex-1 py-3 rounded-full bg-[#F0DC00] text-[#171512] text-xs font-bold"
+                >
+                  {isProcessing ? '...' : isEs ? 'Confirmar' : 'Confirm'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

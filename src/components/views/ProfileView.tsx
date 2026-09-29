@@ -28,6 +28,7 @@ import { ProfilePeopleModal } from '@/components/profile/ProfilePeopleModal';
 import { ProfileAddNightModal } from '@/components/profile/ProfileAddNightModal';
 import { ProfileSettingsModal } from '@/components/profile/ProfileSettingsModal';
 import { CreateCrewModal } from '@/components/ui/CreateCrewModal';
+import { getCoverUrl, getAvatarUrl, getOptimizedImageUrl } from '@/lib/imageOptimization';
 
 const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-3 h-3' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -295,12 +296,13 @@ export const ProfileView: React.FC = () => {
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={currentUser.coverImage || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80'}
+            src={getCoverUrl(currentUser.coverImage || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d', 900)}
             alt="Profile Cover"
             className="absolute inset-0 w-full h-full object-cover object-top cursor-pointer"
             onClick={() => bannerInputRef.current?.click()}
             title={isEs ? 'Haz clic para cambiar la portada' : 'Click to change cover'}
             loading="eager"
+            decoding="async"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
@@ -329,9 +331,10 @@ export const ProfileView: React.FC = () => {
               <div className="w-24 h-24 sm:w-26 sm:h-26 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white dark:border-[#1C1A16] shadow-md bg-black/10">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={currentUser.avatar || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80'}
+                  src={getAvatarUrl(currentUser.avatar || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d', 112)}
                   alt={currentUser.name}
                   className="w-full h-full object-cover"
+                  decoding="async"
                 />
               </div>
               {/* Small Camera Button on Bottom-Right */}
@@ -547,9 +550,11 @@ export const ProfileView: React.FC = () => {
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={party.coverImage}
+                      src={getCoverUrl(party.coverImage, 320)}
                       alt={party.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      decoding="async"
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-2 md:p-2.5">
                       <span className="text-[11px] md:text-xs font-bold text-white leading-tight truncate">
@@ -616,9 +621,11 @@ export const ProfileView: React.FC = () => {
                     <div className="h-24 w-full rounded-xl overflow-hidden mb-2 relative bg-[#EFEAE2] dark:bg-[#1A1815]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={crew.coverImage}
+                        src={getCoverUrl(crew.coverImage, 320)}
                         alt={crew.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        decoding="async"
+                        loading="lazy"
                       />
                       {crew.ownerId === currentUser.id && (
                         <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] uppercase tracking-wider">
@@ -694,9 +701,11 @@ export const ProfileView: React.FC = () => {
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={photo.imageUrl}
+                      src={getOptimizedImageUrl(photo.imageUrl, { width: 320, quality: 75 })}
                       alt={photo.caption || 'Memory'}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      decoding="async"
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 sm:p-2.5">
                       {photo.caption && (
@@ -798,9 +807,11 @@ export const ProfileView: React.FC = () => {
                     <div className="w-12 h-12 rounded-full overflow-hidden border border-black/10 dark:border-white/15 shadow-sm shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={person.avatar}
+                        src={getAvatarUrl(person.avatar, 80)}
                         alt={person.name}
                         className="w-full h-full object-cover rounded-full"
+                        decoding="async"
+                        loading="lazy"
                       />
                     </div>
                     <div>

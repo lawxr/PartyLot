@@ -2,11 +2,14 @@
  * Image optimization helper for remote assets (Unsplash, Cloudinary, Supabase).
  * Reduces image weight by 85-95% by requesting appropriate dimensions, compression, and WebP/AVIF formats.
  */
+const FALLBACK_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
+const FALLBACK_COVER = 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80';
+
 export function getOptimizedImageUrl(
   url?: string | null,
   options: { width?: number; height?: number; quality?: number; fit?: 'crop' | 'clip' | 'fill' } = {}
 ): string {
-  if (!url) return '';
+  if (!url || !url.trim()) return FALLBACK_COVER;
 
   const { width = 400, height, quality = 75, fit = 'crop' } = options;
 
@@ -40,9 +43,11 @@ export function getOptimizedImageUrl(
 }
 
 export function getAvatarUrl(url?: string | null, size: number = 96): string {
-  return getOptimizedImageUrl(url, { width: size, height: size, quality: 70, fit: 'crop' });
+  const target = (url && url.trim()) ? url : FALLBACK_AVATAR;
+  return getOptimizedImageUrl(target, { width: size, height: size, quality: 70, fit: 'crop' });
 }
 
 export function getCoverUrl(url?: string | null, width: number = 800): string {
-  return getOptimizedImageUrl(url, { width, quality: 75, fit: 'crop' });
+  const target = (url && url.trim()) ? url : FALLBACK_COVER;
+  return getOptimizedImageUrl(target, { width, quality: 75, fit: 'crop' });
 }

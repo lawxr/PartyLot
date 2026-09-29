@@ -421,6 +421,16 @@ export function subscribeToPartyRealtime(
       },
       () => onPartyChange()
     )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'game_sessions',
+        filter: `party_id=eq.${partyId}`,
+      },
+      () => onPartyChange()
+    )
     .subscribe();
 
   return () => {
@@ -661,7 +671,7 @@ export async function fetchUserProfileFromDb(userId: string): Promise<{
 /**
  * Fetches all parties from Supabase with their associated members
  */
-export async function fetchPartiesFromDb(): Promise<Party[]> {
+export async function fetchPartiesFromDb(userId?: string): Promise<Party[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
 
@@ -702,7 +712,13 @@ export async function fetchPartiesFromDb(): Promise<Party[]> {
       });
     });
 
-    return partiesData.map((p) => ({
+    const filteredParties = userId
+      ? partiesData.filter(
+          (p) => p.host_id === userId || (membersByParty[p.id] || []).some((m) => m.id === userId)
+        )
+      : partiesData;
+
+    return filteredParties.map((p) => ({
       id: p.id,
       code: p.code,
       title: p.title,
@@ -868,7 +884,7 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
 /**
  * Fetches Crews and their members from Supabase
  */
-export async function fetchCrewsFromDb(): Promise<Crew[]> {
+export async function fetchCrewsFromDb(userId?: string): Promise<Crew[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
 
@@ -903,7 +919,13 @@ export async function fetchCrewsFromDb(): Promise<Crew[]> {
       });
     });
 
-    return crewsData.map((c) => ({
+    const filteredCrews = userId
+      ? crewsData.filter(
+          (c) => c.owner_id === userId || (membersByCrew[c.id] || []).some((m) => m.userId === userId)
+        )
+      : crewsData;
+
+    return filteredCrews.map((c) => ({
       id: c.id,
       name: c.name,
       coverImage: c.cover_image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',

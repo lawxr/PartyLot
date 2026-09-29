@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Scale, ShieldAlert, CheckCircle2, FileCheck, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Scale, ShieldAlert, FileCheck, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 

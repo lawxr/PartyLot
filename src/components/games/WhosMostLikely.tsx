@@ -1,75 +1,52 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Users, Zap, XCircle } from 'lucide-react';
+import { ArrowLeft, Users, Zap, XCircle, Copy, Check } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { WHOS_MOST_LIKELY_QUESTIONS } from '@/data/mockData';
 
 export const WhosMostLikely: React.FC = () => {
-  const { parties, currentPartyId, whosMostLikely, voteWhosMostLikely, setCurrentView, goBack } =
-    usePartyStore();
+  const {
+    parties,
+    currentPartyId,
+    whosMostLikely,
+    voteWhosMostLikely,
+    setCurrentView,
+    goBack,
+    loadPartyFromSupabase,
+    listenToActivePartyRealtime,
+  } = usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
 
-  const fallbackParty = {
-    id: 'demo-party',
-    title: 'Partylot',
-    members: [],
-  };
-  const party = parties.find((p) => p.id === currentPartyId) || parties[0] || fallbackParty;
-  const partyMembers = party.members || [];
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
+  const partyMembers = party?.members || [];
   const [questionIndex, setQuestionIndex] = useState(0);
   const [votedMemberId, setVotedMemberId] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  useEffect(() => {
+    if (!party?.id) return;
+    loadPartyFromSupabase(party.id);
+    const unsub = listenToActivePartyRealtime(party.id);
+    return () => {
+      unsub();
+    };
+  }, [party?.id, listenToActivePartyRealtime, loadPartyFromSupabase]);
 
   const questions = whosMostLikely && whosMostLikely.length > 0 ? whosMostLikely : WHOS_MOST_LIKELY_QUESTIONS;
   const currentQ = questions[questionIndex % questions.length] || WHOS_MOST_LIKELY_QUESTIONS[0];
   const questionText = (isEs && currentQ.questionEs) ? currentQ.questionEs : currentQ.question;
 
-  // Curated fallback friends if party members are still loading or fewer than needed
-  const fallbackFriends = [
-    {
-      id: 'u-law',
-      name: 'Law',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
-    },
-    {
-      id: 'u-valen-test',
-      name: 'Valen',
-      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
-    },
-    {
-      id: 'test-user',
-      name: 'Carlos',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-    },
-    {
-      id: 'u-sofi',
-      name: 'Sofi',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-    },
-    {
-      id: 'u-cam',
-      name: 'Cam',
-      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80',
-    },
-    {
-      id: 'u-ana',
-      name: 'Ana',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
-    },
-  ];
-
-  // Prioritize real party members
-  const friendsToDisplay = partyMembers.length >= 2
-    ? partyMembers.slice(0, 6).map((m) => ({
-        id: m.id,
-        name: m.name,
-        avatar: m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-      }))
-    : fallbackFriends;
+  // Real party members strictly (up to 6)
+  const friendsToDisplay = partyMembers.slice(0, 6).map((m) => ({
+    id: m.id,
+    name: m.name,
+    avatar: m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+  }));
 
   const totalQuestions = questions.length;
   const currentStep = (questionIndex % totalQuestions) + 1;
@@ -90,6 +67,93 @@ export const WhosMostLikely: React.FC = () => {
     setVotedMemberId(null);
     setQuestionIndex((prev) => prev + 1);
   };
+
+  const handleCopyCode = () => {
+    if (party?.code && typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(party.code);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    }
+  };
+
+  if (!party || partyMembers.length < 2) {
+    return (
+      <div className="w-full max-w-md mx-auto flex flex-col justify-between min-h-[85vh] px-4 py-2 text-[#171512]">
+        <header className="flex items-center justify-between pt-2 pb-4">
+          <button
+            onClick={() => {
+              if (goBack) goBack();
+              else setCurrentView('party-detail');
+            }}
+            className="w-10 h-10 rounded-full glass-light border border-black/10 flex items-center justify-center text-[#171512] shadow-sm hover:scale-105 active:scale-90 transition-transform cursor-pointer"
+            aria-label="Back"
+          >
+            <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+          </button>
+          <div className="text-center">
+            <h2 className="font-display font-extrabold text-lg sm:text-xl text-[#171512] tracking-tight leading-none">
+              {isEs ? '¿Quién es más probable?' : "Who's Most Likely?"}
+            </h2>
+          </div>
+          <div className="w-10" />
+        </header>
+
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 my-auto">
+          <div className="w-16 h-16 rounded-full bg-[#FFF5C0] border border-[#F0DC00]/50 flex items-center justify-center text-[#9A7D00] mb-4 shadow-sm">
+            <Users className="w-8 h-8" />
+          </div>
+          <h3 className="font-display font-extrabold text-xl text-[#171512] mb-2">
+            {isEs ? 'Invita a tu grupo para jugar' : 'Invite friends to play'}
+          </h3>
+          <p className="text-xs text-[#6F6A62] max-w-xs leading-relaxed mb-6">
+            {isEs
+              ? 'Este juego necesita al menos 2 personas en la fiesta para poder votar quién encaja mejor con cada pregunta.'
+              : 'This game requires at least 2 members in the party to vote on who fits each prompt best.'}
+          </p>
+
+          {party?.code && (
+            <div className="w-full max-w-xs p-4 rounded-2xl bg-[#F2ECE1] border border-black/5 mb-4 flex flex-col items-center">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-[#8A8173] block mb-1">
+                {isEs ? 'Código de la fiesta' : 'Party code'}
+              </span>
+              <span className="font-mono text-2xl font-black tracking-widest text-[#171512]">
+                {party.code}
+              </span>
+            </div>
+          )}
+
+          {party?.code && (
+            <button
+              onClick={handleCopyCode}
+              className="w-full max-w-xs py-3.5 px-6 rounded-full bg-[#F0DC00] text-[#171512] font-bold text-xs sm:text-sm shadow-sm hover:scale-102 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer mb-3"
+            >
+              {copiedCode ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-800 stroke-[3]" />
+                  <span>{isEs ? '¡Código copiado!' : 'Code copied!'}</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  <span>{isEs ? 'Copiar código para invitar' : 'Copy code to invite'}</span>
+                </>
+              )}
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              if (goBack) goBack();
+              else setCurrentView('party-detail');
+            }}
+            className="w-full max-w-xs py-3 px-6 rounded-full border border-black/10 bg-white/70 hover:bg-white text-[#171512] font-semibold text-xs transition-all active:scale-95 cursor-pointer"
+          >
+            {isEs ? 'Volver al detalle' : 'Back to gathering'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md mx-auto flex flex-col justify-between min-h-[85vh] px-4 py-2 text-[#171512]">
@@ -122,7 +186,7 @@ export const WhosMostLikely: React.FC = () => {
         {/* Participant Count Badge */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-light border border-black/10 shadow-sm text-xs font-bold text-[#171512]">
           <Users className="w-3.5 h-3.5 text-[#6F6A62]" />
-          <span>8</span>
+          <span>{partyMembers.length}</span>
         </div>
       </header>
 

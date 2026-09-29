@@ -1486,9 +1486,10 @@ export const usePartyStore = create<PartyStoreState>()(
       },
 
       hydrateFromSupabase: async () => {
+        const currentUserId = get().currentUser?.id;
         const [dbParties, dbCrews, dbActivities] = await Promise.all([
-          fetchPartiesFromDb(),
-          fetchCrewsFromDb(),
+          fetchPartiesFromDb(currentUserId || undefined),
+          fetchCrewsFromDb(currentUserId || undefined),
           fetchActivitiesFromDb(),
         ]);
 
@@ -1500,6 +1501,8 @@ export const usePartyStore = create<PartyStoreState>()(
                 ? s.currentPartyId
                 : dbParties[0].id,
           }));
+        } else {
+          set({ parties: [], currentPartyId: '' });
         }
 
         if (dbCrews.length > 0) {
@@ -1510,6 +1513,8 @@ export const usePartyStore = create<PartyStoreState>()(
                 ? s.currentCrewId
                 : dbCrews[0].id,
           }));
+        } else {
+          set({ crews: [], currentCrewId: null });
         }
 
         if (dbActivities.length > 0) {

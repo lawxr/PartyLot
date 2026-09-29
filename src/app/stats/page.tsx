@@ -9,18 +9,15 @@ import {
   Users,
   Coins,
   Gamepad2,
-  Image,
   ExternalLink,
   ShieldCheck,
   Zap,
-  TrendingUp,
   RefreshCw,
   Clock,
   Radio,
-  Sparkles,
 } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase/client';
-import { publicMonadClient, MONAD_TESTNET_CONFIG } from '@/lib/web3/monad';
+import { publicMonadClient } from '@/lib/web3/monad';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
 
@@ -139,10 +136,20 @@ export default function PlatformStatsPage() {
 
   // Initial load and Realtime WebSocket Subscription
   useEffect(() => {
-    loadStats();
+    let ignore = false;
+    const fetchInitial = async () => {
+      if (!ignore) {
+        await loadStats();
+      }
+    };
+    void fetchInitial();
 
     const supabase = getSupabase();
-    if (!supabase) return;
+    if (!supabase) {
+      return () => {
+        ignore = true;
+      };
+    }
 
     // Supabase Realtime channel across core tables
     const channel = supabase
@@ -168,6 +175,7 @@ export default function PlatformStatsPage() {
     }, 6000);
 
     return () => {
+      ignore = true;
       supabase.removeChannel(channel);
       clearInterval(blockInterval);
     };

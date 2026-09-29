@@ -525,25 +525,25 @@ export const WHOS_MOST_LIKELY_QUESTIONS: WhosMostLikelyQuestion[] = [
     id: 'wml-1',
     question: 'Who is most likely to disappear for three days and come back like nothing happened?',
     questionEs: '¿Quién es más probable que desaparezca tres días y regrese como si nada?',
-    votes: { 'u-carlos': 6, 'u-ana': 3, 'u-sofi': 2, 'u-mateo': 1 },
+    votes: {},
   },
   {
     id: 'wml-2',
     question: 'Who is most likely to DJ all night and refuse to pass the aux cord?',
     questionEs: '¿Quién es más probable que sea el DJ toda la noche y se niegue a soltar el cable auxiliar?',
-    votes: { 'u-law': 8, 'u-mateo': 2, 'u-nico': 1 },
+    votes: {},
   },
   {
     id: 'wml-3',
     question: 'Who is most likely to adopt a stray animal on the way home?',
     questionEs: '¿Quién es más probable que adopte un animal callejero de camino a casa?',
-    votes: { 'u-sofi': 7, 'u-valen': 4, 'u-camila': 1 },
+    votes: {},
   },
   {
     id: 'wml-4',
     question: 'Who is most likely to order $150 worth of midnight delivery for themselves?',
     questionEs: '¿Quién es más probable que pida $150 en delivery a medianoche solo para sí mismo?',
-    votes: { 'u-carlos': 5, 'u-law': 4, 'u-ana': 2 },
+    votes: {},
   },
 ];
 
@@ -554,8 +554,8 @@ export const THIS_OR_THAT_QUESTIONS: ThisOrThatQuestion[] = [
     optionB: 'ROOFTOP 4AM',
     optionAEs: 'AMANECER EN LA PLAYA',
     optionBEs: 'ROOFTOP A LAS 4AM',
-    votesA: 9,
-    votesB: 14,
+    votesA: 0,
+    votesB: 0,
   },
   {
     id: 'tot-2',
@@ -563,8 +563,8 @@ export const THIS_OR_THAT_QUESTIONS: ThisOrThatQuestion[] = [
     optionB: 'DIRTY GIN MARTINI',
     optionAEs: 'SHOTS DE TEQUILA',
     optionBEs: 'MARTINI DE GINEBRA',
-    votesA: 16,
-    votesB: 7,
+    votesA: 0,
+    votesB: 0,
   },
   {
     id: 'tot-3',
@@ -572,8 +572,8 @@ export const THIS_OR_THAT_QUESTIONS: ThisOrThatQuestion[] = [
     optionB: 'BED & COMFORT FOOD',
     optionAEs: 'AFTER HASTA EL MEDIODÍA',
     optionBEs: 'CAMA Y COMIDA RICA',
-    votesA: 11,
-    votesB: 12,
+    votesA: 0,
+    votesB: 0,
   },
   {
     id: 'tot-4',
@@ -581,8 +581,8 @@ export const THIS_OR_THAT_QUESTIONS: ThisOrThatQuestion[] = [
     optionB: '2000s REGGAETON CLASSICS',
     optionAEs: 'TECHNO INÉDITO',
     optionBEs: 'CLÁSICOS DE REGGAETÓN 2000',
-    votesA: 13,
-    votesB: 10,
+    votesA: 0,
+    votesB: 0,
   },
 ];
 

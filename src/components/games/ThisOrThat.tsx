@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { RefreshCw, ArrowLeft, ArrowRight, Check, Sparkles } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
@@ -9,9 +9,27 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { THIS_OR_THAT_QUESTIONS } from '@/data/mockData';
 
 export const ThisOrThat: React.FC = () => {
-  const { thisOrThat, voteThisOrThat } = usePartyStore();
+  const {
+    parties,
+    currentPartyId,
+    thisOrThat,
+    voteThisOrThat,
+    loadPartyFromSupabase,
+    listenToActivePartyRealtime,
+  } = usePartyStore();
   const { t, language } = useTranslation();
   const isEs = language === 'es';
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
+
+  useEffect(() => {
+    if (!party?.id) return;
+    loadPartyFromSupabase(party.id);
+    const unsub = listenToActivePartyRealtime(party.id);
+    return () => {
+      unsub();
+    };
+  }, [party?.id, listenToActivePartyRealtime, loadPartyFromSupabase]);
+
   const [index, setIndex] = useState(0);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
 

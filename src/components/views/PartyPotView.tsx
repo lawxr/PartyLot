@@ -28,40 +28,13 @@ import { MONAD_CONTRACT_ADDRESSES } from '@/contracts';
 import { useMonPrice } from '@/hooks/useMonPrice';
 import confetti from 'canvas-confetti';
 
-const fallbackParty = {
-  id: 'demo-party-monad',
-  title: 'Monad Launch Party',
-  date: 'Tonight',
-  time: '9:00 PM',
-  location: 'Monad HQ',
-  coverImage:
-    'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80',
-  potBalance: 0,
-  members: [
-    {
-      id: 'u-1',
-      name: 'Host',
-      role: 'host' as const,
-      avatar:
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-    },
-    {
-      id: 'u-2',
-      name: 'Ana',
-      role: 'guest' as const,
-      avatar:
-        'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=100&q=80',
-    },
-  ],
-};
-
 export const PartyPotView: React.FC = () => {
-  const { parties, currentPartyId, crews, transactions, addToPot, spendFromPot, rolloverPotToCrew } =
+  const { parties, currentPartyId, crews, transactions, addToPot, spendFromPot, rolloverPotToCrew, setCurrentView } =
     usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
-  const party = parties.find((p) => p.id === currentPartyId) || parties[0] || fallbackParty;
-  const partyMembers = party.members && party.members.length > 0 ? party.members : fallbackParty.members;
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
+  const partyMembers = party?.members || [];
   const partyTransactions = transactions.filter((t) => t.partyId === party?.id);
 
   const associatedCrew = crews.find((c) => c.id === party?.crewId);
@@ -80,7 +53,7 @@ export const PartyPotView: React.FC = () => {
   const [addAmount, setAddAmount] = useState('0.5');
   const [spendAmount, setSpendAmount] = useState('0.2');
   const [spendDesc, setSpendDesc] = useState('');
-  const [rewardRecipient, setRewardRecipient] = useState(partyMembers[1]?.name || partyMembers[0]?.name || 'Ana');
+  const [rewardRecipient, setRewardRecipient] = useState(partyMembers[1]?.name || partyMembers[0]?.name || '');
   const [rewardRole, setRewardRole] = useState('OFFICIAL_DJ');
   const [rewardAmount, setRewardAmount] = useState('0.1');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -235,6 +208,41 @@ export const PartyPotView: React.FC = () => {
       setIsProcessing(false);
     }
   };
+
+  if (!party) {
+    return (
+      <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-32">
+        <TopNav title={isEs ? 'TESORERÍA COMPARTIDA' : 'SHARED TREASURY'} />
+        <div className="max-w-md mx-auto px-4 py-20 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 rounded-full bg-[#FFF5C0] border border-[#F0DC00]/50 flex items-center justify-center text-[#B89600] mb-4 shadow-sm">
+            <Landmark className="w-8 h-8" />
+          </div>
+          <h2 className="font-display font-black text-xl text-[#171512] mb-2">
+            {isEs ? 'Sin fiesta activa seleccionada' : 'No active gathering selected'}
+          </h2>
+          <p className="text-xs text-[#6F6A62] max-w-xs leading-relaxed mb-6">
+            {isEs
+              ? 'Únete a una fiesta o crea una nueva para gestionar el fondo común, recompensas y gastos compartidos en Monad Testnet.'
+              : 'Join a party or create a new one to manage shared treasury, bounties, and collective funds on Monad Testnet.'}
+          </p>
+          <div className="w-full max-w-xs flex flex-col gap-2.5">
+            <button
+              onClick={() => setCurrentView('create-party')}
+              className="w-full py-3.5 px-6 rounded-full bg-[#F0DC00] text-[#171512] font-bold text-xs sm:text-sm shadow-sm hover:scale-102 active:scale-95 transition-all cursor-pointer"
+            >
+              {isEs ? 'Crear Fiesta' : 'Create Party'}
+            </button>
+            <button
+              onClick={() => setCurrentView('join-party')}
+              className="w-full py-3 px-6 rounded-full border border-black/10 bg-white/70 hover:bg-white text-[#171512] font-semibold text-xs transition-all active:scale-95 cursor-pointer"
+            >
+              {isEs ? 'Unirse con Código' : 'Join with Code'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-32 select-none">

@@ -11,8 +11,6 @@ import {
   Pizza,
   Car,
   Send,
-  Check,
-  Crown,
   Plus,
   Receipt,
 } from 'lucide-react';
@@ -51,7 +49,7 @@ export const SplitView: React.FC = () => {
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('drinks');
-  const [paidById, setPaidById] = useState(partyMembers[0]?.id || currentUser?.id || 'u-law');
+  const [paidById, setPaidById] = useState(partyMembers[0]?.id || currentUser?.id || '');
   const [splitBetween, setSplitBetween] = useState<string[]>(partyMembers.map((m) => m.id));
 
   // Custom split weights state
@@ -172,58 +170,6 @@ export const SplitView: React.FC = () => {
   const realMembersList = [
     ...realDebtorsList,
     ...realCreditorsList,
-  ];
-
-  // Fallback mock members when no real data exists
-  const defaultMockMembers = realMembersList.length > 0 ? realMembersList : [
-    {
-      id: 'u-law',
-      name: 'Law',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
-      subtitle: t.split.youPaid('42.00'),
-      type: 'creator_positive' as const,
-      receiveAmount: '$28.69',
-    },
-    {
-      id: 'u-sofi',
-      name: 'Sofi',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-      subtitle: t.split.owesYou,
-      type: 'debtor' as const,
-      amount: '$13.31',
-    },
-    {
-      id: 'u-cam',
-      name: 'Cam',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
-      subtitle: t.split.owesYou,
-      type: 'debtor' as const,
-      amount: '$13.31',
-    },
-    {
-      id: 'u-ana',
-      name: 'Ana',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
-      subtitle: t.split.alreadyPaid,
-      type: 'covered_badge' as const,
-      badgeText: t.split.coveredDrinks,
-    },
-    {
-      id: 'u-diego',
-      name: 'Diego',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-      subtitle: t.split.owesYou,
-      type: 'debtor' as const,
-      amount: '$13.31',
-    },
-    {
-      id: 'u-sara',
-      name: 'Sara',
-      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
-      subtitle: t.split.owesYou,
-      type: 'debtor' as const,
-      amount: '$13.31',
-    },
   ];
 
   return (
@@ -385,73 +331,82 @@ export const SplitView: React.FC = () => {
           </button>
         </div>
 
-        {/* Tab 1: Equal Split (Mockup View) */}
+        {/* Tab 1: Equal Split (Real Balances or Empty State) */}
         {activeTab === 'equal' && (
           <div className="space-y-2.5 mb-5">
-            {defaultMockMembers.map((member) => (
-              <div
-                key={member.id}
-                className="bg-[#FFFDF8] rounded-[22px] p-3 sm:p-3.5 border border-[rgba(35,30,22,0.06)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex items-center justify-between"
-              >
-                {/* Member Avatar + Name */}
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full overflow-hidden border border-black/5 shrink-0 bg-[#EFEAE2]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={member.avatar}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="text-left">
-                    <span className="font-display font-bold text-sm sm:text-base text-[#171512] block leading-tight">
-                      {member.name}
-                    </span>
-                    <span className="text-xs text-[#8A8173] font-medium leading-tight block">
-                      {member.subtitle}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Right Badge / Status */}
-                {member.type === 'creator_positive' && (
-                  <div className="bg-[#EBF7EE] border border-[#BDE8CA] rounded-2xl px-2.5 py-1 flex items-center gap-2 shadow-2xs">
-                    <div className="w-5 h-5 rounded-full bg-[#171512] flex items-center justify-center text-[#F0DC00] shrink-0">
-                      <Crown className="w-3 h-3 fill-[#F0DC00]" />
+            {realMembersList.length > 0 ? (
+              realMembersList.map((member) => (
+                <div
+                  key={member.id}
+                  className="bg-[#FFFDF8] rounded-[22px] p-3 sm:p-3.5 border border-[rgba(35,30,22,0.06)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex items-center justify-between"
+                >
+                  {/* Member Avatar + Name */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-full overflow-hidden border border-black/5 shrink-0 bg-[#EFEAE2]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={member.avatar}
+                        alt={member.name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div className="text-left">
-                      <span className="text-[10px] font-semibold text-emerald-800 leading-none block mb-0.5">
-                        {t.split.youWillReceive}
+                      <span className="font-display font-bold text-sm sm:text-base text-[#171512] block leading-tight">
+                        {member.name}
                       </span>
-                      <span className="font-display font-black text-sm text-emerald-700 leading-none block">
-                        {member.receiveAmount}
+                      <span className="text-xs text-[#8A8173] font-medium leading-tight block">
+                        {member.subtitle}
                       </span>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-emerald-600 stroke-[2.5]" />
                   </div>
-                )}
 
-                {member.type === 'debtor' && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-display font-black text-base text-[#171512]">
-                      {member.amount}
-                    </span>
-                    <ChevronRight className="w-4 h-4 text-[#999187] stroke-[2.5]" />
-                  </div>
-                )}
-
-                {member.type === 'covered_badge' && (
-                  <div className="bg-[#ECE8E1] rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-2xs">
-                    <div className="w-4 h-4 rounded-full bg-[#666055] text-white flex items-center justify-center shrink-0">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  {/* Right Badge / Status */}
+                  {member.type === 'debtor' && (
+                    <div className="bg-[#EBF7EE] border border-[#BDE8CA] rounded-2xl px-2.5 py-1 flex items-center gap-2 shadow-2xs">
+                      <div className="text-left">
+                        <span className="text-[10px] font-semibold text-emerald-800 leading-none block mb-0.5">
+                          {t.split.youWillReceive}
+                        </span>
+                        <span className="font-display font-black text-sm text-emerald-700 leading-none block">
+                          {member.amount}
+                        </span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-emerald-600 stroke-[2.5]" />
                     </div>
-                    <span className="text-xs font-semibold text-[#666055]">
-                      {member.badgeText}
-                    </span>
-                  </div>
-                )}
+                  )}
+
+                  {member.type === 'creditor' && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-display font-black text-base text-[#171512]">
+                        {member.amount}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-[#999187] stroke-[2.5]" />
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="p-8 rounded-[24px] bg-[#FFFDF8] border border-[rgba(35,30,22,0.06)] shadow-xs text-center flex flex-col items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-[#FAF7F2] border border-[rgba(35,30,22,0.08)] flex items-center justify-center text-[#B89600] mb-3">
+                  <Receipt className="w-6 h-6 stroke-[1.8]" />
+                </div>
+                <h3 className="font-display font-bold text-base text-[#171512] mb-1">
+                  {isEs ? 'Sin cuentas ni gastos aún' : 'No split expenses yet'}
+                </h3>
+                <p className="text-xs text-[#8A8173] max-w-xs leading-relaxed mb-4">
+                  {isEs
+                    ? 'Agrega un gasto para calcular los saldos y liquidar deudas entre el grupo.'
+                    : 'Add an expense to calculate net balances and settle up between members.'}
+                </p>
+                <button
+                  onClick={() => setIsAddOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#F0DC00] text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  {isEs ? 'Agregar primer gasto' : 'Add first expense'}
+                </button>
               </div>
-            ))}
+            )}
           </div>
         )}
 

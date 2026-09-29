@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, CheckCircle2, XCircle, Sparkles, RotateCcw, ArrowRight } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
@@ -9,9 +9,27 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { TRIVIA_QUESTIONS } from '@/data/mockData';
 
 export const CrewTrivia: React.FC = () => {
-  const { trivia, crewTrivia } = usePartyStore();
+  const {
+    parties,
+    currentPartyId,
+    trivia,
+    crewTrivia,
+    loadPartyFromSupabase,
+    listenToActivePartyRealtime,
+  } = usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
+
+  useEffect(() => {
+    if (!party?.id) return;
+    loadPartyFromSupabase(party.id);
+    const unsub = listenToActivePartyRealtime(party.id);
+    return () => {
+      unsub();
+    };
+  }, [party?.id, listenToActivePartyRealtime, loadPartyFromSupabase]);
+
   const [currentRound, setCurrentRound] = useState(0); // 0 to 4 (5 rounds)
   const [score, setScore] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);

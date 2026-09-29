@@ -11,6 +11,8 @@
   --party-yellow-hover: #E6D300;
   --party-yellow-pressed: #D8C700;
   --party-yellow-soft: rgba(240, 220, 0, 0.14);
+  /* Text on yellow stays dark in every theme for contrast. */
+  --on-party-yellow: #171512;
 
   --bg-primary: #F7F2E8;
   --bg-secondary: #F1EADF;
@@ -414,8 +416,8 @@ body {
 
 /* Primary Accent Warm Golden Yellow Button */
 .accent-button {
-  background: var(--yellow);
-  color: var(--ink);
+  background: var(--party-yellow);
+  color: var(--on-party-yellow);
   font-family: var(--font-ui);
   font-weight: 700;
   border: none;
@@ -442,8 +444,8 @@ body {
   background: rgba(240, 220, 0, 0.10);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 1.5px var(--yellow);
-  color: var(--yellow);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 1.5px var(--party-yellow);
+  color: var(--party-yellow);
 }
 
 /* Hide default scrollbars */

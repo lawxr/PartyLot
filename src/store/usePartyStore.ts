@@ -365,7 +365,42 @@ export const usePartyStore = create<PartyStoreState>()(
             };
           }
 
+          // If on party-detail, going back should ALWAYS return to home (or crew-detail if entered from crew)
+          if (state.currentView === 'party-detail') {
+            const dest = state.previousView === 'crew-detail' ? 'crew-detail' : 'home';
+            return {
+              currentView: dest,
+              activeTab: 'home',
+              previousView: null,
+            };
+          }
+
+          // If on a party subview (pot, split, games, polls), return to party-detail
+          if (
+            state.currentView === 'party-pot' ||
+            state.currentView === 'split' ||
+            state.currentView === 'games' ||
+            state.currentView === 'polls'
+          ) {
+            return {
+              currentView: 'party-detail',
+              previousView: 'home',
+            };
+          }
+
           if (state.currentView === 'profile') {
+            return {
+              currentView: 'home',
+              activeTab: 'home',
+              previousView: null,
+            };
+          }
+
+          if (
+            state.currentView === 'crew-detail' ||
+            state.currentView === 'create-party' ||
+            state.currentView === 'join-party'
+          ) {
             return {
               currentView: 'home',
               activeTab: 'home',

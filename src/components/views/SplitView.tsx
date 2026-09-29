@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import {
+  ArrowLeft,
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
@@ -182,10 +183,10 @@ export const SplitView: React.FC = () => {
           <button
             type="button"
             onClick={goBack}
-            className="w-10 h-10 rounded-full bg-white/85 backdrop-blur-md border border-[rgba(35,30,22,0.06)] shadow-xs flex items-center justify-center text-[#171512] hover:bg-white active:scale-95 transition-all cursor-pointer"
+            className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-[#171512] dark:text-white border border-black/10 dark:border-white/20 shadow-sm active:scale-95 transition-transform cursor-pointer p-0"
             aria-label="Back"
           >
-            <ChevronLeft className="w-5 h-5 text-[#171512] stroke-[2.5]" />
+            <ArrowLeft className="w-5 h-5 stroke-[2.4]" />
           </button>
 
           {/* Center Party Profile Header */}

@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronLeft,
+  ArrowLeft,
+  Share2,
   MoreHorizontal,
   Plus,
   ArrowUp,
@@ -45,6 +46,7 @@ export const PartyPotView: React.FC = () => {
     spendFromPot,
     rolloverPotToCrew,
     setCurrentView,
+    goBack,
     theme,
   } = usePartyStore();
 
@@ -351,26 +353,31 @@ export const PartyPotView: React.FC = () => {
         {/* Cinematic Vignette Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/25 pointer-events-none" />
 
-        {/* Top Floating Navigation Header */}
-        <div className="absolute top-4 inset-x-4 flex items-center justify-between z-20">
+        {/* Top Floating Controls matching PartyDetailView aesthetics and position */}
+        <header className="absolute top-0 left-0 right-0 z-40 px-4 sm:px-6 md:px-8 py-3 safe-top flex items-center justify-between pointer-events-none max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
           {/* Back Button */}
           <button
-            onClick={() => setCurrentView('party-detail')}
-            className="w-10 h-10 rounded-full bg-black/35 hover:bg-black/55 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer active:scale-95 shadow-md"
-            aria-label="Back"
+            onClick={() => {
+              if (goBack) goBack();
+              else setCurrentView('party-detail');
+            }}
+            className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md pointer-events-auto active:scale-95 transition-transform cursor-pointer p-0"
+            aria-label={isEs ? 'Volver' : 'Back'}
           >
-            <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+            <ArrowLeft className="w-5 h-5 stroke-[2.4]" />
           </button>
 
           {/* Options Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(true)}
-            className="w-10 h-10 rounded-full bg-black/35 hover:bg-black/55 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer active:scale-95 shadow-md"
-            aria-label="More options"
-          >
-            <MoreHorizontal className="w-5 h-5" />
-          </button>
-        </div>
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <button
+              onClick={() => setIsMenuOpen(true)}
+              className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md active:scale-95 transition-transform cursor-pointer p-0"
+              aria-label={isEs ? 'Más opciones' : 'More options'}
+            >
+              <MoreHorizontal className="w-5 h-5 stroke-[2.2]" />
+            </button>
+          </div>
+        </header>
 
         {/* Content Overlaid at Bottom of Photo (Sitting directly above the floating navigation pill) */}
         <div className="absolute bottom-16 sm:bottom-18 inset-x-5 sm:inset-x-6 z-20 text-white">

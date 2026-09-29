@@ -61,6 +61,7 @@ export const PartyPotView: React.FC = () => {
 
   // Active Tab: 'add' | 'withdraw' | 'qr'
   const [activeTab, setActiveTab] = useState<'add' | 'withdraw' | 'qr'>('add');
+  const [hoveredAction, setHoveredAction] = useState<string | null>(null);
 
   const potActions = [
     {
@@ -429,34 +430,52 @@ export const PartyPotView: React.FC = () => {
           {potActions.map((action) => {
             const Icon = action.icon;
             const isActive = activeTab === action.id;
+            const isHovered = hoveredAction === action.id;
 
             return (
               <motion.button
                 key={action.id}
+                onMouseEnter={() => setHoveredAction(action.id)}
+                onMouseLeave={() => setHoveredAction(null)}
+                onTouchStart={() => setHoveredAction(action.id)}
+                onTouchEnd={() => setHoveredAction(null)}
                 onClick={action.onClick}
                 whileTap={{ scale: 0.94 }}
                 style={
-                  isActive
+                  isHovered
                     ? {
                         background: 'linear-gradient(145deg, #FFE973, #FFCE18 68%, #F8BF0A)',
                         boxShadow:
                           '0 0 24px rgba(255, 212, 41, 0.55), 0 6px 14px rgba(235, 179, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.75)',
                       }
-                    : {
-                        background:
-                          theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.48)',
-                        boxShadow:
-                          theme === 'dark'
-                            ? '0 3px 9px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)'
-                            : '0 3px 9px rgba(74, 56, 35, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.92)',
-                      }
+                    : isActive
+                      ? {
+                          background:
+                            theme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.88)',
+                          boxShadow:
+                            theme === 'dark'
+                              ? '0 3px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
+                              : '0 3px 12px rgba(74, 56, 35, 0.08), inset 0 1px 1px rgba(255, 255, 255, 1)',
+                        }
+                      : {
+                          background:
+                            theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.45)',
+                          boxShadow:
+                            theme === 'dark'
+                              ? '0 2px 6px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.08)'
+                              : '0 2px 6px rgba(74, 56, 35, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.85)',
+                        }
                 }
                 className={`flex flex-col items-center justify-center gap-1 min-w-0 rounded-[26px] transition-all duration-200 cursor-pointer text-[#161514] dark:text-[#F5F1E8] ${
-                  isActive ? 'font-bold' : 'font-medium'
+                  isHovered || isActive ? 'font-bold' : 'font-medium opacity-85'
                 }`}
                 aria-label={action.label}
               >
-                <Icon className={`w-5 h-5 sm:w-5.5 sm:h-5.5 ${isActive ? 'stroke-[2.5]' : 'stroke-[2.2]'}`} />
+                <Icon
+                  className={`w-5 h-5 sm:w-5.5 sm:h-5.5 ${
+                    isHovered || isActive ? 'stroke-[2.5]' : 'stroke-[2.2]'
+                  }`}
+                />
                 <span className="text-[11px] sm:text-[12px] tracking-tight leading-none">
                   {action.label}
                 </span>

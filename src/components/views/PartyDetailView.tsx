@@ -344,10 +344,10 @@ export const PartyDetailView: React.FC = () => {
         {/* LOWER CONTENT AREA: Warm Ivory Sheet                           */}
         {/* ============================================================== */}
         <div className="relative -mt-6 md:-mt-8 z-20 rounded-t-[34px] md:rounded-none bg-[#F7F2E8] dark:bg-[#12110E] md:bg-transparent px-4 sm:px-6 md:px-0 pt-0 pb-20 shadow-[0_-12px_40px_rgba(65,48,25,0.08)] md:shadow-none transition-colors duration-200">
-          {/* Quick actions */}
+          {/* Quick actions with iOS Liquid Glass */}
           <nav
             aria-label="Herramientas de la fiesta"
-            className="relative -top-8 md:-top-10 h-[86px] sm:h-[90px] md:h-[96px] max-w-md sm:max-w-lg md:max-w-2xl mx-auto grid grid-cols-4 gap-2 p-2 sm:p-2.5 rounded-[36px] transition-all select-none bg-[rgba(250,248,243,0.78)] dark:bg-[rgba(28,25,22,0.88)] border border-white/90 dark:border-white/15 shadow-[0_10px_25px_rgba(71,55,35,0.12)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+            className="relative -top-8 md:-top-10 h-[86px] sm:h-[90px] md:h-[96px] max-w-md sm:max-w-lg md:max-w-2xl mx-auto grid grid-cols-4 gap-1.5 sm:gap-2 p-1.5 sm:p-2.5 rounded-[36px] transition-all select-none bg-[rgba(250,248,243,0.85)] dark:bg-[rgba(24,22,19,0.88)] border border-white/90 dark:border-white/15 shadow-[0_12px_32px_rgba(71,55,35,0.12),inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-2xl"
           >
             {quickActions.map((action) => {
               const Icon = action.icon;
@@ -383,7 +383,7 @@ export const PartyDetailView: React.FC = () => {
                   aria-label={action.label}
                 >
                   <Icon className={`w-5 h-5 sm:w-5.5 sm:h-5.5 ${isHovered ? 'stroke-[2.5]' : 'stroke-[2.2]'}`} />
-                  <span className="text-[11px] sm:text-[12px] tracking-tight leading-none">
+                  <span className="text-[10.5px] sm:text-[12px] tracking-tight leading-none truncate max-w-full">
                     {action.label}
                   </span>
                 </motion.button>

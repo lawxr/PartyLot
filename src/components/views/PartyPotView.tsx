@@ -13,6 +13,7 @@ import {
   Copy,
   ExternalLink,
   AlertTriangle,
+  AlertCircle,
   X,
   Landmark,
   Coins,
@@ -28,6 +29,11 @@ import { MONAD_CONTRACT_ADDRESSES } from '@/contracts';
 import { useMonPrice } from '@/hooks/useMonPrice';
 import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
 import { UsdcLogo, MonadLogo } from '@/components/ui/TokenLogo';
+import {
+  formatWeb3Error,
+  formatShortRelativeTime,
+  FormattedWeb3Error,
+} from '@/lib/web3Error';
 
 export const PartyPotView: React.FC = () => {
   const {
@@ -79,7 +85,7 @@ export const PartyPotView: React.FC = () => {
   // Feedback & Processing State
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
-  const [txError, setTxError] = useState<string | null>(null);
+  const [txError, setTxError] = useState<FormattedWeb3Error | null>(null);
 
   const { wallets } = useWallets();
   const activeWallet = wallets.find((w) => w.walletClientType === 'privy') || wallets[0];
@@ -153,7 +159,13 @@ export const PartyPotView: React.FC = () => {
   const handleAddFunds = async () => {
     const usdVal = parseFloat(customAmount);
     if (isNaN(usdVal) || usdVal <= 0) {
-      setTxError(isEs ? 'Ingresa un monto válido mayor a 0' : 'Enter a valid amount greater than 0');
+      setTxError({
+        title: isEs ? 'Monto no válido' : 'Invalid amount',
+        message: isEs
+          ? 'Ingresa un monto válido mayor a 0 para aportar al bote.'
+          : 'Enter a valid amount greater than 0 to add to the pot.',
+        isUserRejection: false,
+      });
       return;
     }
 
@@ -181,9 +193,8 @@ export const PartyPotView: React.FC = () => {
         colors: ['#F0DC00', '#2775CA', '#836EF9'],
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al procesar el depósito en Monad';
       console.error('Error adding funds to pot:', err);
-      setTxError(msg);
+      setTxError(formatWeb3Error(err, isEs));
     } finally {
       setIsProcessing(false);
     }
@@ -192,21 +203,35 @@ export const PartyPotView: React.FC = () => {
   const handleWithdrawFunds = async () => {
     const amountVal = parseFloat(withdrawAmount);
     if (isNaN(amountVal) || amountVal <= 0) {
-      setTxError(isEs ? 'Ingresa un monto válido mayor a 0' : 'Enter a valid amount greater than 0');
+      setTxError({
+        title: isEs ? 'Monto no válido' : 'Invalid amount',
+        message: isEs
+          ? 'Ingresa un monto válido mayor a 0 para retirar.'
+          : 'Enter a valid amount greater than 0 to withdraw.',
+        isUserRejection: false,
+      });
       return;
     }
     if (!withdrawDesc.trim()) {
-      setTxError(isEs ? 'Ingresa el motivo del retiro' : 'Enter a description for the withdrawal');
+      setTxError({
+        title: isEs ? 'Motivo requerido' : 'Description required',
+        message: isEs
+          ? 'Indica el motivo o gasto de la fiesta (ej. hielo, bebidas).'
+          : 'Please enter a description for this party expense.',
+        isUserRejection: false,
+      });
       return;
     }
 
     const monWithdrawAmount = Number((amountVal / effectiveMonPrice).toFixed(4));
     if (party.potBalance < monWithdrawAmount) {
-      setTxError(
-        isEs
-          ? `Saldo insuficiente en el Pot (${party.potBalance.toFixed(2)} MON disponible).`
-          : `Insufficient pot balance (${party.potBalance.toFixed(2)} MON available).`
-      );
+      setTxError({
+        title: isEs ? 'Saldo insuficiente en el Pot' : 'Insufficient Pot Balance',
+        message: isEs
+          ? `Solo hay ${party.potBalance.toFixed(2)} MON disponibles en el bote.`
+          : `Only ${party.potBalance.toFixed(2)} MON available in the party pot.`,
+        isUserRejection: false,
+      });
       return;
     }
 
@@ -220,9 +245,8 @@ export const PartyPotView: React.FC = () => {
       setWithdrawDesc('');
       setActiveTab('add');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al retirar fondos del pot';
       console.error('Error withdrawing from pot:', err);
-      setTxError(msg);
+      setTxError(formatWeb3Error(err, isEs));
     } finally {
       setIsProcessing(false);
     }
@@ -245,9 +269,8 @@ export const PartyPotView: React.FC = () => {
       setIsRolloverOpen(false);
       setIsMenuOpen(false);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al transferir a la Crew';
       console.error('Error rolling over pot:', err);
-      setTxError(msg);
+      setTxError(formatWeb3Error(err, isEs));
     } finally {
       setIsProcessing(false);
     }
@@ -366,27 +389,76 @@ export const PartyPotView: React.FC = () => {
       {/* ============================================================== */}
       {/* 2. MAIN CARD SURFACE (LIQUID GLASS / WARM IVORY)               */}
       {/* ============================================================== */}
-      <div className="relative -mt-6 z-20 rounded-t-[36px] bg-[#FAF7F2] dark:bg-[#181613] border-t border-white/70 dark:border-white/10 px-5 sm:px-6 pt-5 pb-16 shadow-[0_-12px_40px_rgba(65,48,25,0.08)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5)] max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
-        {/* Real-time Monad Transaction Error Banner */}
-        {txError && (
-          <div className="mb-4 flex items-center justify-between p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs shadow-xs">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-              <span className="font-medium">{txError}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setTxError(null)}
-              className="p-1 text-rose-500 hover:text-rose-800 transition-colors cursor-pointer"
+      <div className="relative -mt-6 z-20 rounded-t-[38px] bg-[#FAF7F2] dark:bg-[#161412] border-t border-white/80 dark:border-white/10 px-4 sm:px-6 pt-5 pb-20 shadow-[0_-16px_48px_rgba(65,48,25,0.08)] dark:shadow-[0_-16px_48px_rgba(0,0,0,0.6)] max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full transition-colors">
+        {/* iOS 27 Liquid Glass Real-time Web3 Error / Notice Banner */}
+        <AnimatePresence>
+          {txError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+              className={`mb-5 p-3.5 sm:p-4 rounded-[26px] backdrop-blur-2xl border transition-all ${
+                txError.isUserRejection
+                  ? 'bg-amber-500/[0.08] dark:bg-amber-400/[0.12] border-amber-500/25 dark:border-amber-400/30 text-[#171512] dark:text-[#FBF8F2] shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_1px_rgba(255,255,255,0.7)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)]'
+                  : 'bg-rose-500/[0.08] dark:bg-rose-500/[0.14] border-rose-500/25 dark:border-rose-400/30 text-[#171512] dark:text-[#FBF8F2] shadow-[0_8px_30px_rgba(244,63,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.7)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)]'
+              }`}
             >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-xs ${
+                      txError.isUserRejection
+                        ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                        : 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
+                    }`}
+                  >
+                    {txError.isUserRejection ? (
+                      <AlertCircle className="w-4 h-4 stroke-[2.5]" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 stroke-[2.5]" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="font-display font-bold text-xs sm:text-sm block leading-tight">
+                      {txError.title}
+                    </span>
+                    <p className="text-[11px] sm:text-xs text-[#706B66] dark:text-[#A8A196] font-medium mt-0.5 leading-relaxed">
+                      {txError.message}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setTxError(null)}
+                  className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 flex items-center justify-center text-[#706B66] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-colors cursor-pointer shrink-0"
+                  aria-label="Dismiss error"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Collapsible Technical Details for Developer Tracing (Cleanly Truncated) */}
+              {txError.technicalDetails && !txError.isUserRejection && (
+                <div className="mt-2.5 pt-2 border-t border-black/5 dark:border-white/10">
+                  <details className="text-[10px] text-[#8E887E] dark:text-[#A8A196] font-mono">
+                    <summary className="cursor-pointer hover:underline font-sans font-semibold">
+                      {isEs ? 'Detalles técnicos' : 'Technical details'}
+                    </summary>
+                    <pre className="mt-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 text-[9px] overflow-x-auto whitespace-pre-wrap break-all max-h-24">
+                      {txError.technicalDetails}
+                    </pre>
+                  </details>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Real-time Monad Transaction Confirmation Toast */}
         {lastTxHash && (
-          <div className="mb-4 flex items-center justify-between p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs">
+          <div className="mb-4 flex items-center justify-between p-3.5 rounded-[22px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs backdrop-blur-xl shadow-xs">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
@@ -408,7 +480,7 @@ export const PartyPotView: React.FC = () => {
         )}
 
         {/* 3 Action Tabs inside Unified Capsule Container (Matching Design Reference Mockup) */}
-        <div className="rounded-[28px] sm:rounded-[32px] bg-white dark:bg-[#1E1B17] p-2 shadow-[0_4px_20px_rgba(65,48,25,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.35)] border border-black/[0.04] dark:border-white/10 grid grid-cols-3 gap-1.5 sm:gap-2 mb-6">
+        <div className="rounded-[28px] sm:rounded-[32px] bg-white/90 dark:bg-[#1E1B17]/90 backdrop-blur-xl border border-white/80 dark:border-white/10 shadow-[0_4px_24px_rgba(70,52,28,0.05),inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.08)] p-1.5 sm:p-2 grid grid-cols-3 gap-1 sm:gap-2 mb-6">
           {/* 1. Add */}
           <button
             type="button"
@@ -500,7 +572,7 @@ export const PartyPotView: React.FC = () => {
               </div>
 
               {!isCustomMode ? (
-                <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
+                <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5">
                   {[5, 10, 20, 50].map((amt) => {
                     const isSelected = selectedSuggested === amt;
                     return (
@@ -508,10 +580,10 @@ export const PartyPotView: React.FC = () => {
                         key={amt}
                         type="button"
                         onClick={() => handleSelectSuggested(amt)}
-                        className={`py-3 rounded-[22px] sm:rounded-[26px] text-xs sm:text-sm font-bold transition-all cursor-pointer text-center ${
+                        className={`py-2.5 sm:py-3 rounded-[20px] sm:rounded-[24px] text-xs sm:text-sm font-bold transition-all cursor-pointer text-center ${
                           isSelected
-                            ? 'bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-black shadow-[0_2px_12px_rgba(240,220,0,0.3)]'
-                            : 'bg-white dark:bg-[#1E1B17] text-[#171512] dark:text-white shadow-[0_2px_8px_rgba(65,48,25,0.03)] border border-black/[0.04] dark:border-white/10 hover:border-black/15'
+                            ? 'bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-black shadow-[0_2px_14px_rgba(240,220,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.9)]'
+                            : 'bg-white/95 dark:bg-[#1E1B17]/95 text-[#171512] dark:text-white shadow-[0_2px_8px_rgba(65,48,25,0.03),inset_0_1px_1px_rgba(255,255,255,0.8)] border border-black/[0.04] dark:border-white/10 hover:border-black/15'
                         }`}
                       >
                         ${amt}
@@ -533,7 +605,7 @@ export const PartyPotView: React.FC = () => {
                       setSelectedSuggested(null);
                     }}
                     placeholder="0.00"
-                    className="w-full pl-8 pr-4 py-3 rounded-2xl bg-white/80 dark:bg-white/5 border border-black/10 dark:border-white/15 text-[#171512] dark:text-white font-bold text-base focus:outline-none focus:border-[#F0DC00]"
+                    className="w-full pl-8 pr-4 py-3 rounded-2xl bg-white/95 dark:bg-[#1E1B17]/95 border border-black/10 dark:border-white/15 text-[#171512] dark:text-white font-bold text-base focus:outline-none focus:border-[#F0DC00]"
                   />
                 </div>
               )}
@@ -543,7 +615,7 @@ export const PartyPotView: React.FC = () => {
             <div className="relative">
               <div
                 onClick={() => setIsTokenSelectorOpen(!isTokenSelectorOpen)}
-                className="p-3.5 sm:p-4 rounded-[24px] sm:rounded-[28px] bg-white dark:bg-[#1E1B17] border border-black/[0.04] dark:border-white/10 shadow-[0_4px_16px_rgba(65,48,25,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] flex items-center justify-between cursor-pointer hover:border-black/15 transition-all"
+                className="p-3.5 sm:p-4 rounded-[24px] sm:rounded-[28px] bg-white/95 dark:bg-[#1E1B17]/95 backdrop-blur-xl border border-white/80 dark:border-white/10 shadow-[0_4px_20px_rgba(70,52,28,0.04),inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.08)] flex items-center justify-between cursor-pointer hover:border-black/15 transition-all"
               >
                 <div className="flex items-center gap-3.5">
                   {selectedToken === 'USDC' ? (
@@ -624,7 +696,7 @@ export const PartyPotView: React.FC = () => {
               whileTap={{ scale: 0.98 }}
               onClick={handleAddFunds}
               disabled={isProcessing}
-              className="w-full py-4 rounded-full bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-display font-black text-sm sm:text-base tracking-tight shadow-[0_6px_20px_rgba(240,220,0,0.35)] hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3.5 sm:py-4 rounded-full bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-display font-black text-sm sm:text-base tracking-tight shadow-[0_6px_22px_rgba(240,220,0,0.38),inset_0_1px_1px_rgba(255,255,255,0.9)] hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isProcessing ? (
                 <div className="w-5 h-5 border-2 border-[#161514] border-t-transparent rounded-full animate-spin" />
@@ -762,11 +834,11 @@ export const PartyPotView: React.FC = () => {
                 return (
                   <div
                     key={tx.id}
-                    className="p-3 rounded-2xl bg-white/70 dark:bg-white/[0.03] border border-black/5 dark:border-white/10 flex items-center justify-between gap-3 shadow-xs"
+                    className="p-2.5 sm:p-3 rounded-[22px] sm:rounded-[24px] bg-white/80 dark:bg-white/[0.04] backdrop-blur-xl border border-white/80 dark:border-white/10 flex items-center justify-between gap-2.5 sm:gap-3 shadow-[0_2px_12px_rgba(65,48,25,0.03),inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.05)]"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                       {/* Avatar with Tiny Plus/Minus Micro Badge */}
-                      <div className="relative w-10 h-10 rounded-full shrink-0">
+                      <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={getAvatarUrl(user?.avatar, 80)}
@@ -785,8 +857,8 @@ export const PartyPotView: React.FC = () => {
                         </div>
                       </div>
 
-                      <div>
-                        <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight">
+                      <div className="min-w-0 flex-1 pr-1">
+                        <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight truncate">
                           {tx.userName}{' '}
                           <span className="font-normal text-[#8E887E] dark:text-[#A8A196]">
                             {isDeposit
@@ -798,15 +870,17 @@ export const PartyPotView: React.FC = () => {
                                 : `withdrew $${(tx.amount * effectiveMonPrice).toFixed(0)}`}
                           </span>
                         </span>
-                        <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196] block mt-0.5 truncate max-w-[200px] sm:max-w-xs">
-                          {tx.description || `${tx.amount} MON`}
-                        </span>
+                        {tx.description && (
+                          <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196] block mt-0.5 truncate max-w-[130px] sm:max-w-xs">
+                            {tx.description}
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0">
-                      <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
-                        {tx.timestamp || '2m ago'}
+                    <div className="text-right shrink-0 pl-1">
+                      <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium whitespace-nowrap block">
+                        {formatShortRelativeTime(tx.timestamp)}
                       </span>
                       {tx.txHash && (
                         <a
@@ -823,7 +897,7 @@ export const PartyPotView: React.FC = () => {
                 );
               })
             ) : (
-              /* Fallback Social Initial Activity */
+              /* Fallback Social Initial Activity matching design mockup */
               [
                 {
                   id: 'default-1',
@@ -849,13 +923,21 @@ export const PartyPotView: React.FC = () => {
                   time: '1h ago',
                   isAdd: false,
                 },
+                {
+                  id: 'default-4',
+                  name: partyMembers[3]?.name || 'Valen',
+                  avatar: partyMembers[3]?.avatar,
+                  action: isEs ? 'aportó $8' : 'added $8',
+                  time: '3h ago',
+                  isAdd: true,
+                },
               ].map((item) => (
                 <div
                   key={item.id}
-                  className="p-3 rounded-2xl bg-white/70 dark:bg-white/[0.03] border border-black/5 dark:border-white/10 flex items-center justify-between gap-3 shadow-xs"
+                  className="p-2.5 sm:p-3 rounded-[22px] sm:rounded-[24px] bg-white/80 dark:bg-white/[0.04] backdrop-blur-xl border border-white/80 dark:border-white/10 flex items-center justify-between gap-2.5 sm:gap-3 shadow-[0_2px_12px_rgba(65,48,25,0.03),inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.05)]"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 rounded-full shrink-0">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                    <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={getAvatarUrl(item.avatar, 80)}
@@ -864,16 +946,18 @@ export const PartyPotView: React.FC = () => {
                         decoding="async"
                       />
                       <div
-                        className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white shadow-xs ${
-                          item.isAdd ? 'bg-[#F0DC00] text-[#171512]' : 'bg-rose-500 text-white'
+                        className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white dark:border-[#181613] shadow-xs ${
+                          item.isAdd
+                            ? 'bg-[#FFE600] text-[#161514]'
+                            : 'bg-[#FFCCD5] text-[#900B22]'
                         }`}
                       >
                         {item.isAdd ? '+' : '-'}
                       </div>
                     </div>
 
-                    <div>
-                      <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight">
+                    <div className="min-w-0 flex-1 pr-1">
+                      <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight truncate">
                         {item.name}{' '}
                         <span className="font-normal text-[#8E887E] dark:text-[#A8A196]">
                           {item.action}
@@ -882,9 +966,11 @@ export const PartyPotView: React.FC = () => {
                     </div>
                   </div>
 
-                  <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium shrink-0">
-                    {item.time}
-                  </span>
+                  <div className="text-right shrink-0 pl-1">
+                    <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium whitespace-nowrap block">
+                      {item.time}
+                    </span>
+                  </div>
                 </div>
               ))
             )}

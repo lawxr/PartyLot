@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import {
   ArrowLeft,
-  ChevronLeft,
   ChevronRight,
   MoreHorizontal,
   Coins,

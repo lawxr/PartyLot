@@ -65,7 +65,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             <button
               onClick={handleBack}
               className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full ${
-                isOverImage ? 'glass-light text-white' : 'liquid-glass-button text-[#171512] shadow-sm'
+                isOverImage ? 'glass-light text-white' : 'liquid-glass-button text-[#171512] dark:text-white dark:bg-white/10 dark:border-white/15 shadow-sm'
               } flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer`}
               aria-label="Back"
             >
@@ -78,7 +78,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none max-w-[55%] truncate">
             <span
               className={`font-display font-extrabold text-sm sm:text-base tracking-tight ${
-                isOverImage ? 'text-white drop-shadow-md' : 'text-[#171512]'
+                isOverImage ? 'text-white drop-shadow-md' : 'text-[#171512] dark:text-white'
               }`}
             >
               {title}
@@ -91,7 +91,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             <button
               onClick={handleShare}
               className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full ${
-                isOverImage ? 'glass-light text-white' : 'liquid-glass-button text-[#171512] shadow-sm'
+                isOverImage ? 'glass-light text-white' : 'liquid-glass-button text-[#171512] dark:text-white dark:bg-white/10 dark:border-white/15 shadow-sm'
               } flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer`}
               aria-label="Share"
             >

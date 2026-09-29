@@ -33,13 +33,14 @@ export const RecapView: React.FC = () => {
     polls,
     crews,
     tasks,
+    setCurrentView,
+    goBack,
   } = usePartyStore();
 
   const { language } = useTranslation();
   const isEs = language === 'es';
 
-  const defaultParty = parties[0];
-  const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const partyExpenses = expenses.filter((e) => e.partyId === party?.id);
   const partyTransactions = transactions.filter((t) => t.partyId === party?.id);
   const partyPolls = polls.filter((p) => p.partyId === party?.id);
@@ -51,11 +52,35 @@ export const RecapView: React.FC = () => {
   const [attestationTxHash, setAttestationTxHash] = useState<string | null>(null);
   const posterRef = useRef<HTMLDivElement | null>(null);
 
+  if (!party) {
+    return (
+      <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] flex flex-col items-center justify-center p-6 text-center transition-colors duration-200">
+        <h2 className="font-display font-black text-2xl text-[#171512] dark:text-white mb-2">
+          {isEs ? 'Sin fiesta seleccionada' : 'No Party Selected'}
+        </h2>
+        <p className="text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs mb-6 leading-relaxed">
+          {isEs
+            ? 'Selecciona una fiesta para ver su resumen y logros.'
+            : 'Select a party to view its recap and highlights.'}
+        </p>
+        <button
+          onClick={() => {
+            if (goBack) goBack();
+            else setCurrentView('home');
+          }}
+          className="accent-button px-6 py-3 rounded-full text-xs font-bold cursor-pointer"
+        >
+          {isEs ? 'Volver al Inicio' : 'Return Home'}
+        </button>
+      </div>
+    );
+  }
+
   const handleAttestGathering = async () => {
     if (isAttesting || attestationTxHash) return;
     setIsAttesting(true);
     try {
-      const addresses = party.members.map((m) => m.walletAddress || m.id);
+      const addresses = (party.members || []).map((m) => m.walletAddress || m.id);
       const receipt = await recordGatheringOnchain(party.id, addresses, {
         userAId: party.members[0]?.id,
         userBId: party.members[1]?.id || party.members[0]?.id,
@@ -77,7 +102,8 @@ export const RecapView: React.FC = () => {
   };
 
   // Dynamic calculations from real party state
-  const attendeesCount = party.members.length;
+  const partyMembers = party.members || [];
+  const attendeesCount = partyMembers.length;
   const totalSharedDamage = partyExpenses.reduce((sum, e) => sum + e.amount, 0);
   const minigamesCount = whosMostLikely.length + thisOrThat.length + 1;
 
@@ -94,12 +120,12 @@ export const RecapView: React.FC = () => {
     .reduce((sum, t) => sum + t.amount, 0);
 
   // Night Awards
-  const mvpMember = party.members[1] || party.members[0];
-  const gameKingMember = party.members[2] || party.members[0];
+  const mvpMember = partyMembers[1] || partyMembers[0];
+  const gameKingMember = partyMembers[2] || partyMembers[0];
   const bountyContributor =
     tasks.find((t) => t.partyId === party.id && t.status === 'verified')?.claimedByName ||
-    party.members[0]?.name ||
-    'Law';
+    partyMembers[0]?.name ||
+    (isEs ? 'Colaborador' : 'Contributor');
 
   const handleShareRecap = async () => {
     confetti({

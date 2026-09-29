@@ -27,12 +27,11 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import confetti from 'canvas-confetti';
 
 export const SplitView: React.FC = () => {
-  const { parties, currentPartyId, expenses, addExpense, settleAllDebts, goBack, currentUser } = usePartyStore();
+  const { parties, currentPartyId, expenses, addExpense, settleAllDebts, goBack, setCurrentView, currentUser } = usePartyStore();
   const { t, language } = useTranslation();
   const isEs = language === 'es';
 
-  const defaultParty = parties[0];
-  const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const partyMembers = party?.members || [];
   const partyExpenses = expenses.filter((e) => e.partyId === party?.id);
 
@@ -172,6 +171,30 @@ export const SplitView: React.FC = () => {
     ...realCreditorsList,
   ];
 
+  if (!party) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] flex flex-col items-center justify-center p-6 text-center transition-colors duration-200">
+        <h2 className="font-display font-black text-2xl text-[#171512] dark:text-white mb-2">
+          {isEs ? 'Sin fiesta seleccionada' : 'No Party Selected'}
+        </h2>
+        <p className="text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs mb-6 leading-relaxed">
+          {isEs
+            ? 'Selecciona una fiesta para dividir gastos entre amigos.'
+            : 'Select a gathering to split shared expenses.'}
+        </p>
+        <button
+          onClick={() => {
+            if (goBack) goBack();
+            else setCurrentView('home');
+          }}
+          className="accent-button px-6 py-3 rounded-full text-xs font-bold cursor-pointer"
+        >
+          {isEs ? 'Volver al Inicio' : 'Return Home'}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] flex flex-col justify-between selection:bg-[#F0DC00]/30 transition-colors duration-200">
       {/* Mobile-first Container matching the exact mockup */}
@@ -193,14 +216,14 @@ export const SplitView: React.FC = () => {
             <div className="w-9 h-9 rounded-full overflow-hidden border border-black/10 dark:border-white/10 shrink-0 shadow-xs bg-[#EFEAE2] dark:bg-white/10">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={party?.coverImage || 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=400&q=80'}
-                alt={party?.title || '404 House'}
+                src={party.coverImage || 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=400&q=80'}
+                alt={party.title}
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="text-left">
               <h1 className="font-display font-black text-base sm:text-lg text-[#171512] dark:text-white leading-tight tracking-tight">
-                {party?.title || '404 House'}
+                {party.title}
               </h1>
               <span className="text-xs text-[#8A8173] dark:text-[#A8A196] leading-tight block font-medium">
                 {t.split.title}
@@ -237,7 +260,7 @@ export const SplitView: React.FC = () => {
             </div>
 
             <p className="text-xs text-[#8A8173] dark:text-[#A8A196] font-medium">
-              {t.split.peopleUpdated(partyMembers.length || 14, isEs ? 'hace 2 min' : '2 min ago')}
+              {t.split.peopleUpdated(partyMembers.length, isEs ? 'al día' : 'up to date')}
             </p>
           </div>
 

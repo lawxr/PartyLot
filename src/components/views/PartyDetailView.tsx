@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Check,
   Copy,
+  Camera,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useWallets } from '@privy-io/react-auth';
@@ -53,21 +54,13 @@ export const PartyDetailView: React.FC = () => {
   const { t, language } = useTranslation();
   const isEs = language === 'es';
 
-  const defaultParty = parties[0];
-  const party = parties.find((p) => p.id === currentPartyId) || parties[0] || defaultParty;
-  const partyMemories = (memories || []).filter(
-    (m) => m.partyId === party?.id || m.partyId === 'party_hackathon_demo' || m.partyId === 'p-404'
-  );
-  const partyActivities = (activities || []).filter(
-    (a) =>
-      a.partyId === party?.id ||
-      a.partyId === 'party_hackathon_demo' ||
-      a.partyId === 'p-404' ||
-      !a.partyId
-  );
-  const partyMembers = (party?.members && party.members.length > 0)
-    ? party.members
-    : (defaultParty?.members || []);
+  const party = parties.find((p) => p.id === currentPartyId) || parties[0];
+  const partyMemories = (memories || []).filter((m) => m.partyId === party?.id);
+  const partyActivities = (activities || []).filter((a) => a.partyId === party?.id);
+  const partyMembers = party?.members || [];
+  const hostMember = partyMembers.find((m) => m.role === 'host' || m.id === party?.hostId);
+  const hostName = party?.hostName || hostMember?.name || (isEs ? 'Anfitrión' : 'Host');
+  const hostAvatar = hostMember?.avatar;
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -221,6 +214,30 @@ export const PartyDetailView: React.FC = () => {
     }
   }, [party?.id, listenToActivePartyRealtime, loadPartyFromSupabase]);
 
+  if (!party) {
+    return (
+      <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] flex flex-col items-center justify-center p-6 text-center">
+        <h2 className="font-display font-black text-2xl text-[#171512] dark:text-white mb-2">
+          {isEs ? 'Sin fiesta seleccionada' : 'No Party Selected'}
+        </h2>
+        <p className="text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs mb-6 leading-relaxed">
+          {isEs
+            ? 'Selecciona o crea una fiesta para ver todos sus detalles.'
+            : 'Select or host a party to view its details.'}
+        </p>
+        <button
+          onClick={() => {
+            if (goBack) goBack();
+            else setCurrentView('home');
+          }}
+          className="accent-button px-6 py-3 rounded-full text-xs font-bold cursor-pointer"
+        >
+          {isEs ? 'Volver al Inicio' : 'Return Home'}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-24 select-none relative overflow-x-hidden transition-colors duration-200">
       {/* ============================================================== */}
@@ -266,8 +283,8 @@ export const PartyDetailView: React.FC = () => {
           {/* Background Image: Bright, Candid Party Photography */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={getCoverUrl(party?.coverImage || defaultParty.coverImage, 900)}
-            alt={party?.title || defaultParty.title}
+            src={getCoverUrl(party.coverImage, 900)}
+            alt={party.title}
             className="absolute inset-0 w-full h-full object-cover object-center"
             loading="eager"
             decoding="async"
@@ -279,34 +296,40 @@ export const PartyDetailView: React.FC = () => {
           {/* Hero details */}
           <div className="absolute bottom-16 sm:bottom-18 left-0 right-0 px-5 z-20 flex flex-col justify-end text-white">
             <h1 className="font-display font-black text-4xl sm:text-5xl text-white tracking-tight leading-none mb-2 drop-shadow-md">
-              {party?.title || defaultParty.title}
+              {party.title}
             </h1>
 
-            {/* Date & Location Row (Medellín with accent) */}
+            {/* Date & Location Row */}
             <div className="flex items-center gap-3 text-xs sm:text-sm text-white/95 font-semibold mb-3 drop-shadow">
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                {party?.date || 'Today'} · {party?.time || '9:00 PM'}
+                {party.date || (isEs ? 'Hoy' : 'Today')} · {party.time || '9:00 PM'}
               </span>
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                Medellín
+                {party.location || (isEs ? 'Ubicación por confirmar' : 'Location TBD')}
               </span>
             </div>
 
             {/* Host Row */}
             <div className="flex items-center gap-2 mb-3 drop-shadow">
-              <div className="w-6 h-6 rounded-full overflow-hidden border border-white shrink-0 shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getAvatarUrl("https://images.unsplash.com/photo-1506794778202-cad84cf45f1d", 64)}
-                  alt="Law"
-                  className="w-full h-full object-cover"
-                  decoding="async"
-                />
+              <div className="w-6 h-6 rounded-full overflow-hidden border border-white shrink-0 shadow-sm bg-black/30 flex items-center justify-center">
+                {hostAvatar ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={getAvatarUrl(hostAvatar, 64)}
+                    alt={hostName}
+                    className="w-full h-full object-cover"
+                    decoding="async"
+                  />
+                ) : (
+                  <span className="text-[10px] font-bold text-white">
+                    {hostName.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               <span className="text-xs sm:text-sm font-semibold text-white">
-                {isEs ? `Organizado por ${party?.hostName || 'Law'}` : `Hosted by ${party?.hostName || 'Law'}`}
+                {isEs ? `Organizado por ${hostName}` : `Hosted by ${hostName}`}
               </span>
             </div>
 
@@ -562,20 +585,32 @@ export const PartyDetailView: React.FC = () => {
 
             {/* Photo Grid */}
             <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {(partyMemories.length > 0 ? partyMemories : [
-                { id: '1', imageUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=400&q=80' },
-                { id: '2', imageUrl: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=400&q=80' },
-                { id: '3', imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=400&q=80' }
-              ]).slice(0, 6).map((mem, i) => (
-                <div
-                  key={mem.id || i}
-                  onClick={() => setSelectedPhoto(mem as PartyMemory)}
-                  className="h-24 sm:h-28 rounded-2xl overflow-hidden border border-black/10 shadow-sm cursor-pointer hover:scale-102 transition-transform relative group"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={mem.imageUrl} alt="Memory" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              {partyMemories.length > 0 ? (
+                partyMemories.slice(0, 6).map((mem, i) => (
+                  <div
+                    key={mem.id || i}
+                    onClick={() => setSelectedPhoto(mem as PartyMemory)}
+                    className="h-24 sm:h-28 rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:scale-102 transition-transform relative group"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={mem.imageUrl} alt="Memory" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full py-8 px-4 text-center rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-dashed border-black/10 dark:border-white/10">
+                  <Camera className="w-7 h-7 text-[#8E887E] dark:text-[#A8A196] mx-auto mb-2 opacity-60" />
+                  <p className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium">
+                    {isEs ? 'Aún no hay fotos en este álbum.' : 'No photos in this album yet.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-2 text-xs font-bold text-[#836EF9] hover:underline cursor-pointer"
+                  >
+                    {isEs ? 'Sé el primero en subir una' : 'Be the first to upload one'}
+                  </button>
                 </div>
-              ))}
+              )}
             </div>
           </section>
 
@@ -602,7 +637,9 @@ export const PartyDetailView: React.FC = () => {
                   <div>
                     <span className="text-xs font-bold text-[#171512] dark:text-white block">Who&apos;s Most Likely</span>
                     <span className="text-[10px] text-[#6F6A62] dark:text-[#A8A196]">
-                      {isEs ? '4 participantes activos' : '4 active players'}
+                      {partyMembers.length > 0
+                        ? (isEs ? `${partyMembers.length} participantes` : `${partyMembers.length} active players`)
+                        : (isEs ? 'Juegos de fiesta' : 'Party games')}
                     </span>
                   </div>
                 </div>

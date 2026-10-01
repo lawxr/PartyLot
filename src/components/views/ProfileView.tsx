@@ -447,47 +447,6 @@ export const ProfileView: React.FC = () => {
           </div>
         </div>
 
-        {/* Party Gaming Social Reputation Card */}
-        <div className="mb-6 p-3.5 sm:p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div
-            onClick={() => setIsGameStatsModalOpen(true)}
-            className="flex items-center gap-3 cursor-pointer flex-1"
-          >
-            <div className="w-11 h-11 rounded-2xl bg-[#FFF5C0] dark:bg-[#F0DC00]/15 border border-[#F0DC00]/40 flex items-center justify-center text-xl shrink-0">
-              {gameStats.tierBadge}
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-display font-bold text-sm text-[#171512] dark:text-white">
-                  {gameStats.tierTitle}
-                </span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${gameStats.tierColor}`}>
-                  {gameStats.totalPlays} {isEs ? 'partidas' : 'plays'}
-                </span>
-              </div>
-              <p className="text-xs text-[#8E887E] dark:text-[#A8A196] mt-0.5 line-clamp-1">
-                {gameStats.totalPlays > 0
-                  ? `${gameStats.wmlVotes} ${isEs ? 'votos en Quién es Más' : 'votes in Whos Most'} · ${gameStats.totChoices} ${isEs ? 'en This or That' : 'in This or That'}`
-                  : (isEs ? 'Participa en juegos de fiesta para subir tu reputación' : 'Play party games to raise your reputation')}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-            <button
-              onClick={() => setIsGameStatsModalOpen(true)}
-              className="text-xs font-semibold text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white px-2.5 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
-            >
-              {isEs ? 'Ver stats' : 'View stats'}
-            </button>
-            <button
-              onClick={() => setCurrentView('games')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-            >
-              <Gamepad2 className="w-3.5 h-3.5" />
-              <span>{isEs ? 'Jugar' : 'Play'}</span>
-            </button>
-          </div>
-        </div>
 
         {/* Floating Translucent Glass Options Container */}
         <nav

@@ -129,53 +129,35 @@ export const PartyPotView: React.FC = () => {
   const effectiveMonPrice = monPrice && monPrice > 0 ? monPrice : 18.64;
   const potUsdAmount = (monBalance * effectiveMonPrice).toFixed(2);
 
-  // Target deposit address (Party contract or party ID fallback)
-  const depositAddress =
-    MONAD_CONTRACT_ADDRESSES?.partyTreasury || party?.id || '0x71C...PartyPot';
+  // Target deposit address (Party contract on Monad Testnet)
+  const depositAddress: `0x${string}` =
+    MONAD_CONTRACT_ADDRESSES?.partyTreasury ||
+    '0x13ed67e844496095c0f44c914f89e30ef190db2c';
 
-  // Render QR Code on canvas
+  // Render 100% compliant, universally scannable QR Code for the pot treasury
   useEffect(() => {
     if (activeTab !== 'qr' || !qrCanvasRef.current) return;
     const canvas = qrCanvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
 
-    try {
-      const qrData = `ethereum:${depositAddress}?value=${customAmount}`;
-      const qr = QRCode.create(qrData, { errorCorrectionLevel: 'M' });
-      const moduleCount = qr.modules.size;
-      const margin = 2;
-      const totalModules = moduleCount + margin * 2;
-      const cellSize = Math.floor(480 / totalModules);
-      const canvasSize = cellSize * totalModules;
-
-      canvas.width = canvasSize;
-      canvas.height = canvasSize;
-
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, canvasSize, canvasSize);
-
-      ctx.fillStyle = '#171512';
-      const offset = margin * cellSize;
-      for (let r = 0; r < moduleCount; r++) {
-        for (let c = 0; c < moduleCount; c++) {
-          if (qr.modules.get(r, c)) {
-            ctx.beginPath();
-            ctx.roundRect(
-              offset + c * cellSize,
-              offset + r * cellSize,
-              cellSize - 0.5,
-              cellSize - 0.5,
-              1.5
-            );
-            ctx.fill();
-          }
+    QRCode.toCanvas(
+      canvas,
+      depositAddress,
+      {
+        width: 240,
+        margin: 2,
+        errorCorrectionLevel: 'M',
+        color: {
+          dark: '#161514',
+          light: '#FFFFFF',
+        },
+      },
+      (err) => {
+        if (err) {
+          console.error('Error generating pot QR code:', err);
         }
       }
-    } catch (err) {
-      console.error('Error generating pot QR code:', err);
-    }
-  }, [activeTab, depositAddress, customAmount]);
+    );
+  }, [activeTab, depositAddress]);
 
   const handleCopyAddress = async () => {
     await navigator.clipboard.writeText(depositAddress);
@@ -454,26 +436,17 @@ export const PartyPotView: React.FC = () => {
                         boxShadow:
                           '0 0 24px rgba(255, 212, 41, 0.55), 0 6px 14px rgba(235, 179, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.75)',
                       }
-                    : isActive
-                      ? {
-                          background:
-                            theme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.88)',
-                          boxShadow:
-                            theme === 'dark'
-                              ? '0 3px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
-                              : '0 3px 12px rgba(74, 56, 35, 0.08), inset 0 1px 1px rgba(255, 255, 255, 1)',
-                        }
-                      : {
-                          background:
-                            theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.45)',
-                          boxShadow:
-                            theme === 'dark'
-                              ? '0 2px 6px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.08)'
-                              : '0 2px 6px rgba(74, 56, 35, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.85)',
-                        }
+                    : {
+                        background:
+                          theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.48)',
+                        boxShadow:
+                          theme === 'dark'
+                            ? '0 3px 9px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)'
+                            : '0 3px 9px rgba(74, 56, 35, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.92)',
+                      }
                 }
                 className={`flex flex-col items-center justify-center gap-1 min-w-0 rounded-[26px] transition-all duration-200 cursor-pointer text-[#161514] dark:text-[#F5F1E8] ${
-                  isHovered || isActive ? 'font-bold' : 'font-medium opacity-85'
+                  isHovered || isActive ? 'font-bold' : 'font-medium'
                 }`}
                 aria-label={action.label}
               >
@@ -810,42 +783,54 @@ export const PartyPotView: React.FC = () => {
         {/* TAB C: QR CODE DISPLAY & ADDRESS COPY                          */}
         {/* ============================================================== */}
         {activeTab === 'qr' && (
-          <div className="p-6 rounded-[28px] bg-white/90 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-xs flex flex-col items-center justify-center text-center mb-6">
-            <h4 className="font-display font-bold text-base text-[#171512] dark:text-white mb-1">
-              {isEs ? 'Escanea para transferir al bote' : 'Scan to transfer to pot'}
+          <div className="py-4 px-4 sm:p-5 rounded-[24px] bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-xs flex flex-col items-center justify-center text-center mb-5">
+            <h4 className="font-display font-bold text-sm sm:text-base text-[#171512] dark:text-white mb-0.5">
+              {isEs ? 'Depositar al bote' : 'Deposit to pot'}
             </h4>
-            <p className="text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs mb-4">
+            <p className="text-[11px] sm:text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs mb-3">
               {isEs
-                ? 'Cualquier asistente puede enviar fondos directamente usando su billetera habitual.'
-                : 'Any attendee can send funds directly using their preferred wallet.'}
+                ? 'Escanea para transferir MON o USDC directo a la tesorería de la fiesta.'
+                : 'Scan to transfer MON or USDC directly to the party treasury.'}
             </p>
 
-            {/* QR Canvas */}
-            <div className="p-3 rounded-2xl bg-white shadow-md border border-black/10 mb-4 inline-block">
-              <canvas ref={qrCanvasRef} className="w-48 h-48 sm:w-56 sm:h-56 block rounded-lg" />
+            {/* Compact QR Canvas */}
+            <div className="p-2.5 rounded-2xl bg-white shadow-xs border border-black/10 mb-3 inline-block">
+              <canvas ref={qrCanvasRef} className="w-36 h-36 sm:w-40 sm:h-40 block rounded-lg" />
             </div>
 
-            {/* Copy Address Button */}
-            <button
-              onClick={handleCopyAddress}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 text-xs font-semibold cursor-pointer transition-colors"
-            >
-              {copiedAddress ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 dark:text-emerald-400 font-bold">
-                    {isEs ? 'Dirección copiada' : 'Address copied'}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5 text-[#8E887E]" />
-                  <span>
-                    {depositAddress.slice(0, 10)}...{depositAddress.slice(-8)}
-                  </span>
-                </>
-              )}
-            </button>
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2">
+              <button
+                type="button"
+                onClick={handleCopyAddress}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 text-xs font-semibold cursor-pointer transition-colors"
+              >
+                {copiedAddress ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+                      {isEs ? 'Dirección copiada' : 'Address copied'}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-[#8E887E]" />
+                    <span className="font-mono text-[11px] sm:text-xs">
+                      {depositAddress.slice(0, 8)}...{depositAddress.slice(-6)}
+                    </span>
+                  </>
+                )}
+              </button>
+              <a
+                href={`https://testnet.monadexplorer.com/address/${depositAddress}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-semibold text-[#836EF9] hover:underline"
+              >
+                <span>Monad Explorer</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
         )}
       </section>

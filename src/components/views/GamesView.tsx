@@ -7,11 +7,13 @@ import { WhosMostLikely } from '@/components/games/WhosMostLikely';
 import { ThisOrThat } from '@/components/games/ThisOrThat';
 import { CrewTrivia } from '@/components/games/CrewTrivia';
 
+import { TopNav } from '@/components/navigation/TopNav';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const GamesView: React.FC = () => {
-  const { activeGameId, setActiveGame } = usePartyStore();
-  const { t } = useTranslation();
+  const { activeGameId, setActiveGame, goBack } = usePartyStore();
+  const { t, language } = useTranslation();
+  const isEs = language === 'es';
 
   const games: { id: GameId; label: string; number: string }[] = [
     { id: 'whos-most-likely', label: t.games.mostLikely, number: '01' },
@@ -20,8 +22,15 @@ export const GamesView: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-28 pt-2 transition-colors">
-      <main className="px-4 sm:px-6 max-w-lg md:max-w-xl mx-auto w-full">
+    <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-28 select-none transition-colors">
+      {/* Top Navigation Bar with Back Arrow */}
+      <TopNav
+        title={isEs ? 'JUEGOS DE FIESTA' : 'PARTY GAMES'}
+        showBack={true}
+        onBack={goBack}
+      />
+
+      <main className="px-4 sm:px-6 max-w-lg md:max-w-xl mx-auto w-full pt-1">
         {/* Game switcher */}
         <div className="flex justify-center gap-1.5 p-1 rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 mb-4 max-w-xs mx-auto shadow-sm">
           {games.map((g) => {

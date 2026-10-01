@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -11,13 +11,10 @@ import {
   Sparkles,
   MapPin,
   Clock,
-  Eye,
   ShieldCheck,
-  Camera,
   Upload,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
-import { GlassButton } from '@/components/ui/GlassButton';
 import { Party } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import confetti from 'canvas-confetti';
@@ -25,25 +22,26 @@ import { uploadImageFile } from '@/services/storageService';
 
 const SAMPLE_PARTY_COVERS = [
   { id: '1', url: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=800&q=80' },
-  { id: '2', url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80' },
-  { id: '3', url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80' },
-  { id: '4', url: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80' },
-  { id: '5', url: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=800&q=80' },
-  { id: '6', url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80' },
+  { id: '2', url: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=800&q=80' },
+  { id: '3', url: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=800&q=80' },
+  { id: '4', url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80' },
+  { id: '5', url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80' },
+  { id: '6', url: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80' },
 ];
 
 export const CreatePartyView: React.FC = () => {
-  const { createParty, selectParty, goBack, currentUser, crews, currentCrewId } = usePartyStore();
-  const { t, language } = useTranslation();
+  const { createParty, selectParty, goBack, crews, currentCrewId } = usePartyStore();
+  const { language } = useTranslation();
   const isEs = language === 'es';
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [partyName, setPartyName] = useState('');
   const [selectedCrewId, setSelectedCrewId] = useState<string>(currentCrewId || '');
-  const [selectedCover, setSelectedCover] = useState(SAMPLE_PARTY_COVERS[0].url);
+  const [selectedCover, setSelectedCover] = useState(SAMPLE_PARTY_COVERS[1].url);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
-  const coverInputRef = React.useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
   const [date, setDate] = useState('TONIGHT');
   const [time, setTime] = useState('10:00 PM');
   const [location, setLocation] = useState('Medellín · Rooftop');
@@ -51,6 +49,16 @@ export const CreatePartyView: React.FC = () => {
 
   const [createdParty, setCreatedParty] = useState<Party | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Fallback demo crews matching the requested design if user has none created yet
+  const availableCrews =
+    crews.length > 0
+      ? crews
+      : [
+          { id: 'c-404', name: '404 House', membersCount: 12 },
+          { id: 'c-uni', name: 'Uni Friends', membersCount: 8 },
+          { id: 'c-hack', name: 'Hackathon Crew', membersCount: 6 },
+        ];
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -74,10 +82,9 @@ export const CreatePartyView: React.FC = () => {
     if (step < 4) {
       setStep((prev) => (prev + 1) as 1 | 2 | 3 | 4);
     } else {
-      // Step 4 finishes creation
       const validCrewId = crews.some((c) => c.id === selectedCrewId) ? selectedCrewId : undefined;
       const newParty = createParty({
-        title: partyName.trim() || 'SECRET BALCONY',
+        title: partyName.trim() || (isEs ? 'Secret Balcony' : 'Secret Balcony'),
         date,
         time,
         location,
@@ -91,7 +98,7 @@ export const CreatePartyView: React.FC = () => {
         particleCount: 80,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#F0DC00', '#FFFFFF', '#FF3B30'],
+        colors: ['#FFE600', '#F0DC00', '#FFFFFF', '#FF3B30'],
       });
     }
   };
@@ -118,530 +125,475 @@ export const CreatePartyView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F2E8] text-[#171512] flex flex-col justify-between p-4 sm:p-6 md:px-8 lg:max-w-5xl xl:max-w-6xl mx-auto safe-top safe-bottom select-none w-full">
-      {/* Top Header */}
-      <div className="flex items-center justify-between mb-6 w-full shrink-0">
-        <button
-          onClick={goBack}
-          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#FFFDF8] border border-[rgba(35,30,22,0.1)] shadow-sm flex items-center justify-center text-[#171512] hover:bg-[#F8F3EA] transition-transform active:scale-95"
-          aria-label="Back"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+    <div className="relative min-h-[100dvh] w-full bg-[#FFFDF8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] flex flex-col justify-between overflow-x-hidden transition-colors duration-200">
+      <div className="w-full max-w-lg mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-28 sm:pb-32 flex-1 flex flex-col">
+        {/* Top Header */}
+        <header className="flex items-center justify-between mb-4 sm:mb-6 shrink-0 w-full">
+          <button
+            type="button"
+            onClick={
+              createdParty
+                ? () => selectParty(createdParty.id)
+                : step > 1
+                ? () => setStep((s) => (s - 1) as 1 | 2 | 3 | 4)
+                : goBack
+            }
+            className="w-10 h-10 rounded-full bg-white dark:bg-[#1C1A16] border border-black/5 dark:border-white/10 shadow-xs flex items-center justify-center text-[#171512] dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-transform active:scale-95 cursor-pointer shrink-0"
+            aria-label="Back"
+          >
+            <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+          </button>
 
-        {/* Step Progress Pill */}
-        {!createdParty && (
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFFDF8] border border-[rgba(35,30,22,0.1)] text-xs font-semibold text-[#171512] shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-[#F0DC00] animate-pulse" />
-            <span>{t.createParty.stepCount(step, 4)}</span>
-          </div>
-        )}
-      </div>
+          {/* Step Counter Pill */}
+          {!createdParty && (
+            <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#1C1A16] border border-black/5 dark:border-white/10 shadow-xs flex items-center gap-2 text-xs font-bold text-[#171512] dark:text-white shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#FFE600] shrink-0" />
+              <span>{isEs ? `Paso ${step} de 4` : `Step ${step} of 4`}</span>
+            </div>
+          )}
+        </header>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col justify-center py-2 w-full">
-        <AnimatePresence mode="wait">
-          {createdParty ? (
-            /* Celebration Screen: YOUR PARTY IS LIVE (Fully Responsive) */
-            <motion.div
-              key="celebration"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center py-4"
-            >
-              {/* Left Column: Resulting Party Card Preview */}
-              <div className="lg:col-span-5 hidden lg:flex flex-col items-center">
-                <div className="w-full h-[460px] rounded-[32px] relative overflow-hidden border border-[rgba(35,30,22,0.1)] shadow-xl group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={createdParty.coverImage}
-                    alt={createdParty.title}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
-                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-                    <span className="px-3 py-1 rounded-full bg-[#FFFDF8]/90 backdrop-blur-md text-xs font-bold text-[#171512] border border-[rgba(35,30,22,0.1)] shadow-sm">
-                      {createdParty.date}
-                    </span>
-                    <span className="px-2.5 py-1 rounded-full bg-black/60 text-xs font-mono text-white/90">
-                      CODE {createdParty.code}
-                    </span>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
-                    <h4 className="font-display font-black text-3xl text-white tracking-tight mb-1">
-                      {createdParty.title}
-                    </h4>
-                    <p className="text-xs text-white/70">{createdParty.location}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Celebration Actions & Code */}
-              <div className="lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left">
-                <div className="w-14 h-14 rounded-full bg-[#F0DC00]/25 border border-[#F0DC00]/40 text-[#171512] flex items-center justify-center mb-4">
-                  <Sparkles className="w-7 h-7" />
+        {/* Main Content Area */}
+        <main className="flex-1 flex flex-col justify-start w-full">
+          <AnimatePresence mode="wait">
+            {createdParty ? (
+              /* Celebration Screen: PARTY IS LIVE */
+              <motion.div
+                key="celebration"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                className="flex flex-col items-center text-center py-4 my-auto w-full"
+              >
+                <div className="w-16 h-16 rounded-full bg-[#FFE600]/30 border border-[#FFE600]/50 text-[#171512] dark:text-white flex items-center justify-center mb-4">
+                  <Sparkles className="w-8 h-8 text-[#E5A800] dark:text-[#FFE600]" />
                 </div>
 
-                <span className="text-xs uppercase font-extrabold tracking-widest text-[#B8A700]">
-                  CONGRATS · LIVE ON MONAD
+                <span className="text-xs font-black uppercase tracking-widest text-[#D49B00] dark:text-[#FFE600] mb-1">
+                  {isEs ? '¡FIESTA CREADA!' : 'PARTY CREATED!'}
                 </span>
-                <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight mt-1 mb-2">
-                  {t.createParty.partyCreatedTitle}
+                <h2 className="font-display font-black text-2xl sm:text-3xl text-[#171512] dark:text-white tracking-tight mb-2">
+                  {createdParty.title}
                 </h2>
-                <p className="text-sm text-[#6F6A62] max-w-md mb-6 leading-relaxed">
-                  {t.createParty.partyCreatedSubtitle}
+                <p className="text-xs sm:text-sm text-[#706B66] dark:text-[#A8A196] max-w-sm mb-6 leading-relaxed">
+                  {isEs
+                    ? 'Comparte el código con tus invitados para que puedan unirse y aportar al bote.'
+                    : 'Share the code with your guests so they can join and add to the pot.'}
                 </p>
 
-                {/* Giant Code Box */}
-                <div className="p-6 mb-6 w-full max-w-md bg-[#FFFDF8] rounded-[28px] border border-[rgba(35,30,22,0.1)] shadow-[0_12px_40px_rgba(65,48,25,0.08)]">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] uppercase font-bold text-[#6F6A62] tracking-wider">
-                      {t.createParty.partyCodeLabel}
-                    </span>
-                    <span className="text-[11px] font-mono text-[#171512] font-semibold bg-[#F0DC00]/20 px-2 py-0.5 rounded-full">EIP-712 PERMIT</span>
-                  </div>
-                  <div className="font-display font-black text-5xl sm:text-6xl tracking-widest text-[#171512] my-2 text-center">
+                {/* Code Box */}
+                <div className="p-6 mb-6 w-full max-w-xs bg-white dark:bg-[#1C1A16] rounded-[28px] border border-black/5 dark:border-white/10 shadow-lg text-center">
+                  <span className="text-[10px] uppercase font-bold text-[#8E887E] dark:text-[#A8A196] tracking-wider block mb-1">
+                    {isEs ? 'CÓDIGO DE ENTRADA' : 'INVITE CODE'}
+                  </span>
+                  <div className="font-display font-black text-4xl sm:text-5xl tracking-widest text-[#171512] dark:text-white my-1">
                     {createdParty.code}
                   </div>
-                  <div className="text-xs text-[#6F6A62] text-center">
-                    {createdParty.title} · {createdParty.date} @ {createdParty.time}
+                  <div className="text-xs text-[#8E887E] dark:text-[#A8A196] mt-1 font-medium">
+                    {createdParty.date} · {createdParty.time}
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="w-full max-w-md flex flex-col sm:flex-row gap-3">
-                  <GlassButton
-                    variant="accent"
-                    size="lg"
-                    fullWidth
+                {/* Buttons */}
+                <div className="w-full max-w-xs space-y-2.5">
+                  <button
+                    type="button"
                     onClick={handleCopyCode}
-                    icon={copied ? <Check className="w-5 h-5 text-black" /> : <Copy className="w-5 h-5 text-black" />}
+                    className="w-full py-3.5 rounded-full bg-[#FFE600] hover:bg-[#F0DC00] text-[#161514] font-display font-black text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
                   >
-                    {copied ? t.common.copied : t.createParty.copyCodeButton}
-                  </GlassButton>
+                    {copied ? <Check className="w-4 h-4 stroke-[2.5]" /> : <Copy className="w-4 h-4" />}
+                    <span>{copied ? (isEs ? 'Código copiado' : 'Code copied') : (isEs ? 'Copiar código' : 'Copy code')}</span>
+                  </button>
 
-                  <GlassButton
-                    variant="glass"
-                    size="lg"
-                    fullWidth
+                  <button
+                    type="button"
                     onClick={handleShare}
-                    icon={<Share2 className="w-5 h-5 text-[#171512]" />}
+                    className="w-full py-3.5 rounded-full bg-white dark:bg-[#1C1A16] border border-black/10 dark:border-white/10 text-[#171512] dark:text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-all"
                   >
-                    {t.createParty.shareInviteButton}
-                  </GlassButton>
+                    <Share2 className="w-4 h-4" />
+                    <span>{isEs ? 'Compartir invitación' : 'Share invite'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => selectParty(createdParty.id)}
+                    className="w-full py-3 text-xs font-bold text-[#706B66] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white cursor-pointer mt-2"
+                  >
+                    {isEs ? 'Ir a la fiesta ahora →' : 'Go to party now →'}
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => selectParty(createdParty.id)}
-                  className="mt-5 text-sm font-bold text-[#171512] hover:underline underline-offset-4 cursor-pointer"
-                >
-                  {t.createParty.goToPartyButton} →
-                </button>
-              </div>
-            </motion.div>
-          ) : (
-            /* Wizard Steps with Desktop Live Preview (Responsive Grid) */
-            <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-              {/* Left Column: Live Updating Card Preview (Desktop Only) */}
-              <div className="lg:col-span-5 hidden lg:block">
-                <div className="flex items-center gap-2 mb-3 text-xs font-bold text-[#6F6A62] uppercase tracking-wider">
-                  <Eye className="w-4 h-4 text-[#B8A700]" />
-                  <span>Live Feed Preview</span>
-                </div>
-
-                <div className="w-full h-[460px] rounded-[32px] relative overflow-hidden border border-[rgba(35,30,22,0.1)] shadow-xl group transition-all">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={selectedCover}
-                    alt="Preview cover"
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent" />
-
-                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFFDF8]/90 backdrop-blur-md text-xs font-bold text-[#171512] border border-[rgba(35,30,22,0.1)] shadow-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#F0DC00] animate-pulse" />
-                      {date}
+              </motion.div>
+            ) : (
+              /* Multi-step Form */
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="w-full"
+              >
+                {/* STEP 1: Name, Crew, Cover (EXACT MOCKUP MATCH) */}
+                {step === 1 && (
+                  <div className="w-full">
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-[#D49B00] dark:text-[#FFE600] block mb-1">
+                      {isEs ? 'PASO 1 DE 4' : 'STEP 1 OF 4'}
                     </span>
-                    <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-mono tracking-wider text-white/90 border border-white/10">
-                      CODE ????
-                    </span>
-                  </div>
+                    <h1 className="font-display font-black text-2xl sm:text-3xl text-[#171512] dark:text-white tracking-tight leading-[1.15] mb-1.5">
+                      {isEs ? '¿Cómo se llama esta noche?' : 'What is tonight called?'}
+                    </h1>
+                    <p className="text-xs sm:text-[13px] text-[#706B66] dark:text-[#A8A196] leading-relaxed mb-4 sm:mb-5">
+                      {isEs
+                        ? 'Crea la base de tu plan. Luego eliges fecha, invitados y detalles.'
+                        : 'Create the base of your plan. Then choose date, guests, and details.'}
+                    </p>
 
-                  <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
-                    <h4 className="bubble text-3xl sm:text-4xl text-white tracking-tight leading-none mb-2 drop-shadow-lg">
-                      {partyName.trim() || 'UNTITLED GATHERING'}
-                    </h4>
-
-                    <div className="flex items-center gap-3 text-xs text-white/80 font-medium mb-3">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-[#F0DC00]" />
-                        {time}
-                      </span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1 truncate max-w-[150px]">
-                        <MapPin className="w-3.5 h-3.5 text-[#F0DC00]" />
-                        {location.split('·')[0]}
-                      </span>
+                    {/* FIELD 1: NOMBRE */}
+                    <div className="mb-4 sm:mb-5">
+                      <label className="block text-[11px] font-black text-[#171512] dark:text-white uppercase tracking-wider mb-1.5">
+                        {isEs ? 'NOMBRE' : 'NAME'}
+                      </label>
+                      <input
+                        type="text"
+                        value={partyName}
+                        onChange={(e) => setPartyName(e.target.value)}
+                        placeholder="Ej. 404 House"
+                        className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-[#1C1A16] text-[#171512] dark:text-white placeholder-[#A8A196] text-sm sm:text-base font-semibold outline-none border border-black/10 dark:border-white/10 focus:border-[#FFE600] shadow-2xs transition-all"
+                      />
                     </div>
 
-                    <div className="pt-3 border-t border-white/15 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full overflow-hidden border border-white/30 flex items-center justify-center">
-                          {currentUser.avatar ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={currentUser.avatar} alt="host" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-[#F0DC00]/20 text-[#F0DC00] flex items-center justify-center font-bold text-[10px]">
-                              {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'H'}
-                            </div>
-                          )}
-                        </div>
-                        <span className="text-xs text-white/60">Hosted by you</span>
-                      </div>
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#F0DC00]">
-                        Enter →
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                    {/* FIELD 2: CREW (OPCIONAL) */}
+                    <div className="mb-4 sm:mb-5">
+                      <label className="block text-[11px] font-black text-[#171512] dark:text-white uppercase tracking-wider mb-0.5">
+                        {isEs ? 'CREW (OPCIONAL)' : 'CREW (OPTIONAL)'}
+                      </label>
+                      <p className="text-[11px] text-[#8E887E] dark:text-[#A8A196] mb-2">
+                        {isEs ? 'Asócialo a un grupo si quieres.' : 'Link it to a group if you want.'}
+                      </p>
 
-              {/* Right Column: Step Wizard Inputs */}
-              <div className="lg:col-span-7 w-full max-w-xl mx-auto lg:max-w-none">
-                <motion.div
-                  key={step}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  {step === 1 && (
-                    <div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-[#B8A700]">
-                        {t.createParty.stepCount(1, 4).toUpperCase()}
-                      </span>
-                      <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight mt-1 mb-6">
-                        {t.createParty.step1Title}
-                      </h2>
-
-                      <div className="mb-6">
-                        <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2">
-                          {t.createParty.partyNameLabel}
-                        </label>
-                        <input
-                          type="text"
-                          placeholder={t.createParty.partyNamePlaceholder}
-                          value={partyName}
-                          onChange={(e) => setPartyName(e.target.value)}
-                          autoFocus
-                          className="w-full px-5 py-4 rounded-2xl bg-[#FFFDF8] text-[#171512] placeholder-[#8E887E] text-lg sm:text-xl font-display font-bold outline-none border border-[rgba(35,30,22,0.12)] focus:border-[#F0DC00] focus:ring-2 focus:ring-[#F0DC00]/30 transition-all shadow-sm"
-                        />
-                      </div>
-
-                      {/* Crew Selector */}
-                      <div className="mb-6">
-                        <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2 flex items-center justify-between">
-                          <span>{t.createParty.crewLabel}</span>
-                          <span className="text-[11px] text-[#B8A700] font-mono">Durable Social Circle</span>
-                        </label>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                          {crews.map((c) => (
+                      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCrewId('')}
+                          className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer ${
+                            selectedCrewId === ''
+                              ? 'bg-[#FFE600] text-[#171512] shadow-xs'
+                              : 'bg-white dark:bg-[#1C1A16] border border-black/10 dark:border-white/10 text-[#171512] dark:text-white hover:bg-black/5 dark:hover:bg-white/5'
+                          }`}
+                        >
+                          {isEs ? 'Sin crew' : 'No crew'}
+                        </button>
+                        {availableCrews.map((c) => {
+                          const isSelected = selectedCrewId === c.id;
+                          return (
                             <button
                               key={c.id}
                               type="button"
                               onClick={() => setSelectedCrewId(c.id)}
-                              className={`px-3 py-2.5 rounded-xl text-xs font-bold text-left border transition-all ${
-                                selectedCrewId === c.id
-                                  ? 'bg-[#F0DC00] border-[#F0DC00] text-[#171512] shadow-sm'
-                                  : 'bg-[#FFFDF8] border-[rgba(35,30,22,0.1)] text-[#6F6A62] hover:text-[#171512] hover:bg-[#F8F3EA]'
+                              className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#FFE600] text-[#171512] shadow-xs'
+                                  : 'bg-white dark:bg-[#1C1A16] border border-black/10 dark:border-white/10 text-[#171512] dark:text-white hover:bg-black/5 dark:hover:bg-white/5'
                               }`}
                             >
-                              <span className="block truncate">{c.name}</span>
-                              <span className="text-[10px] text-[#8E887E] font-mono block">{t.home.membersCount(c.membersCount)}</span>
+                              {c.name}
                             </button>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={() => setSelectedCrewId('')}
-                            className={`px-3 py-2.5 rounded-xl text-xs font-bold text-left border transition-all ${
-                              selectedCrewId === ''
-                                ? 'bg-[#F0DC00] border-[#F0DC00] text-[#171512] shadow-sm'
-                                : 'bg-[#FFFDF8] border-[rgba(35,30,22,0.1)] text-[#6F6A62] hover:text-[#171512] hover:bg-[#F8F3EA]'
-                            }`}
-                          >
-                            <span className="block truncate">{t.createParty.noCrewOption}</span>
-                            <span className="text-[10px] text-[#8E887E] font-mono block">Solo</span>
-                          </button>
-                        </div>
+                          );
+                        })}
                       </div>
+                    </div>
 
-                      <div>
-                        {/* Hidden cover file input */}
-                        <input
-                          ref={coverInputRef}
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp,image/gif"
-                          className="hidden"
-                          onChange={handleCoverUpload}
-                        />
+                    {/* FIELD 3: PORTADA */}
+                    <div className="mb-2">
+                      <label className="block text-[11px] font-black text-[#171512] dark:text-white uppercase tracking-wider mb-0.5">
+                        {isEs ? 'PORTADA' : 'COVER'}
+                      </label>
+                      <p className="text-[11px] text-[#8E887E] dark:text-[#A8A196] mb-2">
+                        {isEs ? 'Elige una imagen para tu fiesta.' : 'Choose an image for your party.'}
+                      </p>
 
-                        <div className="flex items-center justify-between mb-2.5">
-                          <label className="text-xs font-bold text-[#6F6A62] uppercase tracking-wider">
-                            {t.createParty.chooseCoverLabel}
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => coverInputRef.current?.click()}
-                            disabled={isUploadingCover}
-                            className="px-3 py-1 rounded-full bg-[#FFFDF8] border border-[rgba(35,30,22,0.12)] text-[#171512] text-xs font-bold hover:bg-[#F8F3EA] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
-                          >
-                            <Camera className="w-3.5 h-3.5 text-[#B8A700]" />
-                            <span>
-                              {isUploadingCover
-                                ? isEs
-                                  ? 'Subiendo flyer...'
-                                  : 'Uploading flyer...'
-                                : isEs
-                                ? 'Subir flyer propio'
-                                : 'Upload flyer'}
-                            </span>
-                          </button>
+                      {/* Hidden file input */}
+                      <input
+                        ref={coverInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={handleCoverUpload}
+                      />
+
+                      {coverUploadError && (
+                        <div className="mb-2 text-xs text-rose-700 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl">
+                          {coverUploadError}
+                        </div>
+                      )}
+
+                      <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none">
+                        {/* Upload photo card */}
+                        <div
+                          onClick={() => coverInputRef.current?.click()}
+                          className={`w-[76px] h-[112px] sm:w-[84px] sm:h-[124px] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 shrink-0 transition-all cursor-pointer text-center bg-white/40 dark:bg-white/5 ${
+                            isUploadingCover
+                              ? 'border-[#FFE600] animate-pulse'
+                              : !SAMPLE_PARTY_COVERS.some((c) => c.url === selectedCover)
+                              ? 'border-[#FFE600] bg-[#FFE600]/10'
+                              : 'border-black/15 dark:border-white/15 hover:border-black/30'
+                          }`}
+                        >
+                          {isUploadingCover ? (
+                            <div className="w-4 h-4 border-2 border-[#171512] dark:border-white border-t-transparent rounded-full animate-spin" />
+                          ) : !SAMPLE_PARTY_COVERS.some((c) => c.url === selectedCover) ? (
+                            <div className="relative w-full h-full rounded-2xl overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={selectedCover} alt="Cover" className="w-full h-full object-cover" />
+                              <div className="absolute top-1.5 right-1.5 w-4.5 h-4.5 rounded-full bg-[#FFE600] text-[#171512] flex items-center justify-center shadow-xs">
+                                <Check className="w-3 h-3 stroke-[3]" />
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="w-5 h-5 text-[#171512] dark:text-white" />
+                              <span className="text-[10.5px] font-bold text-[#171512] dark:text-white leading-tight">
+                                {isEs ? 'Subir\nfoto' : 'Upload\nphoto'}
+                              </span>
+                            </>
+                          )}
                         </div>
 
-                        {coverUploadError && (
-                          <div className="mb-2 text-xs text-rose-700 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl">
-                            {coverUploadError}
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-6 gap-2 sm:gap-3">
-                          {/* Custom Upload Tile */}
-                          <div
-                            onClick={() => coverInputRef.current?.click()}
-                            className={`relative h-20 sm:h-24 rounded-2xl overflow-hidden cursor-pointer border-2 border-dashed flex flex-col items-center justify-center transition-all ${
-                              isUploadingCover
-                                ? 'border-[#171512] bg-[#F0DC00]/10 animate-pulse'
-                                : !SAMPLE_PARTY_COVERS.some((c) => c.url === selectedCover)
-                                ? 'border-[#171512] bg-[#F0DC00]/15 shadow-sm'
-                                : 'border-[rgba(35,30,22,0.15)] hover:border-[#171512] bg-[#FFFDF8]'
-                            }`}
-                          >
-                            {isUploadingCover ? (
-                              <div className="w-5 h-5 border-2 border-[#171512] border-t-transparent rounded-full animate-spin" />
-                            ) : !SAMPLE_PARTY_COVERS.some((c) => c.url === selectedCover) ? (
-                              <div className="relative w-full h-full">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={selectedCover} alt="Uploaded cover" className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                  <Check className="w-5 h-5 text-[#F0DC00]" />
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <Upload className="w-5 h-5 text-[#171512] mb-1" />
-                                <span className="text-[10px] font-bold text-[#6F6A62] text-center leading-tight px-1">
-                                  {isEs ? 'Tu flyer' : 'Flyer'}
-                                </span>
-                              </>
-                            )}
-                          </div>
-
-                          {/* Presets */}
-                          {SAMPLE_PARTY_COVERS.map((cover) => (
+                        {/* Preset photo cards */}
+                        {SAMPLE_PARTY_COVERS.map((cover) => {
+                          const isSelected = selectedCover === cover.url;
+                          return (
                             <div
                               key={cover.id}
                               onClick={() => setSelectedCover(cover.url)}
-                              className={`relative h-20 sm:h-24 rounded-2xl overflow-hidden cursor-pointer border-2 transition-transform active:scale-95 ${
-                                selectedCover === cover.url
-                                  ? 'border-[#171512] scale-105 shadow-md'
-                                  : 'border-transparent opacity-80 hover:opacity-100'
+                              className={`w-[76px] h-[112px] sm:w-[84px] sm:h-[124px] rounded-2xl overflow-hidden shrink-0 relative cursor-pointer transition-transform active:scale-95 ${
+                                isSelected
+                                  ? 'ring-3 ring-[#FFE600] ring-offset-2 ring-offset-[#FFFDF8] dark:ring-offset-[#12110E]'
+                                  : 'border border-black/10 dark:border-white/10 opacity-85 hover:opacity-100'
                               }`}
                             >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={cover.url}
-                                alt={`Party cover ${cover.id}`}
+                                alt="Party cover preset"
                                 className="w-full h-full object-cover"
                               />
+                              {isSelected && (
+                                <div className="absolute top-1.5 right-1.5 w-4.5 h-4.5 rounded-full bg-[#FFE600] text-[#171512] flex items-center justify-center shadow-xs">
+                                  <Check className="w-3 h-3 stroke-[3]" />
+                                </div>
+                              )}
                             </div>
-                          ))}
-                        </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {step === 2 && (
-                    <div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-[#B8A700]">
-                        {t.createParty.stepCount(2, 4).toUpperCase()}
-                      </span>
-                      <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight mt-1 mb-6">
-                        {t.createParty.step2Title}
-                      </h2>
+                {/* STEP 2: DATE & TIME */}
+                {step === 2 && (
+                  <div className="w-full">
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-[#D49B00] dark:text-[#FFE600] block mb-1">
+                      {isEs ? 'PASO 2 DE 4' : 'STEP 2 OF 4'}
+                    </span>
+                    <h1 className="font-display font-black text-2xl sm:text-3xl text-[#171512] dark:text-white tracking-tight leading-[1.15] mb-1.5">
+                      {isEs ? '¿Cuándo es el plan?' : 'When is the plan?'}
+                    </h1>
+                    <p className="text-xs sm:text-[13px] text-[#706B66] dark:text-[#A8A196] leading-relaxed mb-4 sm:mb-5">
+                      {isEs
+                        ? 'Define la fecha y la hora para que tu gente se prepare.'
+                        : 'Set the date and time so your crew can get ready.'}
+                    </p>
 
-                      <div className="space-y-5">
-                        <div>
-                          <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2">
-                            {t.createParty.dateLabel}
-                          </label>
-                          <div className="grid grid-cols-3 gap-2.5">
-                            {['TONIGHT', 'TOMORROW', 'FRIDAY'].map((d) => (
-                              <button
-                                key={d}
-                                type="button"
-                                onClick={() => setDate(d)}
-                                className={`py-4 px-3 rounded-2xl text-xs sm:text-sm font-bold transition-all ${
-                                  date === d
-                                    ? 'bg-[#F0DC00] text-[#171512] shadow-sm scale-[1.02]'
-                                    : 'bg-[#FFFDF8] text-[#6F6A62] hover:text-[#171512] border border-[rgba(35,30,22,0.1)] shadow-sm'
-                                }`}
-                              >
-                                {d === 'TONIGHT' ? (isEs ? 'ESTA NOCHE' : 'TONIGHT') : d === 'TOMORROW' ? (isEs ? 'MAÑANA' : 'TOMORROW') : (isEs ? 'VIERNES' : 'FRIDAY')}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2">
-                            {t.createParty.timeLabel}
-                          </label>
-                          <input
-                            type="text"
-                            value={time}
-                            onChange={(e) => setTime(e.target.value)}
-                            placeholder="e.g. 10:00 PM"
-                            className="w-full px-5 py-4 rounded-2xl bg-[#FFFDF8] text-[#171512] font-mono text-base outline-none border border-[rgba(35,30,22,0.12)] focus:border-[#F0DC00] shadow-sm"
-                          />
-                        </div>
+                    {/* FIELD: FECHA */}
+                    <div className="mb-4 sm:mb-5">
+                      <label className="block text-[11px] font-black text-[#171512] dark:text-white uppercase tracking-wider mb-2">
+                        {isEs ? 'FECHA' : 'DATE'}
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {['TONIGHT', 'TOMORROW', 'FRIDAY'].map((d) => (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() => setDate(d)}
+                            className={`py-3 px-2 rounded-2xl text-xs font-bold transition-all cursor-pointer text-center ${
+                              date === d
+                                ? 'bg-[#FFE600] text-[#171512] shadow-xs'
+                                : 'bg-white dark:bg-[#1C1A16] text-[#706B66] dark:text-[#A8A196] border border-black/10 dark:border-white/10 hover:border-black/25'
+                            }`}
+                          >
+                            {d === 'TONIGHT'
+                              ? isEs
+                                ? 'ESTA NOCHE'
+                                : 'TONIGHT'
+                              : d === 'TOMORROW'
+                              ? isEs
+                                ? 'MAÑANA'
+                                : 'TOMORROW'
+                              : isEs
+                              ? 'VIERNES'
+                              : 'FRIDAY'}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  )}
 
-                  {step === 3 && (
-                    <div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-[#B8A700]">
-                        {t.createParty.stepCount(3, 4).toUpperCase()}
-                      </span>
-                      <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight mt-1 mb-6">
-                        {t.createParty.step3Title}
-                      </h2>
-
-                      <div className="space-y-5">
-                        <div>
-                          <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2">
-                            {t.createParty.locationLabel}
-                          </label>
-                          <input
-                            type="text"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            placeholder={t.createParty.locationPlaceholder}
-                            className="w-full px-5 py-4 rounded-2xl bg-[#FFFDF8] text-[#171512] font-medium text-base outline-none border border-[rgba(35,30,22,0.12)] focus:border-[#F0DC00] shadow-sm"
-                          />
-                          <p className="mt-2 text-xs text-[#8E887E]">
-                            {isEs
-                              ? 'La dirección exacta está cifrada offchain y solo se revela a miembros confirmados.'
-                              : 'Exact address is encrypted offchain and only revealed to confirmed members.'}
-                          </p>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-[#6F6A62] uppercase tracking-wider mb-2">
-                            {t.createParty.descriptionLabel}
-                          </label>
-                          <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            rows={3}
-                            placeholder={t.createParty.descriptionPlaceholder}
-                            className="w-full px-4 py-3 rounded-2xl bg-[#FFFDF8] text-[#171512] text-sm outline-none border border-[rgba(35,30,22,0.12)] focus:border-[#F0DC00] resize-none shadow-sm"
-                          />
-                        </div>
+                    {/* FIELD: HORA */}
+                    <div className="mb-4 sm:mb-5">
+                      <label className="block text-[11px] font-black text-[#171512] dark:text-white uppercase tracking-wider mb-2">
+                        {isEs ? 'HORA' : 'TIME'}
+                      </label>
+                      <div className="relative">
+                        <Clock className="w-4 h-4 text-[#8E887E] absolute left-4 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={time}
+                          onChange={(e) => setTime(e.target.value)}
+                          placeholder="Ej. 10:00 PM"
+                          className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-[#1C1A16] text-[#171512] dark:text-white font-mono text-sm sm:text-base font-semibold outline-none border border-black/10 dark:border-white/10 focus:border-[#FFE600] shadow-2xs transition-all"
+                        />
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {step === 4 && (
-                    <div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-[#B8A700]">
-                        {t.createParty.stepCount(4, 4).toUpperCase()}
-                      </span>
-                      <h2 className="font-display font-black text-3xl sm:text-5xl text-[#171512] tracking-tight mt-1 mb-2">
-                        {t.createParty.step4Title}
-                      </h2>
-                      <p className="text-sm text-[#6F6A62] mb-6">
-                        {t.createParty.step4Subtitle}
+                {/* STEP 3: LOCATION & DETAILS */}
+                {step === 3 && (
+                  <div className="w-full">
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-[#D49B00] dark:text-[#FFE600] block mb-1">
+                      {isEs ? 'PASO 3 DE 4' : 'STEP 3 OF 4'}
+                    </span>
+                    <h1 className="font-display font-black text-2xl sm:text-3xl text-[#171512] dark:text-white tracking-tight leading-[1.15] mb-1.5">
+                      {isEs ? '¿Dónde es el punto?' : 'Where is the spot?'}
+                    </h1>
+                    <p className="text-xs sm:text-[13px] text-[#706B66] dark:text-[#A8A196] leading-relaxed mb-4 sm:mb-5">
+                      {isEs
+                        ? 'Ubicación y detalles clave para los invitados.'
+                        : 'Location and key notes for your guests.'}
+                    </p>
+
+                    {/* FIELD: UBICACIÓN */}
+                    <div className="mb-4 sm:mb-5">
+                      <label className="block text-[11px] font-black text-[#171512] dark:text-white uppercase tracking-wider mb-2">
+                        {isEs ? 'UBICACIÓN' : 'LOCATION'}
+                      </label>
+                      <div className="relative">
+                        <MapPin className="w-4 h-4 text-[#8E887E] absolute left-4 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                          placeholder="Ej. Medellín · Rooftop"
+                          className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-[#1C1A16] text-[#171512] dark:text-white text-sm sm:text-base font-semibold outline-none border border-black/10 dark:border-white/10 focus:border-[#FFE600] shadow-2xs transition-all"
+                        />
+                      </div>
+                      <p className="text-[11px] text-[#8E887E] dark:text-[#A8A196] mt-1.5">
+                        {isEs
+                          ? 'La dirección exacta está protegida y solo se revela a miembros confirmados.'
+                          : 'Exact address is protected and only revealed to confirmed members.'}
                       </p>
+                    </div>
 
-                      {/* Summary Card Preview */}
-                      <div className="p-5 mb-5 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.1)] shadow-sm relative overflow-hidden">
-                        <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-[rgba(35,30,22,0.1)]">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={selectedCover}
-                              alt="Party Preview"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <h4 className="font-display font-black text-xl text-[#171512]">
-                              {partyName.trim() || (isEs ? 'Encuentro sin título' : 'Untitled Gathering')}
-                            </h4>
-                            <p className="text-xs text-[#B8A700] font-semibold mt-0.5">
-                              {date} · {time}
-                            </p>
-                            <p className="text-xs text-[#6F6A62]">{location}</p>
-                          </div>
+                    {/* FIELD: DESCRIPCIÓN */}
+                    <div className="mb-4 sm:mb-5">
+                      <label className="block text-[11px] font-black text-[#171512] dark:text-white uppercase tracking-wider mb-2">
+                        {isEs ? 'NOTAS / DESCRIPCIÓN' : 'NOTES / DESCRIPTION'}
+                      </label>
+                      <textarea
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        rows={3}
+                        placeholder={isEs ? 'Traigan sus bebidas, sonido listo, buena vibra.' : 'BYOB, sound ready, good vibes.'}
+                        className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-[#1C1A16] text-[#171512] dark:text-white text-sm font-medium outline-none border border-black/10 dark:border-white/10 focus:border-[#FFE600] resize-none shadow-2xs transition-all"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 4: REVIEW & LAUNCH */}
+                {step === 4 && (
+                  <div className="w-full">
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-[#D49B00] dark:text-[#FFE600] block mb-1">
+                      {isEs ? 'PASO 4 DE 4' : 'STEP 4 OF 4'}
+                    </span>
+                    <h1 className="font-display font-black text-2xl sm:text-3xl text-[#171512] dark:text-white tracking-tight leading-[1.15] mb-1.5">
+                      {isEs ? 'Todo listo para esta noche' : 'All set for tonight'}
+                    </h1>
+                    <p className="text-xs sm:text-[13px] text-[#706B66] dark:text-[#A8A196] leading-relaxed mb-4 sm:mb-5">
+                      {isEs
+                        ? 'Revisa el resumen antes de abrir la fiesta.'
+                        : 'Review the summary before opening your party.'}
+                    </p>
+
+                    {/* Summary Card */}
+                    <div className="p-4 rounded-3xl bg-white dark:bg-[#1C1A16] border border-black/10 dark:border-white/10 shadow-md mb-4 overflow-hidden">
+                      <div className="flex items-center gap-4">
+                        <div className="w-20 h-24 rounded-2xl overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={selectedCover}
+                            alt="Party Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-display font-black text-lg text-[#171512] dark:text-white truncate">
+                            {partyName.trim() || (isEs ? 'Secret Balcony' : 'Secret Balcony')}
+                          </h3>
+                          <p className="text-xs text-[#D49B00] dark:text-[#FFE600] font-bold mt-0.5">
+                            {date} · {time}
+                          </p>
+                          <p className="text-xs text-[#706B66] dark:text-[#A8A196] truncate mt-1">
+                            {location}
+                          </p>
+                          {selectedCrewId && (
+                            <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-[#FFE600]/20 text-[#171512] dark:text-white font-bold text-[10px]">
+                              {crews.find((c) => c.id === selectedCrewId)?.name || 'Crew'}
+                            </span>
+                          )}
                         </div>
                       </div>
-
-                      <div className="p-4 rounded-2xl bg-[#F0DC00]/15 border border-[#F0DC00]/30 text-xs text-[#171512] leading-relaxed flex items-center gap-2.5">
-                        <ShieldCheck className="w-5 h-5 text-[#B8A700] shrink-0" />
-                        <span>
-                          {isEs
-                            ? 'Listo para desplegar. La tesorería de tu smart contract en Monad se inicializará automáticamente.'
-                            : 'Ready to launch. Your Monad smart contract treasury will be automatically initialized.'}
-                        </span>
-                      </div>
                     </div>
-                  )}
-                </motion.div>
-              </div>
-            </div>
-          )}
-        </AnimatePresence>
+
+                    <div className="p-3.5 rounded-2xl bg-[#FFE600]/15 border border-[#FFE600]/30 text-xs text-[#171512] dark:text-white leading-relaxed flex items-center gap-3">
+                      <ShieldCheck className="w-5 h-5 text-[#D49B00] dark:text-[#FFE600] shrink-0" />
+                      <span>
+                        {isEs
+                          ? 'Tu tesorería y código de acceso se crearán inmediatamente al continuar.'
+                          : 'Your treasury and access code will be generated immediately upon continuing.'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
       </div>
 
-      {/* Footer Navigation */}
+      {/* Fixed Full-Width Bottom Bar without Horizontal Overflow */}
       {!createdParty && (
-        <div className="pt-6 flex items-center justify-between gap-3 w-full shrink-0 border-t border-[rgba(35,30,22,0.08)] mt-4">
-          {step > 1 ? (
-            <GlassButton
-              variant="subtle"
-              size="md"
-              onClick={() => setStep((prev) => (prev - 1) as 1 | 2 | 3 | 4)}
+        <footer className="fixed bottom-0 left-0 right-0 z-30 px-4 py-3.5 safe-bottom bg-[#FFFDF8]/95 dark:bg-[#12110E]/95 backdrop-blur-md border-t border-black/5 dark:border-white/10">
+          <div className="max-w-lg mx-auto w-full">
+            <button
+              type="button"
+              onClick={handleNext}
+              className="w-full py-3.5 sm:py-4 rounded-full bg-[#FFE600] hover:bg-[#F0DC00] text-[#161514] font-display font-black text-sm sm:text-base shadow-[0_4px_18px_rgba(240,220,0,0.38)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              {t.common.back}
-            </GlassButton>
-          ) : (
-            <div />
-          )}
-
-          <div className="flex-1" />
-
-          <GlassButton
-            variant="accent"
-            size="lg"
-            onClick={handleNext}
-            icon={step === 4 ? <Sparkles className="w-4 h-4 text-black" /> : <ArrowRight className="w-4 h-4 text-black" />}
-          >
-            {step === 4 ? t.createParty.createPartyButton : t.createParty.nextStep}
-          </GlassButton>
-        </div>
+              <span>
+                {step === 4
+                  ? isEs
+                    ? 'Lanzar fiesta'
+                    : 'Launch party'
+                  : isEs
+                  ? 'Continuar'
+                  : 'Continue'}
+              </span>
+              <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+            </button>
+          </div>
+        </footer>
       )}
     </div>
   );

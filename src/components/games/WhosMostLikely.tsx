@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Users, Zap, XCircle, Copy, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Users, Zap, XCircle, Copy, Check } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -61,6 +61,11 @@ export const WhosMostLikely: React.FC = () => {
       origin: { y: 0.7 },
       colors: ['#F0DC00', '#171512', '#FFA000'],
     });
+  };
+
+  const handlePrev = () => {
+    setVotedMemberId(null);
+    setQuestionIndex((prev) => (prev > 0 ? prev - 1 : questions.length - 1));
   };
 
   const handleSkip = () => {
@@ -161,31 +166,29 @@ export const WhosMostLikely: React.FC = () => {
       {/* PHONE 4 HEADER                                                 */}
       {/* ============================================================== */}
       <header className="flex items-center justify-between pt-2 pb-4">
-        {/* Back Button */}
+        {/* Previous Question Button */}
         <button
-          onClick={() => {
-            if (goBack) goBack();
-            else setCurrentView('party-detail');
-          }}
-          className="w-10 h-10 rounded-full glass-light border border-black/10 flex items-center justify-center text-[#171512] shadow-sm hover:scale-105 active:scale-90 transition-transform cursor-pointer"
-          aria-label="Back"
+          onClick={handlePrev}
+          className="w-10 h-10 rounded-full glass-light border border-black/10 dark:border-white/10 flex items-center justify-center text-[#171512] dark:text-white shadow-sm hover:scale-105 active:scale-90 transition-transform cursor-pointer"
+          aria-label={isEs ? 'Pregunta anterior' : 'Previous question'}
+          title={isEs ? 'Pregunta anterior' : 'Previous question'}
         >
-          <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+          <ArrowLeft className="w-4 h-4 stroke-[2.2]" />
         </button>
 
         {/* Title & Subtitle */}
         <div className="text-center">
-          <h2 className="font-display font-extrabold text-lg sm:text-xl text-[#171512] tracking-tight leading-none">
+          <h2 className="font-display font-extrabold text-lg sm:text-xl text-[#171512] dark:text-white tracking-tight leading-none">
             {isEs ? '¿Quién es más probable?' : "Who's Most Likely?"}
           </h2>
-          <p className="text-xs text-[#6F6A62] font-medium mt-1">
+          <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] font-medium mt-1">
             {isEs ? 'Toca un amigo para votar' : 'Tap a friend to vote'}
           </p>
         </div>
 
         {/* Participant Count Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-light border border-black/10 shadow-sm text-xs font-bold text-[#171512]">
-          <Users className="w-3.5 h-3.5 text-[#6F6A62]" />
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-light border border-black/10 dark:border-white/10 shadow-sm text-xs font-bold text-[#171512] dark:text-white">
+          <Users className="w-3.5 h-3.5 text-[#6F6A62] dark:text-[#A8A196]" />
           <span>{partyMembers.length}</span>
         </div>
       </header>
@@ -270,15 +273,22 @@ export const WhosMostLikely: React.FC = () => {
       </div>
 
       {/* ============================================================== */}
-      {/* SECONDARY ACTION: SKIP FOR NOW PILL BUTTON                     */}
+      {/* SECONDARY ACTIONS: PREV & SKIP/NEXT BUTTONS                    */}
       {/* ============================================================== */}
-      <div className="w-full flex justify-center mt-6 mb-4">
+      <div className="w-full flex items-center justify-center gap-3 mt-6 mb-4">
+        <button
+          onClick={handlePrev}
+          className="flex-1 max-w-[130px] py-3 px-4 rounded-full border border-black/15 dark:border-white/15 bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 text-[#171512] dark:text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>{isEs ? 'Anterior' : 'Previous'}</span>
+        </button>
         <button
           onClick={handleSkip}
-          className="w-full max-w-[280px] py-3.5 px-6 rounded-full border border-black/15 bg-white/70 hover:bg-white text-[#171512] font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer"
+          className="flex-1 max-w-[180px] py-3 px-4 rounded-full border border-black/15 dark:border-white/15 bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 text-[#171512] dark:text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
         >
-          <XCircle className="w-4 h-4 text-[#6F6A62]" />
-          <span>{isEs ? 'Omitir por ahora' : 'Skip for now'}</span>
+          <span>{isEs ? 'Omitir / Sig' : 'Skip / Next'}</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
 

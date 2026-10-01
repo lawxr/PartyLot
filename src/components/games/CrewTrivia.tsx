@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, CheckCircle2, XCircle, Sparkles, RotateCcw, ArrowRight } from 'lucide-react';
+import { Trophy, CheckCircle2, XCircle, Sparkles, RotateCcw, ArrowRight, ArrowLeft } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -63,6 +63,14 @@ export const CrewTrivia: React.FC = () => {
         origin: { y: 0.7 },
         colors: ['#F0DC00', '#10B981'],
       });
+    }
+  };
+
+  const handlePrevRound = () => {
+    if (currentRound > 0) {
+      setCurrentRound((prev) => prev - 1);
+      setSelectedOption(null);
+      setIsAnswered(false);
     }
   };
 
@@ -149,10 +157,22 @@ export const CrewTrivia: React.FC = () => {
     <div className="flex flex-col items-center w-full select-none">
       {/* Round & Score Header */}
       <div className="w-full flex items-center justify-between mb-3 px-1">
-        <span className="text-xs font-extrabold uppercase tracking-wider text-[#B89600] dark:text-[#F0DC00] flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5" />
-          {isEs ? `Ronda ${currentRound + 1} / ${totalRounds}` : `Round ${currentRound + 1} / ${totalRounds}`}
-        </span>
+        <div className="flex items-center gap-2">
+          {currentRound > 0 && (
+            <button
+              onClick={handlePrevRound}
+              className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 flex items-center justify-center text-[#171512] dark:text-white transition-all cursor-pointer"
+              title={isEs ? 'Ronda anterior' : 'Previous round'}
+              aria-label={isEs ? 'Ronda anterior' : 'Previous round'}
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <span className="text-xs font-extrabold uppercase tracking-wider text-[#B89600] dark:text-[#F0DC00] flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            {isEs ? `Ronda ${currentRound + 1} / ${totalRounds}` : `Round ${currentRound + 1} / ${totalRounds}`}
+          </span>
+        </div>
 
         <span className="px-3 py-1 rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 text-xs font-mono font-bold text-[#171512] dark:text-[#F5F1E8]">
           {score} PTS

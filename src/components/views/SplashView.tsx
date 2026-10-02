@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { PrivyAuthModal } from '@/components/ui/PrivyAuthModal';
+import Link from 'next/link';
 import { usePartyStore } from '@/store/usePartyStore';
 import { KeyRound, ShieldCheck, Sparkles, MapPin, Clock } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
@@ -14,7 +15,7 @@ import { isPrivyConfigured } from '@/lib/runtimeMode';
 export const SplashView: React.FC = () => {
   const { setCurrentView } = usePartyStore();
   const { login, ready } = usePrivy();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const handleGetStarted = () => {
@@ -252,31 +253,42 @@ export const SplashView: React.FC = () => {
             size="lg"
             fullWidth
             onClick={handleGetStarted}
-            className="shadow-[0_8px_24px_rgba(240,220,0,0.35)]"
+            icon={<Sparkles className="w-5 h-5 text-[#171512]" />}
           >
             {t.splash.createEvent}
           </GlassButton>
 
           <GlassButton
-            variant="glass"
+            variant="glass-dark"
             size="lg"
             fullWidth
             onClick={() => setCurrentView('join-party')}
-            icon={<KeyRound className="w-4 h-4 text-white/80" />}
+            icon={<KeyRound className="w-4 h-4 text-white/90" />}
           >
             {t.splash.haveInviteCode}
           </GlassButton>
         </motion.div>
 
-        {/* Footer Note */}
+        {/* Footer Note & Legal Links */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.7 }}
           transition={{ delay: 0.5 }}
-          className="mt-6 flex items-center justify-center gap-1.5 w-full text-[11px] text-white/50 tracking-wide font-medium"
+          className="mt-6 flex flex-col items-center justify-center gap-2 w-full text-[11px] text-white/50 tracking-wide font-medium"
         >
-          <ShieldCheck className="w-3.5 h-3.5 text-[#F0DC00] shrink-0" />
-          <span>{t.splash.privateAccess}</span>
+          <div className="flex items-center justify-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#F0DC00] shrink-0" />
+            <span>{t.splash.privateAccess}</span>
+          </div>
+          <div className="flex items-center gap-3 text-[10px] text-white/40">
+            <Link href="/terms" className="hover:text-white/80 transition-colors underline underline-offset-2">
+              {language === 'es' ? 'Términos de Servicio' : 'Terms of Service'}
+            </Link>
+            <span>·</span>
+            <Link href="/privacy" className="hover:text-white/80 transition-colors underline underline-offset-2">
+              {language === 'es' ? 'Privacidad' : 'Privacy'}
+            </Link>
+          </div>
         </motion.div>
       </div>
 

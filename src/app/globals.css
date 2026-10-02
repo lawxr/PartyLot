@@ -426,6 +426,28 @@ body {
   transform: scale(0.98);
 }
 
+/* Translucent Dark Glass Button for Dark Photographic Backdrops */
+.liquid-glass-button-dark {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s ease, border-color 0.15s ease;
+}
+
+.liquid-glass-button-dark:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.liquid-glass-button-dark:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.22);
+}
+
 /* Primary Accent Warm Golden Yellow Button */
 .accent-button {
   background: var(--party-yellow);

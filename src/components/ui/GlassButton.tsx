@@ -4,7 +4,7 @@ import React from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
 
 interface GlassButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
-  variant?: 'glass' | 'accent' | 'subtle' | 'danger';
+  variant?: 'glass' | 'glass-dark' | 'accent' | 'subtle' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
   icon?: React.ReactNode;
@@ -28,6 +28,7 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
 
   const variantClasses = {
     glass: 'liquid-glass-button text-[#171512] hover:bg-white/90',
+    'glass-dark': 'liquid-glass-button-dark text-white hover:bg-white/20',
     accent: 'accent-button hover:brightness-105 text-[#171512]',
     subtle: 'bg-black/5 hover:bg-black/10 text-[#171512]/80 border border-black/5',
     danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-600 border border-red-500/20',

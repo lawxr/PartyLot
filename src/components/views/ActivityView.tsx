@@ -4,20 +4,13 @@ import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { usePartyStore } from '@/store/usePartyStore';
 import {
-  Sparkles,
   MapPin,
   ArrowRight,
   Plus,
   Search,
   Check,
-  ExternalLink,
   KeyRound,
-  Coins,
-  Gamepad2,
-  Receipt,
-  BarChart3,
   Clock,
-  Radio,
   DoorOpen,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -30,12 +23,13 @@ import { Party } from '@/types';
 type RadarFilter = 'all' | 'tonight' | 'my-crews' | 'discover';
 
 /**
- * Tonight View — Social Radar & Event Discovery
+ * Tonight View — Social Discovery & Gatherings
  *
- * Inspired by Partiful and Luma:
- * 1. Active Gathering Hero Card (Tu Plan de Hoy)
- * 2. Community Radar (Ocurriendo en Otras Crews) with "Solicitar unirse" / Knock on door
- * 3. Quick on-chain verification anchor linked to /stats
+ * Warm, editorial, intimate Partylot design language (DESIGN.md):
+ * - Clean typography & ivory/cream surfaces (#F7F2E8, #FFFDF8).
+ * - Primary brand accent #F0DC00 (Party Yellow).
+ * - Real photo cards with natural warm overlays.
+ * - Active Gathering Card & Gatherings in Other Crews.
  */
 export const ActivityView: React.FC = () => {
   const {
@@ -61,7 +55,7 @@ export const ActivityView: React.FC = () => {
   const [knockMessage, setKnockMessage] = useState('');
   const [knockSuccess, setKnockSuccess] = useState(false);
 
-  // Combine store parties with community mock parties to ensure discovery across other crews
+  // Combine store parties with supplemental community mock parties for discovery across other crews
   const allCommunityParties = useMemo(() => {
     const existingIds = new Set(parties.map((p) => p.id));
     const supplemental = INITIAL_PARTIES.filter((p) => !existingIds.has(p.id));
@@ -101,8 +95,8 @@ export const ActivityView: React.FC = () => {
     );
   }, [activeParty, currentUser]);
 
-  // Filter other parties for the Community Radar
-  const radarParties = useMemo(() => {
+  // Filter parties for the community list
+  const otherParties = useMemo(() => {
     let list = allCommunityParties.filter((p) => p.id !== activeParty?.id);
 
     // Apply Filter Chips
@@ -148,50 +142,6 @@ export const ActivityView: React.FC = () => {
     return list;
   }, [allCommunityParties, activeParty?.id, activeFilter, searchQuery, crews, currentUser, crewMap]);
 
-  // Quick action shortcuts for the active party
-  const activePartyShortcuts = [
-    {
-      id: 'pot',
-      label: isEs ? 'Pozo' : 'Party Pot',
-      desc: isEs ? 'Fondo común' : 'Group pot',
-      icon: Coins,
-      onClick: () => {
-        if (activeParty) selectParty(activeParty.id);
-        setCurrentView('party-pot');
-      },
-    },
-    {
-      id: 'games',
-      label: isEs ? 'Juegos' : 'Games',
-      desc: isEs ? 'Trivia y dilemas' : 'Trivia & party',
-      icon: Gamepad2,
-      onClick: () => {
-        if (activeParty) selectParty(activeParty.id);
-        setCurrentView('games');
-      },
-    },
-    {
-      id: 'split',
-      label: 'Split',
-      desc: isEs ? 'Dividir cuentas' : 'Settle expenses',
-      icon: Receipt,
-      onClick: () => {
-        if (activeParty) selectParty(activeParty.id);
-        setCurrentView('split');
-      },
-    },
-    {
-      id: 'polls',
-      label: isEs ? 'Votar' : 'Polls',
-      desc: isEs ? 'Decisiones' : 'Group votes',
-      icon: BarChart3,
-      onClick: () => {
-        if (activeParty) selectParty(activeParty.id);
-        setCurrentView('polls');
-      },
-    },
-  ];
-
   // Send knock request
   const handleSendKnock = () => {
     if (!selectedPartyForKnock) return;
@@ -201,7 +151,7 @@ export const ActivityView: React.FC = () => {
       setKnockSuccess(false);
       setSelectedPartyForKnock(null);
       setKnockMessage('');
-    }, 1600);
+    }, 1500);
   };
 
   const handleOpenDirectCode = (party: Party) => {
@@ -212,23 +162,17 @@ export const ActivityView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-36 pt-2 px-4 sm:px-6 md:px-8 max-w-5xl mx-auto safe-top select-none w-full transition-colors duration-200">
+    <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-32 pt-2 px-4 sm:px-6 md:px-8 max-w-4xl mx-auto safe-top select-none w-full transition-colors duration-200">
       {/* Editorial Header */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 pb-5 border-b border-black/8 dark:border-white/10 mb-6">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              {isEs ? 'Radar en tiempo real' : 'Live Social Radar'}
-            </span>
-          </div>
           <h1 className="font-display font-black text-3xl sm:text-4xl text-[#171512] dark:text-white tracking-tight">
             {isEs ? 'Esta noche' : 'Tonight'}
           </h1>
-          <p className="text-xs sm:text-sm text-[#8E887E] dark:text-[#A8A196] font-medium mt-1">
+          <p className="text-xs sm:text-sm text-[#6F6A62] dark:text-[#A8A196] font-medium mt-1">
             {isEs
-              ? 'Tus planes confirmados y fiestas simultáneas en otras crews.'
-              : 'Your confirmed plans & live happenings across other crews.'}
+              ? 'Tus planes confirmados y reuniones en otras crews.'
+              : 'Your confirmed plans & gatherings across other crews.'}
           </p>
         </div>
 
@@ -257,25 +201,22 @@ export const ActivityView: React.FC = () => {
       {/* ============================================================== */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-3 px-0.5">
-          <div className="flex items-center gap-2">
-            <Radio className="w-4 h-4 text-[#B89600] dark:text-[#F0DC00]" />
-            <h2 className="font-display font-extrabold text-base sm:text-lg text-[#171512] dark:text-white tracking-tight">
-              {isEs ? 'Tu plan de hoy' : 'Your Plan Tonight'}
-            </h2>
-          </div>
+          <h2 className="font-display font-bold text-base sm:text-lg text-[#171512] dark:text-white tracking-tight">
+            {isEs ? 'Tu plan de hoy' : 'Your Plan Tonight'}
+          </h2>
           {activeParty && (
-            <span className="text-[11px] font-bold text-[#8E887E] dark:text-[#A8A196] px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10">
+            <span className="text-[11px] font-bold text-[#6F6A62] dark:text-[#A8A196] px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10">
               {activeParty.date || (isEs ? 'Hoy' : 'Today')}
             </span>
           )}
         </div>
 
         {activeParty ? (
-          <div className="group relative overflow-hidden rounded-[28px] bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/8 dark:border-white/10 shadow-[0_6px_30px_rgba(40,30,20,0.05)] dark:shadow-[0_6px_30px_rgba(0,0,0,0.5)] transition-all">
+          <div className="group relative overflow-hidden rounded-[28px] bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/8 dark:border-white/10 shadow-[0_8px_30px_rgba(65,48,25,0.06)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-all">
             {/* Visual Photo Card Top */}
             <div
               onClick={() => selectParty(activeParty.id)}
-              className="relative h-48 sm:h-60 w-full overflow-hidden bg-black/10 dark:bg-white/5 cursor-pointer"
+              className="relative h-52 sm:h-64 w-full overflow-hidden bg-black/10 dark:bg-white/5 cursor-pointer"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -283,24 +224,23 @@ export const ActivityView: React.FC = () => {
                 alt={activeParty.title}
                 className="w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
               {/* Top Badges */}
-              <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between z-10">
+              <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full bg-emerald-500 text-black text-[11px] font-extrabold tracking-wide uppercase shadow-xs flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-black animate-ping" />
-                    {isEs ? 'En Vivo' : 'Live Now'}
+                  <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-[#F0DC00] text-[#171512] font-display font-extrabold text-xs shadow-xs">
+                    {activeParty.date || (isEs ? 'Esta noche' : 'Tonight')}
                   </span>
                   {associatedCrewName && (
-                    <span className="px-2.5 py-1 rounded-full bg-black/50 text-white/95 text-[11px] font-semibold backdrop-blur-md border border-white/20">
+                    <span className="px-3 py-1 rounded-full bg-black/45 text-white/95 text-xs font-semibold backdrop-blur-md border border-white/20">
                       {associatedCrewName}
                     </span>
                   )}
                 </div>
 
                 {activeParty.potBalance > 0 && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 text-white text-xs font-mono font-bold backdrop-blur-md border border-white/20 shadow-xs">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 text-white text-xs font-mono font-bold backdrop-blur-md border border-white/20 shadow-xs">
                     <MonadLogo size="xs" />
                     <span>{activeParty.potBalance.toFixed(2)} MON</span>
                   </div>
@@ -312,13 +252,13 @@ export const ActivityView: React.FC = () => {
                 <h3 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight leading-tight drop-shadow-sm">
                   {activeParty.title}
                 </h3>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/90 font-medium mt-1.5">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-white/90 font-medium mt-1.5">
                   <span className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5 text-[#F0DC00]" />
                     {activeParty.date} {activeParty.time ? `· ${activeParty.time}` : ''}
                   </span>
                   {activeParty.location && (
-                    <span className="flex items-center gap-1 truncate max-w-[240px]">
+                    <span className="flex items-center gap-1 truncate max-w-[260px]">
                       <MapPin className="w-3.5 h-3.5 text-[#F0DC00]" />
                       {activeParty.location.split('·')[0].trim()}
                     </span>
@@ -355,10 +295,10 @@ export const ActivityView: React.FC = () => {
                   <div className="text-xs font-bold text-[#171512] dark:text-white">
                     {(activeParty.members || []).length} {isEs ? 'personas confirmadas' : 'guests confirmed'}
                   </div>
-                  <div className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                  <div className="text-[11px] font-medium text-[#6F6A62] dark:text-[#A8A196]">
                     {isUserInActiveParty
-                      ? (isEs ? '✓ Asistiendo a esta fiesta' : '✓ You are attending')
-                      : (isEs ? 'Invitación disponible' : 'Open gathering')}
+                      ? (isEs ? 'Asistiendo a esta fiesta' : 'You are attending')
+                      : (isEs ? 'Reunión disponible' : 'Open gathering')}
                   </div>
                 </div>
               </div>
@@ -366,37 +306,11 @@ export const ActivityView: React.FC = () => {
               {/* Main Enter CTA */}
               <button
                 onClick={() => selectParty(activeParty.id)}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] text-xs font-extrabold active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs group/btn"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] hover:bg-[#F0DC00] hover:text-[#171512] dark:hover:bg-[#F0DC00] dark:hover:text-[#171512] text-xs font-extrabold active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs group/btn"
               >
-                <span>{isEs ? 'Abrir Fiesta' : 'Enter Party'}</span>
+                <span>{isEs ? 'Ver fiesta' : 'View party'}</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
               </button>
-            </div>
-
-            {/* Quick Party Shortcuts Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 sm:p-4 bg-black/[0.015] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5">
-              {activePartyShortcuts.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={item.onClick}
-                    className="p-2.5 rounded-xl bg-white dark:bg-[#25221D] border border-black/6 dark:border-white/8 hover:border-black/20 dark:hover:border-white/20 active:scale-97 transition-all cursor-pointer flex items-center gap-2.5 text-left"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] flex items-center justify-center shrink-0 text-[#171512] dark:text-white">
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-display font-bold text-xs text-[#171512] dark:text-white truncate">
-                        {item.label}
-                      </div>
-                      <div className="text-[10px] text-[#8E887E] dark:text-[#A8A196] truncate">
-                        {item.desc}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
             </div>
           </div>
         ) : (
@@ -404,38 +318,35 @@ export const ActivityView: React.FC = () => {
             <h3 className="font-display font-bold text-base text-[#171512] dark:text-white mb-1">
               {isEs ? 'Sin planes confirmados para hoy' : 'No confirmed plans for tonight'}
             </h3>
-            <p className="text-xs text-[#8E887E] dark:text-[#A8A196] max-w-sm mx-auto mb-4">
+            <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] max-w-sm mx-auto mb-4">
               {isEs
-                ? 'Explora el radar de otras crews a continuación para solicitar unirte, o crea tu propia reunión.'
-                : 'Check out happening parties from other crews below to knock, or start your own gathering.'}
+                ? 'Explora las reuniones de otras crews a continuación para solicitar unirte, o crea tu propia fiesta.'
+                : 'Check out parties from other crews below to knock, or host your own gathering.'}
             </p>
             <button
               onClick={() => setCurrentView('create-party')}
               className="px-4 py-2 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] text-xs font-bold active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>{isEs ? 'Armar fiesta para hoy' : 'Host a party tonight'}</span>
+              <span>{isEs ? 'Crear fiesta para hoy' : 'Host a party tonight'}</span>
             </button>
           </div>
         )}
       </section>
 
       {/* ============================================================== */}
-      {/* 2. COMMUNITY RADAR: OCURRIENDO EN OTRAS CREWS                   */}
+      {/* 2. GATHERINGS IN OTHER CREWS                                   */}
       {/* ============================================================== */}
-      <section className="mb-10">
+      <section className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-0.5">
           <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#B89600] dark:text-[#F0DC00]" />
-              <h2 className="font-display font-black text-xl text-[#171512] dark:text-white tracking-tight">
-                {isEs ? 'Ocurriendo en otras crews' : 'Happening in Other Crews'}
-              </h2>
-            </div>
-            <p className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium mt-0.5">
+            <h2 className="font-display font-extrabold text-xl text-[#171512] dark:text-white tracking-tight">
+              {isEs ? 'Ocurriendo en otras crews' : 'Happening in Other Crews'}
+            </h2>
+            <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] font-medium mt-0.5">
               {isEs
-                ? 'Eventos simultáneos y próximos. Toca la puerta para solicitar unirte.'
-                : 'Simultaneous & upcoming events. Knock to request an invite.'}
+                ? 'Reuniones de otras crews a las que puedes solicitar unirte.'
+                : 'Gatherings from other crews you can request to join.'}
             </p>
           </div>
 
@@ -456,9 +367,9 @@ export const ActivityView: React.FC = () => {
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-4">
           {[
             { id: 'all', label: isEs ? 'Todas las fiestas' : 'All Parties' },
-            { id: 'tonight', label: isEs ? '🌙 Esta noche' : '🌙 Tonight' },
-            { id: 'my-crews', label: isEs ? '👥 Mis crews' : '👥 My Crews' },
-            { id: 'discover', label: isEs ? '⚡ Descubrir' : '⚡ Discover' },
+            { id: 'tonight', label: isEs ? 'Esta noche' : 'Tonight' },
+            { id: 'my-crews', label: isEs ? 'Mis crews' : 'My Crews' },
+            { id: 'discover', label: isEs ? 'Otras crews' : 'Other Crews' },
           ].map((pill) => (
             <button
               key={pill.id}
@@ -474,10 +385,10 @@ export const ActivityView: React.FC = () => {
           ))}
         </div>
 
-        {/* Radar Events Grid */}
-        {radarParties.length > 0 ? (
+        {/* Other Parties Grid */}
+        {otherParties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {radarParties.map((party) => {
+            {otherParties.map((party) => {
               const partyCrewName = party.crewId ? crewMap.get(party.crewId) : null;
               const isMember = (party.members || []).some(
                 (m) =>
@@ -518,7 +429,7 @@ export const ActivityView: React.FC = () => {
                           {party.date} {party.time ? `· ${party.time}` : ''}
                         </span>
                         {party.potBalance > 0 && (
-                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/70 text-emerald-300 text-[10px] font-mono font-bold backdrop-blur-md border border-emerald-500/30">
+                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 text-white text-[10px] font-mono font-bold backdrop-blur-md border border-white/20">
                             <MonadLogo size="xs" />
                             {party.potBalance.toFixed(0)} MON
                           </span>
@@ -589,8 +500,8 @@ export const ActivityView: React.FC = () => {
                           <ArrowRight className="w-3 h-3" />
                         </button>
                       ) : isRequested ? (
-                        <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5" />
+                        <div className="px-3 py-1.5 rounded-full bg-[#F0DC00]/15 border border-[#F0DC00]/35 text-[#171512] dark:text-[#F0DC00] text-xs font-bold flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-[#B89600] dark:text-[#F0DC00]" />
                           <span>{isEs ? 'Solicitud enviada' : 'Requested'}</span>
                         </div>
                       ) : (
@@ -600,11 +511,11 @@ export const ActivityView: React.FC = () => {
                             className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-colors cursor-pointer"
                             title={isEs ? 'Tengo un código' : 'I have a code'}
                           >
-                            <KeyRound className="w-3.5 h-3.5" />
+                            <KeyRound className="w-3.5 h-3.5 text-[#B89600] dark:text-[#F0DC00]" />
                           </button>
                           <button
                             onClick={() => setSelectedPartyForKnock(party)}
-                            className="px-3.5 py-1.5 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] text-xs font-bold hover:bg-black/85 dark:hover:bg-white/90 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                            className="px-3.5 py-1.5 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] hover:bg-[#F0DC00] hover:text-[#171512] dark:hover:bg-[#F0DC00] dark:hover:text-[#171512] text-xs font-bold active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
                           >
                             <DoorOpen className="w-3.5 h-3.5 text-[#F0DC00] dark:text-[#171512]" />
                             <span>{isEs ? 'Tocar puerta' : 'Knock'}</span>
@@ -622,7 +533,7 @@ export const ActivityView: React.FC = () => {
             <p className="font-bold text-sm text-[#171512] dark:text-white mb-1">
               {isEs ? 'No se encontraron fiestas con ese filtro' : 'No parties found with this filter'}
             </p>
-            <p className="text-xs text-[#8E887E] dark:text-[#A8A196] mb-3">
+            <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] mb-3">
               {isEs
                 ? 'Prueba seleccionando "Todas las fiestas" o crea una para tu crew.'
                 : 'Try selecting "All parties" or host one for your crew.'}
@@ -641,36 +552,7 @@ export const ActivityView: React.FC = () => {
       </section>
 
       {/* ============================================================== */}
-      {/* 3. SUBTLE ON-CHAIN RADAR FOOTER (Envio HyperIndex)              */}
-      {/* ============================================================== */}
-      <footer className="p-4 sm:p-5 rounded-[22px] bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/6 dark:border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          </div>
-          <div>
-            <div className="font-bold text-[#171512] dark:text-white">
-              {isEs ? 'Red Social On-Chain en Monad' : 'On-Chain Social Graph on Monad'}
-            </div>
-            <div className="text-[11px] text-[#8E887E] dark:text-[#A8A196]">
-              {isEs
-                ? 'Eventos, tesorerías y relaciones indexadas con Envio HyperIndex'
-                : 'Events, treasuries & ties indexed with Envio HyperIndex'}
-            </div>
-          </div>
-        </div>
-
-        <a
-          href="/stats"
-          className="inline-flex items-center gap-1 font-semibold text-xs text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-colors cursor-pointer self-start sm:self-auto"
-        >
-          <span>{isEs ? 'Ver métricas de la red' : 'View network stats'}</span>
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
-      </footer>
-
-      {/* ============================================================== */}
-      {/* 4. KNOCK ON DOOR (TOCAR LA PUERTA) BOTTOM SHEET                */}
+      {/* 3. KNOCK ON DOOR (TOCAR LA PUERTA) BOTTOM SHEET                */}
       {/* ============================================================== */}
       <BottomSheet
         isOpen={Boolean(selectedPartyForKnock)}
@@ -679,7 +561,7 @@ export const ActivityView: React.FC = () => {
           setKnockMessage('');
           setKnockSuccess(false);
         }}
-        title={isEs ? 'Tocar la puerta 🚪' : 'Knock on the Door 🚪'}
+        title={isEs ? 'Tocar la puerta' : 'Knock on the Door'}
       >
         {selectedPartyForKnock && (
           <div className="space-y-4">
@@ -697,7 +579,7 @@ export const ActivityView: React.FC = () => {
                 <div className="font-display font-extrabold text-sm text-[#171512] dark:text-white truncate">
                   {selectedPartyForKnock.title}
                 </div>
-                <div className="text-xs text-[#8E887E] dark:text-[#A8A196] truncate">
+                <div className="text-xs text-[#6F6A62] dark:text-[#A8A196] truncate">
                   {selectedPartyForKnock.location}
                 </div>
                 <div className="text-[11px] text-[#B89600] dark:text-[#F0DC00] font-semibold mt-0.5">
@@ -708,19 +590,19 @@ export const ActivityView: React.FC = () => {
 
             {knockSuccess ? (
               <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
+                initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center"
+                className="p-5 rounded-2xl bg-[#F0DC00]/15 border border-[#F0DC00]/30 text-center"
               >
-                <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto mb-2">
-                  <Check className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-full bg-[#171512] dark:bg-white text-[#F0DC00] dark:text-[#171512] flex items-center justify-center mx-auto mb-2 shadow-xs">
+                  <Check className="w-5 h-5 stroke-[2.5]" />
                 </div>
-                <h4 className="font-display font-bold text-sm text-emerald-800 dark:text-emerald-300">
+                <h4 className="font-display font-bold text-sm text-[#171512] dark:text-white">
                   {isEs ? '¡Tocaste a la puerta con éxito!' : 'Knock sent successfully!'}
                 </h4>
-                <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 mt-1">
+                <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] mt-1">
                   {isEs
-                    ? `Le enviamos la solicitud al host (${selectedPartyForKnock.hostName}). Te avisaremos cuando abra.`
+                    ? `Le avisamos al host (${selectedPartyForKnock.hostName}). Recibirás la confirmación pronto.`
                     : `Notification sent to ${selectedPartyForKnock.hostName}. You'll be alerted when accepted.`}
                 </p>
               </motion.div>
@@ -734,7 +616,7 @@ export const ActivityView: React.FC = () => {
 
                 {/* Optional note input */}
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8E887E] dark:text-[#A8A196] mb-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196] mb-1.5">
                     {isEs ? 'Mensaje para el host (opcional)' : 'Note for host (optional)'}
                   </label>
                   <input
@@ -754,7 +636,7 @@ export const ActivityView: React.FC = () => {
                 <div className="space-y-2 pt-2">
                   <button
                     onClick={handleSendKnock}
-                    className="w-full py-3 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] font-display font-bold text-xs tracking-tight shadow-sm active:scale-97 transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] hover:bg-[#F0DC00] hover:text-[#171512] dark:hover:bg-[#F0DC00] dark:hover:text-[#171512] font-display font-bold text-xs tracking-tight shadow-sm active:scale-97 transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     <DoorOpen className="w-4 h-4 text-[#F0DC00] dark:text-[#171512]" />
                     <span>{isEs ? 'Enviar solicitud (Tocar puerta)' : 'Send Knock Request'}</span>

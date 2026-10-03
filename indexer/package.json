@@ -1,0 +1,17 @@
+{
+  "name": "partylot-envio-indexer",
+  "version": "1.0.0",
+  "description": "Envio HyperIndex Sub-second Monad Event Pipeline for PartyLot",
+  "scripts": {
+    "codegen": "envio codegen",
+    "dev": "envio dev",
+    "build": "tsc --noEmit",
+    "start": "envio start"
+  },
+  "dependencies": {
+    "envio": "^2.16.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

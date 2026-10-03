@@ -1,0 +1,149 @@
+# ==============================================================================
+# PARTYLOT — Envio HyperIndex GraphQL Schema (Monad Testnet)
+# Non-trivial aggregated onchain data pipeline for social parties and treasuries
+# ==============================================================================
+
+type Party {
+  id: ID!
+  partyIdNumber: BigInt!
+  partyIdBytes: String!
+  host: String!
+  title: String!
+  treasuryAddress: String!
+  totalMembers: BigInt!
+  currentPotBalance: BigInt!
+  totalDeposited: BigInt!
+  totalDistributed: BigInt!
+  totalSettled: BigInt!
+  createdAt: BigInt!
+  createdTxHash: String!
+  members: [PartyMember!]! @derivedFrom(field: "party")
+  deposits: [TreasuryDeposit!]! @derivedFrom(field: "party")
+  rewards: [RewardDistribution!]! @derivedFrom(field: "party")
+  settlements: [DebtSettlement!]! @derivedFrom(field: "party")
+  activities: [ActivityFeedItem!]! @derivedFrom(field: "party")
+}
+
+type PartyMember {
+  id: ID!
+  party: Party!
+  userAddress: String!
+  joinedAt: BigInt!
+  joinedBlockNumber: BigInt!
+  joinedTxHash: String!
+  totalContributed: BigInt!
+}
+
+type TreasuryDeposit {
+  id: ID!
+  party: Party!
+  partyIdBytes: String!
+  member: String!
+  amount: BigInt!
+  newBalance: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: String!
+}
+
+type RewardDistribution {
+  id: ID!
+  party: Party!
+  partyIdBytes: String!
+  recipient: String!
+  amount: BigInt!
+  role: String!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: String!
+}
+
+type ExpenseReimbursement {
+  id: ID!
+  party: Party!
+  partyIdBytes: String!
+  member: String!
+  amount: BigInt!
+  description: String!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: String!
+}
+
+type DebtSettlement {
+  id: ID!
+  party: Party!
+  partyIdBytes: String!
+  debtor: String!
+  creditor: String!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: String!
+}
+
+type BalanceRollover {
+  id: ID!
+  fromPartyId: String!
+  toPartyId: String!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: String!
+}
+
+type Crew {
+  id: ID!
+  crewId: BigInt!
+  name: String!
+  host: String!
+  totalGatherings: BigInt!
+  createdAt: BigInt!
+  transactionHash: String!
+}
+
+type SocialTie {
+  id: ID!
+  userA: String!
+  userB: String!
+  totalSharedNights: BigInt!
+  lastInteractionBlock: BigInt!
+  lastUpdatedTimestamp: BigInt!
+}
+
+type ActivityFeedItem {
+  id: ID!
+  party: Party
+  partyId: String
+  actor: String!
+  target: String
+  type: String!
+  title: String!
+  subtitle: String!
+  amount: BigInt
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: String!
+}
+
+# Derived Aggregated Entities for Reputation & Analytics
+type UserReputationSummary {
+  id: ID!
+  userAddress: String!
+  totalPartiesJoined: BigInt!
+  totalDepositedAmount: BigInt!
+  totalSettledAmount: BigInt!
+  totalRewardsEarned: BigInt!
+  reputationScore: BigInt!
+  lastActiveTimestamp: BigInt!
+}
+
+type GlobalMetrics {
+  id: ID!
+  totalPartiesCreated: BigInt!
+  totalMemberships: BigInt!
+  totalMonVolumeIndexed: BigInt!
+  totalSettlementsExecuted: BigInt!
+  lastIndexedBlock: BigInt!
+  lastIndexedTimestamp: BigInt!
+}

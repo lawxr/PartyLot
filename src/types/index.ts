@@ -186,6 +186,9 @@ export interface ActivityItem {
   time: string;
   avatar: string;
   type: 'join' | 'pot' | 'poll' | 'game' | 'expense';
+  txHash?: string;
+  blockNumber?: number;
+  isEnvioIndexed?: boolean;
 }
 
 export type GameId = 'whos-most-likely' | 'this-or-that' | 'crew-trivia';

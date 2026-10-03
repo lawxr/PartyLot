@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { usePartyStore } from '@/store/usePartyStore';
 import {
   Sparkles,
@@ -13,14 +13,20 @@ import {
   BarChart3,
   Calendar,
   MapPin,
-  Clock,
   ArrowRight,
   Plus,
-  Bell,
+  ExternalLink,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
 import { MonadLogo } from '@/components/ui/TokenLogo';
+import {
+  fetchEnvioActivities,
+  checkEnvioSyncStatus,
+  EnvioSyncStatus,
+} from '@/lib/web3/envio';
+import { subscribeToMonadHyperIndex } from '@/lib/web3/hyperindex';
+import { ActivityItem } from '@/types';
 
 /**
  * Tonight View
@@ -42,10 +48,81 @@ export const ActivityView: React.FC = () => {
   const { t, language } = useTranslation();
   const isEs = language === 'es';
   const [filterType, setFilterType] = useState<string>('all');
+  const [envioStatus, setEnvioStatus] = useState<EnvioSyncStatus | null>(null);
+  const [envioActivities, setEnvioActivities] = useState<ActivityItem[]>([]);
+  const [realtimeActivities, setRealtimeActivities] = useState<ActivityItem[]>([]);
 
   const activeParty =
     parties.find((p) => p.id === currentPartyId) || parties[0] || null;
   const associatedCrew = crews.find((c) => c.id === activeParty?.crewId);
+
+  // Poll / Check Envio Sync Status and fetch indexed activities
+  useEffect(() => {
+    let isMounted = true;
+
+    checkEnvioSyncStatus().then((status) => {
+      if (isMounted) setEnvioStatus(status);
+    });
+
+    fetchEnvioActivities(activeParty?.id).then((items) => {
+      if (!isMounted || !items || items.length === 0) return;
+      const mapped: ActivityItem[] = items.map((item) => {
+        let mappedType: ActivityItem['type'] = 'pot';
+        if (item.type === 'MEMBER_JOINED' || item.type === 'PARTY_CREATED') mappedType = 'join';
+        else if (item.type === 'DEBT_SETTLED' || item.type === 'REIMBURSEMENT') mappedType = 'expense';
+        else if (item.type === 'DEPOSIT' || item.type === 'REWARD' || item.type === 'ROLLOVER') mappedType = 'pot';
+        else if (item.type === 'GATHERING' || item.type === 'TIE_UPDATED') mappedType = 'join';
+
+        return {
+          id: item.id,
+          partyId: item.partyId || activeParty?.id || '',
+          text: `${item.title} — ${item.subtitle}`,
+          time: item.blockTimestamp
+            ? new Date(item.blockTimestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : 'Just now',
+          avatar: '',
+          type: mappedType,
+          txHash: item.transactionHash,
+          blockNumber: item.blockNumber,
+          isEnvioIndexed: true,
+        };
+      });
+      setEnvioActivities(mapped);
+    });
+
+    // Sub-second Monad Event Pipeline
+    const unwatch = subscribeToMonadHyperIndex((ev) => {
+      if (!isMounted) return;
+      const newAct: ActivityItem = {
+        id: ev.id,
+        partyId: activeParty?.id || '',
+        text: ev.title,
+        time: 'Just now',
+        avatar: '',
+        type: ev.type === 'deposit' || ev.type === 'reward' ? 'pot' : 'join',
+        txHash: ev.txHash,
+        blockNumber: ev.blockNumber,
+        isEnvioIndexed: true,
+      };
+      setRealtimeActivities((prev) => [newAct, ...prev.filter((p) => p.id !== newAct.id)]);
+    });
+
+    return () => {
+      isMounted = false;
+      unwatch();
+    };
+  }, [activeParty?.id]);
+
+  const allActivities = useMemo(() => {
+    const combined = [...realtimeActivities, ...envioActivities, ...activities];
+    const seen = new Set<string>();
+    return combined.filter((a) => {
+      const key = a.txHash || a.id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [realtimeActivities, envioActivities, activities]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -64,11 +141,14 @@ export const ActivityView: React.FC = () => {
 
   const filtered =
     filterType === 'all'
-      ? activities
-      : activities.filter((a) => a.type === filterType);
+      ? allActivities
+      : filterType === 'onchain'
+      ? allActivities.filter((a) => a.isEnvioIndexed || Boolean(a.txHash))
+      : allActivities.filter((a) => a.type === filterType);
 
   const filters = [
     { id: 'all', label: isEs ? 'Todo' : 'All' },
+    { id: 'onchain', label: 'Envio Onchain' },
     { id: 'join', label: isEs ? 'Asistencias' : 'RSVPs' },
     { id: 'pot', label: isEs ? 'Pozo' : 'Pot' },
     { id: 'game', label: isEs ? 'Juegos' : 'Games' },
@@ -154,11 +234,23 @@ export const ActivityView: React.FC = () => {
           </p>
         </div>
 
-        {activeParty && (
-          <span className="text-[11px] font-bold text-[#8E887E] dark:text-[#A8A196] px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10">
-            {activeParty.date || (isEs ? 'Hoy' : 'Today')}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {envioStatus && (
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px] font-mono font-bold tracking-tight shadow-xs"
+              title={`Envio HyperIndex GraphQL: ${envioStatus.endpoint}`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span>Envio {envioStatus.latestIndexedBlock > 0 ? `#${envioStatus.latestIndexedBlock}` : 'HyperIndex'}</span>
+            </div>
+          )}
+
+          {activeParty && (
+            <span className="text-[11px] font-bold text-[#8E887E] dark:text-[#A8A196] px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10">
+              {activeParty.date || (isEs ? 'Hoy' : 'Today')}
+            </span>
+          )}
+        </div>
       </header>
 
       {/* ============================================================== */}
@@ -380,6 +472,19 @@ export const ActivityView: React.FC = () => {
                           </span>
                         )}
                         <span>{act.time}</span>
+                        {act.txHash && (
+                          <a
+                            href={`https://testnet.monadexplorer.com/tx/${act.txHash}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-1.5 py-0.5 rounded transition-colors"
+                            title="Verified on Monad via Envio HyperIndex"
+                          >
+                            <span>Envio</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>

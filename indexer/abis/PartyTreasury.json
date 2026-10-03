@@ -1,0 +1,174 @@
+[
+  { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "fromPartyId", "type": "bytes32" },
+      { "indexed": true, "internalType": "bytes32", "name": "toPartyId", "type": "bytes32" },
+      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "BalanceRolledOver",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "partyId", "type": "bytes32" },
+      { "indexed": true, "internalType": "address", "name": "debtor", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "creditor", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "DebtSettled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "partyId", "type": "bytes32" },
+      { "indexed": true, "internalType": "address", "name": "member", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "newBalance", "type": "uint256" }
+    ],
+    "name": "Deposited",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "partyId", "type": "bytes32" },
+      { "indexed": true, "internalType": "address", "name": "host", "type": "address" }
+    ],
+    "name": "PartyRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "partyId", "type": "bytes32" },
+      { "indexed": true, "internalType": "address", "name": "member", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "indexed": false, "internalType": "string", "name": "description", "type": "string" }
+    ],
+    "name": "ReimbursementClaimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "partyId", "type": "bytes32" },
+      { "indexed": true, "internalType": "address", "name": "recipient", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "indexed": false, "internalType": "string", "name": "role", "type": "string" }
+    ],
+    "name": "RewardDistributed",
+    "type": "event"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "partyId", "type": "bytes32" }],
+    "name": "deposit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "partyId", "type": "bytes32" },
+      { "internalType": "address payable", "name": "recipient", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "internalType": "string", "name": "role", "type": "string" }
+    ],
+    "name": "distributeReward",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "partyId", "type": "bytes32" },
+      { "internalType": "address payable", "name": "member", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "internalType": "string", "name": "description", "type": "string" }
+    ],
+    "name": "executeReimbursement",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "partyId", "type": "bytes32" }],
+    "name": "getParty",
+    "outputs": [
+      { "internalType": "address", "name": "host", "type": "address" },
+      { "internalType": "uint256", "name": "balance", "type": "uint256" },
+      { "internalType": "uint256", "name": "totalDeposited", "type": "uint256" },
+      { "internalType": "uint256", "name": "totalDistributed", "type": "uint256" },
+      { "internalType": "bool", "name": "exists", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "", "type": "bytes32" },
+      { "internalType": "address", "name": "", "type": "address" }
+    ],
+    "name": "memberBalances",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "name": "parties",
+    "outputs": [
+      { "internalType": "address", "name": "host", "type": "address" },
+      { "internalType": "uint256", "name": "balance", "type": "uint256" },
+      { "internalType": "uint256", "name": "totalDeposited", "type": "uint256" },
+      { "internalType": "uint256", "name": "totalDistributed", "type": "uint256" },
+      { "internalType": "bool", "name": "exists", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "partyId", "type": "bytes32" },
+      { "internalType": "address", "name": "host", "type": "address" }
+    ],
+    "name": "registerParty",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "fromPartyId", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "toPartyId", "type": "bytes32" }
+    ],
+    "name": "rolloverToNextParty",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "partyId", "type": "bytes32" },
+      { "internalType": "address payable", "name": "creditor", "type": "address" }
+    ],
+    "name": "settleDebt",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+]

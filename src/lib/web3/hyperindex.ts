@@ -10,6 +10,8 @@ export interface HyperIndexEvent {
   timestamp: string;
 }
 
+export * from './envio';
+
 /**
  * Envio HyperIndex Sub-second Monad Event Pipeline
  * Listens to onchain contract events and triggers real-time social activity updates.

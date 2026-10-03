@@ -1,0 +1,37 @@
+name: partylot-indexer
+description: Envio HyperIndex sub-second pipeline for PartyLot on Monad Testnet
+networks:
+  - id: 10143
+    rpc_config:
+      url: https://testnet-rpc.monad.xyz
+    start_block: 0
+    contracts:
+      - name: PartyRegistry
+        abi_file_path: abis/PartyRegistry.json
+        address:
+          - "0xb7d922488daa522443ffe1627efc6d65825eebad"
+        handler: src/EventHandlers.ts
+        events:
+          - event: "PartyCreated(uint256 indexed partyId, address indexed host, string title, address treasury)"
+          - event: "MemberJoined(uint256 indexed partyId, address indexed guest, uint256 totalMembers)"
+      - name: PartyTreasury
+        abi_file_path: abis/PartyTreasury.json
+        address:
+          - "0x13ed67e844496095c0f44c914f89e30ef190db2c"
+        handler: src/EventHandlers.ts
+        events:
+          - event: "PartyRegistered(bytes32 indexed partyId, address indexed host)"
+          - event: "Deposited(bytes32 indexed partyId, address indexed member, uint256 amount, uint256 newBalance)"
+          - event: "RewardDistributed(bytes32 indexed partyId, address indexed recipient, uint256 amount, string role)"
+          - event: "ReimbursementClaimed(bytes32 indexed partyId, address indexed member, uint256 amount, string description)"
+          - event: "DebtSettled(bytes32 indexed partyId, address indexed debtor, address indexed creditor, uint256 amount)"
+          - event: "BalanceRolledOver(bytes32 indexed fromPartyId, bytes32 indexed toPartyId, uint256 amount)"
+      - name: SocialGraph
+        abi_file_path: abis/SocialGraph.json
+        address:
+          - "0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9"
+        handler: src/EventHandlers.ts
+        events:
+          - event: "CrewCreated(uint256 indexed crewId, string name, address indexed host)"
+          - event: "GatheringRecorded(uint256 indexed partyId, uint256 participantsCount)"
+          - event: "SocialTiesUpdated(address indexed userA, address indexed userB, uint256 totalShared)"

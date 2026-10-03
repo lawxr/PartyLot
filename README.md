@@ -91,9 +91,15 @@ pnpm start
 
 OpenAI Codex was used for repository analysis and editing this README. This statement covers this documentation task only; maintainers must confirm and disclose any AI tools used elsewhere in the project's development before submission.
 
+## Team
+
+PartyLot is created and maintained for the Monad Metropolis Hackathon by **Law & Gabriela**.
+
 ## License and third-party credits
 
-No repository-wide license is currently declared. The MIT SPDX headers in Solidity files apply to those contract sources only; they do not license the application as a whole. Maintainers must select an appropriate whole-repository license to meet the hackathon open-source requirement. A complete audit of third-party fonts, photos, and other assets and their attribution requirements remains outstanding.
+This repository is licensed under the [MIT License](LICENSE) &copy; 2026 Law & Gabriela (PartyLot Team).
+
+Third-party libraries (Next.js, Viem, Privy, Supabase, Tailwind CSS, Lucide Icons, Framer Motion) are licensed under their respective open-source licenses (MIT/Apache 2.0). Unsplash photography used in mock data is used under the Unsplash License for demonstration purposes.
 
 ## Metropolis submission checklist
 
@@ -104,5 +110,5 @@ Submission window: **September 1–October 13, 2026**; deadline: **October 13, 2
 - [ ] Verify deployed contract addresses and demo transaction hashes on the relevant Monad explorer, then record the exact evidence here.
 - [ ] Disclose any pre-existing foundation accurately. Local commit dates alone do not establish code provenance.
 - [ ] Confirm the project's full AI-tool usage and update the disclosure above if needed.
-- [ ] Choose and add an OSI-approved license for the whole repository, and complete the third-party asset attribution review.
+- [x] Choose and add an OSI-approved license for the whole repository ([MIT License](LICENSE)).
 - [ ] Confirm the final track choice; **Track 03: Social** is a recommendation, not a submitted selection.

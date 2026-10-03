@@ -22,8 +22,6 @@ import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
 import { MonadLogo } from '@/components/ui/TokenLogo';
 import {
   fetchEnvioActivities,
-  checkEnvioSyncStatus,
-  EnvioSyncStatus,
 } from '@/lib/web3/envio';
 import { subscribeToMonadHyperIndex } from '@/lib/web3/hyperindex';
 import { ActivityItem } from '@/types';
@@ -48,7 +46,6 @@ export const ActivityView: React.FC = () => {
   const { t, language } = useTranslation();
   const isEs = language === 'es';
   const [filterType, setFilterType] = useState<string>('all');
-  const [envioStatus, setEnvioStatus] = useState<EnvioSyncStatus | null>(null);
   const [envioActivities, setEnvioActivities] = useState<ActivityItem[]>([]);
   const [realtimeActivities, setRealtimeActivities] = useState<ActivityItem[]>([]);
 
@@ -56,13 +53,9 @@ export const ActivityView: React.FC = () => {
     parties.find((p) => p.id === currentPartyId) || parties[0] || null;
   const associatedCrew = crews.find((c) => c.id === activeParty?.crewId);
 
-  // Poll / Check Envio Sync Status and fetch indexed activities
+  // Fetch Envio indexed activities and subscribe to sub-second events
   useEffect(() => {
     let isMounted = true;
-
-    checkEnvioSyncStatus().then((status) => {
-      if (isMounted) setEnvioStatus(status);
-    });
 
     fetchEnvioActivities(activeParty?.id).then((items) => {
       if (!isMounted || !items || items.length === 0) return;
@@ -234,23 +227,11 @@ export const ActivityView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {envioStatus && (
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px] font-mono font-bold tracking-tight shadow-xs"
-              title={`Envio HyperIndex GraphQL: ${envioStatus.endpoint}`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span>Envio {envioStatus.latestIndexedBlock > 0 ? `#${envioStatus.latestIndexedBlock}` : 'HyperIndex'}</span>
-            </div>
-          )}
-
-          {activeParty && (
-            <span className="text-[11px] font-bold text-[#8E887E] dark:text-[#A8A196] px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10">
-              {activeParty.date || (isEs ? 'Hoy' : 'Today')}
-            </span>
-          )}
-        </div>
+        {activeParty && (
+          <span className="text-[11px] font-bold text-[#8E887E] dark:text-[#A8A196] px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10">
+            {activeParty.date || (isEs ? 'Hoy' : 'Today')}
+          </span>
+        )}
       </header>
 
       {/* ============================================================== */}

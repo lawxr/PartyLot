@@ -164,7 +164,7 @@ declare module 'generated' {
     GlobalMetrics: EnvioEntityStore<GlobalMetricsEntity>;
   }
 
-  export interface EnvioEvent<TParams = any> {
+  export interface EnvioEvent<TParams = Record<string, unknown>> {
     params: TParams;
     block: {
       number: number | bigint;
@@ -179,14 +179,14 @@ declare module 'generated' {
     logIndex: number | bigint;
   }
 
-  export interface HandlerArgs<TParams = any> {
+  export interface HandlerArgs<TParams = Record<string, unknown>> {
     event: EnvioEvent<TParams>;
     context: EnvioContext;
   }
 
-  export type HandlerFunction<TParams = any> = (args: HandlerArgs<TParams>) => Promise<void> | void;
+  export type HandlerFunction<TParams = Record<string, unknown>> = (args: HandlerArgs<TParams>) => Promise<void> | void;
 
-  export interface EventRegistration<TParams = any> {
+  export interface EventRegistration<TParams = Record<string, unknown>> {
     handler: (fn: HandlerFunction<TParams>) => void;
   }
 

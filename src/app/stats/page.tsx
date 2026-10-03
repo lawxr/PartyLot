@@ -74,7 +74,6 @@ export default function PlatformStatsPage() {
 
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [isLiveConnected, setIsLiveConnected] = useState(false);
   const [envioStatus, setEnvioStatus] = useState<EnvioSyncStatus | null>(null);
   const [envioMetrics, setEnvioMetrics] = useState<EnvioGlobalMetrics | null>(null);
 
@@ -175,9 +174,7 @@ export default function PlatformStatsPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'game_sessions' }, () => loadStats())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pot_transactions' }, () => loadStats())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'party_memories' }, () => loadStats())
-      .subscribe((status) => {
-        setIsLiveConnected(status === 'SUBSCRIBED');
-      });
+      .subscribe();
 
     // Monad block ticker every 6 seconds
     const blockInterval = setInterval(async () => {
@@ -209,20 +206,6 @@ export default function PlatformStatsPage() {
         </Link>
 
         <div className="flex items-center gap-3">
-          {/* Realtime Live Pulse */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-400 text-xs font-bold shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-            <span className="truncate">
-              {isLiveConnected
-                ? isEs
-                  ? 'Realtime Activo'
-                  : 'Realtime Connected'
-                : isEs
-                ? 'Conectando...'
-                : 'Connecting...'}
-            </span>
-          </div>
-
           <LanguageSwitch compact />
         </div>
       </div>

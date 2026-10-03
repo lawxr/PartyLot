@@ -605,7 +605,7 @@ export const PartyDetailView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="mt-2 text-xs font-bold text-[#836EF9] hover:underline cursor-pointer"
+                    className="mt-2 text-xs font-bold text-[#171512] dark:text-[#F5F1E8] underline underline-offset-2 hover:text-[#B89600] dark:hover:text-[#F0DC00] transition-colors cursor-pointer"
                   >
                     {isEs ? 'Sé el primero en subir una' : 'Be the first to upload one'}
                   </button>
@@ -623,7 +623,7 @@ export const PartyDetailView: React.FC = () => {
                 </h4>
                 <button
                   onClick={() => setCurrentView('games')}
-                  className="text-xs font-bold text-[#836EF9] hover:underline cursor-pointer"
+                  className="text-xs font-bold text-[#171512] dark:text-[#F5F1E8] hover:text-[#B89600] dark:hover:text-[#F0DC00] transition-colors cursor-pointer"
                 >
                   {isEs ? 'Jugar' : 'Play'}
                 </button>

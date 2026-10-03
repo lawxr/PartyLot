@@ -113,7 +113,7 @@ export default function App() {
       )}
 
       {/* Main Responsive View Container */}
-      <div className="relative z-10 w-full min-h-screen flex flex-col justify-start">
+      <div className="relative w-full min-h-screen flex flex-col justify-start">
         {currentView === 'splash' && <SplashView />}
         {currentView === 'home' && <HomeView />}
         {currentView === 'create-party' && <CreatePartyView />}

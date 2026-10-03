@@ -631,13 +631,6 @@ export const CrewDetailView: React.FC = () => {
                       <p className="text-xs text-red-500 mb-2">{memoryUploadError}</p>
                     )}
 
-                    <input
-                      type="url"
-                      placeholder={isEs ? 'o ingresa un URL (https://...)' : 'or enter a URL (https://...)'}
-                      value={memoryUrl}
-                      onChange={(e) => setMemoryUrl(e.target.value)}
-                      className="w-full px-4 py-2 rounded-xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.1)] text-[#171512] text-xs outline-none focus:border-[#F0DC00] placeholder:text-[#999187]"
-                    />
                   </div>
                   <div>
                     <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1">

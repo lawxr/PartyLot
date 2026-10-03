@@ -7,21 +7,14 @@ import { getServerSupabase } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/security/rateLimit';
 import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
 
+import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
+
 export function toPartyBytes32(partyId: string): `0x${string}` {
   if (!partyId) return `0x${'0'.repeat(64)}` as `0x${string}`;
   if (partyId.startsWith('0x') && partyId.length === 66) {
     return partyId as `0x${string}`;
   }
   return keccak256(toHex(partyId));
-}
-
-function resolveValidAddress(addressCandidate?: string, fallbackSeed?: string): `0x${string}` {
-  if (addressCandidate && addressCandidate.startsWith('0x') && addressCandidate.length === 42) {
-    return addressCandidate as `0x${string}`;
-  }
-  const seed = fallbackSeed || `party-member-${Date.now()}`;
-  const hash = keccak256(toHex(seed));
-  return `0x${hash.slice(26, 66)}` as `0x${string}`;
 }
 
 const ALLOWED_ACTIONS = new Set(['deposit', 'reward', 'reimbursement', 'spend', 'rollover', 'settle']);
@@ -53,7 +46,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Authentication check
+  // Authentication check - strictly required for financial state changes
   const authHeader = request.headers.get('authorization');
   let authenticatedUserId: string | null = null;
   if (authHeader?.startsWith('Bearer ')) {
@@ -71,6 +64,16 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  if (!authenticatedUserId) {
+    if (process.env.NODE_ENV === 'production' || (!isExplicitDevelopmentDemoMode() && process.env.NODE_ENV !== 'test')) {
+      return NextResponse.json(
+        { success: false, error: 'UNAUTHORIZED', message: 'Authentication is strictly required for treasury operations.' },
+        { status: 401 }
+      );
+    }
+    authenticatedUserId = 'demo-user';
+  }
+
   try {
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== 'object') {
@@ -86,7 +89,6 @@ export async function POST(request: NextRequest) {
       toPartyId,
       amount,
       userAddress,
-      userId,
       userName,
       recipientAddress,
       recipientName,
@@ -112,12 +114,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Role-based authorization: spending/distribution actions require party host permission
+    const HOST_ONLY_ACTIONS = new Set(['reward', 'reimbursement', 'spend', 'rollover']);
+    if (HOST_ONLY_ACTIONS.has(action) && authenticatedUserId !== 'demo-user') {
+      try {
+        const supabase = getServerSupabase();
+        const { data: partyRecord } = await supabase
+          .from('parties')
+          .select('host_id')
+          .eq('id', partyId)
+          .single();
+
+        if (partyRecord?.host_id && authenticatedUserId !== partyRecord.host_id) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'FORBIDDEN',
+              message: 'Only the party host is authorized to execute this treasury distribution.',
+            },
+            { status: 403 }
+          );
+        }
+      } catch {
+        // Continue if DB check unavailable in offline mode
+      }
+    }
+
     const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
     if (action !== 'rollover' && (isNaN(numAmount) || numAmount <= 0 || numAmount > 1000000)) {
       return NextResponse.json(
         { success: false, error: 'INVALID_AMOUNT', message: 'Amount must be a positive number.' },
         { status: 400 }
       );
+    }
+
+    // Validate recipient address strictly for distribution actions
+    const candidateAddress = recipientAddress || userAddress;
+    if (action !== 'deposit' && action !== 'rollover') {
+      if (!candidateAddress || !candidateAddress.startsWith('0x') || candidateAddress.length !== 42) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'INVALID_RECIPIENT_ADDRESS',
+            message: 'Recipient address must be a valid 42-character Monad/Ethereum hex address (0x...).',
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const partyBytes = toPartyBytes32(partyId);
@@ -134,10 +177,9 @@ export async function POST(request: NextRequest) {
       transport: http(rpcUrl),
     });
 
-    const recipient = resolveValidAddress(
-      recipientAddress || userAddress,
-      recipientName || userName || authenticatedUserId || userId
-    );
+    const recipient = (candidateAddress?.startsWith('0x') && candidateAddress.length === 42)
+      ? (candidateAddress as `0x${string}`)
+      : (account.address as `0x${string}`);
 
     // Format safe wei amount for MON
     const monWei = parseEther(String(Math.max(0.000001, Number(numAmount.toFixed(6)))));

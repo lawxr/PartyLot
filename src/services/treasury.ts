@@ -248,18 +248,39 @@ export async function settleDamageOnchain(
   settlements: DebtSettlement[],
   userAddress?: string
 ): Promise<TreasuryReceipt> {
-  const totalAmount = settlements.reduce((sum, s) => sum + s.amount, 0);
+  if (!settlements || settlements.length === 0) {
+    throw new Error('No pending debts to settle.');
+  }
 
+  // Security & Financial Integrity Check:
+  // Each creditor must possess a verified 42-character Monad/Ethereum address (0x...).
+  const unverified = settlements.filter(
+    (s) => !s.toId || !s.toId.startsWith('0x') || s.toId.length !== 42
+  );
+  if (unverified.length > 0) {
+    throw new Error(
+      `Para liquidar en Monad, cada acreedor debe tener una billetera verificada (0x...). Los siguientes participantes aún no la tienen: ${unverified.map((u) => u.toName || u.toId).join(', ')}.`
+    );
+  }
+
+  // Prevent multi-debt pooling to a single arbitrary recipient
+  if (settlements.length > 1) {
+    throw new Error(
+      'La liquidación agrupada a un solo destinatario está deshabilitada por seguridad contable. Cada deuda debe ser liquidada individualmente a la billetera de su acreedor.'
+    );
+  }
+
+  const s = settlements[0];
   const res = await fetch('/api/treasury/action', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       action: 'settle',
       partyId,
-      amount: totalAmount,
+      amount: s.amount,
       userAddress,
-      recipientAddress: settlements[0]?.toId || userAddress,
-      description: `Settlement of ${settlements.length} debts totaling ${totalAmount.toFixed(4)} MON`,
+      recipientAddress: s.toId,
+      description: `Settlement of debt to ${s.toName || s.toId} (${s.amount.toFixed(4)} MON)`,
     }),
   });
 
@@ -273,7 +294,7 @@ export async function settleDamageOnchain(
     txHash: data.txHash,
     blockNumber: data.blockNumber,
     explorerUrl: data.explorerUrl || getMonadExplorerTxUrl(data.txHash),
-    amount: totalAmount,
+    amount: s.amount,
     token: (data.token as 'MON' | 'USDC') || 'MON',
     network: 'Monad Testnet',
   };

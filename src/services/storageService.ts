@@ -5,7 +5,11 @@ import { getSupabase } from '@/lib/supabase/client';
  * Automatically tries the server-side /api/upload endpoint first, falling back
  * to direct client-side Supabase storage upload if available.
  */
-export async function uploadImageFile(file: File | Blob, folder: string = 'uploads'): Promise<string> {
+export async function uploadImageFile(
+  file: File | Blob,
+  folder: string = 'uploads',
+  authToken?: string | null
+): Promise<string> {
   const fileObj =
     file instanceof File
       ? file
@@ -26,8 +30,14 @@ export async function uploadImageFile(file: File | Blob, folder: string = 'uploa
     formData.append('file', fileObj);
     formData.append('folder', folder);
 
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
     const res = await fetch('/api/upload', {
       method: 'POST',
+      headers,
       body: formData,
     });
 

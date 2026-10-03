@@ -52,9 +52,9 @@ contract PartyTreasury {
     }
 
     /**
-     * @notice Register a party and define its host.
+     * @notice Register a party and define its host (Restricted to contract owner).
      */
-    function registerParty(bytes32 partyId, address host) external {
+    function registerParty(bytes32 partyId, address host) external onlyOwner {
         require(host != address(0), "Invalid host address");
         require(!parties[partyId].exists, "Party already registered");
 
@@ -74,14 +74,9 @@ contract PartyTreasury {
      */
     function deposit(bytes32 partyId) public payable nonReentrant {
         require(msg.value > 0, "Deposit must be > 0");
+        require(parties[partyId].exists, "Party not registered. Must be registered by authorized host or contract owner.");
 
         PartyPot storage pot = parties[partyId];
-        if (!pot.exists) {
-            pot.host = msg.sender;
-            pot.exists = true;
-            emit PartyRegistered(partyId, msg.sender);
-        }
-
         pot.balance += msg.value;
         pot.totalDeposited += msg.value;
         memberBalances[partyId][msg.sender] += msg.value;

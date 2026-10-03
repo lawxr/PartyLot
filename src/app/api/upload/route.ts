@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/security/rateLimit';
+import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
+import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
 
 export const runtime = 'nodejs';
 
@@ -13,6 +15,8 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/gif',
   'image/avif',
 ]);
+
+const ALLOWED_FOLDERS = new Set(['avatars', 'banners', 'crews', 'parties', 'memories', 'uploads']);
 
 export async function POST(request: NextRequest) {
   const clientIp =
@@ -30,6 +34,34 @@ export async function POST(request: NextRequest) {
       { success: false, error: 'RATE_LIMIT_EXCEEDED', message: 'Too many uploads. Please wait a minute.' },
       { status: 429, headers: { 'Retry-After': '60' } }
     );
+  }
+
+  // Mandatory Authentication
+  const authHeader = request.headers.get('authorization');
+  let authenticatedUserId: string | null = null;
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (token) {
+      try {
+        const verified = await verifyPrivyToken(token);
+        authenticatedUserId = verified.userId;
+      } catch {
+        return NextResponse.json(
+          { success: false, error: 'UNAUTHORIZED', message: 'Invalid or expired authentication token.' },
+          { status: 401 }
+        );
+      }
+    }
+  }
+
+  if (!authenticatedUserId) {
+    if (!isExplicitDevelopmentDemoMode()) {
+      return NextResponse.json(
+        { success: false, error: 'UNAUTHORIZED', message: 'Authentication is required to upload media.' },
+        { status: 401 }
+      );
+    }
+    authenticatedUserId = 'demo-user';
   }
 
   try {
@@ -62,10 +94,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const cleanFolder = folder.replace(/[^a-zA-Z0-9_-]/g, '') || 'uploads';
+    const cleanFolder = ALLOWED_FOLDERS.has(folder) ? folder : 'uploads';
     const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const safeExt = ext.replace(/[^a-z0-9]/g, '') || 'jpg';
-    const fileName = `${cleanFolder}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${safeExt}`;
+    const safeUserId = authenticatedUserId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `${cleanFolder}/${safeUserId}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${safeExt}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);

@@ -10,7 +10,6 @@ import {
   Sparkles,
   AlertCircle,
   Camera,
-  Link as LinkIcon,
   MapPin,
   Globe,
 } from 'lucide-react';
@@ -53,8 +52,6 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [avatar, setAvatar] = useState(currentUser.avatar || '');
   const [coverImage, setCoverImage] = useState(currentUser.coverImage || '');
 
-  const [customUrl, setCustomUrl] = useState('');
-  const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -162,14 +159,6 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
   };
 
-  const handleApplyCustomUrl = () => {
-    if (customUrl.trim()) {
-      setAvatar(customUrl.trim());
-      setShowCustomUrlInput(false);
-      setCustomUrl('');
-    }
-  };
-
   return (
     <form onSubmit={handleSave} className="space-y-5 pt-1 pb-6 px-1">
       {/* Hidden file inputs */}
@@ -255,37 +244,7 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <Camera className="w-3 h-3" />
             <span>{isUploading ? (isEs ? 'Subiendo...' : 'Uploading...') : (isEs ? 'Cambiar avatar' : 'Change avatar')}</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setShowCustomUrlInput(!showCustomUrlInput)}
-            className="text-xs text-[#8E887E] dark:text-white/40 hover:text-[#171512] dark:hover:text-white transition-colors flex items-center gap-1 cursor-pointer font-medium"
-          >
-            <LinkIcon className="w-3 h-3" />
-            <span>URL</span>
-          </button>
         </div>
-
-        {/* Custom URL Input Toggle */}
-        {showCustomUrlInput && (
-          <div className="mt-3 w-full flex items-center gap-2 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-2">
-            <LinkIcon className="w-4 h-4 text-[#8E887E] dark:text-white/40 ml-1 shrink-0" />
-            <input
-              type="url"
-              placeholder="https://..."
-              value={customUrl}
-              onChange={(e) => setCustomUrl(e.target.value)}
-              className="bg-transparent text-xs text-[#171512] dark:text-white outline-none flex-1 placeholder:text-[#8E887E]/50 dark:placeholder:text-white/30"
-            />
-            <button
-              type="button"
-              onClick={handleApplyCustomUrl}
-              className="px-3 py-1.5 rounded-xl bg-[#F0DC00] text-[#171512] font-bold text-xs hover:brightness-105 cursor-pointer"
-            >
-              {isEs ? 'Usar' : 'Use'}
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Primary Identity Fields */}

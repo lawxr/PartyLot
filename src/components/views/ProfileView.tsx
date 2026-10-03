@@ -285,7 +285,7 @@ export const ProfileView: React.FC = () => {
 
       {/* ============================================================== */}
       {/* TOP COVER BANNER */}
-      <div className="relative h-64 sm:h-72 md:h-80 w-full md:max-w-3xl lg:max-w-5xl md:mx-auto md:rounded-b-[36px] md:mt-2 md:shadow-lg overflow-hidden">
+      <div className="relative h-64 sm:h-72 md:h-80 w-full md:max-w-3xl lg:max-w-5xl md:mx-auto md:rounded-b-[36px] md:shadow-lg overflow-hidden">
         {currentUser.coverImage?.startsWith('linear-gradient') ? (
           <div
             style={{ background: currentUser.coverImage }}

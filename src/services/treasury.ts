@@ -99,6 +99,21 @@ export async function depositToPartyPotOnchain(
     const partyBytes = toPartyBytes32(partyId);
     const monWei = parseEther(String(Math.max(0.000001, Number(numAmount.toFixed(6)))));
 
+    // Ensure the party is registered onchain in PartyTreasury before user deposits
+    try {
+      await fetch('/api/treasury/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'register',
+          partyId,
+          recipientAddress: wallet.address,
+        }),
+      });
+    } catch {
+      // Non-blocking if already registered or network transient
+    }
+
     const txHash = await walletClient.writeContract({
       address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
       abi: PartyTreasuryABI,
@@ -358,3 +373,27 @@ export async function getPartyPotBalanceOnchain(partyId: string): Promise<number
     return null;
   }
 }
+
+/**
+ * Registers a party onchain in PartyTreasury.sol via server relayer.
+ */
+export async function registerPartyOnchain(
+  partyId: string,
+  hostAddress?: string
+): Promise<{ success: boolean; txHash?: string }> {
+  try {
+    const res = await fetch('/api/treasury/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'register',
+        partyId,
+        recipientAddress: hostAddress,
+      }),
+    });
+    return await res.json();
+  } catch {
+    return { success: false };
+  }
+}
+

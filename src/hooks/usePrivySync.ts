@@ -85,6 +85,11 @@ export function usePrivySync() {
       walletAddress: walletAddress || undefined,
       authMethod,
       isPrivyAuthenticated: true,
+      gamesCount: 0,
+      gatheringsCount: 0,
+      settlementsCount: 0,
+      peopleCount: 0,
+      balance: 0,
     });
 
     // 2. Enrich profile from Supabase asynchronously if existing record is found

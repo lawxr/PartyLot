@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+
+const emptySubscribe = () => () => {};
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -19,11 +21,11 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   children,
   maxHeight = 'max-h-[90vh] sm:max-h-[85vh]',
 }) => {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const isClient = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   // Prevent background scroll when open
   useEffect(() => {
@@ -103,6 +105,6 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     </AnimatePresence>
   );
 
-  if (!mounted || typeof document === 'undefined') return null;
+  if (!isClient || typeof document === 'undefined') return null;
   return createPortal(sheetContent, document.body);
 };

@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabase/client';
 import { getRandomPastelBanner } from '@/lib/pastelBanners';
+import { registerPartyOnchain } from '@/services/treasury';
 import {
   Party,
   Member,
@@ -221,6 +222,11 @@ export async function persistPartyToSupabase(
       max_uses: 50,
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       is_revoked: false,
+    });
+
+    // 6. Asynchronously register party pot in PartyTreasury.sol on Monad Testnet
+    registerPartyOnchain(party.id).catch((onchainErr) => {
+      console.warn('Background onchain treasury registration notice:', onchainErr);
     });
   } catch (err) {
     console.warn('Failed to persist party to Supabase:', err);

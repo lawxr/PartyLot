@@ -17,7 +17,7 @@ export function toPartyBytes32(partyId: string): `0x${string}` {
   return keccak256(toHex(partyId));
 }
 
-const ALLOWED_ACTIONS = new Set(['deposit', 'reward', 'reimbursement', 'spend', 'rollover', 'settle']);
+const ALLOWED_ACTIONS = new Set(['deposit', 'reward', 'reimbursement', 'spend', 'rollover', 'settle', 'register']);
 
 export async function POST(request: NextRequest) {
   // Rate limiting against spam
@@ -141,16 +141,27 @@ export async function POST(request: NextRequest) {
     }
 
     const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
-    if (action !== 'rollover' && (isNaN(numAmount) || numAmount <= 0 || numAmount > 1000000)) {
+    if (action !== 'rollover' && action !== 'register' && (isNaN(numAmount) || numAmount <= 0 || numAmount > 1000000)) {
       return NextResponse.json(
         { success: false, error: 'INVALID_AMOUNT', message: 'Amount must be a positive number.' },
         { status: 400 }
       );
     }
 
+    if (action === 'deposit' && numAmount > 0.1 && process.env.NODE_ENV !== 'test') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'AMOUNT_EXCEEDS_SPONSORED_LIMIT',
+          message: 'Server-sponsored testnet deposits are capped at 0.1 MON. Connect your Web3 wallet for larger deposits.',
+        },
+        { status: 400 }
+      );
+    }
+
     // Validate recipient address strictly for distribution actions
     const candidateAddress = recipientAddress || userAddress;
-    if (action !== 'deposit' && action !== 'rollover') {
+    if (action !== 'deposit' && action !== 'rollover' && action !== 'register') {
       if (!candidateAddress || !candidateAddress.startsWith('0x') || candidateAddress.length !== 42) {
         return NextResponse.json(
           {
@@ -207,6 +218,44 @@ export async function POST(request: NextRequest) {
 
     // Fail-closed smart contract execution on Monad Testnet with safe gas buffer
     try {
+      // 1. Auto-registration check: ensure the party exists in PartyTreasury before operations that require it
+      try {
+        const partyData = await publicMonadClient.readContract?.({
+          address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
+          abi: PartyTreasuryABI,
+          functionName: 'parties',
+          args: [partyBytes],
+        }).catch(() => null);
+
+        const isRegistered = Boolean(partyData && partyData[4]);
+        if (!isRegistered) {
+          const hostAddr = (candidateAddress?.startsWith('0x') && candidateAddress.length === 42)
+            ? (candidateAddress as `0x${string}`)
+            : (account.address as `0x${string}`);
+
+          const regTx = await walletClient.writeContract({
+            address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
+            abi: PartyTreasuryABI,
+            functionName: 'registerParty',
+            args: [partyBytes, hostAddr],
+            gas: BigInt(250000),
+          });
+          await publicMonadClient.waitForTransactionReceipt?.({ hash: regTx, timeout: 20_000 }).catch(() => null);
+          if (action === 'register') {
+            txHash = regTx;
+          }
+        } else if (action === 'register') {
+          return NextResponse.json({
+            success: true,
+            partyId,
+            alreadyRegistered: true,
+            message: 'Party is already registered onchain.',
+          });
+        }
+      } catch (regErr) {
+        console.warn('Party onchain registration notice:', regErr);
+      }
+
       if (action === 'deposit') {
         txHash = await walletClient.writeContract({
           address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
@@ -298,22 +347,24 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       });
 
-      // Update parties table pot_balance
-      const partiesTable = supabase.from('parties');
-      if (typeof partiesTable?.select === 'function') {
-        const { data: currentParty } = await partiesTable
-          .select('pot_balance')
-          .eq('id', partyId)
-          .single();
-        const prevBal = Number(currentParty?.pot_balance) || 0;
-        const updatedBalance =
-          action === 'deposit'
-            ? prevBal + numAmount
-            : Math.max(0, prevBal - numAmount);
-        if (typeof partiesTable.update === 'function') {
-          await partiesTable
-            .update({ pot_balance: Number(updatedBalance.toFixed(4)) })
-            .eq('id', partyId);
+      // Update parties table pot_balance (skip for registration)
+      if (action !== 'register') {
+        const partiesTable = supabase.from('parties');
+        if (typeof partiesTable?.select === 'function') {
+          const { data: currentParty } = await partiesTable
+            .select('pot_balance')
+            .eq('id', partyId)
+            .single();
+          const prevBal = Number(currentParty?.pot_balance) || 0;
+          const updatedBalance =
+            action === 'deposit'
+              ? prevBal + numAmount
+              : Math.max(0, prevBal - numAmount);
+          if (typeof partiesTable.update === 'function') {
+            await partiesTable
+              .update({ pot_balance: Number(updatedBalance.toFixed(4)) })
+              .eq('id', partyId);
+          }
         }
       }
 
@@ -321,7 +372,9 @@ export async function POST(request: NextRequest) {
         id: `act-treasury-${Date.now()}`,
         party_id: partyId,
         type: 'pot',
-        text: action === 'deposit'
+        text: action === 'register'
+          ? `🎉 Tesorería onchain registrada en Monad Testnet`
+          : action === 'deposit'
           ? `💰 ${userName || 'Alguien'} aportó ${numAmount.toFixed(4)} MON al Party Pot (Monad)`
           : action === 'reward'
           ? `🏆 Recompensa de ${numAmount.toFixed(4)} MON para ${recipientName || 'contribuidor'} (${role})`

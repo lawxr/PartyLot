@@ -131,8 +131,7 @@ export const ProfileView: React.FC = () => {
       return acc + (hasChosen ? 1 : 0);
     }, 0);
 
-    const explicitGames = currentUser.gamesCount || 0;
-    const totalPlays = Math.max(explicitGames, wmlVotes + totChoices);
+    const totalPlays = wmlVotes + totChoices;
 
     let tierTitle = isEs ? 'Listo para Jugar' : 'Ready to Play';
     let tierBadge = '🎲';
@@ -354,19 +353,23 @@ export const ProfileView: React.FC = () => {
                 {currentUser.name || 'Law'}
               </h2>
               <span className="text-xs sm:text-sm font-semibold text-[#8E887E] dark:text-[#A8A196] block mt-0.5">
-                {currentUser.handle?.startsWith('@') ? currentUser.handle : `@${currentUser.handle || 'lawx'}`}
+                {currentUser.handle?.startsWith('@') ? currentUser.handle : currentUser.handle ? `@${currentUser.handle}` : currentUser.walletAddress ? `${currentUser.walletAddress.slice(0, 6)}...${currentUser.walletAddress.slice(-4)}` : '@member'}
               </span>
             </div>
 
-            {/* Bio & Location */}
+            {/* Bio & Location (Real Data Only) */}
             <div className="mb-3">
-              <p className="text-xs sm:text-sm text-[#504437] dark:text-[#D1C9BE] font-medium mb-1.5 leading-relaxed">
-                {currentUser.bio || 'Good food, better people.'}
-              </p>
-              <div className="flex items-center gap-1.5 text-xs text-[#8E887E] dark:text-[#A8A196] font-medium">
-                <MapPin className="w-3.5 h-3.5 stroke-[2.2] shrink-0" />
-                <span>{currentUser.location || 'Medellin, Colombia'}</span>
-              </div>
+              {currentUser.bio && (
+                <p className="text-xs sm:text-sm text-[#504437] dark:text-[#D1C9BE] font-medium mb-1.5 leading-relaxed">
+                  {currentUser.bio}
+                </p>
+              )}
+              {currentUser.location && (
+                <div className="flex items-center gap-1.5 text-xs text-[#8E887E] dark:text-[#A8A196] font-medium">
+                  <MapPin className="w-3.5 h-3.5 stroke-[2.2] shrink-0" />
+                  <span>{currentUser.location}</span>
+                </div>
+              )}
 
               {/* Social Links if present */}
               {(currentUser.website || currentUser.instagram || currentUser.twitter) && (
@@ -414,7 +417,7 @@ export const ProfileView: React.FC = () => {
             <div className="grid grid-cols-3 divide-x divide-[#EFE8DD] dark:divide-white/10 text-center my-4 md:my-0 py-2 md:py-4 border-y md:border border-[#EFE8DD] dark:border-white/10 md:rounded-2xl md:bg-black/[0.02] md:dark:bg-white/[0.03]">
               <div>
                 <span className="font-display font-black text-xl sm:text-2xl text-[#171512] dark:text-white block">
-                  {attendedPartiesList.length || currentUser.gatheringsCount || 0}
+                  {attendedPartiesList.length}
                 </span>
                 <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
                   {isEs ? 'noches' : 'nights'}

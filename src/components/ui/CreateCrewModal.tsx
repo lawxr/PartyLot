@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Users, Sparkles, Image as ImageIcon, ShieldCheck, Camera, Loader2 } from 'lucide-react';
+import { X, Users, Sparkles, ShieldCheck, Camera, Loader2 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { uploadImageFile } from '@/services/storageService';

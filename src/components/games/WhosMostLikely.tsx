@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Users, Zap, XCircle, Copy, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Users, Zap, Copy, Check } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';

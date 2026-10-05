@@ -236,6 +236,49 @@ async function runE2E() {
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '03-home-dashboard.png') });
 
     // -------------------------------------------------------------
+    // TEST 3b: Create Party Flow & Real Code Generation
+    // -------------------------------------------------------------
+    console.log('\n📋 Test 3b: Party Creation Flow & Code Generation');
+    await page.evaluate(() => {
+      const store = window.__partyStore;
+      store?.setState({
+        currentView: 'create-party',
+      });
+    });
+    await new Promise((r) => setTimeout(r, 500));
+
+    const isCreatePartyView = await page.evaluate(() => {
+      const store = window.__partyStore?.getState();
+      return store?.currentView === 'create-party';
+    });
+    assert(isCreatePartyView, 'Navigates to Create Party screen');
+
+    // Create party in store
+    const createdPartyData = await page.evaluate(() => {
+      const store = window.__partyStore;
+      if (!store) return null;
+      const party = store.getState().createParty({
+        title: 'Monad Metropolis Night',
+        date: 'TONIGHT',
+        time: '11:00 PM',
+        location: 'Monad Metropolis HQ',
+        description: 'V2 Smart Contract Celebration Party',
+        coverImage: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=800&q=80',
+      });
+      return party;
+    });
+
+    assert(Boolean(createdPartyData && createdPartyData.id), 'Party created successfully in store');
+    assert(Boolean(createdPartyData && createdPartyData.code && createdPartyData.code.length === 4), 'Generated valid 4-digit invite code', `Code: ${createdPartyData?.code}`);
+
+    const partyExistsInStore = await page.evaluate((partyId) => {
+      const store = window.__partyStore?.getState();
+      return store?.parties.some((p) => p.id === partyId);
+    }, createdPartyData?.id);
+    assert(partyExistsInStore, 'New party persists in parties collection');
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '03b-party-created.png') });
+
+    // -------------------------------------------------------------
     // TEST 4: Party Detail View & Treasury Summary
     // -------------------------------------------------------------
     console.log('\n📋 Test 4: Party Detail View & Pot');

@@ -16,6 +16,7 @@ All mock data imports have been successfully removed from the PartyLot applicati
 - ✅ `src/components/views/SplitView.tsx` - Removed INITIAL_PARTIES import, uses real parties array
 - ✅ `src/components/views/PollsView.tsx` - Removed INITIAL_PARTIES import, uses real parties array
 - ✅ `src/components/views/PartyPotView.tsx` - Removed INITIAL_PARTIES import, uses real parties array
+- ✅ `src/components/views/ActivityView.tsx` - Removed INITIAL_PARTIES and INITIAL_CREWS imports, 100% backed by real parties/crews and Supabase activity persistence
 
 ## Build Status
 ✅ Build passes with **zero errors**

@@ -17,8 +17,8 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
 import { MonadLogo } from '@/components/ui/TokenLogo';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { INITIAL_PARTIES, INITIAL_CREWS } from '@/data/mockData';
-import { Party } from '@/types';
+import { persistActivityToSupabase } from '@/services/supabaseService';
+import type { Party, ActivityItem } from '@/types';
 
 type RadarFilter = 'all' | 'tonight' | 'my-crews' | 'discover';
 
@@ -55,17 +55,13 @@ export const ActivityView: React.FC = () => {
   const [knockMessage, setKnockMessage] = useState('');
   const [knockSuccess, setKnockSuccess] = useState(false);
 
-  // Combine store parties with supplemental community mock parties for discovery across other crews
-  const allCommunityParties = useMemo(() => {
-    const existingIds = new Set(parties.map((p) => p.id));
-    const supplemental = INITIAL_PARTIES.filter((p) => !existingIds.has(p.id));
-    return [...parties, ...supplemental];
-  }, [parties]);
+  // 100% Real parties from store
+  const allCommunityParties = parties;
 
-  // Combined crews map for badge labels
+  // Real crews map for badge labels
   const crewMap = useMemo(() => {
     const map = new Map<string, string>();
-    [...INITIAL_CREWS, ...crews].forEach((c) => {
+    crews.forEach((c) => {
       map.set(c.id, c.name);
     });
     return map;
@@ -147,6 +143,18 @@ export const ActivityView: React.FC = () => {
     if (!selectedPartyForKnock) return;
     setRequestedPartyIds((prev) => new Set(prev).add(selectedPartyForKnock.id));
     setKnockSuccess(true);
+
+    // Persist real knock request in Supabase activity feed
+    const knockActivity: ActivityItem = {
+      id: `knock_${Date.now()}`,
+      partyId: selectedPartyForKnock.id,
+      type: 'join',
+      text: `${currentUser.name || 'Alguien'} tocó la puerta para unirse a ${selectedPartyForKnock.title}${knockMessage ? `: "${knockMessage}"` : ''}`,
+      time: 'Just now',
+      avatar: currentUser.avatar || '',
+    };
+    persistActivityToSupabase(knockActivity).catch(() => {});
+
     setTimeout(() => {
       setKnockSuccess(false);
       setSelectedPartyForKnock(null);

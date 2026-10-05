@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "node scripts/run-e2e.mjs",
     "release:check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
   },
   "dependencies": {

@@ -2,7 +2,6 @@ import type { DebtSettlement, PotTransaction } from '@/types';
 import { createWalletClient, custom, parseEther, formatEther } from 'viem';
 import { monadTestnet, publicMonadClient, getMonadExplorerTxUrl, toPartyBytes32 } from '@/lib/web3/monad';
 import { MONAD_CONTRACT_ADDRESSES, PartyTreasuryABI } from '@/contracts';
-import { getSupabase } from '@/lib/supabase/client';
 
 /**
  * Onchain Financial Treasury & Settlement is live on Monad Testnet (Chain ID: 10143)
@@ -134,45 +133,21 @@ export async function depositToPartyPotOnchain(
 
     const blockNumber = Number(receipt?.blockNumber || 65050000);
 
-    // Synchronize Supabase persistent state
+    // Synchronize server-side persistent state securely via BFF endpoint
     try {
-      const supabase = getSupabase();
-      if (supabase) {
-        await supabase.from('pot_transactions').insert({
-          id: `pot-tx-${Date.now()}`,
-          party_id: partyId,
+      await fetch('/api/treasury/record-deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partyId,
+          txHash,
           amount: numAmount,
-          type: 'add',
-          description: `Deposit of ${numAmount.toFixed(4)} MON via User Wallet on Monad`,
-          user_name: options?.userName || 'Party Member',
-          user_avatar:
-            options?.userAvatar ||
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-          created_at: new Date().toISOString(),
-        });
-
-        // Persist updated pot_balance on the party row
-        const { data: currentParty } = await supabase
-          .from('parties')
-          .select('pot_balance')
-          .eq('id', partyId)
-          .single();
-        const updatedBal = Number(((Number(currentParty?.pot_balance) || 0) + numAmount).toFixed(4));
-        await supabase
-          .from('parties')
-          .update({ pot_balance: updatedBal })
-          .eq('id', partyId);
-
-        await supabase.from('activities').insert({
-          id: `act-treasury-${Date.now()}`,
-          party_id: partyId,
-          type: 'pot',
-          text: `💰 ${options?.userName || 'Alguien'} aportó ${numAmount.toFixed(4)} MON al Party Pot desde su billetera`,
-          time: 'Just now',
-        });
-      }
-    } catch (dbErr) {
-      console.warn('Supabase sync notice:', dbErr);
+          userName: options?.userName || 'Party Member',
+          userAvatar: options?.userAvatar,
+        }),
+      });
+    } catch (syncErr) {
+      console.warn('Server treasury record sync notice:', syncErr);
     }
 
     return {

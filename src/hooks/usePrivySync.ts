@@ -7,14 +7,37 @@ import { fetchUserProfileFromDb } from '@/services/supabaseService';
 
 // Global signature of the last synchronized identity to avoid duplicate sync cycles across component lifecycles
 let globalSyncedKey = '';
+let activeGetAccessToken: (() => Promise<string | null>) | null = null;
+
+/**
+ * Returns the current active Privy access token if authenticated on the client.
+ */
+export async function getClientPrivyToken(): Promise<string | null> {
+  if (typeof window === 'undefined' || !activeGetAccessToken) {
+    return null;
+  }
+  try {
+    return await activeGetAccessToken();
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Custom hook to reactively synchronize Privy authenticated identity
  * and embedded wallet state into the Partylot central store.
  */
 export function usePrivySync() {
-  const { ready, authenticated, user, logout: privyLogout, login: privyLogin } = usePrivy();
+  const { ready, authenticated, user, logout: privyLogout, login: privyLogin, getAccessToken } = usePrivy();
   const { wallets } = useWallets();
+
+  useEffect(() => {
+    if (authenticated && getAccessToken) {
+      activeGetAccessToken = getAccessToken;
+    } else {
+      activeGetAccessToken = null;
+    }
+  }, [authenticated, getAccessToken]);
 
   // Primary wallet address
   const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy') || wallets[0];

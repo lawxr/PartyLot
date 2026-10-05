@@ -1,6 +1,6 @@
 import { getSupabase } from '@/lib/supabase/client';
 import { getRandomPastelBanner } from '@/lib/pastelBanners';
-import { registerPartyOnchain } from '@/services/treasury';
+import { getClientPrivyToken } from '@/hooks/usePrivySync';
 import {
   Party,
   Member,
@@ -147,89 +147,38 @@ export async function persistPartyToSupabase(
   party: Party,
   hostUser: { id: string; name: string; handle?: string; avatar?: string }
 ): Promise<void> {
-  const supabase = getSupabase();
-  if (!supabase || !hostUser.id) return;
-
   try {
-    // 1. Ensure Host User exists in public.users to satisfy foreign key constraints
-    await supabase.from('users').upsert(
-      {
-        id: hostUser.id,
-        name: hostUser.name || 'PartyMember',
-        handle: hostUser.handle || `@user_${hostUser.id.replace(/[^a-zA-Z0-9]/g, '').slice(-4).toLowerCase()}`,
-        avatar: hostUser.avatar || null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'id', ignoreDuplicates: true }
-    );
-
-    // 2. Validate crew_id if provided to avoid FK constraint violations
-    let validCrewId: string | null = null;
-    if (party.crewId) {
-      const { data: crewData } = await supabase
-        .from('crews')
-        .select('id')
-        .eq('id', party.crewId)
-        .maybeSingle();
-      if (crewData?.id) {
-        validCrewId = crewData.id;
-      }
+    const token = await getClientPrivyToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
-    // 3. Upsert Party
-    const { error: partyErr } = await supabase.from('parties').upsert(
-      {
+    const res = await fetch('/api/parties', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
         id: party.id,
-        crew_id: validCrewId,
-        code: party.code,
         title: party.title,
         date: party.date,
         time: party.time,
         location: party.location,
         description: party.description,
-        cover_image: party.coverImage,
-        host_id: hostUser.id,
-        host_name: hostUser.name,
-        pot_balance: party.potBalance || 0,
-        status: party.status || 'live',
-      },
-      { onConflict: 'id' }
-    );
+        coverImage: party.coverImage,
+        code: party.code,
+        crewId: party.crewId,
+        hostUser,
+      }),
+    });
 
-    if (partyErr) {
-      console.warn('Error upserting party to Supabase:', partyErr);
-      return;
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      console.warn('Backend party persistence warning:', errData);
     }
-
-    // 4. Upsert Host as first member
-    await supabase.from('party_members').upsert(
-      {
-        party_id: party.id,
-        user_id: hostUser.id,
-        name: hostUser.name,
-        avatar: hostUser.avatar || null,
-        role: 'host',
-        status: 'going',
-        nights_together: 1,
-      },
-      { onConflict: 'party_id,user_id' }
-    );
-
-    // 5. Create server-side invitation primitive
-    await supabase.from('invitations').insert({
-      party_id: party.id,
-      code: party.code,
-      max_uses: 50,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      is_revoked: false,
-    });
-
-    // 6. Asynchronously register party pot in PartyTreasury.sol on Monad Testnet
-    registerPartyOnchain(party.id).catch((onchainErr) => {
-      console.warn('Background onchain treasury registration notice:', onchainErr);
-    });
   } catch (err) {
-    console.warn('Failed to persist party to Supabase:', err);
+    console.warn('Failed to persist party via API:', err);
   }
 }
 

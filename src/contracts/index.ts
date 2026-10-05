@@ -203,6 +203,26 @@ export const PartyTreasuryABI = [
     anonymous: false,
     inputs: [
       { indexed: true, internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { indexed: true, internalType: 'address', name: 'participant', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'refundAmount', type: 'uint256' },
+    ],
+    name: 'ParticipantRefunded',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { indexed: true, internalType: 'address', name: 'host', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'remainingWithdrawn', type: 'uint256' },
+    ],
+    name: 'PartyClosed',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
       { indexed: true, internalType: 'address', name: 'host', type: 'address' },
     ],
     name: 'PartyRegistered',
@@ -231,10 +251,60 @@ export const PartyTreasuryABI = [
     type: 'event',
   },
   {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { indexed: true, internalType: 'address', name: 'token', type: 'address' },
+      { indexed: true, internalType: 'address', name: 'member', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'TokenDeposited',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { indexed: true, internalType: 'address', name: 'token', type: 'address' },
+      { indexed: true, internalType: 'address', name: 'recipient', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'TokenDistributed',
+    type: 'event',
+  },
+  {
+    inputs: [{ internalType: 'bytes32', name: 'partyId', type: 'bytes32' }],
+    name: 'claimProRataRefund',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { internalType: 'address payable', name: 'recipient', type: 'address' },
+    ],
+    name: 'closePartyAndWithdrawRemaining',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
     inputs: [{ internalType: 'bytes32', name: 'partyId', type: 'bytes32' }],
     name: 'deposit',
     outputs: [],
     stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { internalType: 'address', name: 'token', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'depositToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -252,6 +322,18 @@ export const PartyTreasuryABI = [
   {
     inputs: [
       { internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { internalType: 'address', name: 'token', type: 'address' },
+      { internalType: 'address', name: 'recipient', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'distributeTokenReward',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
       { internalType: 'address payable', name: 'member', type: 'address' },
       { internalType: 'uint256', name: 'amount', type: 'uint256' },
       { internalType: 'string', name: 'description', type: 'string' },
@@ -259,6 +341,16 @@ export const PartyTreasuryABI = [
     name: 'executeReimbursement',
     outputs: [],
     stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'bytes32', name: 'partyId', type: 'bytes32' },
+      { internalType: 'address', name: 'member', type: 'address' },
+    ],
+    name: 'getMemberBalance',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -332,6 +424,16 @@ export const PartyTreasuryABI = [
     name: 'settleDebt',
     outputs: [],
     stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'bytes32', name: '', type: 'bytes32' },
+      { internalType: 'address', name: '', type: 'address' },
+    ],
+    name: 'tokenBalances',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
     type: 'function',
   },
   {

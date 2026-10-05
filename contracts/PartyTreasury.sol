@@ -2,10 +2,11 @@
 pragma solidity ^0.8.24;
 
 /**
- * @title PartyTreasury
- * @notice Multi-party verifiable onchain group treasury on Monad Testnet.
- * @dev Supports native MON deposits, host-approved social rewards, expense reimbursements,
- * peer-to-peer debt settlements, and inter-party rollovers.
+ * @title PartyTreasury (v2 Architecture)
+ * @notice Multi-party verifiable onchain group treasury on Monad.
+ * @dev Supports native MON & ERC-20 deposits, decentralized auto-registration,
+ * host-approved social rewards, expense reimbursements, peer-to-peer debt settlements,
+ * pro-rata participant refunds, and inter-party rollovers.
  */
 contract PartyTreasury {
     struct PartyPot {
@@ -24,12 +25,20 @@ contract PartyTreasury {
     // Mapping from partyId => member address => total deposited
     mapping(bytes32 => mapping(address => uint256)) public memberBalances;
 
+    // Mapping from partyId => ERC20 token => balance
+    mapping(bytes32 => mapping(address => uint256)) public tokenBalances;
+
+    // Events
     event PartyRegistered(bytes32 indexed partyId, address indexed host);
     event Deposited(bytes32 indexed partyId, address indexed member, uint256 amount, uint256 newBalance);
     event RewardDistributed(bytes32 indexed partyId, address indexed recipient, uint256 amount, string role);
     event ReimbursementClaimed(bytes32 indexed partyId, address indexed member, uint256 amount, string description);
     event DebtSettled(bytes32 indexed partyId, address indexed debtor, address indexed creditor, uint256 amount);
     event BalanceRolledOver(bytes32 indexed fromPartyId, bytes32 indexed toPartyId, uint256 amount);
+    event ParticipantRefunded(bytes32 indexed partyId, address indexed participant, uint256 refundAmount);
+    event PartyClosed(bytes32 indexed partyId, address indexed host, uint256 remainingWithdrawn);
+    event TokenDeposited(bytes32 indexed partyId, address indexed token, address indexed member, uint256 amount);
+    event TokenDistributed(bytes32 indexed partyId, address indexed token, address indexed recipient, uint256 amount);
 
     modifier nonReentrant() {
         require(_locked == 1, "REENTRANCY_GUARD");
@@ -47,14 +56,21 @@ contract PartyTreasury {
         _;
     }
 
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only contract owner authorized");
+        _;
+    }
+
     constructor() {
         owner = msg.sender;
     }
 
     /**
-     * @notice Register a party and define its host (Restricted to contract owner).
+     * @notice Register a party and define its host.
+     * @dev Permissionless: authorized by contract owner OR designated host.
      */
-    function registerParty(bytes32 partyId, address host) external onlyOwner {
+    function registerParty(bytes32 partyId, address host) external {
+        require(msg.sender == owner || msg.sender == host, "Only contract owner or host authorized");
         require(host != address(0), "Invalid host address");
         require(!parties[partyId].exists, "Party already registered");
 
@@ -71,12 +87,18 @@ contract PartyTreasury {
 
     /**
      * @notice Deposit native MON into a specific party pot.
+     * @dev Auto-registers the party with msg.sender as host if not yet registered.
      */
     function deposit(bytes32 partyId) public payable nonReentrant {
         require(msg.value > 0, "Deposit must be > 0");
-        require(parties[partyId].exists, "Party not registered. Must be registered by authorized host or contract owner.");
 
         PartyPot storage pot = parties[partyId];
+        if (!pot.exists) {
+            pot.host = msg.sender;
+            pot.exists = true;
+            emit PartyRegistered(partyId, msg.sender);
+        }
+
         pot.balance += msg.value;
         pot.totalDeposited += msg.value;
         memberBalances[partyId][msg.sender] += msg.value;
@@ -150,6 +172,51 @@ contract PartyTreasury {
     }
 
     /**
+     * @notice Claim a proportional refund of remaining party pot balance based on contribution ratio.
+     */
+    function claimProRataRefund(bytes32 partyId) external nonReentrant {
+        PartyPot storage pot = parties[partyId];
+        require(pot.exists, "Party does not exist");
+        require(pot.balance > 0, "No remaining balance in pot");
+
+        uint256 userDeposited = memberBalances[partyId][msg.sender];
+        require(userDeposited > 0, "No contribution to refund");
+        require(pot.totalDeposited > 0, "Zero total deposits");
+
+        // Pro-rata share of remaining balance: (userDeposited * currentBalance) / totalDeposited
+        uint256 refundAmount = (userDeposited * pot.balance) / pot.totalDeposited;
+        require(refundAmount > 0, "Refund amount too small");
+
+        memberBalances[partyId][msg.sender] = 0;
+        pot.balance -= refundAmount;
+
+        (bool sent, ) = payable(msg.sender).call{value: refundAmount}("");
+        require(sent, "Refund transfer failed");
+
+        emit ParticipantRefunded(partyId, msg.sender, refundAmount);
+    }
+
+    /**
+     * @notice Close party and sweep any remaining funds to a designated recipient/crew wallet.
+     */
+    function closePartyAndWithdrawRemaining(
+        bytes32 partyId,
+        address payable recipient
+    ) external nonReentrant onlyHostOrOwner(partyId) {
+        require(recipient != address(0), "Invalid recipient");
+        PartyPot storage pot = parties[partyId];
+        require(pot.exists, "Party does not exist");
+        uint256 remaining = pot.balance;
+        require(remaining > 0, "No remaining balance");
+
+        pot.balance = 0;
+        (bool sent, ) = recipient.call{value: remaining}("");
+        require(sent, "Withdrawal failed");
+
+        emit PartyClosed(partyId, msg.sender, remaining);
+    }
+
+    /**
      * @notice Roll over remaining funds to the next party pot.
      */
     function rolloverToNextParty(
@@ -177,6 +244,57 @@ contract PartyTreasury {
     }
 
     /**
+     * @notice Deposit standard ERC-20 token (e.g. USDC) into party pot.
+     */
+    function depositToken(
+        bytes32 partyId,
+        address token,
+        uint256 amount
+    ) external nonReentrant {
+        require(token != address(0), "Invalid token address");
+        require(amount > 0, "Amount must be > 0");
+
+        PartyPot storage pot = parties[partyId];
+        if (!pot.exists) {
+            pot.host = msg.sender;
+            pot.exists = true;
+            emit PartyRegistered(partyId, msg.sender);
+        }
+
+        tokenBalances[partyId][token] += amount;
+
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSignature("transferFrom(address,address,uint256)", msg.sender, address(this), amount)
+        );
+        require(success && (data.length == 0 || abi.decode(data, (bool))), "Token transfer failed");
+
+        emit TokenDeposited(partyId, token, msg.sender, amount);
+    }
+
+    /**
+     * @notice Distribute an ERC-20 token reward from party pot.
+     */
+    function distributeTokenReward(
+        bytes32 partyId,
+        address token,
+        address recipient,
+        uint256 amount
+    ) external nonReentrant onlyHostOrOwner(partyId) {
+        require(recipient != address(0), "Invalid recipient");
+        require(amount > 0, "Amount must be > 0");
+        require(tokenBalances[partyId][token] >= amount, "Insufficient token balance");
+
+        tokenBalances[partyId][token] -= amount;
+
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSignature("transfer(address,uint256)", recipient, amount)
+        );
+        require(success && (data.length == 0 || abi.decode(data, (bool))), "Token transfer failed");
+
+        emit TokenDistributed(partyId, token, recipient, amount);
+    }
+
+    /**
      * @notice Get party pot summary.
      */
     function getParty(bytes32 partyId)
@@ -192,6 +310,13 @@ contract PartyTreasury {
     {
         PartyPot memory pot = parties[partyId];
         return (pot.host, pot.balance, pot.totalDeposited, pot.totalDistributed, pot.exists);
+    }
+
+    /**
+     * @notice Get deposited balance of a member in a party pot.
+     */
+    function getMemberBalance(bytes32 partyId, address member) external view returns (uint256) {
+        return memberBalances[partyId][member];
     }
 
     receive() external payable {

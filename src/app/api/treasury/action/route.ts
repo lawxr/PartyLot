@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createWalletClient, http, parseEther, formatEther, keccak256, toHex } from 'viem';
+import { createWalletClient, http, parseEther, keccak256, toHex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { monadTestnet, publicMonadClient, getMonadExplorerTxUrl } from '@/lib/web3/monad';
 import { MONAD_CONTRACT_ADDRESSES, PartyTreasuryABI } from '@/contracts';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/security/rateLimit';
 import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
-
-import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
 
 export function toPartyBytes32(partyId: string): `0x${string}` {
   if (!partyId) return `0x${'0'.repeat(64)}` as `0x${string}`;
@@ -18,6 +16,8 @@ export function toPartyBytes32(partyId: string): `0x${string}` {
 }
 
 const ALLOWED_ACTIONS = new Set(['deposit', 'reward', 'reimbursement', 'spend', 'rollover', 'settle', 'register']);
+const RELAYER_FUNDED_USER_ACTIONS = new Set(['deposit', 'settle']);
+const HOST_ONLY_ACTIONS = new Set(['reward', 'reimbursement', 'spend', 'rollover', 'register']);
 
 export async function POST(request: NextRequest) {
   // Rate limiting against spam
@@ -38,23 +38,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const deployerKey = process.env.MONAD_DEPLOYER_PRIVATE_KEY;
-  if (!deployerKey || !deployerKey.startsWith('0x') || deployerKey.length !== 66) {
-    return NextResponse.json(
-      { success: false, error: 'CONFIG_ERROR', message: 'Monad deployer private key is not configured securely on server.' },
-      { status: 500 }
-    );
-  }
-
   // Authentication check - strictly required for financial state changes
   const authHeader = request.headers.get('authorization');
   let authenticatedUserId: string | null = null;
+  let authenticatedWalletAddress: string | null = null;
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7).trim();
     if (token) {
       try {
         const verified = await verifyPrivyToken(token);
         authenticatedUserId = verified.userId;
+        authenticatedWalletAddress = verified.walletAddress;
       } catch {
         return NextResponse.json(
           { success: false, error: 'UNAUTHORIZED', message: 'Invalid or expired authentication token.' },
@@ -65,13 +59,10 @@ export async function POST(request: NextRequest) {
   }
 
   if (!authenticatedUserId) {
-    if (process.env.NODE_ENV === 'production' || (!isExplicitDevelopmentDemoMode() && process.env.NODE_ENV !== 'test')) {
-      return NextResponse.json(
-        { success: false, error: 'UNAUTHORIZED', message: 'Authentication is strictly required for treasury operations.' },
-        { status: 401 }
-      );
-    }
-    authenticatedUserId = 'demo-user';
+    return NextResponse.json(
+      { success: false, error: 'UNAUTHORIZED', message: 'Authentication is strictly required for treasury operations.' },
+      { status: 401 }
+    );
   }
 
   try {
@@ -114,30 +105,68 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Role-based authorization: spending/distribution actions require party host permission
-    const HOST_ONLY_ACTIONS = new Set(['reward', 'reimbursement', 'spend', 'rollover']);
-    if (HOST_ONLY_ACTIONS.has(action) && authenticatedUserId !== 'demo-user') {
+    // User-obligation transfers must use the connected wallet, not the server relayer.
+    if (RELAYER_FUNDED_USER_ACTIONS.has(action)) {
+      return NextResponse.json(
+        { success: false, error: 'ACTION_UNAVAILABLE', message: 'Connect your wallet to make this transfer directly.' },
+        { status: 503 }
+      );
+    }
+
+    // Every privileged contract action requires a verified host identity and a successful host lookup.
+    if (HOST_ONLY_ACTIONS.has(action)) {
+      if (!authenticatedUserId || authenticatedUserId === 'demo-user') {
+        return NextResponse.json(
+          { success: false, error: 'UNAUTHORIZED', message: 'A verified party host is required for this treasury action.' },
+          { status: 401 }
+        );
+      }
+
+      let partyRecord: { host_id?: string | null } | null = null;
       try {
         const supabase = getServerSupabase();
-        const { data: partyRecord } = await supabase
+        const result = await supabase
           .from('parties')
           .select('host_id')
           .eq('id', partyId)
           .single();
-
-        if (partyRecord?.host_id && authenticatedUserId !== partyRecord.host_id) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'FORBIDDEN',
-              message: 'Only the party host is authorized to execute this treasury distribution.',
-            },
-            { status: 403 }
-          );
-        }
+        if (result.error) throw result.error;
+        partyRecord = result.data;
       } catch {
-        // Continue if DB check unavailable in offline mode
+        return NextResponse.json(
+          { success: false, error: 'AUTHORIZATION_UNAVAILABLE', message: 'Party host authorization could not be verified.' },
+          { status: 503 }
+        );
       }
+
+      if (!partyRecord?.host_id) {
+        return NextResponse.json(
+          { success: false, error: 'AUTHORIZATION_UNAVAILABLE', message: 'Party host authorization could not be verified.' },
+          { status: 503 }
+        );
+      }
+
+      if (authenticatedUserId !== partyRecord.host_id) {
+        return NextResponse.json(
+          { success: false, error: 'FORBIDDEN', message: 'Only the party host is authorized to execute this treasury action.' },
+          { status: 403 }
+        );
+      }
+
+      if (action === 'register' && (!authenticatedWalletAddress || !/^0x[a-fA-F0-9]{40}$/.test(authenticatedWalletAddress))) {
+        return NextResponse.json(
+          { success: false, error: 'HOST_WALLET_UNAVAILABLE', message: 'The verified party host wallet could not be resolved.' },
+          { status: 503 }
+        );
+      }
+    }
+
+    const deployerKey = process.env.MONAD_DEPLOYER_PRIVATE_KEY;
+    if (!deployerKey || !deployerKey.startsWith('0x') || deployerKey.length !== 66) {
+      return NextResponse.json(
+        { success: false, error: 'CONFIG_ERROR', message: 'Monad deployer private key is not configured securely on server.' },
+        { status: 500 }
+      );
     }
 
     const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
@@ -148,20 +177,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (action === 'deposit' && numAmount > 0.1 && process.env.NODE_ENV !== 'test') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'AMOUNT_EXCEEDS_SPONSORED_LIMIT',
-          message: 'Server-sponsored testnet deposits are capped at 0.1 MON. Connect your Web3 wallet for larger deposits.',
-        },
-        { status: 400 }
-      );
-    }
-
     // Validate recipient address strictly for distribution actions
     const candidateAddress = recipientAddress || userAddress;
-    if (action !== 'deposit' && action !== 'rollover' && action !== 'register') {
+    if (action !== 'rollover' && action !== 'register') {
       if (!candidateAddress || !candidateAddress.startsWith('0x') || candidateAddress.length !== 42) {
         return NextResponse.json(
           {
@@ -192,78 +210,42 @@ export async function POST(request: NextRequest) {
       ? (candidateAddress as `0x${string}`)
       : (account.address as `0x${string}`);
 
-    // Format safe wei amount for MON
-    const monWei = parseEther(String(Math.max(0.000001, Number(numAmount.toFixed(6)))));
-
-    // Verify deployer balance has enough native MON for value transactions
-    const deployerBalance = await publicMonadClient.getBalance?.({ address: account.address }).catch(() => null);
-    if (
-      (action === 'deposit' || action === 'settle') &&
-      deployerBalance !== null &&
-      deployerBalance !== undefined &&
-      deployerBalance < monWei
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'INSUFFICIENT_FUNDS',
-          message: `Deployer wallet balance (${Number(formatEther(deployerBalance)).toFixed(4)} MON) is insufficient to fund ${numAmount} MON. Please deposit a smaller amount.`,
-        },
-        { status: 400 }
-      );
+    if (action === 'register') {
+      // Registration identity comes from the verified party host, never caller-controlled request fields.
+      const partyData = await publicMonadClient.readContract({
+        address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
+        abi: PartyTreasuryABI,
+        functionName: 'parties',
+        args: [partyBytes],
+      });
+      if (partyData?.[4]) {
+        if (String(partyData[0]).toLowerCase() !== authenticatedWalletAddress?.toLowerCase()) {
+          return NextResponse.json(
+            { success: false, error: 'FORBIDDEN', message: 'The onchain party is registered to a different host wallet.' },
+            { status: 403 }
+          );
+        }
+        return NextResponse.json({ success: true, partyId, alreadyRegistered: true, message: 'Party is already registered onchain.' });
+      }
     }
 
+    // Format safe wei amount for MON
+    const monWei = action === 'register' || action === 'rollover'
+      ? BigInt(0)
+      : parseEther(String(Math.max(0.000001, Number(numAmount.toFixed(6)))));
+
     let txHash: `0x${string}` | null = null;
-    let blockNumber = 65050000;
+    let blockNumber = 0;
 
     // Fail-closed smart contract execution on Monad Testnet with safe gas buffer
     try {
-      // 1. Auto-registration check: ensure the party exists in PartyTreasury before operations that require it
-      try {
-        const partyData = await publicMonadClient.readContract?.({
-          address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
-          abi: PartyTreasuryABI,
-          functionName: 'parties',
-          args: [partyBytes],
-        }).catch(() => null);
-
-        const isRegistered = Boolean(partyData && partyData[4]);
-        if (!isRegistered) {
-          const hostAddr = (candidateAddress?.startsWith('0x') && candidateAddress.length === 42)
-            ? (candidateAddress as `0x${string}`)
-            : (account.address as `0x${string}`);
-
-          const regTx = await walletClient.writeContract({
-            address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
-            abi: PartyTreasuryABI,
-            functionName: 'registerParty',
-            args: [partyBytes, hostAddr],
-            gas: BigInt(250000),
-          });
-          await publicMonadClient.waitForTransactionReceipt?.({ hash: regTx, timeout: 20_000 }).catch(() => null);
-          if (action === 'register') {
-            txHash = regTx;
-          }
-        } else if (action === 'register') {
-          return NextResponse.json({
-            success: true,
-            partyId,
-            alreadyRegistered: true,
-            message: 'Party is already registered onchain.',
-          });
-        }
-      } catch (regErr) {
-        console.warn('Party onchain registration notice:', regErr);
-      }
-
-      if (action === 'deposit') {
+      if (action === 'register') {
         txHash = await walletClient.writeContract({
           address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
           abi: PartyTreasuryABI,
-          functionName: 'deposit',
-          args: [partyBytes],
-          value: monWei,
-          gas: BigInt(350000),
+          functionName: 'registerParty',
+          args: [partyBytes, authenticatedWalletAddress as `0x${string}`],
+          gas: BigInt(250000),
         });
       } else if (action === 'reward') {
         txHash = await walletClient.writeContract({
@@ -279,15 +261,6 @@ export async function POST(request: NextRequest) {
           abi: PartyTreasuryABI,
           functionName: 'executeReimbursement',
           args: [partyBytes, recipient, monWei, description || 'Party expense reimbursement'],
-          gas: BigInt(350000),
-        });
-      } else if (action === 'settle') {
-        txHash = await walletClient.writeContract({
-          address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
-          abi: PartyTreasuryABI,
-          functionName: 'settleDebt',
-          args: [partyBytes, recipient],
-          value: monWei,
           gas: BigInt(350000),
         });
       } else if (action === 'rollover') {
@@ -311,13 +284,11 @@ export async function POST(request: NextRequest) {
         timeout: 20_000,
       });
 
-      if (receipt && receipt.status === 'reverted') {
-        throw new Error(`Transaction reverted onchain (Hash: ${txHash})`);
+      if (!receipt || receipt.status !== 'success') {
+        throw new Error(receipt?.status === 'reverted' ? `Transaction reverted onchain (Hash: ${txHash})` : 'Transaction receipt could not be confirmed onchain.');
       }
 
-      if (receipt) {
-        blockNumber = Number(receipt.blockNumber);
-      }
+      blockNumber = Number(receipt.blockNumber);
     } catch (contractErr) {
       console.error('Monad Treasury transaction execution failed:', contractErr);
       return NextResponse.json(

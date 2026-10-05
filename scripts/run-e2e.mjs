@@ -195,6 +195,44 @@ async function runE2E() {
     await new Promise((r) => setTimeout(r, 300));
     const isLight = await page.evaluate(() => !document.documentElement.classList.contains('dark'));
     assert(isLight, 'Theme toggles back to Light Mode');
+
+    // Test Floating Notifications Popover
+    await page.evaluate(() => {
+      // Seed a test notification in store
+      window.__partyStore?.setState((s) => ({
+        activities: [
+          {
+            id: 'act-e2e-1',
+            partyId: s.parties[0]?.id || 'p-1',
+            type: 'pot',
+            text: '💰 Depósito de prueba en la tesorería',
+            time: 'Just now',
+            avatar: '',
+          },
+          ...s.activities,
+        ],
+      }));
+      const bellButton = document.querySelector('button[aria-label="Notificaciones"]') ||
+        document.querySelector('button[aria-label="Notifications"]') ||
+        document.querySelector('header button')?.parentElement?.querySelector('button');
+      if (bellButton) bellButton.click();
+    });
+    await new Promise((r) => setTimeout(r, 400));
+    const isPopoverOpen = await page.evaluate(() => {
+      const dialog = document.querySelector('div[role="dialog"]');
+      const store = window.__partyStore?.getState();
+      const didNotSwitchToTonight = store?.activeTab === 'home';
+      return Boolean(dialog && didNotSwitchToTonight);
+    });
+    assert(isPopoverOpen, 'Bell opens floating notification popover without navigating to Tonight');
+
+    // Test dismiss/close popover
+    await page.evaluate(() => {
+      const closeBtn = document.querySelector('div[role="dialog"] button[aria-label="Cerrar"]') ||
+        document.querySelector('div[role="dialog"] button[aria-label="Close"]');
+      if (closeBtn) closeBtn.click();
+    });
+    await new Promise((r) => setTimeout(r, 300));
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '03-home-dashboard.png') });
 
     // -------------------------------------------------------------

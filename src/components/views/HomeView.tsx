@@ -8,6 +8,7 @@ import { ActivityView } from '@/components/views/ActivityView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { CrewsView } from '@/components/views/CrewsView';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { NotificationsPopover } from '@/components/notifications/NotificationsPopover';
 
 export const HomeView: React.FC = () => {
   const {
@@ -18,10 +19,12 @@ export const HomeView: React.FC = () => {
     setCurrentView,
     activeTab,
     setActiveTab,
+    activities,
   } = usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const displayCrews = crews;
 
@@ -58,16 +61,29 @@ export const HomeView: React.FC = () => {
         </div>
 
         {/* Header Right Actions */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 relative">
           {/* Circular Glass Notification Bell with Yellow Unread Indicator */}
           <button
-            onClick={() => setActiveTab('activity')}
-            className="relative w-11 h-11 rounded-full glass-light dark:bg-white/10 flex items-center justify-center border border-white/80 dark:border-white/15 shadow-[0_4px_14px_rgba(65,48,25,0.08)] active:scale-95 transition-transform cursor-pointer p-0"
-            aria-label="Activity notifications"
+            onClick={() => setIsNotificationsOpen((prev) => !prev)}
+            className={`relative w-11 h-11 rounded-full ${
+              isNotificationsOpen
+                ? 'bg-[#F0DC00] text-[#171512] shadow-[0_4px_16px_rgba(240,220,0,0.35)]'
+                : 'glass-light dark:bg-white/10 text-[#171512] dark:text-white border border-white/80 dark:border-white/15 shadow-[0_4px_14px_rgba(65,48,25,0.08)]'
+            } flex items-center justify-center active:scale-95 transition-all cursor-pointer p-0`}
+            aria-label={isEs ? 'Notificaciones' : 'Notifications'}
+            aria-expanded={isNotificationsOpen}
           >
-            <Bell className="w-5 h-5 text-[#171512] dark:text-white stroke-[2.2]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#F0DC00] border-2 border-[#F7F2E8] dark:border-[#12110E] absolute top-2 right-2.5" />
+            <Bell className="w-5 h-5 stroke-[2.2]" />
+            {activities.length > 0 && !isNotificationsOpen && (
+              <span className="w-2.5 h-2.5 rounded-full bg-[#F0DC00] border-2 border-[#F7F2E8] dark:border-[#12110E] absolute top-2 right-2.5" />
+            )}
           </button>
+
+          {/* Floating Notifications Popover */}
+          <NotificationsPopover
+            isOpen={isNotificationsOpen}
+            onClose={() => setIsNotificationsOpen(false)}
+          />
 
           {/* Quick Create Action */}
           <button

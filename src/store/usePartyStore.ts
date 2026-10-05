@@ -244,6 +244,10 @@ interface PartyStoreState {
   attendedPartyIds: string[];
   addAttendedNight: (partyId: string) => void;
 
+  // Activity & Notifications
+  dismissActivity: (activityId: string) => void;
+  clearAllActivities: () => void;
+
   // Reset
   resetToDefaults: () => void;
 }
@@ -1617,6 +1621,16 @@ export const usePartyStore = create<PartyStoreState>()(
           unsubParty();
           unsubTasks();
         };
+      },
+
+      dismissActivity: (activityId: string) => {
+        set((state) => ({
+          activities: state.activities.filter((a) => a.id !== activityId),
+        }));
+      },
+
+      clearAllActivities: () => {
+        set({ activities: [] });
       },
 
       resetToDefaults: () => {

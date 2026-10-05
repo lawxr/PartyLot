@@ -17,7 +17,7 @@ networks:
       - name: PartyTreasury
         abi_file_path: abis/PartyTreasury.json
         address:
-          - "0x13ed67e844496095c0f44c914f89e30ef190db2c"
+          - "0x172b6df45a7fd334e690ae789109a181e46adb66"
         handler: src/EventHandlers.ts
         events:
           - event: "PartyRegistered(bytes32 indexed partyId, address indexed host)"

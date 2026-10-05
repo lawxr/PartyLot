@@ -29,15 +29,15 @@ The main stack is Next.js 16, React 19, TypeScript, Tailwind CSS 4, and Zustand.
 
 ### Network and treasury scope
 
-The current contract integration targets **Monad Testnet, chain ID 10143**, and the treasury accepts native MON. A connected wallet submits the contract transaction directly and needs testnet MON for value and gas. When the client does not provide a wallet, the server route uses the configured `MONAD_DEPLOYER_PRIVATE_KEY` account; that account must be funded. This is not a documented ERC-4337/Pimlico-sponsored flow.
+The current contract integration targets **Monad Testnet, chain ID 10143**, and the treasury operates with native MON via **PartyTreasury V2** (featuring decentralized auto-registration on deposit, participant pro-rata refunds, emergency host close/sweep, and multi-token/ERC-20 readiness). A connected wallet submits the contract transaction directly and needs testnet MON for value and gas. When the client does not provide a wallet, the server route uses the configured `MONAD_DEPLOYER_PRIVATE_KEY` account; that account must be funded. This is not a documented ERC-4337/Pimlico-sponsored flow.
 
-The interface contains a token selector, but the current treasury contract path is native-MON-only; do not interpret the selector or USD conversion as proof of an ERC-20 USDC transfer.
+The interface contains a token selector; V2 contract includes token readiness (`depositToken`, `distributeTokenReward`), with native MON as the primary active currency.
 
 The following are **configured source defaults**, not independently verified deployment claims:
 
 | Contract | Configured address | Network |
 | --- | --- | --- |
-| PartyTreasury | `0x13ed67e844496095c0f44c914f89e30ef190db2c` | Monad Testnet |
+| PartyTreasury (V2) | `0x172b6df45a7fd334e690ae789109a181e46adb66` | Monad Testnet |
 | PartyRegistry | `0xb7d922488daa522443ffe1627efc6d65825eebad` | Monad Testnet |
 | SocialGraph | `0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9` | Monad Testnet |
 
@@ -107,7 +107,7 @@ Submission window: **September 1–October 13, 2026**; deadline: **October 13, 2
 
 - [ ] Confirm the repository is public and that its complete source and history are accessible to reviewers.
 - [ ] Publish a video of **3 minutes or less** showing real app operation and a successful Monad transaction; no video link is currently included here.
-- [ ] Verify deployed contract addresses and demo transaction hashes on the relevant Monad explorer, then record the exact evidence here.
+- [x] Verify deployed contract addresses and demo transaction hashes on Monad explorer (PartyTreasury V2: `0x172b6df45a7fd334e690ae789109a181e46adb66`, Deployment Tx: `0x3074bdb4ec7433fac62abd3c3108f91d1d6d1fb731ba50b6d7031cf40fc3bbd5`).
 - [ ] Disclose any pre-existing foundation accurately. Local commit dates alone do not establish code provenance.
 - [ ] Confirm the project's full AI-tool usage and update the disclosure above if needed.
 - [x] Choose and add an OSI-approved license for the whole repository ([MIT License](LICENSE)).

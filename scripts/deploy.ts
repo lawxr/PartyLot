@@ -20,6 +20,20 @@ const monadTestnet = defineChain({
 });
 
 async function main() {
+  if (fs.existsSync('.env.local')) {
+    const envContent = fs.readFileSync('.env.local', 'utf-8');
+    for (const line of envContent.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) continue;
+      const idx = trimmed.indexOf('=');
+      const key = trimmed.slice(0, idx).trim();
+      const val = trimmed.slice(idx + 1).trim();
+      if (!process.env[key]) {
+        process.env[key] = val;
+      }
+    }
+  }
+
   const privateKey = (process.env.MONAD_DEPLOYER_PRIVATE_KEY || process.argv[2]) as `0x${string}`;
 
   if (!privateKey || !privateKey.startsWith('0x') || privateKey.length !== 66) {

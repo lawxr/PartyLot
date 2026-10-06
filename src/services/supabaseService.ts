@@ -270,20 +270,20 @@ export async function persistPotRolloverToSupabase(
 }
 
 /**
- * Persists an activity feed entry
+ * Persists an activity feed entry via authenticated scoped endpoint
  */
 export async function persistActivityToSupabase(activity: ActivityItem): Promise<void> {
-  const supabase = getSupabase();
-  if (!supabase) return;
+  const authToken = await getClientPrivyToken();
+  if (!authToken) return;
 
   try {
-    await supabase.from('activities').upsert({
-      id: activity.id,
-      party_id: activity.partyId,
-      type: activity.type,
-      text: activity.text,
-      time: activity.time,
-      avatar: activity.avatar,
+    await fetch('/api/activities', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(activity),
     });
   } catch (err) {
     console.warn('Failed to persist activity:', err);
@@ -291,22 +291,20 @@ export async function persistActivityToSupabase(activity: ActivityItem): Promise
 }
 
 /**
- * Persists a new party memory/photo to Supabase
+ * Persists a new party memory/photo to Supabase via authenticated scoped endpoint
  */
 export async function persistPartyMemoryToSupabase(memory: PartyMemory): Promise<void> {
-  const supabase = getSupabase();
-  if (!supabase) return;
+  const authToken = await getClientPrivyToken();
+  if (!authToken) return;
 
   try {
-    await supabase.from('party_memories').insert({
-      id: memory.id,
-      party_id: memory.partyId,
-      image_url: memory.imageUrl,
-      caption: memory.caption || null,
-      uploaded_by_id: memory.uploadedById || null,
-      uploaded_by_name: memory.uploadedByName,
-      uploaded_by_avatar: memory.uploadedByAvatar || null,
-      created_at: memory.createdAt,
+    await fetch('/api/parties/memories', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(memory),
     });
   } catch (err) {
     console.warn('Failed to persist party memory:', err);
@@ -685,117 +683,98 @@ export async function fetchPartiesFromDb(userId?: string): Promise<Party[]> {
  * Fetches all details, expenses, pot transactions, tasks and activities for a specific party
  */
 export async function fetchPartyDetailsFromDb(partyId: string) {
-  const supabase = getSupabase();
-  if (!supabase) return null;
+  const authToken = await getClientPrivyToken();
+  if (!authToken) return null;
 
   try {
-    const [partyRes, membersRes, expensesRes, transactionsRes, tasksRes, activitiesRes, memoriesRes] = await Promise.all([
-      supabase.from('parties').select('*').eq('id', partyId).single(),
-      supabase.from('party_members').select('*').eq('party_id', partyId),
-      supabase.from('expenses').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
-      supabase.from('pot_transactions').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
-      supabase.from('tasks').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
-      supabase.from('activities').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
-      supabase.from('party_memories').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
-    ]);
+    const response = await fetch(`/api/parties/details?partyId=${encodeURIComponent(partyId)}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${authToken}` },
+      cache: 'no-store',
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!data || !data.party) return null;
 
-    if (!partyRes.data) return null;
 
-    const userIds = (membersRes.data || []).map((m) => m.user_id).filter(Boolean);
-    const userHandleMap = new Map<string, string>();
-    const userAvatarMap = new Map<string, string>();
-    if (userIds.length > 0) {
-      const { data: usersData } = await supabase
-        .from('users')
-        .select('id, handle, avatar')
-        .in('id', userIds);
-      if (usersData) {
-        usersData.forEach((u) => {
-          if (u.handle) userHandleMap.set(u.id, u.handle);
-          if (u.avatar) userAvatarMap.set(u.id, u.avatar);
-        });
-      }
-    }
 
-    const members: Member[] = (membersRes.data || []).map((m) => ({
-      id: m.user_id,
-      name: m.name,
-      avatar: userAvatarMap.get(m.user_id) || m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-      role: m.role as 'host' | 'guest',
-      status: m.status as 'going' | 'maybe' | 'invited',
-      nightsTogether: m.nights_together || 1,
-      walletAddress: m.wallet_address || undefined,
-      handle: userHandleMap.get(m.user_id),
+    const members: Member[] = (data.members || []).map((m: Record<string, unknown>) => ({
+      id: String(m.user_id || m.id || ''),
+      name: String(m.name || 'Member'),
+      avatar: String(m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'),
+      role: (m.role as 'host' | 'guest') || 'guest',
+      status: (m.status as 'going' | 'maybe' | 'invited') || 'going',
+      nightsTogether: Number(m.nights_together) || 1,
+      walletAddress: (m.wallet_address as string) || undefined,
+      handle: (m.handle as string) || undefined,
     }));
 
-    const expenses: Expense[] = (expensesRes.data || []).map((e) => ({
-      id: e.id,
-      partyId: e.party_id,
-      description: e.description,
+    const expenses: Expense[] = (data.expenses || []).map((e: Record<string, unknown>) => ({
+      id: String(e.id),
+      partyId: String(e.party_id),
+      description: String(e.description),
       amount: Number(e.amount),
-      paidById: e.paid_by_id || 'u-unknown',
-      paidByName: e.paid_by_name,
-      paidByAvatar:
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      paidById: String(e.paid_by_id || 'u-unknown'),
+      paidByName: String(e.paid_by_name || 'Member'),
+      paidByAvatar: String(e.paid_by_avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'),
       splitBetweenIds: Array.isArray(e.split_between_ids) ? e.split_between_ids : [],
       category: 'general',
-      isSettled: e.is_settled ?? false,
-      createdAt: e.created_at,
-      txHash: e.tx_hash || undefined,
+      isSettled: Boolean(e.is_settled),
+      createdAt: String(e.created_at || ''),
+      txHash: e.tx_hash ? String(e.tx_hash) : undefined,
     }));
 
-    const transactions: PotTransaction[] = (transactionsRes.data || []).map((t) => ({
-      id: t.id,
-      partyId: t.party_id,
-      userId: t.user_id || undefined,
-      userName: t.user_name,
-      userAvatar:
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    const transactions: PotTransaction[] = (data.transactions || []).map((t: Record<string, unknown>) => ({
+      id: String(t.id),
+      partyId: String(t.party_id),
+      userId: t.user_id ? String(t.user_id) : undefined,
+      userName: String(t.user_name || 'Member'),
+      userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
       type: (t.type === 'deposit'
         ? 'add'
         : t.type === 'reimbursement'
         ? 'spend'
         : t.type) as 'add' | 'spend' | 'reward' | 'rollover',
       amount: Number(t.amount),
-      description: t.description || '',
-      timestamp: t.created_at,
-      txHash: t.tx_hash || undefined,
+      description: String(t.description || ''),
+      timestamp: String(t.created_at || ''),
+      txHash: t.tx_hash ? String(t.tx_hash) : undefined,
     }));
 
-    const tasks: PartyTask[] = (tasksRes.data || []).map((tk) => ({
-      id: tk.id,
-      partyId: tk.party_id,
-      title: tk.title,
+    const tasks: PartyTask[] = (data.tasks || []).map((tk: Record<string, unknown>) => ({
+      id: String(tk.id),
+      partyId: String(tk.party_id),
+      title: String(tk.title),
       rewardAmount: Number(tk.reward_amount),
-      status: tk.status as 'open' | 'claimed' | 'completed' | 'verified',
-      claimedById: tk.claimed_by_id || undefined,
-      claimedByName: tk.claimed_by_name || undefined,
-      claimedByAvatar: tk.claimed_by_avatar || undefined,
-      completedAt: tk.completed_at || undefined,
-      createdAt: tk.created_at || 'Just now',
+      status: (tk.status as 'open' | 'claimed' | 'completed' | 'verified') || 'open',
+      claimedById: tk.claimed_by_id ? String(tk.claimed_by_id) : undefined,
+      claimedByName: tk.claimed_by_name ? String(tk.claimed_by_name) : undefined,
+      claimedByAvatar: tk.claimed_by_avatar ? String(tk.claimed_by_avatar) : undefined,
+      completedAt: tk.completed_at ? String(tk.completed_at) : undefined,
+      createdAt: String(tk.created_at || 'Just now'),
     }));
 
-    const activities: ActivityItem[] = (activitiesRes.data || []).map((a) => ({
-      id: a.id,
-      partyId: a.party_id,
+    const activities: ActivityItem[] = (data.activities || []).map((a: Record<string, unknown>) => ({
+      id: String(a.id),
+      partyId: String(a.party_id),
       type: (a.type === 'deposit' ? 'pot' : a.type) as 'join' | 'pot' | 'poll' | 'game' | 'expense',
-      text: a.text,
-      time: a.time,
-      avatar: a.avatar || undefined,
+      text: String(a.text || a.details || ''),
+      time: String(a.time || a.timestamp || ''),
+      avatar: a.avatar ? String(a.avatar) : undefined,
     }));
 
-    const memories: PartyMemory[] = (memoriesRes.data || []).map((m) => ({
-      id: m.id,
-      partyId: m.party_id,
-      imageUrl: m.image_url,
-      caption: m.caption || undefined,
-      uploadedById: m.uploaded_by_id || undefined,
-      uploadedByName: m.uploaded_by_name || 'Anonymous',
-      uploadedByAvatar: m.uploaded_by_avatar || undefined,
-      createdAt: m.created_at,
+    const memories: PartyMemory[] = (data.memories || []).map((m: Record<string, unknown>) => ({
+      id: String(m.id),
+      partyId: String(m.party_id),
+      imageUrl: String(m.image_url),
+      caption: m.caption ? String(m.caption) : undefined,
+      uploadedById: m.uploaded_by_id ? String(m.uploaded_by_id) : undefined,
+      uploadedByName: String(m.uploaded_by_name || 'Anonymous'),
+      uploadedByAvatar: m.uploaded_by_avatar ? String(m.uploaded_by_avatar) : undefined,
+      createdAt: String(m.created_at),
     }));
 
-    const p = partyRes.data;
+    const p = data.party;
     const party: Party = {
       id: p.id,
       code: p.code,
@@ -816,7 +795,7 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
 
     return { party, members, expenses, transactions, tasks, activities, memories };
   } catch (err) {
-    console.warn('Failed to fetch party details from Supabase:', err);
+    console.warn('Failed to fetch party details from server:', err);
     return null;
   }
 }
@@ -888,36 +867,33 @@ export async function fetchCrewsFromDb(userId?: string): Promise<Crew[]> {
 }
 
 /**
- * Fetches activities from Supabase
+ * Fetches activities via scoped server API
  */
 export async function fetchActivitiesFromDb(partyId?: string): Promise<ActivityItem[]> {
-  const supabase = getSupabase();
-  if (!supabase) return [];
+  const authToken = await getClientPrivyToken();
+  if (!authToken) return [];
 
   try {
-    let query = supabase
-      .from('activities')
-      .select('*')
-      .order('timestamp', { ascending: false });
+    const url = partyId ? `/api/activities?partyId=${encodeURIComponent(partyId)}` : '/api/activities';
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${authToken}` },
+      cache: 'no-store',
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    if (!Array.isArray(data.activities)) return [];
 
-    if (partyId) {
-      query = query.eq('party_id', partyId);
-    }
-
-    const { data, error } = await query;
-
-    if (error || !data) return [];
-
-    return data.map((a) => ({
-      id: a.id,
-      partyId: a.party_id,
-      type: a.type,
-      text: a.details || a.text || '',
-      time: a.timestamp || a.time,
-      avatar: a.user_avatar || a.avatar || undefined,
+    return data.activities.map((a: Record<string, unknown>) => ({
+      id: String(a.id),
+      partyId: String(a.party_id),
+      type: (a.type === 'deposit' ? 'pot' : a.type) as 'join' | 'pot' | 'poll' | 'game' | 'expense',
+      text: String(a.text || a.details || ''),
+      time: String(a.time || a.timestamp || ''),
+      avatar: a.avatar ? String(a.avatar) : undefined,
     }));
   } catch (err) {
-    console.warn('Failed to fetch activities from Supabase:', err);
+    console.warn('Failed to fetch activities from server:', err);
     return [];
   }
 }
@@ -1021,7 +997,7 @@ export async function fetchGameSessionsFromDb(
 }
 
 /**
- * Persists a game session to Supabase
+ * Persists a game session to Supabase via authenticated scoped API
  */
 export async function persistGameSessionToSupabase(session: {
   id: string;
@@ -1029,18 +1005,19 @@ export async function persistGameSessionToSupabase(session: {
   gameType: string;
   questions?: unknown;
 }): Promise<void> {
-  const supabase = getSupabase();
-  if (!supabase) return;
+  const authToken = await getClientPrivyToken();
+  if (!authToken) return;
 
   try {
-    await supabase.from('game_sessions').upsert({
-      id: session.id,
-      party_id: session.partyId,
-      game_type: session.gameType,
-      questions: session.questions,
-      updated_at: new Date().toISOString(),
+    await fetch('/api/parties/games', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(session),
     });
   } catch (err) {
-    console.warn('Failed to persist game session to Supabase:', err);
+    console.warn('Failed to persist game session via API:', err);
   }
 }

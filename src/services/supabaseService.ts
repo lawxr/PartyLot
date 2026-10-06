@@ -627,53 +627,39 @@ export async function fetchUserProfileFromDb(userId: string): Promise<{
  * Fetches all parties from Supabase with their associated members
  */
 export async function fetchPartiesFromDb(userId?: string): Promise<Party[]> {
-  const supabase = getSupabase();
-  if (!supabase) return [];
+  // Keep the legacy argument for callers, but never trust it for authorization.
+  void userId;
+  const authToken = await getClientPrivyToken();
+  if (!authToken) return [];
 
   try {
-    const { data: partiesData, error: partiesErr } = await supabase
-      .from('parties')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (partiesErr || !partiesData) return [];
-
-    const [{ data: membersData }, { data: usersData }] = await Promise.all([
-      supabase.from('party_members').select('*'),
-      supabase.from('users').select('id, handle, avatar'),
-    ]);
-
-    const userHandleMap = new Map<string, string>();
-    const userAvatarMap = new Map<string, string>();
-    (usersData || []).forEach((u) => {
-      if (u.handle) userHandleMap.set(u.id, u.handle);
-      if (u.avatar) userAvatarMap.set(u.id, u.avatar);
+    const response = await fetch('/api/parties/read', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${authToken}` },
+      cache: 'no-store',
     });
+    if (!response.ok) return [];
+    const { parties: partiesData } = await response.json();
+    if (!Array.isArray(partiesData)) return [];
 
     const membersByParty: Record<string, Member[]> = {};
-    (membersData || []).forEach((m) => {
-      if (!membersByParty[m.party_id]) {
-        membersByParty[m.party_id] = [];
-      }
-      membersByParty[m.party_id].push({
-        id: m.user_id,
-        name: m.name,
-        avatar: userAvatarMap.get(m.user_id) || m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-        role: m.role as 'host' | 'guest',
-        status: m.status as 'going' | 'maybe' | 'invited',
-        nightsTogether: m.nights_together || 1,
-        walletAddress: m.wallet_address || undefined,
-        handle: userHandleMap.get(m.user_id),
+    partiesData.forEach((party) => {
+      membersByParty[party.id] = (party.members || []).map((m: Record<string, unknown>) => {
+        const memberId = String(m.user_id || m.id || '');
+        return {
+          id: memberId,
+          name: String(m.name || 'Member'),
+          avatar: String(m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'),
+          role: (m.role as 'host' | 'guest') || 'guest',
+          status: (m.status as 'going' | 'maybe' | 'invited') || 'going',
+          nightsTogether: Number(m.nights_together) || 1,
+          walletAddress: (m.wallet_address as string) || undefined,
+          handle: (m.handle as string) || undefined,
+        };
       });
     });
 
-    const filteredParties = userId
-      ? partiesData.filter(
-          (p) => p.host_id === userId || (membersByParty[p.id] || []).some((m) => m.id === userId)
-        )
-      : partiesData;
-
-    return filteredParties.map((p) => ({
+    return partiesData.map((p) => ({
       id: p.id,
       code: p.code,
       title: p.title,
@@ -690,8 +676,7 @@ export async function fetchPartiesFromDb(userId?: string): Promise<Party[]> {
       crewId: p.crew_id || undefined,
       members: membersByParty[p.id] || [],
     }));
-  } catch (err) {
-    console.warn('Failed to fetch parties from Supabase:', err);
+  } catch {
     return [];
   }
 }

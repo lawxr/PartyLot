@@ -4,9 +4,9 @@ pragma solidity ^0.8.24;
 /**
  * @title PartyTreasury (v2 Architecture)
  * @notice Multi-party verifiable onchain group treasury on Monad.
- * @dev Supports native MON & ERC-20 deposits, decentralized auto-registration,
+ * @dev Supports native MON & ERC-20 deposits, canonical host authority binding,
  * host-approved social rewards, expense reimbursements, peer-to-peer debt settlements,
- * pro-rata participant refunds, and inter-party rollovers.
+ * conserved pro-rata participant refunds, and inter-party rollovers.
  */
 contract PartyTreasury {
     struct PartyPot {
@@ -67,10 +67,9 @@ contract PartyTreasury {
 
     /**
      * @notice Register a party and define its host.
-     * @dev Permissionless: authorized by contract owner OR designated host.
+     * @dev Restricted to contract owner (relayer) to bind canonical party host authority.
      */
-    function registerParty(bytes32 partyId, address host) external {
-        require(msg.sender == owner || msg.sender == host, "Only contract owner or host authorized");
+    function registerParty(bytes32 partyId, address host) external onlyOwner {
         require(host != address(0), "Invalid host address");
         require(!parties[partyId].exists, "Party already registered");
 
@@ -87,17 +86,13 @@ contract PartyTreasury {
 
     /**
      * @notice Deposit native MON into a specific party pot.
-     * @dev Auto-registers the party with msg.sender as host if not yet registered.
+     * @dev Requires the party to be explicitly registered by the canonical authority.
      */
     function deposit(bytes32 partyId) public payable nonReentrant {
         require(msg.value > 0, "Deposit must be > 0");
 
         PartyPot storage pot = parties[partyId];
-        if (!pot.exists) {
-            pot.host = msg.sender;
-            pot.exists = true;
-            emit PartyRegistered(partyId, msg.sender);
-        }
+        require(pot.exists, "Party not registered");
 
         pot.balance += msg.value;
         pot.totalDeposited += msg.value;
@@ -173,6 +168,7 @@ contract PartyTreasury {
 
     /**
      * @notice Claim a proportional refund of remaining party pot balance based on contribution ratio.
+     * @dev Conserves remaining pot across arbitrary claim orders by dynamically adjusting denominator pool.
      */
     function claimProRataRefund(bytes32 partyId) external nonReentrant {
         PartyPot storage pot = parties[partyId];
@@ -183,8 +179,15 @@ contract PartyTreasury {
         require(userDeposited > 0, "No contribution to refund");
         require(pot.totalDeposited > 0, "Zero total deposits");
 
-        // Pro-rata share of remaining balance: (userDeposited * currentBalance) / totalDeposited
-        uint256 refundAmount = (userDeposited * pot.balance) / pot.totalDeposited;
+        // Pro-rata share of remaining balance with conserved denominator tracking
+        uint256 refundAmount;
+        if (userDeposited >= pot.totalDeposited) {
+            refundAmount = pot.balance;
+            pot.totalDeposited = 0;
+        } else {
+            refundAmount = (userDeposited * pot.balance) / pot.totalDeposited;
+            pot.totalDeposited -= userDeposited;
+        }
         require(refundAmount > 0, "Refund amount too small");
 
         memberBalances[partyId][msg.sender] = 0;
@@ -225,17 +228,15 @@ contract PartyTreasury {
     ) external nonReentrant onlyHostOrOwner(fromPartyId) {
         require(fromPartyId != toPartyId, "Cannot rollover to same party");
         PartyPot storage sourcePot = parties[fromPartyId];
+        require(sourcePot.exists, "Source party does not exist");
         uint256 remaining = sourcePot.balance;
         require(remaining > 0, "No funds to rollover");
 
         sourcePot.balance = 0;
 
         PartyPot storage destPot = parties[toPartyId];
-        if (!destPot.exists) {
-            destPot.host = sourcePot.host;
-            destPot.exists = true;
-            emit PartyRegistered(toPartyId, sourcePot.host);
-        }
+        require(destPot.exists, "Destination party not registered");
+        require(destPot.host == sourcePot.host || msg.sender == owner, "Destination host mismatch");
 
         destPot.balance += remaining;
         destPot.totalDeposited += remaining;
@@ -245,6 +246,7 @@ contract PartyTreasury {
 
     /**
      * @notice Deposit standard ERC-20 token (e.g. USDC) into party pot.
+     * @dev Requires the party to be explicitly registered by the canonical authority.
      */
     function depositToken(
         bytes32 partyId,
@@ -255,11 +257,7 @@ contract PartyTreasury {
         require(amount > 0, "Amount must be > 0");
 
         PartyPot storage pot = parties[partyId];
-        if (!pot.exists) {
-            pot.host = msg.sender;
-            pot.exists = true;
-            emit PartyRegistered(partyId, msg.sender);
-        }
+        require(pot.exists, "Party not registered");
 
         tokenBalances[partyId][token] += amount;
 

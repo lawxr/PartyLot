@@ -7,7 +7,7 @@ export const MONAD_CONTRACT_ADDRESSES = {
   partyRegistry: (process.env.NEXT_PUBLIC_PARTY_REGISTRY_ADDRESS ||
     '0xb7d922488daa522443ffe1627efc6d65825eebad') as `0x${string}`,
   partyTreasury: (process.env.NEXT_PUBLIC_PARTY_TREASURY_ADDRESS ||
-    '0x172b6df45a7fd334e690ae789109a181e46adb66') as `0x${string}`,
+    '0x69c7851af46d56345838fd4eb9e505d090c397c3') as `0x${string}`,
   socialGraph: (process.env.NEXT_PUBLIC_SOCIAL_GRAPH_ADDRESS ||
     '0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9') as `0x${string}`,
   pythOracle: (process.env.NEXT_PUBLIC_PYTH_ORACLE_ADDRESS ||

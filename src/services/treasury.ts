@@ -2,6 +2,16 @@ import type { DebtSettlement, PotTransaction } from '@/types';
 import { createWalletClient, custom, parseEther, formatEther } from 'viem';
 import { monadTestnet, publicMonadClient, getMonadExplorerTxUrl, toPartyBytes32 } from '@/lib/web3/monad';
 import { MONAD_CONTRACT_ADDRESSES, PartyTreasuryABI } from '@/contracts';
+import { getClientPrivyToken } from '@/hooks/usePrivySync';
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const token = await getClientPrivyToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 /**
  * Onchain Financial Treasury & Settlement is live on Monad Testnet (Chain ID: 10143)
@@ -16,12 +26,45 @@ export interface TreasuryReceipt {
   amount: number;
   token: 'MON' | 'USDC';
   network: 'Monad Testnet';
+  receipts?: TreasuryReceipt[];
+  settledCount?: number;
+}
+
+export interface BatchSettlementReceipt extends TreasuryReceipt {
+  receipts: TreasuryReceipt[];
+  settledCount: number;
+}
+
+export class PartialSettlementError extends Error {
+  public successfulReceipts: TreasuryReceipt[];
+  public settledSettlements: DebtSettlement[];
+  public failedSettlement: DebtSettlement;
+  public remainingSettlements: DebtSettlement[];
+
+  constructor(
+    message: string,
+    successfulReceipts: TreasuryReceipt[],
+    settledSettlements: DebtSettlement[],
+    failedSettlement: DebtSettlement,
+    remainingSettlements: DebtSettlement[]
+  ) {
+    super(message);
+    this.name = 'PartialSettlementError';
+    this.successfulReceipts = successfulReceipts;
+    this.settledSettlements = settledSettlements;
+    this.failedSettlement = failedSettlement;
+    this.remainingSettlements = remainingSettlements;
+  }
 }
 
 export type FinancialActionResult = {
   status: 'available';
   message: string;
   receipt?: TreasuryReceipt;
+  partial?: boolean;
+  settledCount?: number;
+  remainingCount?: number;
+  successfulReceipts?: TreasuryReceipt[];
 };
 
 export function calculateTotalContributed(transactions: PotTransaction[]): number {
@@ -100,9 +143,10 @@ export async function depositToPartyPotOnchain(
 
     // Ensure the party is registered onchain in PartyTreasury before user deposits
     try {
+      const headers = await getAuthHeaders();
       await fetch('/api/treasury/action', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           action: 'register',
           partyId,
@@ -135,9 +179,10 @@ export async function depositToPartyPotOnchain(
 
     // Synchronize server-side persistent state securely via BFF endpoint
     try {
+      const headers = await getAuthHeaders();
       await fetch('/api/treasury/record-deposit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           partyId,
           txHash,
@@ -162,9 +207,10 @@ export async function depositToPartyPotOnchain(
   }
 
   // 2. Relayer / Sponsored Fallback when no client wallet is provided
+  const headers = await getAuthHeaders();
   const res = await fetch('/api/treasury/action', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       action: 'deposit',
       partyId,
@@ -201,9 +247,10 @@ export async function distributeBountyOnchain(
   role: string,
   recipientName?: string
 ): Promise<TreasuryReceipt> {
+  const headers = await getAuthHeaders();
   const res = await fetch('/api/treasury/action', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       action: 'reward',
       partyId,
@@ -232,12 +279,29 @@ export async function distributeBountyOnchain(
 
 /**
  * Settles debts between group members on Monad Testnet.
+ * Requires connected wallet to sign non-custodial settleDebt transaction in native MON.
+ */
+export interface SettleDamageOptions {
+  wallet?: ConnectedUserWallet;
+  onSettlementConfirmed?: (progress: {
+    settlement: DebtSettlement;
+    receipt: TreasuryReceipt;
+    index: number;
+    total: number;
+  }) => void | Promise<void>;
+}
+
+/**
+ * Settles debts between group members on Monad Testnet.
+ * Requires connected wallet to sign non-custodial settleDebt transactions in native MON.
+ * Executes each creditor transfer individually and returns detailed receipts.
  */
 export async function settleDamageOnchain(
   partyId: string,
   settlements: DebtSettlement[],
-  userAddress?: string
-): Promise<TreasuryReceipt> {
+  userAddress?: string,
+  options?: SettleDamageOptions
+): Promise<BatchSettlementReceipt> {
   if (!settlements || settlements.length === 0) {
     throw new Error('No pending debts to settle.');
   }
@@ -249,44 +313,122 @@ export async function settleDamageOnchain(
   );
   if (unverified.length > 0) {
     throw new Error(
-      `Para liquidar en Monad, cada acreedor debe tener una billetera verificada (0x...). Los siguientes participantes aún no la tienen: ${unverified.map((u) => u.toName || u.toId).join(', ')}.`
+      `All creditors must have a verified wallet address (0x...). Unverified: ${unverified.map((u) => u.toName || u.toId).join(', ')}`
     );
   }
 
-  // Prevent multi-debt pooling to a single arbitrary recipient
-  if (settlements.length > 1) {
-    throw new Error(
-      'La liquidación agrupada a un solo destinatario está deshabilitada por seguridad contable. Cada deuda debe ser liquidada individualmente a la billetera de su acreedor.'
-    );
+  const invalidAmounts = settlements.filter((s) => s.amount <= 0);
+  if (invalidAmounts.length > 0) {
+    throw new Error('Settlement amount must be > 0.');
   }
 
-  const s = settlements[0];
-  const res = await fetch('/api/treasury/action', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'settle',
-      partyId,
-      amount: s.amount,
-      userAddress,
-      recipientAddress: s.toId,
-      description: `Settlement of debt to ${s.toName || s.toId} (${s.amount.toFixed(4)} MON)`,
-    }),
+  // User obligations cannot use server relayer (fail closed)
+  if (!options?.wallet) {
+    throw new Error('Connect your wallet to settle debts directly on Monad Testnet (MON).');
+  }
+
+  const wallet = options.wallet;
+  for (const s of settlements) {
+    if (wallet.address && s.toId.toLowerCase() === wallet.address.toLowerCase()) {
+      throw new Error('Cannot settle debt with yourself.');
+    }
+  }
+
+  if (wallet.chainId !== 'eip155:10143' && typeof wallet.switchChain === 'function') {
+    try {
+      await wallet.switchChain(10143);
+    } catch (err) {
+      console.warn('Network switch notice:', err);
+    }
+  }
+
+  const provider = (await wallet.getEthereumProvider()) as Parameters<typeof custom>[0];
+  const walletClient = createWalletClient({
+    account: wallet.address as `0x${string}`,
+    chain: monadTestnet,
+    transport: custom(provider),
   });
 
-  const data = await res.json();
-  if (!res.ok || !data.success) {
-    throw new Error(data.message || data.error || 'Failed to settle debt on Monad.');
+  const partyBytes = toPartyBytes32(partyId);
+  const successfulReceipts: TreasuryReceipt[] = [];
+  const settledSettlements: DebtSettlement[] = [];
+
+  for (let i = 0; i < settlements.length; i++) {
+    const s = settlements[i];
+    try {
+      const monWei = parseEther(String(Math.max(0.000001, Number(s.amount.toFixed(6)))));
+
+      const txHash = await walletClient.writeContract({
+        address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
+        abi: PartyTreasuryABI,
+        functionName: 'settleDebt',
+        args: [partyBytes, s.toId as `0x${string}`],
+        value: monWei,
+        gas: BigInt(350000),
+      });
+
+      const receipt = await publicMonadClient.waitForTransactionReceipt({
+        hash: txHash,
+        timeout: 30_000,
+      });
+
+      if (receipt && receipt.status === 'reverted') {
+        throw new Error(`Transaction reverted onchain (Hash: ${txHash})`);
+      }
+
+      const blockNumber = Number(receipt?.blockNumber || 65050000);
+      const individualReceipt: TreasuryReceipt = {
+        success: true,
+        txHash,
+        blockNumber,
+        explorerUrl: getMonadExplorerTxUrl(txHash),
+        amount: s.amount,
+        token: 'MON',
+        network: 'Monad Testnet',
+      };
+
+      successfulReceipts.push(individualReceipt);
+      settledSettlements.push(s);
+
+      if (options?.onSettlementConfirmed) {
+        await options.onSettlementConfirmed({
+          settlement: s,
+          receipt: individualReceipt,
+          index: i,
+          total: settlements.length,
+        });
+      }
+    } catch (err: unknown) {
+      if (successfulReceipts.length > 0) {
+        const remainingSettlements = settlements.slice(i);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        throw new PartialSettlementError(
+          `Partial settlement: ${successfulReceipts.length} of ${settlements.length} transfers succeeded. Failed at transfer to ${s.toName || s.toId}: ${errMsg}`,
+          successfulReceipts,
+          settledSettlements,
+          s,
+          remainingSettlements
+        );
+      }
+      throw err;
+    }
   }
+
+  const primaryReceipt = successfulReceipts[successfulReceipts.length - 1];
+  const totalAmount = Number(
+    successfulReceipts.reduce((sum, r) => sum + r.amount, 0).toFixed(6)
+  );
 
   return {
     success: true,
-    txHash: data.txHash,
-    blockNumber: data.blockNumber,
-    explorerUrl: data.explorerUrl || getMonadExplorerTxUrl(data.txHash),
-    amount: s.amount,
-    token: (data.token as 'MON' | 'USDC') || 'MON',
+    txHash: primaryReceipt.txHash,
+    blockNumber: primaryReceipt.blockNumber,
+    explorerUrl: primaryReceipt.explorerUrl,
+    amount: totalAmount,
+    token: 'MON',
     network: 'Monad Testnet',
+    receipts: successfulReceipts,
+    settledCount: successfulReceipts.length,
   };
 }
 
@@ -298,9 +440,10 @@ export async function rolloverFundsOnchain(
   nextPartyId: string,
   amount: number
 ): Promise<TreasuryReceipt> {
+  const headers = await getAuthHeaders();
   const res = await fetch('/api/treasury/action', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       action: 'rollover',
       partyId: fromTreasury,
@@ -357,9 +500,10 @@ export async function registerPartyOnchain(
   hostAddress?: string
 ): Promise<{ success: boolean; txHash?: string }> {
   try {
+    const headers = await getAuthHeaders();
     const res = await fetch('/api/treasury/action', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         action: 'register',
         partyId,

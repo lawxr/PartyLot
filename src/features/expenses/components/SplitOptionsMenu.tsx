@@ -59,8 +59,8 @@ export const SplitOptionsMenu: React.FC<SplitOptionsMenuProps> = ({
           className="w-full p-3.5 rounded-2xl bg-[#FFFDF8] dark:bg-white/5 border border-[rgba(35,30,22,0.08)] dark:border-white/10 flex items-center justify-between text-left hover:bg-[#F7F2E8] dark:hover:bg-white/10 transition-all cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#2775CA]/20 to-[#836EF9]/20 flex items-center justify-center text-[#2775CA]">
-              <TokenLogo token="usdc" size="sm" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#836EF9]/20 to-[#A78BFA]/20 flex items-center justify-center text-[#836EF9]">
+              <TokenLogo token="mon" size="sm" />
             </div>
             <div>
               <span className="font-bold text-sm text-[#171512] dark:text-white block">

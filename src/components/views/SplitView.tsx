@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useWallets } from '@privy-io/react-auth';
 import {
   ArrowLeft,
   ChevronRight,
@@ -30,6 +31,9 @@ export const SplitView: React.FC = () => {
   const { parties, currentPartyId, expenses, addExpense, settleAllDebts, goBack, setCurrentView, currentUser } = usePartyStore();
   const { t, language } = useTranslation();
   const isEs = language === 'es';
+  const { wallets } = useWallets();
+  const activeWallet = wallets.find((w) => w.walletClientType === 'privy') || wallets[0];
+  const [settleError, setSettleError] = useState<string | null>(null);
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const partyMembers = party?.members || [];
@@ -113,17 +117,24 @@ export const SplitView: React.FC = () => {
 
   // Handle Onchain Settlement
   const handleSettleOnchain = async () => {
+    setSettleError(null);
     setIsSettling(true);
     try {
-      await settleAllDebts(party.id);
-      confetti({
-        particleCount: 70,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#2775CA', '#836EF9', '#F0DC00'],
-      });
-      setIsSettleOpen(false);
-    } catch (err) {
+      const result = await settleAllDebts(party.id, { wallet: activeWallet });
+      if (result.partial) {
+        setSettleError(result.message);
+      } else {
+        confetti({
+          particleCount: 70,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#2775CA', '#836EF9', '#F0DC00'],
+        });
+        setIsSettleOpen(false);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error settling debts on Monad.';
+      setSettleError(msg);
       console.error('Error settling debts:', err);
     } finally {
       setIsSettling(false);
@@ -686,10 +697,14 @@ export const SplitView: React.FC = () => {
       {/* Settle Debts Sheet */}
       <SettleDebtsSheet
         isOpen={isSettleOpen}
-        onClose={() => setIsSettleOpen(false)}
+        onClose={() => {
+          setSettleError(null);
+          setIsSettleOpen(false);
+        }}
         isSettling={isSettling}
-        debtorsList={realDebtorsList}
+        debtorsList={realCreditorsList}
         onSettle={handleSettleOnchain}
+        errorMessage={settleError}
       />
     </div>
   );

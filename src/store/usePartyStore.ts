@@ -20,6 +20,7 @@ import {
   PartyTask,
   SharedExperienceConnection,
   PartyMemory,
+  DebtSettlement,
 } from '@/types';
 import { generatePartyCode } from '@/services/party';
 import {
@@ -59,6 +60,7 @@ import {
   rolloverFundsOnchain,
   getPartyPotBalanceOnchain,
   TreasuryReceipt,
+  PartialSettlementError,
 } from '@/services/treasury';
 import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
 import { recordGatheringOnchain } from '@/services/socialGraphService';
@@ -178,7 +180,10 @@ interface PartyStoreState {
     splitBetweenIds: string[];
     category?: ExpenseCategory;
   }) => void;
-  settleAllDebts: (partyId?: string) => Promise<FinancialActionResult>;
+  settleAllDebts: (
+    partyId?: string,
+    options?: { wallet?: ConnectedUserWallet }
+  ) => Promise<FinancialActionResult>;
 
   // Party Pot Actions
   addToPot: (
@@ -740,7 +745,10 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      settleAllDebts: async (targetPartyId?: string) => {
+      settleAllDebts: async (
+        targetPartyId?: string,
+        options?: { wallet?: ConnectedUserWallet }
+      ) => {
         const state = get();
         const pId = targetPartyId || state.currentPartyId;
         const party = state.parties.find((p) => p.id === pId) || state.parties[0];
@@ -754,31 +762,141 @@ export const usePartyStore = create<PartyStoreState>()(
           return { status: 'available', message: 'No pending debts to settle' };
         }
 
-        const receipt = await settleDamageOnchain(party.id, debtSettlements, state.currentUser.walletAddress);
+        // Scope settlements strictly to authenticated user's debts when user is authenticated
+        const currentUserId = state.currentUser.id;
+        const currentWallet = state.currentUser.walletAddress?.toLowerCase();
+        const activeWalletAddress = options?.wallet?.address?.toLowerCase();
 
-        const updatedExpenses = state.expenses.map((e) =>
-          e.partyId === party.id ? { ...e, isSettled: true } : e
-        );
+        const userDebts = currentUserId
+          ? debtSettlements.filter((s) => {
+              const fromIdLower = s.fromId.toLowerCase();
+              return (
+                s.fromId === currentUserId ||
+                (currentWallet && fromIdLower === currentWallet) ||
+                (activeWalletAddress && fromIdLower === activeWalletAddress)
+              );
+            })
+          : debtSettlements;
 
-        const newActivity: ActivityItem = {
-          id: `act-${Date.now()}`,
-          partyId: party.id,
-          type: 'pot',
-          text: `⚡ Cuentas saldadas en Monad Testnet (${debtSettlements.length} pagos liquidados en MON)`,
-          time: 'Just now',
-          avatar: state.currentUser.avatar,
-        };
+        if (userDebts.length === 0) {
+          return {
+            status: 'available',
+            message: 'No pending debts to settle for your account',
+          };
+        }
 
-        set({
-          expenses: updatedExpenses,
-          activities: [newActivity, ...state.activities],
+        // Resolve creditor wallet addresses from party members if toId is a member ID
+        const memberMap = new Map(party.members.map((m) => [m.id, m]));
+        const resolvedSettlements: DebtSettlement[] = userDebts.map((s) => {
+          const isHex42 = s.toId.startsWith('0x') && s.toId.length === 42;
+          const creditorMember = memberMap.get(s.toId);
+          const targetAddress = isHex42
+            ? s.toId
+            : creditorMember?.walletAddress || s.toId;
+          return {
+            ...s,
+            toId: targetAddress,
+          };
         });
 
-        return {
-          status: 'available',
-          message: 'All debts settled successfully on Monad Testnet (MON)',
-          receipt,
+        // Record confirmed settlement in store state incrementally upon transaction receipt
+        const recordSettlementConfirmed = (s: DebtSettlement, receipt: TreasuryReceipt) => {
+          const currentState = get();
+          const creditorMember = party.members.find(
+            (m) =>
+              m.id === s.toId ||
+              (m.walletAddress && m.walletAddress.toLowerCase() === s.toId.toLowerCase())
+          );
+          const creditorMemberId = creditorMember?.id || s.toId;
+          const debtorMember = party.members.find(
+            (m) =>
+              m.id === s.fromId ||
+              (m.walletAddress && m.walletAddress.toLowerCase() === s.fromId.toLowerCase())
+          );
+          const debtorMemberId = debtorMember?.id || s.fromId;
+
+          const settlementExpense: Expense = {
+            id: `settle-${Date.now()}-${receipt.txHash.slice(0, 10)}`,
+            partyId: party.id,
+            description: `Settlement: ${s.fromName} paid ${s.toName} (MON)`,
+            amount: s.amount,
+            paidById: debtorMemberId,
+            paidByName: s.fromName,
+            paidByAvatar: s.fromAvatar,
+            splitBetweenIds: [creditorMemberId],
+            createdAt: 'Just now',
+            category: 'general',
+            isSettled: false,
+            txHash: receipt.txHash,
+          };
+
+          const newActivity: ActivityItem = {
+            id: `act-${Date.now()}-${receipt.txHash.slice(0, 8)}`,
+            partyId: party.id,
+            type: 'pot',
+            text: `⚡ Pago liquidado en Monad Testnet: ${s.fromName} transfirió ${s.amount} MON a ${s.toName}`,
+            time: 'Just now',
+            avatar: currentState.currentUser.avatar,
+          };
+
+          set((st) => ({
+            expenses: [settlementExpense, ...st.expenses],
+            activities: [newActivity, ...st.activities],
+          }));
+
+          persistExpenseToSupabase(settlementExpense);
+          persistActivityToSupabase(newActivity);
         };
+
+        try {
+          const receipt = await settleDamageOnchain(
+            party.id,
+            resolvedSettlements,
+            state.currentUser.walletAddress,
+            {
+              wallet: options?.wallet,
+              onSettlementConfirmed: async ({ settlement, receipt: individualReceipt }) => {
+                recordSettlementConfirmed(settlement, individualReceipt);
+              },
+            }
+          );
+
+          // Clear expenses if all balances in the party are settled
+          const refreshedExpenses = get().expenses.filter(
+            (e) => e.partyId === party.id && !e.isSettled
+          );
+          const remainingBalances = calculateNetBalances(refreshedExpenses, party.members);
+          const remainingDebts = computeDebtSettlements(remainingBalances, party.members);
+
+          if (remainingDebts.length === 0) {
+            set((st) => ({
+              expenses: st.expenses.map((e) =>
+                e.partyId === party.id ? { ...e, isSettled: true } : e
+              ),
+            }));
+          }
+
+          return {
+            status: 'available',
+            message: 'All debts settled successfully on Monad Testnet (MON)',
+            receipt,
+            settledCount: receipt.settledCount,
+            successfulReceipts: receipt.receipts,
+          };
+        } catch (err: unknown) {
+          if (err instanceof PartialSettlementError) {
+            return {
+              status: 'available',
+              message: err.message,
+              receipt: err.successfulReceipts[err.successfulReceipts.length - 1],
+              partial: true,
+              settledCount: err.settledSettlements.length,
+              remainingCount: err.remainingSettlements.length,
+              successfulReceipts: err.successfulReceipts,
+            };
+          }
+          throw err;
+        }
       },
 
       addToPot: async (
@@ -1525,6 +1643,11 @@ export const usePartyStore = create<PartyStoreState>()(
       },
 
       hydrateFromSupabase: async () => {
+        if (!get().currentUser?.isPrivyAuthenticated) {
+          set({ parties: [], currentPartyId: '', crews: [], currentCrewId: null, activities: [] });
+          return;
+        }
+
         const currentUserId = get().currentUser?.id;
         const [dbParties, dbCrews, dbActivities] = await Promise.all([
           fetchPartiesFromDb(currentUserId || undefined),
@@ -1562,6 +1685,8 @@ export const usePartyStore = create<PartyStoreState>()(
       },
 
       loadPartyFromSupabase: async (partyId: string) => {
+        if (!get().currentUser?.isPrivyAuthenticated) return;
+
         const details = await fetchPartyDetailsFromDb(partyId);
         if (!details || !details.party) return;
 
@@ -1610,6 +1735,10 @@ export const usePartyStore = create<PartyStoreState>()(
       },
 
       listenToActivePartyRealtime: (partyId: string) => {
+        if (!get().currentUser?.isPrivyAuthenticated) {
+          return () => {};
+        }
+
         const unsubParty = subscribeToPartyRealtime(partyId, () => {
           get().loadPartyFromSupabase(partyId);
         });

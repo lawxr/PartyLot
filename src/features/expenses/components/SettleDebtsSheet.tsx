@@ -20,6 +20,7 @@ interface SettleDebtsSheetProps {
   isSettling: boolean;
   debtorsList: SettleDebtorItem[];
   onSettle: () => Promise<void>;
+  errorMessage?: string | null;
 }
 
 export const SettleDebtsSheet: React.FC<SettleDebtsSheetProps> = ({
@@ -28,6 +29,7 @@ export const SettleDebtsSheet: React.FC<SettleDebtsSheetProps> = ({
   isSettling,
   debtorsList,
   onSettle,
+  errorMessage,
 }) => {
   const { t, language } = useTranslation();
   const isEs = language === 'es';
@@ -41,9 +43,9 @@ export const SettleDebtsSheet: React.FC<SettleDebtsSheetProps> = ({
       title={t.split.settleTitle}
     >
       <div className="space-y-4">
-        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-[#2775CA]/10 via-[#836EF9]/10 to-transparent border border-[#2775CA]/20">
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-[#836EF9]/10 via-[#A78BFA]/10 to-transparent border border-[#836EF9]/20">
           <div className="flex items-center gap-2.5">
-            <TokenLogo token="usdc" size="md" />
+            <TokenLogo token="mon" size="md" />
             <div>
               <span className="text-xs font-bold text-[#171512] dark:text-white block">
                 {t.split.settleEngineBadge}
@@ -53,8 +55,14 @@ export const SettleDebtsSheet: React.FC<SettleDebtsSheetProps> = ({
               </span>
             </div>
           </div>
-          <CryptoBadge token="usdc" network="Monad" showNetwork={false} />
+          <CryptoBadge token="mon" network="Monad" showNetwork={false} />
         </div>
+
+        {errorMessage && (
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-medium">
+            {errorMessage}
+          </div>
+        )}
 
         <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
           {debtorsList.length > 0 ? (
@@ -74,7 +82,7 @@ export const SettleDebtsSheet: React.FC<SettleDebtsSheetProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <TokenLogo token="usdc" size="xs" />
+                  <TokenLogo token="mon" size="xs" />
                   <span className="font-display font-black text-base text-[#171512] dark:text-white">
                     {member.amount}
                   </span>

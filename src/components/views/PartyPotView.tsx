@@ -132,7 +132,7 @@ export const PartyPotView: React.FC = () => {
   // Target deposit address (Party contract on Monad Testnet)
   const depositAddress: `0x${string}` =
     MONAD_CONTRACT_ADDRESSES?.partyTreasury ||
-    '0x172b6df45a7fd334e690ae789109a181e46adb66';
+    '0x69c7851af46d56345838fd4eb9e505d090c397c3';
 
   // Render 100% compliant, universally scannable QR Code for the pot treasury
   useEffect(() => {

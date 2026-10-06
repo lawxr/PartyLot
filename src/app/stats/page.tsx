@@ -549,10 +549,10 @@ export default function PlatformStatsPage() {
           <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 flex items-center justify-between flex-wrap gap-2">
             <div>
               <span className="font-sans font-bold text-[#171512] dark:text-white block">Party Treasury (Vault)</span>
-              <span className="text-[#8E887E] dark:text-[#A8A196] text-[11px] break-all">0x172b6df45a7fd334e690ae789109a181e46adb66</span>
+              <span className="text-[#8E887E] dark:text-[#A8A196] text-[11px] break-all">0x69c7851af46d56345838fd4eb9e505d090c397c3</span>
             </div>
             <a
-              href="https://testnet.monadexplorer.com/address/0x172b6df45a7fd334e690ae789109a181e46adb66"
+              href="https://testnet.monadexplorer.com/address/0x69c7851af46d56345838fd4eb9e505d090c397c3"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#B89600] dark:text-[#F0DC00] font-sans font-bold flex items-center gap-1 hover:underline text-xs"

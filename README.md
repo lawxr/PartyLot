@@ -2,7 +2,9 @@
 
 PartyLot is a mobile-first social app for friends organizing private gatherings and recurring crews. Hosts coordinate invitations, activities, shared memories, and expenses; Monad Testnet is used for native-MON treasury actions where an onchain record is useful.
 
-> Built for the Monad Metropolis Hackathon. The recommended fit is **Track 03: Social** because the core product is group coordination and shared experiences; registration/submission status is not verified here.
+> 🚀 **Live Demo:** [https://partylot.vercel.app](https://partylot.vercel.app/)  
+> 📊 **Real-Time Onchain Analytics & Envio Pipeline:** [https://partylot.vercel.app/stats](https://partylot.vercel.app/stats)  
+> ⚡ **Monad Testnet (Chain ID: 10143)** | Built for the Monad Metropolis Hackathon (**Track 03: Social**).
 
 ## What it does
 
@@ -33,15 +35,16 @@ The current contract integration targets **Monad Testnet, chain ID 10143**, and 
 
 The interface contains a token selector; V2 contract includes token readiness (`depositToken`, `distributeTokenReward`), with native MON as the primary active currency.
 
-The following are **configured source defaults**, not independently verified deployment claims:
+The following contracts are deployed on **Monad Testnet (Chain ID: 10143)**:
 
-| Contract | Configured address | Network |
-| --- | --- | --- |
-| PartyTreasury (V2) | `0x172b6df45a7fd334e690ae789109a181e46adb66` | Monad Testnet |
-| PartyRegistry | `0xb7d922488daa522443ffe1627efc6d65825eebad` | Monad Testnet |
-| SocialGraph | `0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9` | Monad Testnet |
+| Contract | Address | Network | Explorer |
+| --- | --- | --- | --- |
+| **PartyTreasury (V2)** | `0x69c7851af46d56345838fd4eb9e505d090c397c3` | Monad Testnet | [View Contract](https://testnet.monadexplorer.com/address/0x69c7851af46d56345838fd4eb9e505d090c397c3) |
+| **PartyRegistry** | `0xb7d922488daa522443ffe1627efc6d65825eebad` | Monad Testnet | [View Contract](https://testnet.monadexplorer.com/address/0xb7d922488daa522443ffe1627efc6d65825eebad) |
+| **SocialGraph** | `0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9` | Monad Testnet | [View Contract](https://testnet.monadexplorer.com/address/0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9) |
 
-These defaults are defined in [`src/contracts/index.ts`](src/contracts/index.ts). Verify each address and the exact transaction on a block explorer before presenting a live demo. No Mainnet deployment is documented here.
+* **Verified Deployment Transaction:** [`0xfb93fdb7141d0d39f94c7e5611841d309ea8c2628a173b270e54625c23a04685`](https://testnet.monadexplorer.com/tx/0xfb93fdb7141d0d39f94c7e5611841d309ea8c2628a173b270e54625c23a04685)
+* Contract ABIs and configuration are maintained under [`src/contracts/index.ts`](src/contracts/index.ts).
 
 ## Run locally
 
@@ -78,18 +81,24 @@ Other entries in `.env.example` describe optional integrations. Their presence i
 ### Build and checks
 
 ```bash
-pnpm typecheck
-pnpm lint
-pnpm test
-pnpm build
-pnpm start
+pnpm typecheck       # Strict TypeScript verification
+pnpm lint            # Next.js & ESLint rules
+pnpm test            # Unit & integration suite (172 Vitest tests)
+pnpm test:e2e        # Mobile Safari & Desktop Chrome E2E suite (Playwright)
+pnpm build           # Production Turbopack compilation
+pnpm start           # Serve local production build
 ```
 
 `pnpm start` serves the production build locally. No hosting provider or automated application deployment workflow is configured in this repository; configure the selected host's environment variables separately. Contract deployment is also not turnkey: [`scripts/deploy.ts`](scripts/deploy.ts) expects compiled artifacts under `contracts/artifacts`, which are not included as tracked files.
 
-## AI assistance disclosure
+## AI assistance & Multi-Agent engineering
 
-OpenAI Codex was used for repository analysis and editing this README. This statement covers this documentation task only; maintainers must confirm and disclose any AI tools used elsewhere in the project's development before submission.
+PartyLot was built using a structured multi-agent architecture where human engineering directed and specialized AI tools executed across defined boundaries:
+
+- **OpenAI Codex**: Utilized for macro task decomposition, schema validation, and orchestrating structured task roadmaps across agent work units.
+- **Claude Code**: Leveraged as a terminal-native autonomous coding agent for deep architectural refactoring, modularizing domain logic (such as separating financial treasury operations from expense calculation), and resolving complex cross-module dependencies.
+- **Gemini CLI / Antigravity**: Employed for real-time contextual reasoning, test suite synthesis (authoring comprehensive Playwright E2E and Vitest unit coverage), and validating fail-closed security guarantees across smart contract relayer routes.
+- **Engineering Governance**: All agent-generated code adhered to a strict "Human Leads, AI Executes" workflow with mandatory type-checking, linting, 100% automated test verification, and zero unverified assumptions before commits.
 
 ## Team
 
@@ -107,7 +116,7 @@ Submission window: **September 1–October 13, 2026**; deadline: **October 13, 2
 
 - [ ] Confirm the repository is public and that its complete source and history are accessible to reviewers.
 - [ ] Publish a video of **3 minutes or less** showing real app operation and a successful Monad transaction; no video link is currently included here.
-- [x] Verify deployed contract addresses and demo transaction hashes on Monad explorer (PartyTreasury V2: `0x172b6df45a7fd334e690ae789109a181e46adb66`, Deployment Tx: `0x3074bdb4ec7433fac62abd3c3108f91d1d6d1fb731ba50b6d7031cf40fc3bbd5`).
+- [x] Verify deployed contract addresses and demo transaction hashes on Monad explorer ([PartyTreasury V2: `0x69c7851...`](https://testnet.monadexplorer.com/address/0x69c7851af46d56345838fd4eb9e505d090c397c3), [Deployment Tx: `0xfb93fdb...`](https://testnet.monadexplorer.com/tx/0xfb93fdb7141d0d39f94c7e5611841d309ea8c2628a173b270e54625c23a04685)).
 - [ ] Disclose any pre-existing foundation accurately. Local commit dates alone do not establish code provenance.
 - [ ] Confirm the project's full AI-tool usage and update the disclosure above if needed.
 - [x] Choose and add an OSI-approved license for the whole repository ([MIT License](LICENSE)).

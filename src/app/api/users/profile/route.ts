@@ -105,8 +105,15 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Supabase update_user_profile error:', error);
+      const isPermDenied = error.code === '42501';
       return NextResponse.json(
-        { success: false, error: 'DATABASE_ERROR', message: 'Failed to update user profile.' },
+        {
+          success: false,
+          error: isPermDenied ? 'PERMISSION_DENIED' : 'DATABASE_ERROR',
+          message: isPermDenied
+            ? 'Permission denied for update_user_profile. Please configure SUPABASE_SERVICE_ROLE_KEY in .env.local or execute migration 20261008_grant_update_user_profile_rpc.sql.'
+            : error.message || 'Failed to update user profile.',
+        },
         { status: 500 }
       );
     }

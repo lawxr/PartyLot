@@ -76,7 +76,15 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
     setIsUploading(true);
     setError(null);
     try {
-      const uploadedUrl = await uploadImageFile(croppedBlob, 'avatars');
+      let token: string | null = null;
+      if (authenticated) {
+        try {
+          token = await getAccessToken();
+        } catch {
+          // Fallback to unauthenticated upload if token retrieval fails
+        }
+      }
+      const uploadedUrl = await uploadImageFile(croppedBlob, 'avatars', token);
       setAvatar(uploadedUrl);
     } catch (uploadErr) {
       console.error('Avatar upload failed in onboarding:', uploadErr);

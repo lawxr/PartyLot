@@ -584,7 +584,6 @@ export async function syncUserDataToDb(user: User, authToken?: string | null): P
       p_name: user.name,
       p_handle: user.handle,
       p_avatar: user.avatar || null,
-      p_cover_image: coverImageToUse || null,
     });
     if (error) throw error;
   } catch (err) {

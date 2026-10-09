@@ -100,7 +100,8 @@ export function usePrivySync() {
 
     // 1. Immediately apply authenticated state to store so downstream route gates
     // and UI components see an active authenticated session without waiting for network I/O
-    void store.updateUser({
+    store.setCurrentUser({
+      ...store.currentUser,
       id: user.id,
       name: displayName,
       handle: defaultUniqueHandle,
@@ -108,18 +109,19 @@ export function usePrivySync() {
       walletAddress: walletAddress || undefined,
       authMethod,
       isPrivyAuthenticated: true,
-      gamesCount: 0,
-      gatheringsCount: 0,
-      settlementsCount: 0,
-      peopleCount: 0,
-      balance: 0,
+      gamesCount: store.currentUser.gamesCount || 0,
+      gatheringsCount: store.currentUser.gatheringsCount || 0,
+      settlementsCount: store.currentUser.settlementsCount || 0,
+      peopleCount: store.currentUser.peopleCount || 0,
+      balance: store.currentUser.balance || 0,
     });
 
     // 2. Enrich profile from Supabase asynchronously if existing record is found
     void fetchUserProfileFromDb(user.id).then((persisted) => {
       if (!isSubscribed) return;
       if (persisted) {
-        void store.updateUser({
+        store.setCurrentUser({
+          ...store.currentUser,
           id: user.id,
           name: persisted.name || displayName,
           handle: persisted.handle || defaultUniqueHandle,

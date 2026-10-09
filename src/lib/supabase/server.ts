@@ -16,6 +16,12 @@ export function getServerSupabase(): SupabaseClient {
   const serviceKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn(
+      '⚠️ [Partylot] SUPABASE_SERVICE_ROLE_KEY is missing from environment. Falling back to anon key. Elevated RPCs (like update_user_profile) will require explicit GRANT or service_role key.'
+    );
+  }
+
   if (!supabaseUrl || !serviceKey) {
     throw new Error('Supabase environment variables are missing on the server.');
   }

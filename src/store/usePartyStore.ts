@@ -230,6 +230,7 @@ interface PartyStoreState {
   sendPartyCheers: (targetMember: Member) => Promise<void>;
 
   // User & Auth Actions
+  setCurrentUser: (user: User) => void;
   updateUser: (updates: Partial<User>, authToken?: string | null) => Promise<void>;
   resetUserSession: () => void;
   isOnboardingOpen: boolean;
@@ -1602,6 +1603,8 @@ export const usePartyStore = create<PartyStoreState>()(
           persistActivityToSupabase(newActivity).catch(() => {});
         }
       },
+
+      setCurrentUser: (user) => set({ currentUser: user }),
 
       updateUser: async (updates, authToken) => {
         const state = get();

@@ -39,10 +39,30 @@ export const monadTestnet = defineChain({
   testnet: true,
 });
 
-export const publicMonadClient = createPublicClient({
-  chain: monadTestnet,
-  transport: http(monadRpcUrl),
-});
+/**
+ * Monad Testnet Block Cadence & Polling Parameters
+ * Monad features ~400ms block times and ~800ms finality.
+ * Default Viem HTTP polling interval is 4,000ms (designed for Ethereum L1).
+ * We configure MONAD_POLLING_INTERVAL_MS to 500ms to unlock Monad's native execution speed.
+ */
+export const MONAD_BLOCK_TIME_MS = 400;
+export const MONAD_POLLING_INTERVAL_MS = 500;
+
+export interface CreateMonadClientOptions {
+  rpcUrl?: string;
+  pollingInterval?: number;
+}
+
+export function createMonadPublicClient(options: CreateMonadClientOptions = {}) {
+  const rpc = options.rpcUrl || monadRpcUrl;
+  return createPublicClient({
+    chain: monadTestnet,
+    transport: http(rpc),
+    pollingInterval: options.pollingInterval ?? MONAD_POLLING_INTERVAL_MS,
+  });
+}
+
+export const publicMonadClient = createMonadPublicClient();
 
 export interface MonadNetworkConfig {
   chainId: number;
@@ -50,6 +70,8 @@ export interface MonadNetworkConfig {
   rpcUrl: string;
   currencySymbol: string;
   blockExplorerUrl: string;
+  blockTimeMs: number;
+  pollingIntervalMs: number;
 }
 
 export const MONAD_TESTNET_CONFIG: MonadNetworkConfig = {
@@ -58,6 +80,8 @@ export const MONAD_TESTNET_CONFIG: MonadNetworkConfig = {
   rpcUrl: process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz',
   currencySymbol: 'MON',
   blockExplorerUrl: 'https://testnet.monadexplorer.com',
+  blockTimeMs: MONAD_BLOCK_TIME_MS,
+  pollingIntervalMs: MONAD_POLLING_INTERVAL_MS,
 };
 
 export interface TreasuryDepositReceipt {

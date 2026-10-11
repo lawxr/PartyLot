@@ -1,26 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { usePartyStore } from '@/store/usePartyStore';
+import { Party } from '@/types';
 
 describe('Dynamic Party Deep-Link Route Resolution (Item 2)', () => {
+  const mockParty: Party = {
+    id: 'party-uuid-1234',
+    title: 'Neon Nights Monad',
+    date: 'Tonight',
+    time: '22:00',
+    location: 'Club 0x, Bogota',
+    description: 'A hackathon afterparty',
+    coverImage: 'https://images.unsplash.com/photo-1',
+    code: 'NEON',
+    hostId: 'host-1',
+    hostName: 'Alice',
+    members: [],
+    potBalance: 100,
+    createdAt: '2026-10-11',
+    status: 'upcoming',
+  };
+
   beforeEach(() => {
     vi.restoreAllMocks();
     usePartyStore.setState({
-      parties: [
-        {
-          id: 'party-uuid-1234',
-          title: 'Neon Nights Monad',
-          date: 'Tonight',
-          time: '22:00',
-          location: 'Club 0x, Bogota',
-          description: 'A hackathon afterparty',
-          coverImage: 'https://images.unsplash.com/photo-1',
-          code: 'NEON',
-          potBalance: 100,
-          membersCount: 5,
-          tasksCount: 2,
-          isRsvp: false,
-        },
-      ],
+      parties: [mockParty],
       currentPartyId: '',
       currentView: 'home',
       pendingInviteCode: null,
@@ -60,24 +63,26 @@ describe('Dynamic Party Deep-Link Route Resolution (Item 2)', () => {
 
   it('handles remote party hydration when party is not present in local memory', async () => {
     const remotePartyId = 'party-remote-999';
+    const remoteParty: Party = {
+      id: remotePartyId,
+      title: 'Hydrated Party',
+      date: 'Tomorrow',
+      time: '20:00',
+      location: 'Crypto Rooftop',
+      description: 'Loaded remotely',
+      coverImage: '',
+      hostId: 'host-2',
+      hostName: 'Bob',
+      members: [],
+      potBalance: 0,
+      createdAt: '2026-10-11',
+      status: 'upcoming',
+      code: 'REMT',
+    };
+
     const loadSpy = vi.fn().mockImplementation(async (id: string) => {
       usePartyStore.setState((s) => ({
-        parties: [
-          ...s.parties,
-          {
-            id,
-            title: 'Hydrated Party',
-            date: 'Tomorrow',
-            time: '20:00',
-            location: 'Crypto Rooftop',
-            description: 'Loaded remotely',
-            coverImage: '',
-            potBalance: 0,
-            membersCount: 1,
-            tasksCount: 0,
-            isRsvp: false,
-          },
-        ],
+        parties: [...s.parties, remoteParty],
       }));
     });
 

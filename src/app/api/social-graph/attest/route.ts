@@ -3,7 +3,7 @@ import { createWalletClient, http, keccak256, toHex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { MONAD_CONTRACT_ADDRESSES, SocialGraphABI } from '@/contracts';
-import { publicMonadClient, getMonadExplorerTxUrl, monadTestnet } from '@/lib/web3/monad';
+import { publicMonadClient, getMonadExplorerTxUrl, monadTestnet, MONAD_POLLING_INTERVAL_MS } from '@/lib/web3/monad';
 
 import { checkRateLimit } from '@/lib/security/rateLimit';
 import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
@@ -133,6 +133,7 @@ export async function POST(request: NextRequest) {
     // 5. Wait for on-chain confirmation on Monad Testnet
     const receipt = await publicMonadClient.waitForTransactionReceipt({
       hash: txHash,
+      pollingInterval: MONAD_POLLING_INTERVAL_MS,
     });
 
     // 6. Query updated verified nights together from smart contract

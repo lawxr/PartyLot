@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase/server';
-import { publicMonadClient } from '@/lib/web3/monad';
+import { publicMonadClient, MONAD_POLLING_INTERVAL_MS } from '@/lib/web3/monad';
 import { checkRateLimit } from '@/lib/security/rateLimit';
 
 export async function POST(request: NextRequest) {
@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
     const receipt = await publicMonadClient.waitForTransactionReceipt?.({
       hash: txHash,
       timeout: 20_000,
+      pollingInterval: MONAD_POLLING_INTERVAL_MS,
     }).catch(() => null);
 
     if (receipt && receipt.status === 'reverted') {

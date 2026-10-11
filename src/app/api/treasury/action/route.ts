@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createWalletClient, http, parseEther, keccak256, toHex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { monadTestnet, publicMonadClient, getMonadExplorerTxUrl } from '@/lib/web3/monad';
+import { monadTestnet, publicMonadClient, getMonadExplorerTxUrl, MONAD_POLLING_INTERVAL_MS } from '@/lib/web3/monad';
 import { MONAD_CONTRACT_ADDRESSES, PartyTreasuryABI } from '@/contracts';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/security/rateLimit';
@@ -282,6 +282,7 @@ export async function POST(request: NextRequest) {
       const receipt = await publicMonadClient.waitForTransactionReceipt({
         hash: txHash,
         timeout: 20_000,
+        pollingInterval: MONAD_POLLING_INTERVAL_MS,
       });
 
       if (!receipt || receipt.status !== 'success') {

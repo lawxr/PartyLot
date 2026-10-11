@@ -1,17 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePartyStore } from '@/store/usePartyStore';
 import * as treasuryService from '@/services/treasury';
-import type { Party, PartyMember } from '@/types';
+import type { Party, Member } from '@/types';
 
 describe('Games View & Onchain Reward Winner Integration (Objective 2)', () => {
-  const mockMember1: PartyMember = {
+  const mockMember1: Member = {
     id: 'user-winner-1',
     name: 'Sofia Winner',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
     walletAddress: '0x1111111111111111111111111111111111111111',
   };
 
-  const mockMember2: PartyMember = {
+  const mockMember2: Member = {
     id: 'user-player-2',
     name: 'Carlos RunnerUp',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
@@ -69,8 +69,8 @@ describe('Games View & Onchain Reward Winner Integration (Objective 2)', () => {
       blockNumber: 77000,
       explorerUrl: `https://testnet.monadexplorer.com/tx/${mockTxHash}`,
       amount: 0.5,
-      recipient: mockMember1.walletAddress!,
-      role: 'WINNER_CREW_TRIVIA',
+      token: 'MON',
+      network: 'Monad Testnet',
     });
 
     const result = await usePartyStore.getState().rewardGameWinner({

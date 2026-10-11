@@ -93,7 +93,7 @@ describe('POST /api/social-graph/attest (Authentication & Security Hardening)', 
   });
 
   it('rejects unauthenticated request in production with 401', async () => {
-    process.env.NODE_ENV = 'production';
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
     const { POST } = await import('@/app/api/social-graph/attest/route');
 
     const req = new NextRequest('http://localhost/api/social-graph/attest', {
@@ -108,7 +108,7 @@ describe('POST /api/social-graph/attest (Authentication & Security Hardening)', 
   });
 
   it('rejects unauthenticated request in development when REQUIRE_AUTH_IN_DEV=true', async () => {
-    process.env.NODE_ENV = 'development';
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'development';
     process.env.REQUIRE_AUTH_IN_DEV = 'true';
     const { POST } = await import('@/app/api/social-graph/attest/route');
 

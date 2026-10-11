@@ -46,7 +46,7 @@ describe('POST /api/treasury/record-deposit (Security & Fail-Closed Receipts)', 
   });
 
   it('rejects unauthenticated request when REQUIRE_AUTH_IN_DEV=true', async () => {
-    process.env.NODE_ENV = 'development';
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'development';
     process.env.REQUIRE_AUTH_IN_DEV = 'true';
     const { POST } = await import('@/app/api/treasury/record-deposit/route');
 

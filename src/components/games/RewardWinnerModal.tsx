@@ -6,7 +6,7 @@ import { Trophy, X, Coins, ExternalLink, Loader2, CheckCircle2, AlertCircle, Spa
 import confetti from 'canvas-confetti';
 import { usePartyStore } from '@/store/usePartyStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { PartyMember } from '@/types';
+import { Member } from '@/types';
 import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
 
 interface RewardWinnerModalProps {
@@ -27,7 +27,7 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
   const isEs = language === 'es';
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
-  const members: PartyMember[] = party?.members && party.members.length > 0
+  const members: Member[] = party?.members && party.members.length > 0
     ? party.members
     : currentUser
     ? [currentUser]

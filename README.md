@@ -46,6 +46,26 @@ The following contracts are deployed on **Monad Testnet (Chain ID: 10143)**:
 * **Verified Deployment Transaction:** [`0xfb93fdb7141d0d39f94c7e5611841d309ea8c2628a173b270e54625c23a04685`](https://testnet.monadexplorer.com/tx/0xfb93fdb7141d0d39f94c7e5611841d309ea8c2628a173b270e54625c23a04685)
 * Contract ABIs and configuration are maintained under [`src/contracts/index.ts`](src/contracts/index.ts).
 
+### Security Model & Onchain Custody
+
+PartyLot adheres to a transparent, fail-closed security architecture separating cryptographic custody, server-side facilitation, and decentralized execution:
+
+1. **Non-Custodial Direct Submission (Default User Path):**
+   - End users submitting deposits, settlements, and member actions interact directly with Monad Testnet through their connected wallets (e.g. Privy embedded wallets, MetaMask, Rabby) using Viem.
+   - Private keys never touch PartyLot servers. The user retains complete cryptographic sovereignty over their funds.
+
+2. **Server Relayer Fallback (Testnet Convenience / Gasless Onboarding):**
+   - For demo continuity and testnet environments where users may not have native testnet MON for gas, `/api/treasury/action` and `/api/social-graph/attest` provide a sponsored execution fallback powered by `MONAD_DEPLOYER_PRIVATE_KEY`.
+   - **Production Roadmap:** Storing a raw deployer key in server environment variables is explicitly designated as non-production-safe. The production roadmap migrates this relayer to:
+     - **Account Abstraction (ERC-4337):** Bundlers with scoped Paymasters for zero-friction gas sponsorship.
+     - **Session Keys:** Ephemeral, value-capped session permissions granted directly by users.
+     - **MPC / HSM Signers:** AWS Cloud KMS or Turnkey MPC infrastructure for protocol-managed attestations.
+
+3. **Fail-Closed Guarantees & Anti-Sybil Protections:**
+   - **No Speculative State:** Offchain database records (e.g. pot balances, social ties) are only updated after the Monad transaction receipt is confirmed onchain (`receipt.status === 'success'`). Missing, pending, or reverted transactions fail closed immediately.
+   - **Access Control & Batch Limits:** Smart contracts enforce role separation (`onlyOwnerOrRegistry`) and hard batch caps (`MAX_RECORD_BATCH = 50` on `SocialGraph.sol`) to prevent gas exhaustion and Sybil graph manipulation.
+   - **Rate Limiting & Token Authentication:** Mutating API endpoints require verified Privy Bearer tokens (with `REQUIRE_AUTH_IN_DEV` support in local environments) and enforce sliding-window IP rate limits.
+
 ## Run locally
 
 ### Requirements

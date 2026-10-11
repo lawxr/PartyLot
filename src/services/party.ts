@@ -24,5 +24,5 @@ export function findPartyByCode(parties: Party[], code: string): Party | undefin
  * Formats a shareable party invite text for native clipboard / WhatsApp / iMessage
  */
 export function formatPartyInviteText(party: Party): string {
-  return `You're invited to ${party.title}! 🍸\n\nWhen: ${party.date} · ${party.time}\nWhere: ${party.location}\nPrivate Code: ${party.code}\n\nJoin on Partylot: https://partylot.app/join?code=${party.code}`;
+  return `You're invited to ${party.title}! 🍸\n\nWhen: ${party.date} · ${party.time}\nWhere: ${party.location}\nPrivate Code: ${party.code}\n\nJoin on Partylot: https://partylot.vercel.app/join/${party.code}`;
 }

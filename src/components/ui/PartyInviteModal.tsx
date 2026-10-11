@@ -34,8 +34,8 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://partylot.app';
-  const inviteUrl = `${origin}/join?code=${party.code}`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://partylot.vercel.app';
+  const inviteUrl = `${origin}/join/${party.code}`;
 
   // Draw Instagram-style rounded QR Code on Canvas (clean, sleek, without center emoji)
   useEffect(() => {

@@ -1,3 +1,17 @@
+/**
+ * @security SocialGraph Attestation Endpoint
+ *
+ * This endpoint records verifiable social ties and gathering attendance on Monad Testnet.
+ *
+ * Security Model & Trust Boundaries:
+ * 1. Authentication: Requires verified Privy JWT (Bearer token).
+ *    - In production, unauthenticated requests fail-closed with 401 UNAUTHORIZED.
+ *    - In local development, auth is strictly required if REQUIRE_AUTH_IN_DEV=true is set.
+ * 2. Rate Limiting: IP-scoped sliding window (20 req / 60s) to mitigate automated spam.
+ * 3. Onchain Signer: Uses a server-side deployer key authorized on the SocialGraph contract.
+ *    - The SocialGraph contract enforces onlyOwnerOrRegistry modifier and MAX_RECORD_BATCH limit.
+ * 4. Sybil & Replay Resistance: Verified against Supabase party membership before onchain attestation.
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { createWalletClient, http, keccak256, toHex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -58,9 +72,9 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-  } else if (process.env.NODE_ENV === 'production') {
+  } else if (process.env.NODE_ENV === 'production' || process.env.REQUIRE_AUTH_IN_DEV === 'true') {
     return NextResponse.json(
-      { success: false, error: 'UNAUTHORIZED', message: 'Authentication required for attestations in production.' },
+      { success: false, error: 'UNAUTHORIZED', message: 'Authentication required for attestations.' },
       { status: 401 }
     );
   }

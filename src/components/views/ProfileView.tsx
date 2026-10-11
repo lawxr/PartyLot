@@ -29,6 +29,8 @@ import { ProfileAddNightModal } from '@/components/profile/ProfileAddNightModal'
 import { ProfileSettingsModal } from '@/components/profile/ProfileSettingsModal';
 import { CreateCrewModal } from '@/components/ui/CreateCrewModal';
 import { getCoverUrl, getAvatarUrl, getOptimizedImageUrl } from '@/lib/imageOptimization';
+import { ReputationBadge } from '@/components/ui/ReputationBadge';
+import { calculateReputation } from '@/lib/reputation';
 
 const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-3 h-3' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -106,6 +108,11 @@ export const ProfileView: React.FC = () => {
 
     return list;
   }, [currentUser.id, parties]);
+
+  const userNightsCount = currentUser.gatheringsCount || attendedPartyIds.length;
+  const repDetails = useMemo(() => {
+    return calculateReputation(userNightsCount, userNightsCount);
+  }, [userNightsCount]);
 
   // Attended nights / events (real gatherings hosted, joined, or attended)
   const attendedPartiesList: Party[] = useMemo(() => {
@@ -349,9 +356,16 @@ export const ProfileView: React.FC = () => {
 
             {/* Name and Handle */}
             <div className="mb-3">
-              <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl text-[#171512] dark:text-white tracking-tight leading-tight">
-                {currentUser.name || 'Law'}
-              </h2>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl text-[#171512] dark:text-white tracking-tight leading-tight">
+                  {currentUser.name || 'Law'}
+                </h2>
+                <ReputationBadge
+                  sharedNights={userNightsCount}
+                  gatheringsCount={userNightsCount}
+                  size="sm"
+                />
+              </div>
               <span className="text-xs sm:text-sm font-semibold text-[#8E887E] dark:text-[#A8A196] block mt-0.5">
                 {currentUser.handle?.startsWith('@') ? currentUser.handle : currentUser.handle ? `@${currentUser.handle}` : currentUser.walletAddress ? `${currentUser.walletAddress.slice(0, 6)}...${currentUser.walletAddress.slice(-4)}` : '@member'}
               </span>
@@ -447,6 +461,62 @@ export const ProfileView: React.FC = () => {
                 </span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* SocialGraph Reputation Tier & Onchain Stake Card */}
+        <div className="p-4 sm:p-5 rounded-3xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/8 dark:border-white/10 mb-6 transition-all">
+          <div className="flex items-center justify-between gap-3 mb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#836EF9] animate-pulse" />
+              <span className="text-[10px] uppercase font-black tracking-widest text-[#836EF9] dark:text-[#A78BFA]">
+                {isEs ? 'REPUTACIÓN EN SOCIAL GRAPH (MONAD)' : 'SOCIAL GRAPH REPUTATION (MONAD)'}
+              </span>
+            </div>
+            <ReputationBadge
+              sharedNights={userNightsCount}
+              gatheringsCount={userNightsCount}
+              size="xs"
+            />
+          </div>
+
+          {/* Progress Bar towards Next Tier */}
+          <div className="mb-3">
+            <div className="flex items-center justify-between text-xs font-semibold text-[#8E887E] dark:text-[#A8A196] mb-1.5">
+              <span>
+                {isEs ? `Nivel actual: ${repDetails.tierNameEs}` : `Current tier: ${repDetails.tierName}`}
+              </span>
+              <span>
+                {repDetails.nextTierNights
+                  ? isEs
+                    ? `${repDetails.effectiveNights} / ${repDetails.nextTierNights} noches para el siguiente nivel`
+                    : `${repDetails.effectiveNights} / ${repDetails.nextTierNights} nights to next tier`
+                  : isEs
+                  ? 'Nivel máximo alcanzado (OG Legend)'
+                  : 'Max tier unlocked (OG Legend)'}
+              </span>
+            </div>
+            <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#836EF9] to-[#F0DC00] rounded-full transition-all duration-500"
+                style={{ width: `${repDetails.progressToNext}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Unlocked Perks Chips */}
+          <div className="flex items-center gap-1.5 flex-wrap text-xs">
+            <span className="text-[10px] uppercase font-bold text-[#6F6A62] dark:text-[#A8A196] mr-1">
+              {isEs ? 'Privilegios:' : 'Perks:'}
+            </span>
+            {(isEs ? repDetails.unlockedPerksEs : repDetails.unlockedPerks).map((perk, idx) => (
+              <span
+                key={idx}
+                className="px-2.5 py-0.5 rounded-full bg-white/80 dark:bg-white/10 border border-black/5 dark:border-white/10 text-[11px] font-medium text-[#171512] dark:text-[#F5F1E8]"
+              >
+                ✓ {perk}
+              </span>
+            ))}
           </div>
         </div>
 

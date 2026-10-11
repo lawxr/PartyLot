@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Users, Zap, Copy, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Users, Zap, Copy, Check, Trophy } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { WHOS_MOST_LIKELY_QUESTIONS } from '@/data/mockData';
+import { RewardWinnerModal } from './RewardWinnerModal';
 
 export const WhosMostLikely: React.FC = () => {
   const {
@@ -27,6 +28,7 @@ export const WhosMostLikely: React.FC = () => {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [votedMemberId, setVotedMemberId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
 
   useEffect(() => {
     if (!party?.id) return;
@@ -272,6 +274,31 @@ export const WhosMostLikely: React.FC = () => {
         })}
       </div>
 
+      {/* Onchain Reward Prompt for Selected Member */}
+      <AnimatePresence>
+        {votedMemberId && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="w-full flex items-center justify-between gap-3 p-3.5 mt-2 mb-2 rounded-2xl bg-[#836EF9]/10 border border-[#836EF9]/25 text-xs text-[#171512] dark:text-[#F5F1E8]"
+          >
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-[#836EF9] shrink-0" />
+              <span className="font-medium">
+                {isEs ? '¿Quieres enviar una recompensa onchain?' : 'Send an onchain bounty to the voted member?'}
+              </span>
+            </div>
+            <button
+              onClick={() => setIsRewardModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-[#836EF9] hover:bg-[#7257F2] text-white font-bold text-xs shrink-0 active:scale-95 transition-all cursor-pointer shadow-sm"
+            >
+              {isEs ? '🏆 Premiar' : '🏆 Reward'}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ============================================================== */}
       {/* SECONDARY ACTIONS: PREV & SKIP/NEXT BUTTONS                    */}
       {/* ============================================================== */}
@@ -316,6 +343,13 @@ export const WhosMostLikely: React.FC = () => {
           {currentStep} / {totalQuestions}
         </span>
       </footer>
+
+      <RewardWinnerModal
+        isOpen={isRewardModalOpen}
+        onClose={() => setIsRewardModalOpen(false)}
+        gameTitle="Who is Most Likely"
+        defaultRecipientId={votedMemberId || undefined}
+      />
     </div>
   );
 };

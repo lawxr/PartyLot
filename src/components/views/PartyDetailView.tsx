@@ -35,6 +35,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { uploadImageFile } from '@/services/storageService';
 import { useMonPrice } from '@/hooks/useMonPrice';
 import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
+import { ReputationBadge } from '@/components/ui/ReputationBadge';
 
 export const PartyDetailView: React.FC = () => {
   const {
@@ -331,6 +332,11 @@ export const PartyDetailView: React.FC = () => {
               <span className="text-xs sm:text-sm font-semibold text-white">
                 {isEs ? `Organizado por ${hostName}` : `Hosted by ${hostName}`}
               </span>
+              <ReputationBadge
+                sharedNights={hostMember?.nightsTogether || 3}
+                gatheringsCount={hostMember?.nightsTogether || 3}
+                size="xs"
+              />
             </div>
 
             {/* Real Attendees Avatar Stack with Social Graph Modal trigger */}

@@ -20,6 +20,7 @@ import {
 import { Member, SharedExperienceConnection } from '@/types';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { ReputationBadge } from '@/components/ui/ReputationBadge';
 
 interface SharedExperienceModalProps {
   member: Member | null;
@@ -250,6 +251,12 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
                 )}
               </div>
               <span className="text-xs font-bold mt-1 text-[#171512]">{member.name}</span>
+              <ReputationBadge
+                sharedNights={displayedGatherings}
+                gatheringsCount={displayedGatherings}
+                size="xs"
+                className="mt-1"
+              />
             </div>
           </div>
 

@@ -13,12 +13,15 @@ function JoinRedirectHandler() {
   useEffect(() => {
     const rawCode = searchParams.get('code') || searchParams.get('join');
     if (rawCode) {
-      const cleanCode = rawCode.trim().slice(0, 4).toUpperCase();
-      setPendingInviteCode(cleanCode);
-      setCurrentView('join-party');
-    } else {
-      setCurrentView('join-party');
+      const cleanCode = rawCode.trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 10).toUpperCase();
+      if (cleanCode) {
+        setPendingInviteCode(cleanCode);
+        setCurrentView('join-party');
+        router.replace(`/join/${cleanCode}`);
+        return;
+      }
     }
+    setCurrentView('join-party');
     router.replace('/');
   }, [searchParams, router, setPendingInviteCode, setCurrentView]);
 

@@ -473,6 +473,14 @@ export const SocialGraphABI = [
     type: 'event',
   },
   {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'address', name: 'registry', type: 'address' },
+    ],
+    name: 'AuthorizedRegistryUpdated',
+    type: 'event',
+  },
+  {
     inputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     name: 'crews',
     outputs: [
@@ -536,6 +544,27 @@ export const SocialGraphABI = [
     name: 'totalGatheringsAttended',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'owner',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'authorizedRegistry',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'address', name: '_registry', type: 'address' }],
+    name: 'setAuthorizedRegistry',
+    outputs: [],
+    stateMutability: 'nonpayable',
     type: 'function',
   },
 ] as const;

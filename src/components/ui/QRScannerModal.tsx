@@ -18,11 +18,17 @@ export function extractPartyCode(scannedText: string): string | null {
 
   // Try parsing as URL
   try {
-    if (raw.includes('?') || raw.startsWith('http://') || raw.startsWith('https://')) {
-      const url = new URL(raw, 'https://partylot.app');
+    if (raw.includes('?') || raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('/')) {
+      const url = new URL(raw, 'https://partylot.vercel.app');
       const code = url.searchParams.get('code') || url.searchParams.get('join');
       if (code && code.trim().length >= 4) {
         return code.trim().slice(0, 4).toUpperCase();
+      }
+
+      // Path-based match: /join/8F4K or /party/8F4K
+      const pathMatch = url.pathname.match(/\/(?:join|party)\/([A-Za-z0-9_-]{4,10})/i);
+      if (pathMatch) {
+        return pathMatch[1].slice(0, 4).toUpperCase();
       }
     }
   } catch {

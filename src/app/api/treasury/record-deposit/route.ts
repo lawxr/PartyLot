@@ -1,7 +1,21 @@
+/**
+ * @security Direct-Wallet Deposit Sync Endpoint
+ *
+ * This endpoint syncs offchain database pot balances after a user submits a deposit
+ * directly via their self-sovereign connected wallet on Monad Testnet.
+ *
+ * Security Guarantees:
+ * 1. Authentication: Verified Privy Bearer token (required in production & configurable in dev).
+ * 2. Onchain Verification: Transaction receipt is queried directly on Monad.
+ *    - Reverted, non-existent, or unconfirmed receipts fail-closed immediately (no balance credit).
+ * 3. Idempotency: Pot transaction upsert keyed by deterministic tx hash prefix.
+ * 4. Rate Limiting: IP-based sliding window (20 req / 60s).
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { publicMonadClient } from '@/lib/web3/monad';
 import { checkRateLimit } from '@/lib/security/rateLimit';
+import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
 
 export async function POST(request: NextRequest) {
   const clientIp =
@@ -18,6 +32,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { success: false, error: 'RATE_LIMIT_EXCEEDED', message: 'Too many deposit record requests.' },
       { status: 429 }
+    );
+  }
+
+  // Authentication validation
+  const authHeader = request.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (token) {
+      try {
+        await verifyPrivyToken(token);
+      } catch {
+        return NextResponse.json(
+          { success: false, error: 'UNAUTHORIZED', message: 'Invalid or expired authentication token.' },
+          { status: 401 }
+        );
+      }
+    }
+  } else if (process.env.NODE_ENV === 'production' || process.env.REQUIRE_AUTH_IN_DEV === 'true') {
+    return NextResponse.json(
+      { success: false, error: 'UNAUTHORIZED', message: 'Authentication required to record deposits.' },
+      { status: 401 }
     );
   }
 
@@ -44,21 +79,31 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 1. Verify transaction on Monad Testnet
+  // 1. Verify transaction on Monad Testnet (fail-closed if receipt is missing or reverted)
   try {
     const receipt = await publicMonadClient.waitForTransactionReceipt?.({
       hash: txHash,
       timeout: 20_000,
     }).catch(() => null);
 
-    if (receipt && receipt.status === 'reverted') {
+    if (!receipt || receipt.status !== 'success') {
       return NextResponse.json(
-        { success: false, error: 'TX_REVERTED', message: 'Transaction reverted on Monad blockchain.' },
+        {
+          success: false,
+          error: receipt?.status === 'reverted' ? 'TX_REVERTED' : 'TX_UNCONFIRMED',
+          message: receipt?.status === 'reverted'
+            ? 'Transaction reverted on Monad blockchain.'
+            : 'Transaction receipt could not be confirmed on Monad testnet.',
+        },
         { status: 400 }
       );
     }
   } catch (txErr) {
     console.warn('Monad tx receipt check notice:', txErr);
+    return NextResponse.json(
+      { success: false, error: 'VERIFICATION_FAILED', message: 'Unable to verify transaction receipt on Monad.' },
+      { status: 502 }
+    );
   }
 
   try {

@@ -1,6 +1,6 @@
 import type { DebtSettlement, PotTransaction } from '@/types';
 import { createWalletClient, custom, parseEther, formatEther } from 'viem';
-import { monadTestnet, publicMonadClient, getMonadExplorerTxUrl, toPartyBytes32, MONAD_POLLING_INTERVAL_MS } from '@/lib/web3/monad';
+import { monadTestnet, publicMonadClient, getMonadExplorerTxUrl, toPartyBytes32 } from '@/lib/web3/monad';
 import { MONAD_CONTRACT_ADDRESSES, PartyTreasuryABI } from '@/contracts';
 import { getClientPrivyToken } from '@/hooks/usePrivySync';
 
@@ -169,7 +169,6 @@ export async function depositToPartyPotOnchain(
     const receipt = await publicMonadClient.waitForTransactionReceipt({
       hash: txHash,
       timeout: 30_000,
-      pollingInterval: MONAD_POLLING_INTERVAL_MS,
     });
 
     if (receipt && receipt.status === 'reverted') {
@@ -371,7 +370,6 @@ export async function settleDamageOnchain(
       const receipt = await publicMonadClient.waitForTransactionReceipt({
         hash: txHash,
         timeout: 30_000,
-        pollingInterval: MONAD_POLLING_INTERVAL_MS,
       });
 
       if (receipt && receipt.status === 'reverted') {

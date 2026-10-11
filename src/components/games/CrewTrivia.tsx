@@ -7,6 +7,7 @@ import { usePartyStore } from '@/store/usePartyStore';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { TRIVIA_QUESTIONS } from '@/data/mockData';
+import { RewardWinnerModal } from './RewardWinnerModal';
 
 export const CrewTrivia: React.FC = () => {
   const {
@@ -35,6 +36,7 @@ export const CrewTrivia: React.FC = () => {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
+  const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
 
   const questions =
     crewTrivia && crewTrivia.length > 0
@@ -142,12 +144,26 @@ export const CrewTrivia: React.FC = () => {
           </div>
 
           <button
+            onClick={() => setIsRewardModalOpen(true)}
+            className="w-full mb-3 py-3.5 px-5 rounded-2xl bg-[#836EF9] hover:bg-[#7257F2] text-white font-black text-sm shadow-[0_4px_16px_rgba(131,110,249,0.35)] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Trophy className="w-4 h-4" />
+            <span>{isEs ? '🏆 Premiar Ganador (Monad Pot)' : '🏆 Reward Winner (Monad Pot)'}</span>
+          </button>
+
+          <button
             onClick={handleRestart}
             className="w-full py-3.5 px-5 rounded-2xl bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] font-black text-sm shadow-[0_4px_16px_rgba(240,220,0,0.3)] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <RotateCcw className="w-4 h-4 stroke-[2.5]" />
             <span>{isEs ? 'Jugar de Nuevo' : 'Play Again'}</span>
           </button>
+
+          <RewardWinnerModal
+            isOpen={isRewardModalOpen}
+            onClose={() => setIsRewardModalOpen(false)}
+            gameTitle="Crew Trivia"
+          />
         </div>
       </div>
     );

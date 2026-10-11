@@ -1,3 +1,29 @@
+/**
+ * @security Treasury Action Relayer & Execution Endpoint
+ *
+ * TRUST MODEL & TRANSACTION PATHS:
+ * 1. Non-Custodial Direct Submission (Recommended & Default for End Users):
+ *    - Connected wallets (e.g., Privy embedded wallet, MetaMask, Rabby) sign and broadcast
+ *      treasury transactions directly to Monad Testnet using Viem.
+ *    - The user retains and exercises complete cryptographic sovereignty over their funds.
+ *
+ * 2. Server-Side Relayer Fallback (Testnet Convenience / Gasless Onboarding):
+ *    - This route acts as a gas relayer using the server-side `MONAD_DEPLOYER_PRIVATE_KEY`.
+ *    - In a testnet hackathon environment, this prevents users from getting stuck without native testnet MON gas.
+ *    - NON-PRODUCTION NOTICE: Storing a raw private key in environment variables is NOT safe for mainnet production.
+ *
+ * 3. Production Hardening Roadmap:
+ *    - In production, this relayer MUST be replaced with:
+ *      a) Account Abstraction (ERC-4337 Paymasters / UserOperations via bundlers).
+ *      b) Scoped Session Keys granting temporary, restricted execution permissions.
+ *      c) Hardware Security Modules (AWS KMS / GCP Cloud KMS / Turnkey MPC).
+ *
+ * 4. Authorization & Fail-Closed Guardrails:
+ *    - Mandatory Privy Bearer JWT validation to confirm user identity.
+ *    - Host-Only Actions ('reward', 'reimbursement', 'spend', 'rollover', 'register') verify that the authenticated
+ *      user is the actual host of the party in the Supabase database.
+ *    - Transaction receipt is confirmed onchain before writing database state changes.
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { createWalletClient, http, parseEther, keccak256, toHex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export interface AvatarUser {
   id?: string;
   name?: string;
   avatar?: string | null;
   address?: string;
+  walletAddress?: string;
 }
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -53,23 +54,64 @@ function getHash(input: string): number {
   return Math.abs(hash);
 }
 
+/**
+ * Normalizes damaged or corrupted profile names (e.g. "undefined", "null", "[object Object]", raw 0x addresses)
+ */
+function cleanProfileName(name?: string | null): string {
+  if (!name || typeof name !== 'string') return '';
+  const trimmed = name.trim();
+  const lower = trimmed.toLowerCase();
+  if (
+    lower === 'undefined' ||
+    lower === 'null' ||
+    lower === '[object object]' ||
+    lower === 'nan' ||
+    lower === 'none' ||
+    lower === 'false'
+  ) {
+    return '';
+  }
+  // Strip leading @ handle character if present
+  if (trimmed.startsWith('@') && trimmed.length > 1) {
+    return trimmed.slice(1);
+  }
+  return trimmed;
+}
+
 function getInitials(name?: string, address?: string): string {
-  if (name && name.trim().length > 0) {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
+  const cleanName = cleanProfileName(name);
+
+  if (cleanName) {
+    // If the name is literally a raw Ethereum address (e.g. 0x0419F23...)
+    if (cleanName.startsWith('0x') && cleanName.length >= 6) {
+      return cleanName.slice(2, 4).toUpperCase();
+    }
+    const parts = cleanName.split(/\s+/).filter(Boolean);
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
     return parts[0].slice(0, 2).toUpperCase();
   }
-  if (address && address.startsWith('0x')) {
+
+  // Fallback to address
+  if (address && address.startsWith('0x') && address.length >= 6) {
     return address.slice(2, 4).toUpperCase();
   }
-  return 'U';
+
+  return 'PA';
 }
 
-function isStockPhoto(url?: string | null): boolean {
-  if (!url) return false;
-  return url.includes('images.unsplash.com');
+function isValidAvatarUrl(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined' || trimmed === 'false') return false;
+  return (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('data:image/') ||
+    trimmed.startsWith('blob:') ||
+    trimmed.startsWith('/')
+  );
 }
 
 export const Avatar: React.FC<AvatarProps> = ({
@@ -85,15 +127,22 @@ export const Avatar: React.FC<AvatarProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
 
-  const rawName = nameProp ?? user?.name ?? '';
-  const rawId = idProp ?? user?.id ?? user?.address ?? rawName;
+  const rawName = cleanProfileName(nameProp ?? user?.name ?? '');
+  const walletAddr = user?.address || user?.walletAddress || '';
+  const rawId = idProp ?? user?.id ?? walletAddr ?? rawName;
   const rawSrc = srcProp ?? user?.avatar ?? null;
 
-  // If the avatar is a stock unsplash photo, discard it to avoid fake stranger avatars
-  const validSrc = rawSrc && !isStockPhoto(rawSrc) ? rawSrc : null;
+  const validSrc = isValidAvatarUrl(rawSrc) ? rawSrc : null;
 
-  const initials = getInitials(rawName, user?.address);
-  const colorIndex = getHash(rawId || 'default') % PALETTE.length;
+  // Reset imgError whenever source changes so newly uploaded photos render immediately
+  useEffect(() => {
+    setImgError(false);
+  }, [validSrc]);
+
+  const initials = getInitials(rawName, walletAddr);
+  // Anchor colorSeed to clean name or identifier so user has identical theme across all views
+  const colorSeed = rawName || rawId || 'default';
+  const colorIndex = getHash(colorSeed) % PALETTE.length;
   const theme = PALETTE[colorIndex];
   const sizeConfig = SIZE_MAP[size];
 

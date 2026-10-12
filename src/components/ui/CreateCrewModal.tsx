@@ -14,24 +14,16 @@ interface CreateCrewModalProps {
 
 const COVER_PRESETS = [
   {
-    name: 'Techno Bunker',
-    url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
+    name: 'Sunset Glow',
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23F0DC00"/><stop offset="100%" stop-color="%23FF5722"/></linearGradient></defs><rect width="800" height="800" fill="url(%23g)"/></svg>',
   },
   {
-    name: 'Hacker House',
-    url: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
+    name: 'Midnight Amber',
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%232C241D"/><stop offset="100%" stop-color="%23F0DC00"/></linearGradient></defs><rect width="800" height="800" fill="url(%23g)"/></svg>',
   },
   {
-    name: 'Rooftop Sunset',
-    url: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    name: 'Neon Cyber Loft',
-    url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    name: 'Festival Afters',
-    url: 'https://images.unsplash.com/photo-1543007630-9710e4a00a20?auto=format&fit=crop&w=800&q=80',
+    name: 'Warm Hearth',
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%231E1B18"/><stop offset="100%" stop-color="%23382D20"/></linearGradient></defs><rect width="800" height="800" fill="url(%23g)"/></svg>',
   },
 ];
 

@@ -8,6 +8,7 @@ import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { WHOS_MOST_LIKELY_QUESTIONS } from '@/data/mockData';
 import { RewardWinnerModal } from './RewardWinnerModal';
+import { Avatar } from '@/components/ui/Avatar';
 
 export const WhosMostLikely: React.FC = () => {
   const {
@@ -47,7 +48,7 @@ export const WhosMostLikely: React.FC = () => {
   const friendsToDisplay = partyMembers.slice(0, 6).map((m) => ({
     id: m.id,
     name: m.name,
-    avatar: m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    avatar: m.avatar,
   }));
 
   const totalQuestions = questions.length;
@@ -240,11 +241,12 @@ export const WhosMostLikely: React.FC = () => {
                       : 'border-2 border-transparent group-hover:border-black/20 group-hover:scale-102'
                   }`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={friend.avatar}
-                    alt={friend.name}
-                    className="w-full h-full object-cover"
+                  <Avatar
+                    user={{
+                      avatar: friend.avatar,
+                      name: friend.name,
+                    }}
+                    size="xl"
                   />
                 </div>
 
@@ -257,7 +259,7 @@ export const WhosMostLikely: React.FC = () => {
                       exit={{ scale: 0 }}
                       className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F0DC00] text-[#171512] font-black text-[11px] flex items-center justify-center border-2 border-[#F7F2E8] shadow-sm z-10"
                     >
-                      {votesCount > 0 ? votesCount : '✓'}
+                      {votesCount > 0 ? votesCount : <Check className="w-3 h-3 stroke-[3]" />}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -286,14 +288,14 @@ export const WhosMostLikely: React.FC = () => {
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-[#836EF9] shrink-0" />
               <span className="font-medium">
-                {isEs ? '¿Quieres enviar una recompensa onchain?' : 'Send an onchain bounty to the voted member?'}
+                {isEs ? '¿Quieres premiar al participante más votado?' : 'Reward the most voted player?'}
               </span>
             </div>
             <button
               onClick={() => setIsRewardModalOpen(true)}
               className="px-3.5 py-1.5 rounded-xl bg-[#836EF9] hover:bg-[#7257F2] text-white font-bold text-xs shrink-0 active:scale-95 transition-all cursor-pointer shadow-sm"
             >
-              {isEs ? '🏆 Premiar' : '🏆 Reward'}
+              {isEs ? 'Premiar' : 'Reward'}
             </button>
           </motion.div>
         )}

@@ -3,6 +3,7 @@
 import React, { useEffect, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { X } from 'lucide-react';
 
 const emptySubscribe = () => () => {};
 
@@ -90,7 +91,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                   className="w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-[#171512]/70 hover:text-[#171512] dark:text-white/70 dark:hover:text-white flex items-center justify-center text-xs transition-colors shrink-0 cursor-pointer"
                   aria-label="Close"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             )}

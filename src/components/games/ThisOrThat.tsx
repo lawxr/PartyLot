@@ -138,8 +138,8 @@ export const ThisOrThat: React.FC = () => {
 
       <p className="text-[11px] text-[#6F6A62] dark:text-[#A8A196] mb-3 text-center">
         {isEs
-          ? '👈 Desliza izquierda por A · Desliza derecha por B 👉'
-          : '👈 Swipe left for A · Swipe right for B 👉'}
+          ? 'Desliza a la izquierda por A · Desliza a la derecha por B'
+          : 'Swipe left for A · Swipe right for B'}
       </p>
 
       {/* Two Vertical Playing Cards Arena with Tinder Swiping */}
@@ -171,14 +171,14 @@ export const ThisOrThat: React.FC = () => {
               style={{ opacity: stampOpacityA }}
               className="absolute -top-3 left-4 z-30 px-3.5 py-1 rounded-2xl border-2 border-[#171512] dark:border-white bg-[#F0DC00] text-[#171512] font-black text-xs uppercase tracking-wider shadow-lg pointer-events-none rotate-[-12deg]"
             >
-              👈 {isEs ? 'ELEGIR A' : 'PICK A'}
+              {isEs ? 'ELEGIR A' : 'PICK A'}
             </motion.div>
 
             <motion.div
               style={{ opacity: stampOpacityB }}
               className="absolute -top-3 right-4 z-30 px-3.5 py-1 rounded-2xl border-2 border-[#F0DC00] bg-[#171512] dark:bg-white text-white dark:text-[#171512] font-black text-xs uppercase tracking-wider shadow-lg pointer-events-none rotate-[12deg]"
             >
-              {isEs ? 'ELEGIR B' : 'PICK B'} 👉
+              {isEs ? 'ELEGIR B' : 'PICK B'}
             </motion.div>
 
             {/* ============================================================== */}
@@ -225,7 +225,7 @@ export const ThisOrThat: React.FC = () => {
               <div className="z-10 mt-auto pt-2 border-t border-black/5 dark:border-white/10">
                 <div className="flex items-center justify-between text-xs font-mono font-bold mb-1">
                   <span className="text-[#6F6A62] dark:text-[#A8A196] text-[11px]">
-                    {hasVoted ? `${currentQ.votesA || 0} votes` : (isEs ? '👈 Desliza' : '👈 Swipe')}
+                    {hasVoted ? `${currentQ.votesA || 0} votes` : (isEs ? 'Desliza A' : 'Swipe A')}
                   </span>
                   <span className="text-[#B89600] dark:text-[#F0DC00] font-black text-sm">
                     {hasVoted ? `${percentA}%` : '50%'}
@@ -298,7 +298,7 @@ export const ThisOrThat: React.FC = () => {
               <div className="z-10 mt-auto pt-2 border-t border-black/5 dark:border-white/10">
                 <div className="flex items-center justify-between text-xs font-mono font-bold mb-1">
                   <span className="text-[#6F6A62] dark:text-[#A8A196] text-[11px]">
-                    {hasVoted ? `${currentQ.votesB || 0} votes` : (isEs ? 'Desliza 👉' : 'Swipe 👉')}
+                    {hasVoted ? `${currentQ.votesB || 0} votes` : (isEs ? 'Desliza B' : 'Swipe B')}
                   </span>
                   <span className="text-[#171512] dark:text-white font-black text-sm">
                     {hasVoted ? `${percentB}%` : '50%'}

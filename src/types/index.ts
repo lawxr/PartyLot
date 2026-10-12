@@ -185,6 +185,8 @@ export interface ActivityItem {
   text: string;
   time: string;
   avatar: string;
+  userName?: string;
+  userId?: string;
   type: 'join' | 'pot' | 'poll' | 'game' | 'expense';
   txHash?: string;
   blockNumber?: number;

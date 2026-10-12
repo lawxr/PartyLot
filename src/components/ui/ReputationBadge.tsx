@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, Shield, Award, Crown, User, Info } from 'lucide-react';
+import { Moon, Users, User } from 'lucide-react';
 import { calculateReputation } from '@/lib/reputation';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
@@ -30,18 +30,13 @@ export const ReputationBadge: React.FC<ReputationBadgeProps> = ({
       className: size === 'xs' ? 'w-3 h-3' : size === 'md' ? 'w-4 h-4' : 'w-3.5 h-3.5',
     };
 
-    switch (rep.tier) {
-      case 'og_legend':
-        return <Crown {...iconProps} className={`${iconProps.className} text-[#F0DC00]`} />;
-      case 'inner_circle':
-        return <Award {...iconProps} className={`${iconProps.className} text-[#836EF9]`} />;
-      case 'regular':
-        return <Shield {...iconProps} className={`${iconProps.className} text-blue-500`} />;
-      case 'initiate':
-        return <Sparkles {...iconProps} className={`${iconProps.className} text-emerald-500`} />;
-      default:
-        return <User {...iconProps} className={`${iconProps.className} text-stone-500`} />;
+    if (rep.effectiveNights <= 0) {
+      return <User {...iconProps} className={`${iconProps.className} opacity-60`} />;
     }
+    if (rep.effectiveNights === 1) {
+      return <Moon {...iconProps} className={`${iconProps.className} text-[#171512] dark:text-[#F0DC00]`} />;
+    }
+    return <Users {...iconProps} className={`${iconProps.className} text-[#171512] dark:text-[#F0DC00]`} />;
   };
 
   const sizeClasses = {
@@ -50,12 +45,17 @@ export const ReputationBadge: React.FC<ReputationBadgeProps> = ({
     md: 'py-1.5 px-3 text-xs gap-2',
   }[size];
 
-  const label = isEs ? rep.tierNameEs : rep.tierName;
+  const label =
+    rep.effectiveNights > 0
+      ? `${rep.effectiveNights} ${isEs ? (rep.effectiveNights === 1 ? 'noche juntos' : 'noches juntos') : (rep.effectiveNights === 1 ? 'night together' : 'nights together')}`
+      : isEs
+        ? 'Nuevo'
+        : 'New';
 
   return (
     <span
-      className={`inline-flex items-center font-bold font-display rounded-full border transition-all ${rep.badgeBg} ${rep.badgeBorder} ${rep.badgeText} ${sizeClasses} ${className}`}
-      title={`${label} (${rep.effectiveNights} ${isEs ? 'noches compartidas' : 'nights together'})`}
+      className={`inline-flex items-center font-medium font-ui rounded-full border transition-all ${rep.badgeBg} ${rep.badgeBorder} ${rep.badgeText} ${sizeClasses} ${className}`}
+      title={`${rep.effectiveNights} ${isEs ? 'noches compartidas' : 'nights together'}`}
     >
       {getIcon()}
       {!showIconOnly && <span className="tracking-tight">{label}</span>}

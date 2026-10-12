@@ -137,8 +137,7 @@ export const JoinPartyView: React.FC = () => {
           date: 'Upcoming',
           time: 'TBA',
           description: 'Private gathering invitation confirmed by server.',
-          coverImage:
-            'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80',
+          coverImage: '',
           members: [],
           potBalance: 0,
           status: 'upcoming',

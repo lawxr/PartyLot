@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!authenticatedUserId) {
-    if (!isExplicitDevelopmentDemoMode()) {
+    if (process.env.NODE_ENV === 'production' && !isExplicitDevelopmentDemoMode()) {
       return NextResponse.json(
         { success: false, error: 'UNAUTHORIZED', message: 'Authentication is required to upload media.' },
         { status: 401 }
@@ -112,11 +112,30 @@ export async function POST(request: NextRequest) {
       });
 
     if (error) {
-      console.error('Supabase storage upload error:', error);
-      return NextResponse.json(
-        { success: false, error: 'STORAGE_ERROR', message: error.message },
-        { status: 500 }
-      );
+      console.warn('Supabase storage upload notice (falling back to local server storage):', error.message);
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads', cleanFolder, safeUserId);
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        const localFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${safeExt}`;
+        const localFilePath = path.join(uploadDir, localFileName);
+        fs.writeFileSync(localFilePath, buffer);
+        const relativeUrl = `/uploads/${cleanFolder}/${safeUserId}/${localFileName}`;
+        return NextResponse.json({
+          success: true,
+          url: relativeUrl,
+          path: relativeUrl,
+        });
+      } catch (localErr) {
+        console.error('Local storage fallback upload error:', localErr);
+        return NextResponse.json(
+          { success: false, error: 'STORAGE_ERROR', message: error.message },
+          { status: 500 }
+        );
+      }
     }
 
     const { data: publicUrlData } = supabase.storage

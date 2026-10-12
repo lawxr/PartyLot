@@ -20,6 +20,7 @@ import {
   Check,
   Copy,
   Camera,
+  Users,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useWallets } from '@privy-io/react-auth';
@@ -36,6 +37,10 @@ import { uploadImageFile } from '@/services/storageService';
 import { useMonPrice } from '@/hooks/useMonPrice';
 import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
 import { ReputationBadge } from '@/components/ui/ReputationBadge';
+import { Avatar } from '@/components/ui/Avatar';
+import { toast } from '@/store/useToastStore';
+import { resolveActivityActor } from '@/lib/activityActor';
+import { DEFAULT_PARTY_COVER } from '@/data/mockData';
 
 export const PartyDetailView: React.FC = () => {
   const {
@@ -158,7 +163,7 @@ export const PartyDetailView: React.FC = () => {
       await addToPot(
         party.id,
         potAmount,
-        `Deposit of ${potAmount} MON on Monad Testnet`,
+        `Deposit of ${potAmount} MON`,
         { wallet: activeWallet }
       );
       confetti({
@@ -176,7 +181,7 @@ export const PartyDetailView: React.FC = () => {
       }
     } catch (err) {
       console.error('Error adding to party pot:', err);
-      setPotError(err instanceof Error ? err.message : 'Failed to deposit into Monad Treasury.');
+      setPotError(err instanceof Error ? err.message : (isEs ? 'Error al aportar al bote.' : 'Failed to deposit into party pot.'));
     } finally {
       setIsPotSubmitting(false);
     }
@@ -190,7 +195,7 @@ export const PartyDetailView: React.FC = () => {
       await addToPot(
         party.id,
         potAmount,
-        `Demo Sponsor deposit of ${potAmount} MON on Monad Testnet`
+        `Demo deposit of ${potAmount} MON`
       );
       confetti({
         particleCount: 60,
@@ -241,9 +246,7 @@ export const PartyDetailView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-24 select-none relative overflow-x-hidden transition-colors duration-200">
-      {/* ============================================================== */}
-      {/* PHONE 2 TOP FLOATING CONTROLS (Back, Share, More)             */}
-      {/* ============================================================== */}
+      {/* Top Floating Controls */}
       <header className="absolute top-0 left-0 right-0 z-40 px-4 sm:px-6 md:px-8 py-3 md:pt-6 safe-top flex items-center justify-between pointer-events-none max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto w-full">
         <button
           onClick={() => {
@@ -284,11 +287,14 @@ export const PartyDetailView: React.FC = () => {
           {/* Background Image: Bright, Candid Party Photography */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={getCoverUrl(party.coverImage, 900)}
+            src={getCoverUrl(party.coverImage, 900) || DEFAULT_PARTY_COVER}
             alt={party.title}
             className="absolute inset-0 w-full h-full object-cover object-center"
             loading="eager"
             decoding="async"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = DEFAULT_PARTY_COVER;
+            }}
           />
 
           {/* Restrained Dark Gradient (lower half only) */}
@@ -314,20 +320,14 @@ export const PartyDetailView: React.FC = () => {
 
             {/* Host Row */}
             <div className="flex items-center gap-2 mb-3 drop-shadow">
-              <div className="w-6 h-6 rounded-full overflow-hidden border border-white shrink-0 shadow-sm bg-black/30 flex items-center justify-center">
-                {hostAvatar ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={getAvatarUrl(hostAvatar, 64)}
-                    alt={hostName}
-                    className="w-full h-full object-cover"
-                    decoding="async"
-                  />
-                ) : (
-                  <span className="text-[10px] font-bold text-white">
-                    {hostName.charAt(0).toUpperCase()}
-                  </span>
-                )}
+              <div className="shrink-0">
+                <Avatar
+                  user={{
+                    avatar: hostAvatar,
+                    name: hostName,
+                  }}
+                  size="xs"
+                />
               </div>
               <span className="text-xs sm:text-sm font-semibold text-white">
                 {isEs ? `Organizado por ${hostName}` : `Hosted by ${hostName}`}
@@ -345,16 +345,16 @@ export const PartyDetailView: React.FC = () => {
                 <button
                   key={m.id || idx}
                   onClick={() => setSelectedMember(m)}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 bg-black/40 cursor-pointer hover:scale-115 hover:z-20 transition-transform relative group focus:outline-none"
+                  className="rounded-full border-2 border-white shadow-sm shrink-0 bg-black/40 cursor-pointer hover:scale-110 hover:z-20 transition-transform relative group focus:outline-none"
                   title={`${m.name} · ${m.nightsTogether || 1} ${isEs ? 'noches juntos' : 'nights together'}`}
                   aria-label={`Ver vínculo social con ${m.name}`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={getAvatarUrl(m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb', 72)}
-                    alt={m.name}
-                    className="w-full h-full object-cover"
-                    decoding="async"
+                  <Avatar
+                    user={{
+                      avatar: m.avatar,
+                      name: m.name,
+                    }}
+                    size="sm"
                   />
                 </button>
               ))}
@@ -456,7 +456,7 @@ export const PartyDetailView: React.FC = () => {
                 )}
               </div>
               <span className="text-[11px] sm:text-xs text-[#706B66] dark:text-[#A8A196] font-medium tracking-tight block truncate">
-                {isEs ? 'Tesoreria onchain en Monad Testnet' : 'Onchain treasury on Monad Testnet'}
+                {isEs ? 'Fondo común del crew' : 'Shared crew fund'}
               </span>
             </div>
 
@@ -499,23 +499,23 @@ export const PartyDetailView: React.FC = () => {
             <div className="space-y-1">
               {partyActivities.length > 0 ? (
                 partyActivities.slice(0, 5).map((act) => {
-                  const getBadge = (type: string) => {
+                  const getActivityIcon = (type: string) => {
                     switch (type) {
                       case 'pot':
-                        return { bg: 'bg-[#F0DC00]', text: 'text-[#171512]', icon: '💰' };
+                        return Coins;
                       case 'game':
-                        return { bg: 'bg-purple-500', text: 'text-white', icon: '🎮' };
+                        return Gamepad2;
                       case 'poll':
-                        return { bg: 'bg-blue-500', text: 'text-white', icon: '📊' };
-                      case 'join':
-                        return { bg: 'bg-emerald-500', text: 'text-white', icon: '👤' };
+                        return BarChart3;
                       case 'expense':
-                        return { bg: 'bg-amber-500', text: 'text-white', icon: '🧾' };
+                        return Receipt;
                       default:
-                        return { bg: 'bg-[#F0DC00]', text: 'text-[#171512]', icon: '✨' };
+                        return Users;
                     }
                   };
-                  const badge = getBadge(act.type);
+                  const Icon = getActivityIcon(act.type);
+
+                  const actor = resolveActivityActor(act, hostName, partyMembers);
 
                   return (
                     <div
@@ -523,27 +523,17 @@ export const PartyDetailView: React.FC = () => {
                       className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="relative shrink-0 w-10 h-10">
-                          <div className="w-10 h-10 rounded-full overflow-hidden border border-black/10 dark:border-white/10 bg-black/20 flex items-center justify-center">
-                            {act.avatar ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img
-                                src={getAvatarUrl(act.avatar, 80)}
-                                alt="User"
-                                className="w-full h-full object-cover"
-                                decoding="async"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-[#F0DC00]/30 text-[#171512] dark:text-white flex items-center justify-center font-display font-black text-sm">
-                                P
-                              </div>
-                            )}
-                          </div>
-                          <div
-                            className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full ${badge.bg} ${badge.text} text-[9px] font-black flex items-center justify-center border-2 border-white dark:border-[#1C1A16] shadow-sm`}
-                          >
-                            {badge.icon}
+                        <div className="relative shrink-0">
+                          <Avatar
+                            user={{
+                              avatar: actor.avatar || act.avatar,
+                              name: actor.name,
+                              id: actor.id,
+                            }}
+                            size="md"
+                          />
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#F0DC00] text-[#171512] flex items-center justify-center border border-white dark:border-[#1C1A16] shadow-sm">
+                            <Icon className="w-2.5 h-2.5 stroke-[2.5]" />
                           </div>
                         </div>
                         <p className="text-xs sm:text-sm text-[#171512] dark:text-[#F5F1E8] truncate font-medium">
@@ -639,7 +629,9 @@ export const PartyDetailView: React.FC = () => {
                 className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between cursor-pointer hover:bg-amber-500/15 transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xl">🎲</span>
+                  <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-700 dark:text-amber-300">
+                    <Gamepad2 className="w-4 h-4 stroke-[2.5]" />
+                  </div>
                   <div>
                     <span className="text-xs font-bold text-[#171512] dark:text-white block">Who&apos;s Most Likely</span>
                     <span className="text-[10px] text-[#6F6A62] dark:text-[#A8A196]">
@@ -657,9 +649,7 @@ export const PartyDetailView: React.FC = () => {
       </div>
     </main>
 
-      {/* ============================================================== */}
-      {/* PHONE 3: ADD TO THE PARTY POT BOTTOM SHEET                     */}
-      {/* ============================================================== */}
+      {/* Party Pot Bottom Sheet */}
       <AnimatePresence>
         {isPotSheetOpen && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -763,21 +753,16 @@ export const PartyDetailView: React.FC = () => {
                 ))}
               </div>
 
-              {/* Payment Source Selection Row (MON · Monad Testnet) */}
+              {/* Payment Source Selection Row */}
               <div className="w-full p-3 rounded-2xl bg-white/70 dark:bg-white/5 border border-black/[0.06] dark:border-white/10 flex items-center justify-between mb-3 shadow-sm">
                 <div className="flex items-center gap-3">
                   <TokenLogo token="mon" size="md" />
                   <div className="text-left">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-display font-bold text-xs text-[#171512] dark:text-white block">
-                        MON nativo · Monad Testnet
-                      </span>
-                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#836EF9]/15 text-[#674FF4] font-bold">
-                        10143
-                      </span>
-                    </div>
+                    <span className="font-display font-bold text-xs text-[#171512] dark:text-white block">
+                      MON · Monad
+                    </span>
                     <span className="text-[10px] text-[#6F6A62] dark:text-[#A8A196] font-medium block">
-                      {isEs ? 'Gas patrocinado · Monad Treasury' : 'Sponsored gas · Monad Treasury'}
+                      {isEs ? 'Aporte directo al fondo común' : 'Direct deposit to crew fund'}
                     </span>
                   </div>
                 </div>
@@ -789,7 +774,7 @@ export const PartyDetailView: React.FC = () => {
                 <div className="w-full p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/10 mb-4 text-left">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-[#6F6A62] dark:text-[#A8A196]">
-                      {isEs ? 'Firmando con tu billetera:' : 'Signing with your wallet:'}
+                      {isEs ? 'Firmando con tu cuenta:' : 'Signing with your account:'}
                     </span>
                     <span className="font-mono font-bold text-[#171512] dark:text-white">
                       {activeWallet.address.slice(0, 6)}...{activeWallet.address.slice(-4)}
@@ -797,7 +782,7 @@ export const PartyDetailView: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between text-xs mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
                     <span className="text-[#6F6A62] dark:text-[#A8A196]">
-                      {isEs ? 'Saldo en tu wallet:' : 'Wallet balance:'}
+                      {isEs ? 'Saldo disponible:' : 'Available balance:'}
                     </span>
                     <span className="font-mono font-bold text-[#836EF9]">
                       {userBalance !== null ? `${Number(userBalance).toFixed(4)} MON` : '...'}
@@ -807,23 +792,23 @@ export const PartyDetailView: React.FC = () => {
               ) : (
                 <div className="w-full p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 mb-4 text-xs text-amber-700 dark:text-amber-300 text-left">
                   {isEs
-                    ? 'Inicia sesión con Privy para conectar tu billetera y firmar tus propios aportes.'
-                    : 'Log in with Privy to connect your wallet and sign your own deposits.'}
+                    ? 'Inicia sesión para vincular tu cuenta y aportar al fondo.'
+                    : 'Log in to connect your account and deposit to the fund.'}
                 </div>
               )}
 
-              {/* Insufficient User Balance Banner with Faucet and Demo Sponsor */}
+              {/* Insufficient User Balance Banner */}
               {userBalance !== null && Number(userBalance) < potAmount && (
                 <div className="w-full p-3.5 mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs text-left leading-relaxed">
                   <p className="font-bold mb-1">
                     {isEs
-                      ? `Saldo insuficiente en tu wallet (${Number(userBalance).toFixed(4)} MON)`
-                      : `Insufficient balance in your wallet (${Number(userBalance).toFixed(4)} MON)`}
+                      ? `Saldo insuficiente (${Number(userBalance).toFixed(4)} MON)`
+                      : `Insufficient balance (${Number(userBalance).toFixed(4)} MON)`}
                   </p>
                   <p className="text-[11px] opacity-80 mb-3">
                     {isEs
-                      ? 'Para firmar con tus propios fondos necesitas MON de prueba en Monad Testnet.'
-                      : 'To sign with your own funds you need testnet MON on Monad.'}
+                      ? 'Para transferir con tus fondos necesitas saldo de prueba.'
+                      : 'To deposit with your own funds you need demo balance.'}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -831,13 +816,13 @@ export const PartyDetailView: React.FC = () => {
                       onClick={() => {
                         if (activeWallet?.address) {
                           navigator.clipboard.writeText(activeWallet.address);
-                          alert(isEs ? 'Dirección copiada para el Faucet de Monad' : 'Address copied for Monad Faucet');
+                          toast.info(isEs ? 'Dirección copiada' : 'Address copied');
                         }
                       }}
                       className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 text-[11px] font-bold cursor-pointer transition-colors flex items-center gap-1.5"
                     >
                       <Copy className="w-3 h-3" />
-                      <span>{isEs ? 'Copiar Dirección Faucet' : 'Copy Faucet Address'}</span>
+                      <span>{isEs ? 'Copiar Dirección' : 'Copy Address'}</span>
                     </button>
                     <button
                       type="button"
@@ -845,7 +830,7 @@ export const PartyDetailView: React.FC = () => {
                       disabled={isPotSubmitting}
                       className="px-3 py-1.5 rounded-xl bg-[#836EF9]/20 hover:bg-[#836EF9]/30 text-[#674FF4] dark:text-[#A78BFA] text-[11px] font-bold cursor-pointer transition-colors"
                     >
-                      {isEs ? 'Usar Faucet Demo (Patrocinado)' : 'Use Demo Faucet Sponsor'}
+                      {isEs ? 'Aporte Demo (Patrocinado)' : 'Demo Deposit (Sponsored)'}
                     </button>
                   </div>
                 </div>
@@ -854,7 +839,7 @@ export const PartyDetailView: React.FC = () => {
               {/* Error Alert Banner */}
               {potError && (
                 <div className="w-full p-3 mb-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 dark:text-rose-400 text-xs text-left leading-relaxed">
-                  <strong className="block mb-0.5">{isEs ? 'Error en la transacción:' : 'Transaction error:'}</strong>
+                  <strong className="block mb-0.5">{isEs ? 'Error en el aporte:' : 'Deposit error:'}</strong>
                   {potError}
                 </div>
               )}
@@ -878,7 +863,7 @@ export const PartyDetailView: React.FC = () => {
 
               {/* Micro-copy footer */}
               <p className="text-[11px] text-[#6F6A62] dark:text-[#A8A196] mt-3 font-medium">
-                {isEs ? 'Reparto justo. Más noches juntos. 🎉' : 'Split fairly. More nights together. 🎉'}
+                {isEs ? 'Reparto justo. Más noches juntos.' : 'Split fairly. More nights together.'}
               </p>
             </motion.div>
           </div>

@@ -8,6 +8,7 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Member } from '@/types';
 import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface RewardWinnerModalProps {
   isOpen: boolean;
@@ -183,9 +184,8 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-[#836EF9] dark:text-[#A78BFA] flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" />
-                      MONAD TESTNET
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196]">
+                      {isEs ? 'BOTE DE LA FIESTA' : 'PARTY POT'}
                     </span>
                   </div>
                   <h3 className="font-display font-black text-xl tracking-tight leading-tight">
@@ -224,10 +224,12 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
                             : 'border-black/10 dark:border-white/10 bg-transparent hover:border-black/20'
                         }`}
                       >
-                        <img
-                          src={m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
-                          alt={m.name}
-                          className="w-7 h-7 rounded-full object-cover shrink-0"
+                        <Avatar
+                          user={{
+                            avatar: m.avatar,
+                            name: m.name,
+                          }}
+                          size="xs"
                         />
                         <span className="text-xs font-bold truncate text-[#171512] dark:text-white">
                           {m.name}

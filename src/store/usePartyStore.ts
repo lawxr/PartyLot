@@ -455,7 +455,7 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `c-${Date.now()}`,
           name: name.trim() || 'My Secret Crew',
           description: description.trim() || 'Private trust network for gatherings.',
-          coverImage: coverImage || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
+          coverImage: coverImage || '',
           ownerId: state.currentUser.id,
           membersCount: 1,
           partiesCount: 0,
@@ -501,7 +501,7 @@ export const usePartyStore = create<PartyStoreState>()(
               userId: memberData.userId || `u-${Date.now()}`,
               name: memberData.name || 'Anonymous Guest',
               handle: memberData.handle || '@guest',
-              avatar: memberData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+              avatar: memberData.avatar || '',
               role: memberData.role || 'member',
               joinedAt: 'Today',
               walletAddress: memberData.walletAddress,
@@ -658,9 +658,9 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-memory-${Date.now()}`,
           partyId,
           type: 'game',
-          text: `📸 ${state.currentUser.name} añadió una nueva foto al álbum!`,
+          text: `${state.currentUser.name} añadió una nueva foto al álbum`,
           time: 'Just now',
-          avatar: state.currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+          avatar: state.currentUser.avatar || '',
         };
 
         set((s) => ({
@@ -835,7 +835,7 @@ export const usePartyStore = create<PartyStoreState>()(
             id: `act-${Date.now()}-${receipt.txHash.slice(0, 8)}`,
             partyId: party.id,
             type: 'pot',
-            text: `⚡ Pago liquidado en Monad Testnet: ${s.fromName} transfirió ${s.amount} MON a ${s.toName}`,
+            text: `Pago liquidado: ${s.fromName} transfirió $${s.amount.toFixed(2)} a ${s.toName}`,
             time: 'Just now',
             avatar: currentState.currentUser.avatar,
           };
@@ -879,7 +879,7 @@ export const usePartyStore = create<PartyStoreState>()(
 
           return {
             status: 'available',
-            message: 'All debts settled successfully on Monad Testnet (MON)',
+            message: 'All debts settled successfully',
             receipt,
             settledCount: receipt.settledCount,
             successfulReceipts: receipt.receipts,
@@ -922,7 +922,7 @@ export const usePartyStore = create<PartyStoreState>()(
           partyId,
           amount: numAmount,
           type: 'add',
-          description: description || `Deposit into party pot via Monad Testnet (MON)`,
+          description: description || `Deposit into party pot`,
           userName: state.currentUser.name,
           userAvatar: state.currentUser.avatar,
           timestamp: 'Just now',
@@ -1590,9 +1590,9 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-cheers-${Date.now()}`,
           partyId: partyId || 'party_hackathon_demo',
           type: 'game',
-          text: `🥂 ${state.currentUser.name} brindó con ${targetMember.name}!`,
+          text: `${state.currentUser.name} brindó con ${targetMember.name}`,
           time: 'Just now',
-          avatar: state.currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+          avatar: state.currentUser.avatar || '',
         };
 
         set((s) => ({

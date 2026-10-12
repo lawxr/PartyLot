@@ -21,6 +21,7 @@ import { recordGatheringOnchain } from '@/services/socialGraphService';
 import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { Avatar } from '@/components/ui/Avatar';
 
 export const RecapView: React.FC = () => {
   const {
@@ -136,32 +137,24 @@ export const RecapView: React.FC = () => {
     });
 
     const shareText = isEs
-      ? `PARTYLOT RESUMEN — ${party.title} 🔥\n` +
-        `📅 ${party.date} · ${party.location}\n\n` +
-        `👥 ${attendeesCount} Asistentes\n` +
-        `💸 $${totalSharedDamage.toFixed(2)} Daño Compartido\n` +
-        `🎮 ${minigamesCount} Minijuegos Jugados\n` +
-        `🗳️ ${totalVotesCast} Votos de Consenso\n\n` +
-        `🏆 MVP de la Noche: ${mvpMember?.name || 'Ana'}\n` +
-        `👑 Rey de los Juegos: ${gameKingMember?.name || 'Carlos'}\n` +
-        `🎧 Contribuidor / AUX: ${bountyContributor}\n` +
-        (rolloverAmount > 0
-          ? `🏦 $${rolloverAmount.toFixed(2)} Trasladados a la Tesorería de ${associatedCrew?.name || 'la Crew'}\n\n`
-          : '\n') +
-        `Prueba de Asistencia auditada en Monad: https://partylot.app/party/${party.code || party.id}`
-      : `PARTYLOT RECAP — ${party.title} 🔥\n` +
-        `📅 ${party.date} · ${party.location}\n\n` +
-        `👥 ${attendeesCount} People Attended\n` +
-        `💸 $${totalSharedDamage.toFixed(2)} Shared Damage\n` +
-        `🎮 ${minigamesCount} Minigames Played\n` +
-        `🗳️ ${totalVotesCast} Consensus Votes\n\n` +
-        `🏆 MVP of the Night: ${mvpMember?.name || 'Ana'}\n` +
-        `👑 Game King: ${gameKingMember?.name || 'Carlos'}\n` +
-        `🎧 Contributor / AUX: ${bountyContributor}\n` +
-        (rolloverAmount > 0
-          ? `🏦 $${rolloverAmount.toFixed(2)} Rolled into ${associatedCrew?.name || 'Crew'} Treasury\n\n`
-          : '\n') +
-        `Proof of Attendance audited on Monad: https://partylot.app/party/${party.code || party.id}`;
+      ? `Partylot — ${party.title}\n` +
+        `${party.date}${party.location ? ` · ${party.location}` : ''}\n\n` +
+        `Asistentes: ${attendeesCount}\n` +
+        `Gastado juntos: $${totalSharedDamage.toFixed(2)}\n` +
+        (minigamesCount > 0 ? `Juegos jugados: ${minigamesCount}\n` : '') +
+        (totalVotesCast > 0 ? `Votos: ${totalVotesCast}\n` : '') +
+        (mvpMember?.name ? `Más votado: ${mvpMember.name}\n` : '') +
+        (gameKingMember?.name ? `Ganador de juegos: ${gameKingMember.name}\n` : '') +
+        `\nhttps://partylot.app/party/${party.code || party.id}`
+      : `Partylot — ${party.title}\n` +
+        `${party.date}${party.location ? ` · ${party.location}` : ''}\n\n` +
+        `Who came: ${attendeesCount}\n` +
+        `Spent together: $${totalSharedDamage.toFixed(2)}\n` +
+        (minigamesCount > 0 ? `Games played: ${minigamesCount}\n` : '') +
+        (totalVotesCast > 0 ? `Votes: ${totalVotesCast}\n` : '') +
+        (mvpMember?.name ? `Top voted: ${mvpMember.name}\n` : '') +
+        (gameKingMember?.name ? `Top player: ${gameKingMember.name}\n` : '') +
+        `\nhttps://partylot.app/party/${party.code || party.id}`;
 
     if (navigator.share) {
       try {
@@ -249,9 +242,9 @@ export const RecapView: React.FC = () => {
       };
 
       drawMetricBox(80, 440, 440, 170, `${attendeesCount}`, isEs ? 'ASISTENTES' : 'PEOPLE ATTENDED', '#FFFFFF');
-      drawMetricBox(560, 440, 440, 170, `$${totalSharedDamage.toFixed(0)}`, isEs ? 'DAÑO COMPARTIDO' : 'SHARED DAMAGE', '#F0DC00');
-      drawMetricBox(80, 640, 440, 170, `${minigamesCount}`, isEs ? 'MINIJUEGOS JUGADOS' : 'MINIGAMES PLAYED', '#FFFFFF');
-      drawMetricBox(560, 640, 440, 170, `${totalVotesCast}`, isEs ? 'VOTOS DE CONSENSO' : 'CONSENSUS VOTES', '#FFFFFF');
+      drawMetricBox(560, 440, 440, 170, `$${totalSharedDamage.toFixed(0)}`, isEs ? 'GASTADO JUNTOS' : 'SPENT TOGETHER', '#F0DC00');
+      drawMetricBox(80, 640, 440, 170, `${minigamesCount}`, isEs ? 'JUEGOS JUGADOS' : 'GAMES PLAYED', '#FFFFFF');
+      drawMetricBox(560, 640, 440, 170, `${totalVotesCast}`, isEs ? 'VOTOS' : 'VOTES', '#FFFFFF');
 
       // Night Awards Card
       ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
@@ -263,7 +256,7 @@ export const RecapView: React.FC = () => {
 
       ctx.fillStyle = '#F0DC00';
       ctx.font = '800 24px sans-serif';
-      ctx.fillText(isEs ? 'PREMIOS DE LA NOCHE & SALÓN DE LA FAMA' : 'NIGHT AWARDS & HALL OF FAME', 120, 915);
+      ctx.fillText(isEs ? 'DESTACADOS DE LA NOCHE' : 'HIGHLIGHTS OF THE NIGHT', 120, 915);
 
       const drawAwardLine = (y: number, title: string, name: string) => {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
@@ -275,9 +268,15 @@ export const RecapView: React.FC = () => {
         ctx.fillText(name.toUpperCase(), 780, y);
       };
 
-      drawAwardLine(990, isEs ? '🏆 MVP DE LA NOCHE' : '🏆 MVP OF THE NIGHT', mvpMember?.name || 'Ana');
-      drawAwardLine(1070, isEs ? '👑 REY DE LOS JUEGOS' : '👑 GAME KING', gameKingMember?.name || 'Carlos');
-      drawAwardLine(1150, isEs ? '🎧 DJ OFICIAL DEL AUX' : '🎧 OFFICIAL AUX DJ', bountyContributor);
+      if (mvpMember?.name) {
+        drawAwardLine(990, isEs ? 'MÁS VOTADO' : 'TOP VOTED', mvpMember.name);
+      }
+      if (gameKingMember?.name) {
+        drawAwardLine(1070, isEs ? 'GANADOR DE JUEGOS' : 'TOP PLAYER', gameKingMember.name);
+      }
+      if (bountyContributor) {
+        drawAwardLine(1150, isEs ? 'EN LA MÚSICA' : 'ON MUSIC', bountyContributor);
+      }
 
       // Rollover Banner
       if (rolloverAmount > 0) {
@@ -379,7 +378,7 @@ export const RecapView: React.FC = () => {
                     ${totalSharedDamage.toFixed(0)}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-white/50">
-                    {isEs ? 'DAÑO COMPARTIDO' : 'SHARED DAMAGE'}
+                    {isEs ? 'GASTADO JUNTOS' : 'SPENT TOGETHER'}
                   </span>
                 </div>
 
@@ -388,7 +387,7 @@ export const RecapView: React.FC = () => {
                     {minigamesCount}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-white/50">
-                    {isEs ? 'MINIJUEGOS JUGADOS' : 'MINIGAMES PLAYED'}
+                    {isEs ? 'JUEGOS JUGADOS' : 'GAMES PLAYED'}
                   </span>
                 </div>
 
@@ -397,41 +396,49 @@ export const RecapView: React.FC = () => {
                     {totalVotesCast}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-white/50">
-                    {isEs ? 'VOTOS DE CONSENSO' : 'CONSENSUS VOTES'}
+                    {isEs ? 'VOTOS' : 'VOTES'}
                   </span>
                 </div>
               </div>
 
               {/* Hall of Fame Awards */}
-              <div className="p-4 rounded-2xl liquid-glass-modal border border-white/20 mb-6 space-y-2.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F0DC00] block">
-                  {isEs ? 'PREMIOS DE LA NOCHE' : 'NIGHT AWARDS'}
-                </span>
-
-                <div className="flex items-center justify-between text-xs font-bold border-b border-white/10 pb-2">
-                  <span className="text-white/60 flex items-center gap-1.5">
-                    <Award className="w-3.5 h-3.5 text-[#F0DC00]" />
-                    {isEs ? 'MVP DE LA NOCHE' : 'MVP OF THE NIGHT'}
+              {(mvpMember?.name || gameKingMember?.name || bountyContributor) && (
+                <div className="p-4 rounded-2xl liquid-glass-modal border border-white/20 mb-6 space-y-2.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#F0DC00] block">
+                    {isEs ? 'DESTACADOS DE LA NOCHE' : 'HIGHLIGHTS OF THE NIGHT'}
                   </span>
-                  <span className="text-white font-display font-black">{mvpMember?.name || 'Ana'}</span>
-                </div>
 
-                <div className="flex items-center justify-between text-xs font-bold border-b border-white/10 pb-2">
-                  <span className="text-white/60 flex items-center gap-1.5">
-                    <Flame className="w-3.5 h-3.5 text-rose-400" />
-                    {isEs ? 'REY DE LOS JUEGOS' : 'GAME KING'}
-                  </span>
-                  <span className="text-white font-display font-black">{gameKingMember?.name || 'Carlos'}</span>
-                </div>
+                  {mvpMember?.name && (
+                    <div className="flex items-center justify-between text-xs font-bold border-b border-white/10 pb-2">
+                      <span className="text-white/60 flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5 text-[#F0DC00]" />
+                        {isEs ? 'MÁS VOTADO' : 'TOP VOTED'}
+                      </span>
+                      <span className="text-white font-display font-black">{mvpMember.name}</span>
+                    </div>
+                  )}
 
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-white/60 flex items-center gap-1.5">
-                    <Disc className="w-3.5 h-3.5 text-sky-400" />
-                    {isEs ? 'DJ OFICIAL DEL AUX' : 'OFFICIAL AUX DJ'}
-                  </span>
-                  <span className="text-white font-display font-black">{bountyContributor}</span>
+                  {gameKingMember?.name && (
+                    <div className="flex items-center justify-between text-xs font-bold border-b border-white/10 pb-2">
+                      <span className="text-white/60 flex items-center gap-1.5">
+                        <Flame className="w-3.5 h-3.5 text-rose-400" />
+                        {isEs ? 'GANADOR DE JUEGOS' : 'TOP PLAYER'}
+                      </span>
+                      <span className="text-white font-display font-black">{gameKingMember.name}</span>
+                    </div>
+                  )}
+
+                  {bountyContributor && (
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-white/60 flex items-center gap-1.5">
+                        <Disc className="w-3.5 h-3.5 text-sky-400" />
+                        {isEs ? 'EN LA MÚSICA' : 'ON MUSIC'}
+                      </span>
+                      <span className="text-white font-display font-black">{bountyContributor}</span>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
 
               {/* Rollover Balance Card */}
               {rolloverAmount > 0 && (
@@ -478,28 +485,28 @@ export const RecapView: React.FC = () => {
 
           {/* Right Column: Editorial Breakdown & Export Hub (6 cols on desktop) */}
           <div className="lg:col-span-6 space-y-6">
-            {/* Monad Proof-of-Presence Card */}
+            {/* Crew History Card */}
             <div className="p-6 bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] rounded-[28px] shadow-[0_10px_30px_rgba(65,48,25,0.06)]">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-[#B8A700]" />
                   <span className="text-xs uppercase font-extrabold tracking-wider text-[#171512]">
-                    {isEs ? 'GRAFO SOCIAL VERIFICADO' : 'VERIFIED SOCIAL GRAPH'}
+                    {isEs ? 'HISTORIA DEL CREW' : 'CREW HISTORY'}
                   </span>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 font-bold">
-                  {isEs ? 'REGISTRO ONCHAIN' : 'ONCHAIN RECORD'}
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#F0DC00]/20 text-[#171512] font-bold">
+                  {isEs ? 'MEMORIA COMPARTIDA' : 'SHARED MEMORY'}
                 </span>
               </div>
 
               <h3 className="font-display font-black text-2xl text-[#171512] tracking-tight mb-2">
-                {isEs ? 'Dossier de la Noche y Recuerdos' : 'Night Dossier & Collective Memories'}
+                {isEs ? 'Recuerdos de la Noche' : 'Night Memories'}
               </h3>
               <p className="text-xs sm:text-sm text-[#6F6A62] leading-relaxed mb-4">
                 {isEs ? (
-                  <>La asistencia, minijuegos y liquidación de gastos de <span className="text-[#171512] font-semibold">{party.title}</span> quedaron certificados permanentemente para todo el grupo.</>
+                  <>La asistencia, minijuegos y gastos de <span className="text-[#171512] font-semibold">{party.title}</span> quedan guardados para todo el grupo.</>
                 ) : (
-                  <>Attendance, minigames and expense settlement for <span className="text-[#171512] font-semibold">{party.title}</span> have been permanently certified for the entire group.</>
+                  <>Attendance, games and expenses for <span className="text-[#171512] font-semibold">{party.title}</span> are saved for the entire group.</>
                 )}
               </p>
 
@@ -507,56 +514,47 @@ export const RecapView: React.FC = () => {
                 <div className="p-2.5 rounded-xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.08)]">
                   <Users className="w-4 h-4 text-[#B8A700] mx-auto mb-1" />
                   <span className="font-display font-black text-base text-[#171512] block">{attendeesCount}</span>
-                  <span className="text-[9px] uppercase text-[#8E887E]">{isEs ? 'Asistentes' : 'Attendees'}</span>
+                  <span className="text-[9px] uppercase text-[#8E887E]">{isEs ? 'Asistieron' : 'Came'}</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.08)]">
-                  <Receipt className="w-4 h-4 text-rose-500 mx-auto mb-1" />
+                  <Receipt className="w-4 h-4 text-stone-600 mx-auto mb-1" />
                   <span className="font-display font-black text-base text-[#171512] block">${totalSharedDamage.toFixed(0)}</span>
-                  <span className="text-[9px] uppercase text-[#8E887E]">{isEs ? 'Saldado' : 'Settled'}</span>
+                  <span className="text-[9px] uppercase text-[#8E887E]">{isEs ? 'Gastado' : 'Spent'}</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.08)]">
-                  <Gamepad2 className="w-4 h-4 text-purple-600 mx-auto mb-1" />
+                  <Gamepad2 className="w-4 h-4 text-stone-600 mx-auto mb-1" />
                   <span className="font-display font-black text-base text-[#171512] block">{minigamesCount}</span>
                   <span className="text-[9px] uppercase text-[#8E887E]">{isEs ? 'Juegos' : 'Games'}</span>
                 </div>
               </div>
 
-              {/* Onchain Attestation Action */}
+              {/* Attestation Action */}
               {attestationTxHash ? (
-                <a
-                  href={getMonadExplorerTxUrl(attestationTxHash)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 text-xs font-mono font-bold flex items-center justify-center gap-2 hover:bg-emerald-500/20 transition-all"
-                >
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>{isEs ? 'Certificado en el Historial [Verificado]' : 'Certified on Ledger [Verified]'}</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+                <div className="w-full py-2.5 px-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[#171512] text-xs font-semibold flex items-center justify-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-[#B8A700]" />
+                  <span>{isEs ? 'Guardado en la historia' : 'Saved to history'}</span>
+                </div>
               ) : (
                 <button
                   onClick={handleAttestGathering}
                   disabled={isAttesting}
-                  className="w-full py-2.5 px-3 rounded-xl bg-[#F0DC00] hover:bg-[#E6D300] active:scale-95 text-[#171512] text-xs font-display font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#F0DC00] hover:bg-[#E6D300] active:scale-95 text-[#171512] text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
                 >
                   <ShieldCheck className="w-4 h-4 text-[#171512] stroke-[2.5]" />
                   <span>
                     {isAttesting
-                      ? isEs ? 'Certificando noche...' : 'Attesting night onchain...'
-                      : isEs ? '⚡ Certificar Noche en el Historial del Grupo' : '⚡ Certify Night in Group Ledger'}
+                      ? isEs ? 'Guardando en la historia...' : 'Saving to history...'
+                      : isEs ? 'Guardar en la historia del crew' : 'Save to crew history'}
                   </span>
                 </button>
               )}
             </div>
 
-            {/* Attendees Who Earned Co-Presence Badge */}
+            {/* Attendees */}
             <div className="p-6 bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] rounded-[28px] shadow-[0_10px_30px_rgba(65,48,25,0.06)]">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-[#6F6A62]">
-                  {isEs ? `ASISTENTES VERIFICADOS (${party.members.length})` : `VERIFIED ATTENDEES (${party.members.length})`}
-                </span>
-                <span className="text-[11px] text-[#B8A700] font-semibold">
-                  {isEs ? 'Insignias sociales acuñadas' : 'Social badges minted'}
+                  {isEs ? `QUIÉNES VINIERON (${party.members.length})` : `WHO CAME (${party.members.length})`}
                 </span>
               </div>
 
@@ -566,22 +564,13 @@ export const RecapView: React.FC = () => {
                     key={member.id}
                     className="p-2.5 rounded-xl bg-[#F8F3EA] flex items-center gap-2.5 border border-[rgba(35,30,22,0.08)]"
                   >
-                    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[rgba(35,30,22,0.12)] flex items-center justify-center bg-[#F1EADF]">
-                      {member.avatar ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-[#F0DC00]/30 text-[#171512] flex items-center justify-center font-bold text-xs">
-                          {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
-                        </div>
-                      )}
-                    </div>
+                    <Avatar user={member} size="sm" />
                     <div className="min-w-0">
                       <span className="text-xs font-bold text-[#171512] truncate block">
                         {member.name}
                       </span>
-                      <span className="text-[9px] text-[#B8A700] font-mono font-bold">
-                        {member.role === 'host' ? (isEs ? 'Anfitrión' : 'Host') : (isEs ? 'Verificado' : 'Verified')}
+                      <span className="text-[9px] text-[#8E887E] font-medium">
+                        {member.role === 'host' ? (isEs ? 'Anfitrión' : 'Host') : (isEs ? 'Asistió' : 'Came')}
                       </span>
                     </div>
                   </div>

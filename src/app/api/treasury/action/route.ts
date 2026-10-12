@@ -339,8 +339,8 @@ export async function POST(request: NextRequest) {
         amount: numAmount,
         type: action === 'deposit' ? 'add' : action === 'reward' ? 'reward' : action === 'rollover' ? 'rollover' : 'spend',
         description: description || `${action.toUpperCase()} of ${numAmount.toFixed(4)} MON on Monad`,
-        user_name: userName || 'Law',
-        user_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+        user_name: userName || 'Member',
+        user_avatar: '',
         created_at: new Date().toISOString(),
       });
 

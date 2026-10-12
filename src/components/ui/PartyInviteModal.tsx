@@ -192,7 +192,7 @@ export const PartyInviteModal: React.FC<PartyInviteModalProps> = ({
   };
 
   const shareTextWhatsApp = encodeURIComponent(
-    `Yo! Join "${party.title}" on Partylot 🔥\nCode: ${party.code}\n${inviteUrl}`
+    `Join "${party.title}" on Partylot\nCode: ${party.code}\n${inviteUrl}`
   );
   const shareTextTelegram = encodeURIComponent(
     `Join ${party.title} on Partylot with code ${party.code}`

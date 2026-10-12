@@ -224,13 +224,19 @@ export const SplitView: React.FC = () => {
 
           {/* Center Party Profile Header */}
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full overflow-hidden border border-black/10 dark:border-white/10 shrink-0 shadow-xs bg-[#EFEAE2] dark:bg-white/10">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={party.coverImage || 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=400&q=80'}
-                alt={party.title}
-                className="w-full h-full object-cover"
-              />
+            <div className="w-9 h-9 rounded-full overflow-hidden border border-black/10 dark:border-white/10 shrink-0 shadow-xs bg-[#EFEAE2] dark:bg-white/10 flex items-center justify-center">
+              {party.coverImage ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={party.coverImage}
+                  alt={party.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="font-display font-black text-xs text-[#171512] dark:text-white">
+                  {party.title ? party.title.charAt(0).toUpperCase() : 'P'}
+                </span>
+              )}
             </div>
             <div className="text-left">
               <h1 className="font-display font-black text-base sm:text-lg text-[#171512] dark:text-white leading-tight tracking-tight">

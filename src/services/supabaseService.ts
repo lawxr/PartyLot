@@ -108,17 +108,13 @@ export async function joinPartyWithInviteCode(
       time: rawParty.time,
       location: rawParty.location,
       description: rawParty.description || '',
-      coverImage:
-        rawParty.cover_image ||
-        'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80',
+      coverImage: rawParty.cover_image || '',
       hostId: rawParty.host_id || 'host',
       hostName: rawParty.host_name || 'Host',
       members: (rawParty.members || []).map((m: Record<string, unknown>) => ({
         id: (m.user_id as string) || (m.id as string),
         name: (m.name as string) || 'Member',
-        avatar:
-          (m.avatar as string) ||
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        avatar: (m.avatar as string) || '',
         role: (m.role as 'host' | 'guest') || 'guest',
         status: (m.status as 'going' | 'maybe' | 'invited') || 'going',
         nightsTogether: Number(m.nights_together) || 1,
@@ -562,14 +558,13 @@ export async function syncUserDataToDb(user: User, authToken?: string | null): P
           coverImage: coverImageToUse,
         }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Failed to sync user profile via API.');
+      if (res.ok) {
+        return;
       }
-      return;
+      const err = await res.json().catch(() => ({}));
+      console.warn('API profile sync warning, falling back to direct Supabase RPC:', err.message);
     } catch (apiErr) {
-      console.warn('API profile sync error:', apiErr);
-      throw apiErr;
+      console.warn('API profile sync error, falling back to direct Supabase RPC:', apiErr);
     }
   }
 
@@ -646,7 +641,7 @@ export async function fetchPartiesFromDb(userId?: string): Promise<Party[]> {
         return {
           id: memberId,
           name: String(m.name || 'Member'),
-          avatar: String(m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'),
+          avatar: String(m.avatar || ''),
           role: (m.role as 'host' | 'guest') || 'guest',
           status: (m.status as 'going' | 'maybe' | 'invited') || 'going',
           nightsTogether: Number(m.nights_together) || 1,
@@ -664,7 +659,7 @@ export async function fetchPartiesFromDb(userId?: string): Promise<Party[]> {
       time: p.time,
       location: p.location,
       description: p.description || '',
-      coverImage: p.cover_image || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
+      coverImage: p.cover_image || '',
       hostId: p.host_id || 'u-host',
       hostName: p.host_name || 'Host',
       potBalance: Number(p.pot_balance) || 0,
@@ -700,7 +695,7 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
     const members: Member[] = (data.members || []).map((m: Record<string, unknown>) => ({
       id: String(m.user_id || m.id || ''),
       name: String(m.name || 'Member'),
-      avatar: String(m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'),
+      avatar: String(m.avatar || ''),
       role: (m.role as 'host' | 'guest') || 'guest',
       status: (m.status as 'going' | 'maybe' | 'invited') || 'going',
       nightsTogether: Number(m.nights_together) || 1,
@@ -715,7 +710,7 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
       amount: Number(e.amount),
       paidById: String(e.paid_by_id || 'u-unknown'),
       paidByName: String(e.paid_by_name || 'Member'),
-      paidByAvatar: String(e.paid_by_avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'),
+      paidByAvatar: String(e.paid_by_avatar || ''),
       splitBetweenIds: Array.isArray(e.split_between_ids) ? e.split_between_ids : [],
       category: 'general',
       isSettled: Boolean(e.is_settled),
@@ -728,7 +723,7 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
       partyId: String(t.party_id),
       userId: t.user_id ? String(t.user_id) : undefined,
       userName: String(t.user_name || 'Member'),
-      userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      userAvatar: String(t.user_avatar || ''),
       type: (t.type === 'deposit'
         ? 'add'
         : t.type === 'reimbursement'
@@ -782,7 +777,7 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
       time: p.time,
       location: p.location,
       description: p.description || '',
-      coverImage: p.cover_image || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
+      coverImage: p.cover_image || '',
       hostId: p.host_id || 'u-host',
       hostName: p.host_name || 'Host',
       potBalance: Number(p.pot_balance) || 0,
@@ -829,7 +824,7 @@ export async function fetchCrewsFromDb(userId?: string): Promise<Crew[]> {
         userId: cm.user_id,
         name: u?.name || 'Member',
         handle: u?.handle || '@member',
-        avatar: u?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        avatar: u?.avatar || '',
         role: cm.role as 'owner' | 'admin' | 'member',
         joinedAt: cm.joined_at,
         walletAddress: u?.wallet_address || undefined,
@@ -846,7 +841,7 @@ export async function fetchCrewsFromDb(userId?: string): Promise<Crew[]> {
     return filteredCrews.map((c) => ({
       id: c.id,
       name: c.name,
-      coverImage: c.cover_image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
+      coverImage: c.cover_image || '',
       ownerId: c.owner_id || undefined,
       membersCount: (membersByCrew[c.id] || []).length || 1,
       members: membersByCrew[c.id] || [],

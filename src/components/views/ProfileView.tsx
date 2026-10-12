@@ -30,7 +30,10 @@ import { ProfileSettingsModal } from '@/components/profile/ProfileSettingsModal'
 import { CreateCrewModal } from '@/components/ui/CreateCrewModal';
 import { getCoverUrl, getAvatarUrl, getOptimizedImageUrl } from '@/lib/imageOptimization';
 import { ReputationBadge } from '@/components/ui/ReputationBadge';
-import { calculateReputation } from '@/lib/reputation';
+import { Avatar } from '@/components/ui/Avatar';
+import { AvatarCropModal } from '@/components/ui/AvatarCropModal';
+import { usePrivy } from '@privy-io/react-auth';
+import { useToastStore } from '@/store/useToastStore';
 
 const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-3 h-3' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -69,6 +72,8 @@ export const ProfileView: React.FC = () => {
 
   const { language } = useTranslation();
   const isEs = language === 'es';
+  const { authenticated, getAccessToken } = usePrivy();
+  const { showToast } = useToastStore();
 
   const [copied, setCopied] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -87,8 +92,12 @@ export const ProfileView: React.FC = () => {
     sourceTitle?: string;
   } | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [isCropOpen, setIsCropOpen] = useState(false);
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const activeAddress = currentUser.walletAddress;
 
@@ -110,9 +119,6 @@ export const ProfileView: React.FC = () => {
   }, [currentUser.id, parties]);
 
   const userNightsCount = currentUser.gatheringsCount || attendedPartyIds.length;
-  const repDetails = useMemo(() => {
-    return calculateReputation(userNightsCount, userNightsCount);
-  }, [userNightsCount]);
 
   // Attended nights / events (real gatherings hosted, joined, or attended)
   const attendedPartiesList: Party[] = useMemo(() => {
@@ -141,21 +147,17 @@ export const ProfileView: React.FC = () => {
     const totalPlays = wmlVotes + totChoices;
 
     let tierTitle = isEs ? 'Listo para Jugar' : 'Ready to Play';
-    let tierBadge = '🎲';
-    let tierColor = 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/30';
+    let tierColor = 'text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/30';
 
     if (totalPlays >= 10) {
-      tierTitle = isEs ? 'Leyenda de la Fiesta' : 'Party Legend';
-      tierBadge = '👑';
-      tierColor = 'text-amber-500 bg-amber-500/10 border-amber-500/40';
+      tierTitle = isEs ? 'Leyenda del Crew' : 'Crew Veteran';
+      tierColor = 'text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/40';
     } else if (totalPlays >= 4) {
-      tierTitle = isEs ? 'Alma de la Fiesta' : 'Party MVP';
-      tierBadge = '⚡';
-      tierColor = 'text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/40';
+      tierTitle = isEs ? 'Jugador Frecuente' : 'Regular Player';
+      tierColor = 'text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/40';
     } else if (totalPlays >= 1) {
       tierTitle = isEs ? 'Jugador Activo' : 'Active Player';
-      tierBadge = '🎉';
-      tierColor = 'text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/40';
+      tierColor = 'text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/40';
     }
 
     return {
@@ -163,7 +165,6 @@ export const ProfileView: React.FC = () => {
       wmlVotes,
       totChoices,
       tierTitle,
-      tierBadge,
       tierColor,
     };
   }, [currentUser, whosMostLikely, thisOrThat, isEs]);
@@ -235,9 +236,9 @@ export const ProfileView: React.FC = () => {
       title: title || (isEs ? 'Noche de Fiesta' : 'Party Night'),
       date: date || (isEs ? 'Hoy' : 'Tonight'),
       time: '10:00 PM',
-      location: currentUser.location || (isEs ? 'Medellín' : 'Local'),
+      location: currentUser.location || '',
       description: isEs ? 'Noche registrada en mi perfil.' : 'Night logged from my profile.',
-      coverImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
+      coverImage: '',
     });
     if (created?.id) {
       addAttendedNight(created.id);
@@ -268,6 +269,35 @@ export const ProfileView: React.FC = () => {
     }
   };
 
+  const handleAvatarCropComplete = async (croppedBlob: Blob) => {
+    setIsUploadingAvatar(true);
+    try {
+      let token: string | null = null;
+      if (authenticated) {
+        try {
+          token = await getAccessToken();
+        } catch {
+          // ignore
+        }
+      }
+      const { uploadImageFile } = await import('@/services/storageService');
+      const uploadedUrl = await uploadImageFile(croppedBlob, 'avatars', token);
+      await updateUser({ avatar: uploadedUrl }, token);
+      showToast(isEs ? 'Foto de perfil actualizada con éxito.' : 'Profile photo updated successfully.', 'success');
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.6 },
+      });
+    } catch (err) {
+      console.error('Failed to upload avatar:', err);
+      showToast(isEs ? 'Error al actualizar foto de perfil.' : 'Failed to update profile photo.', 'error');
+    } finally {
+      setIsUploadingAvatar(false);
+      setCropImageSrc(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-32 select-none relative overflow-x-hidden transition-colors duration-200">
       {/* Hidden Banner File Input */}
@@ -289,26 +319,50 @@ export const ProfileView: React.FC = () => {
         }}
       />
 
+      {/* Hidden Avatar File Input */}
+      <input
+        ref={avatarInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const previewUrl = URL.createObjectURL(file);
+          setCropImageSrc(previewUrl);
+          setIsCropOpen(true);
+          if (avatarInputRef.current) avatarInputRef.current.value = '';
+        }}
+      />
+
       {/* ============================================================== */}
       {/* TOP COVER BANNER */}
       <div className="relative h-64 sm:h-72 md:h-80 w-full md:max-w-3xl lg:max-w-5xl md:mx-auto md:rounded-b-[36px] md:shadow-lg overflow-hidden">
-        {currentUser.coverImage?.startsWith('linear-gradient') ? (
-          <div
-            style={{ background: currentUser.coverImage }}
-            className="absolute inset-0 w-full h-full cursor-pointer"
-            onClick={() => bannerInputRef.current?.click()}
-            title={isEs ? 'Haz clic para cambiar la portada' : 'Click to change cover'}
-          />
+        {currentUser.coverImage ? (
+          currentUser.coverImage.startsWith('linear-gradient') ? (
+            <div
+              style={{ background: currentUser.coverImage }}
+              className="absolute inset-0 w-full h-full cursor-pointer"
+              onClick={() => bannerInputRef.current?.click()}
+              title={isEs ? 'Haz clic para cambiar la portada' : 'Click to change cover'}
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={getCoverUrl(currentUser.coverImage, 900)}
+              alt="Profile Cover"
+              className="absolute inset-0 w-full h-full object-cover object-top cursor-pointer"
+              onClick={() => bannerInputRef.current?.click()}
+              title={isEs ? 'Haz clic para cambiar la portada' : 'Click to change cover'}
+              loading="eager"
+              decoding="async"
+            />
+          )
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={getCoverUrl(currentUser.coverImage || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d', 900)}
-            alt="Profile Cover"
-            className="absolute inset-0 w-full h-full object-cover object-top cursor-pointer"
+          <div
+            className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#2D241E] via-[#3D3228] to-[#1C1814] cursor-pointer"
             onClick={() => bannerInputRef.current?.click()}
             title={isEs ? 'Haz clic para cambiar la portada' : 'Click to change cover'}
-            loading="eager"
-            decoding="async"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
@@ -334,23 +388,27 @@ export const ProfileView: React.FC = () => {
           <div className="md:col-span-7 lg:col-span-8">
             {/* Circular Avatar Overlapping Cover & Card */}
             <div className="relative -mt-12 mb-2 inline-block">
-              <div className="w-24 h-24 sm:w-26 sm:h-26 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white dark:border-[#1C1A16] shadow-md bg-black/10">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getAvatarUrl(currentUser.avatar || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d', 112)}
-                  alt={currentUser.name}
-                  className="w-full h-full object-cover"
-                  decoding="async"
-                />
-              </div>
+              <Avatar
+                user={currentUser}
+                size="2xl"
+                border="light"
+                onClick={() => avatarInputRef.current?.click()}
+                className="w-24 h-24 sm:w-26 sm:h-26 md:w-28 md:h-28 shadow-md"
+              />
               {/* Small Camera Button on Bottom-Right */}
               <button
-                onClick={() => setIsEditProfileOpen(true)}
-                className="absolute bottom-0 right-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-white dark:bg-[#2C2822] text-[#171512] dark:text-white flex items-center justify-center border border-black/10 dark:border-white/15 shadow-sm active:scale-90 transition-transform cursor-pointer hover:bg-slate-50 dark:hover:bg-[#38332B]"
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute bottom-0 right-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-white dark:bg-[#2C2822] text-[#171512] dark:text-white flex items-center justify-center border border-black/10 dark:border-white/15 shadow-sm active:scale-90 transition-transform cursor-pointer hover:bg-slate-50 dark:hover:bg-[#38332B] disabled:opacity-50"
                 aria-label="Change photo"
                 title={isEs ? 'Cambiar foto de perfil' : 'Change profile photo'}
               >
-                <Camera className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.2]" />
+                {isUploadingAvatar ? (
+                  <div className="w-3.5 h-3.5 border-2 border-[#171512] dark:border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.2]" />
+                )}
               </button>
             </div>
 
@@ -358,7 +416,7 @@ export const ProfileView: React.FC = () => {
             <div className="mb-3">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl text-[#171512] dark:text-white tracking-tight leading-tight">
-                  {currentUser.name || 'Law'}
+                  {currentUser.name || (currentUser.walletAddress ? `${currentUser.walletAddress.slice(0, 6)}...${currentUser.walletAddress.slice(-4)}` : (isEs ? 'Mi Perfil' : 'My Profile'))}
                 </h2>
                 <ReputationBadge
                   sharedNights={userNightsCount}
@@ -450,11 +508,10 @@ export const ProfileView: React.FC = () => {
                 className="cursor-pointer group hover:bg-black/[0.04] dark:hover:bg-white/[0.04] rounded-xl transition-colors py-1"
                 title={isEs ? 'Ver estadísticas de juego' : 'View gaming stats'}
               >
-                <div className="flex items-center justify-center gap-1">
+                <div className="flex items-center justify-center">
                   <span className="font-display font-black text-xl sm:text-2xl text-[#171512] dark:text-white block group-hover:text-[#B89600] transition-colors">
                     {gameStats.totalPlays}
                   </span>
-                  <span className="text-xs group-hover:scale-110 transition-transform">{gameStats.tierBadge}</span>
                 </div>
                 <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block group-hover:text-[#171512] dark:group-hover:text-white transition-colors">
                   {isEs ? 'juegos' : 'games'}
@@ -463,63 +520,6 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* SocialGraph Reputation Tier & Onchain Stake Card */}
-        <div className="p-4 sm:p-5 rounded-3xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/8 dark:border-white/10 mb-6 transition-all">
-          <div className="flex items-center justify-between gap-3 mb-2.5">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#836EF9] animate-pulse" />
-              <span className="text-[10px] uppercase font-black tracking-widest text-[#836EF9] dark:text-[#A78BFA]">
-                {isEs ? 'REPUTACIÓN EN SOCIAL GRAPH (MONAD)' : 'SOCIAL GRAPH REPUTATION (MONAD)'}
-              </span>
-            </div>
-            <ReputationBadge
-              sharedNights={userNightsCount}
-              gatheringsCount={userNightsCount}
-              size="xs"
-            />
-          </div>
-
-          {/* Progress Bar towards Next Tier */}
-          <div className="mb-3">
-            <div className="flex items-center justify-between text-xs font-semibold text-[#8E887E] dark:text-[#A8A196] mb-1.5">
-              <span>
-                {isEs ? `Nivel actual: ${repDetails.tierNameEs}` : `Current tier: ${repDetails.tierName}`}
-              </span>
-              <span>
-                {repDetails.nextTierNights
-                  ? isEs
-                    ? `${repDetails.effectiveNights} / ${repDetails.nextTierNights} noches para el siguiente nivel`
-                    : `${repDetails.effectiveNights} / ${repDetails.nextTierNights} nights to next tier`
-                  : isEs
-                  ? 'Nivel máximo alcanzado (OG Legend)'
-                  : 'Max tier unlocked (OG Legend)'}
-              </span>
-            </div>
-            <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-[#836EF9] to-[#F0DC00] rounded-full transition-all duration-500"
-                style={{ width: `${repDetails.progressToNext}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Unlocked Perks Chips */}
-          <div className="flex items-center gap-1.5 flex-wrap text-xs">
-            <span className="text-[10px] uppercase font-bold text-[#6F6A62] dark:text-[#A8A196] mr-1">
-              {isEs ? 'Privilegios:' : 'Perks:'}
-            </span>
-            {(isEs ? repDetails.unlockedPerksEs : repDetails.unlockedPerks).map((perk, idx) => (
-              <span
-                key={idx}
-                className="px-2.5 py-0.5 rounded-full bg-white/80 dark:bg-white/10 border border-black/5 dark:border-white/10 text-[11px] font-medium text-[#171512] dark:text-[#F5F1E8]"
-              >
-                ✓ {perk}
-              </span>
-            ))}
-          </div>
-        </div>
-
 
         {/* Floating Translucent Glass Options Container */}
         <nav
@@ -836,16 +836,10 @@ export const ProfileView: React.FC = () => {
                     onClick={() => setSelectedConnectionMember(person)}
                     className="flex items-center gap-3 cursor-pointer flex-1"
                   >
-                    <div className="w-12 h-12 rounded-full overflow-hidden border border-black/10 dark:border-white/15 shadow-sm shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={getAvatarUrl(person.avatar, 80)}
-                        alt={person.name}
-                        className="w-full h-full object-cover rounded-full"
-                        decoding="async"
-                        loading="lazy"
-                      />
-                    </div>
+                    <Avatar
+                      user={{ avatar: person.avatar, name: person.name }}
+                      size="lg"
+                    />
                     <div>
                       <span className="font-bold text-sm text-[#171512] dark:text-white block">
                         {person.name}
@@ -909,6 +903,17 @@ export const ProfileView: React.FC = () => {
       <EditProfileModal
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
+      />
+
+      {/* Avatar Crop Modal */}
+      <AvatarCropModal
+        isOpen={isCropOpen}
+        imageSrc={cropImageSrc}
+        onCropComplete={handleAvatarCropComplete}
+        onClose={() => {
+          setIsCropOpen(false);
+          setCropImageSrc(null);
+        }}
       />
 
       {/* Create Crew Modal */}
@@ -1001,8 +1006,8 @@ export const ProfileView: React.FC = () => {
               </button>
 
               <div className="flex items-center gap-3.5 mb-5">
-                <div className="w-12 h-12 rounded-2xl bg-[#FFF5C0] dark:bg-[#F0DC00]/15 border border-[#F0DC00]/40 flex items-center justify-center text-2xl">
-                  {gameStats.tierBadge}
+                <div className="w-12 h-12 rounded-2xl bg-[#FFF5C0] dark:bg-[#F0DC00]/15 border border-[#F0DC00]/40 flex items-center justify-center text-[#171512] dark:text-[#F0DC00]">
+                  <Gamepad2 className="w-6 h-6 stroke-[2.5]" />
                 </div>
                 <div>
                   <h3 className="font-display font-black text-lg sm:text-xl leading-tight">

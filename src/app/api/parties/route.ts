@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
   const description = typeof body.description === 'string' ? body.description : '';
   const coverImage = typeof body.coverImage === 'string' && body.coverImage
     ? body.coverImage
-    : 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80';
+    : '';
   if (body.crewId !== undefined && body.crewId !== null && (typeof body.crewId !== 'string' || !body.crewId.trim())) {
     return NextResponse.json(
       { success: false, error: 'BAD_REQUEST', message: 'Valid crewId is required when provided.' },
@@ -280,7 +280,7 @@ export async function POST(request: NextRequest) {
         {
           id: verifiedUser.userId,
           name: verifiedUser.name,
-          avatar: verifiedUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+          avatar: verifiedUser.avatar || '',
           role: 'host',
           status: 'going',
           nightsTogether: 1,

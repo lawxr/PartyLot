@@ -5,15 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import {
   X,
-  Flame,
   Gamepad2,
   Users,
+  User,
   Receipt,
-  Sparkles,
+  CheckCircle2,
   ShieldCheck,
   Heart,
-  Crown,
-  Zap,
   ExternalLink,
   Loader2,
 } from 'lucide-react';
@@ -21,6 +19,7 @@ import { Member, SharedExperienceConnection } from '@/types';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { ReputationBadge } from '@/components/ui/ReputationBadge';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface SharedExperienceModalProps {
   member: Member | null;
@@ -52,48 +51,44 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
 
   const sparkTheme = {
     'Ride or Die': {
-      color: 'text-amber-300',
-      bg: 'bg-amber-400/10',
-      border: 'border-amber-400/30',
-      glow: 'shadow-[0_0_25px_rgba(251,191,36,0.3)]',
-      icon: Crown,
-      tag: 'LEVEL 4 · RIDE OR DIE',
+      color: 'text-[#171512]',
+      bg: 'bg-[#F0DC00]/25',
+      border: 'border-[#F0DC00]/45',
+      icon: Users,
+      tag: language === 'es' ? 'NIVEL 4 · INSEPARABLES' : 'LEVEL 4 · RIDE OR DIE',
       desc:
         language === 'es'
-          ? 'Sinergia mutua en el top 1% de fiestas. Dúo imparable de tripulación.'
-          : 'Top 1% mutual gathering synergy. Unstoppable party duo.',
+          ? 'Sinergia mutua constante en fiestas. Gran vínculo con el crew.'
+          : 'Top mutual gathering synergy. Strongest crew bond.',
     },
     'Soul Crew': {
-      color: 'text-purple-300',
-      bg: 'bg-purple-500/10',
-      border: 'border-purple-500/30',
-      glow: 'shadow-[0_0_25px_rgba(168,85,247,0.3)]',
-      icon: Sparkles,
-      tag: 'LEVEL 3 · SOUL CREW',
+      color: 'text-[#171512]',
+      bg: 'bg-[#F0DC00]/20',
+      border: 'border-[#F0DC00]/35',
+      icon: Users,
+      tag: language === 'es' ? 'NIVEL 3 · CÍRCULO ÍNTIMO' : 'LEVEL 3 · INNER CIRCLE',
       desc:
         language === 'es'
-          ? 'Círculo íntimo esencial. Alta frecuencia de juegos compartidos y cuentas saldadas.'
+          ? 'Círculo íntimo. Alta frecuencia de juegos compartidos y cuentas saldadas.'
           : 'Core inner circle. High frequency of shared games & splits.',
     },
     Ignited: {
-      color: 'text-sky-300',
-      bg: 'bg-sky-400/10',
-      border: 'border-sky-400/30',
-      glow: 'shadow-[0_0_25px_rgba(56,189,248,0.3)]',
-      icon: Zap,
-      tag: 'LEVEL 2 · IGNITED',
+      color: 'text-[#171512]',
+      bg: 'bg-[#F0DC00]/15',
+      border: 'border-[#F0DC00]/30',
+      icon: Users,
+      tag: language === 'es' ? 'NIVEL 2 · HABITUAL' : 'LEVEL 2 · REGULAR',
       desc:
         language === 'es'
           ? 'Asistentes habituales. Construyendo confianza sostenida de equipo.'
           : 'Frequent co-attendees. Building sustained crew trust.',
     },
     Kindling: {
-      color: 'text-[#F0DC00]',
-      bg: 'bg-[#F0DC00]/10',
-      border: 'border-[#F0DC00]/30',
-      glow: 'shadow-[0_0_25px_rgba(240,220,0,0.2)]',
-      icon: Flame,
-      tag: 'LEVEL 1 · KINDLING',
+      color: 'text-[#6F6A62]',
+      bg: 'bg-black/5',
+      border: 'border-black/10',
+      icon: User,
+      tag: language === 'es' ? 'NIVEL 1 · PRIMERAS NOCHES' : 'LEVEL 1 · FIRST NIGHTS',
       desc:
         language === 'es'
           ? 'Conexión inicial. Primeras noches y dinámicas compartidas.'
@@ -123,7 +118,7 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
         particleCount: 80,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#F0DC00', '#38BDF8', '#A855F7', '#10B981'],
+        colors: ['#F0DC00', '#DE6B48', '#D48B38', '#547A5B'],
       });
     } else {
       setSyncError(
@@ -182,7 +177,7 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
           {/* Top Label */}
           <div className="text-center mb-4">
             <span className="text-[10px] font-mono uppercase tracking-widest text-[#8E887E] block">
-              SHARED-EXPERIENCE GRAPH
+              {language === 'es' ? 'HISTORIA COMPARTIDA' : 'SHARED HISTORY'}
             </span>
           </div>
 
@@ -190,20 +185,13 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
           <div className="flex items-center justify-center gap-4 mb-6">
             {/* Current User */}
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[rgba(35,30,22,0.12)] shadow-sm flex items-center justify-center bg-[#F1EADF]">
-                {currentUser.avatar ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-[#F0DC00]/30 text-[#171512] flex items-center justify-center font-display font-black text-lg">
-                    {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'Y'}
-                  </div>
-                )}
-              </div>
+              <Avatar
+                user={{
+                  avatar: currentUser.avatar,
+                  name: currentUser.name || (language === 'es' ? 'Tú' : 'You'),
+                }}
+                size="lg"
+              />
               <span className="text-xs font-bold mt-1 text-[#6F6A62]">
                 {language === 'es' ? 'Tú' : 'You'}
               </span>
@@ -212,8 +200,8 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
             {/* Spark Connector */}
             <div className="flex flex-col items-center">
               {onchainReceipt ? (
-                <div className="flex items-center gap-1.5 text-emerald-800 font-black font-mono text-xs px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 shadow-sm">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <div className="flex items-center gap-1.5 text-[#171512] font-black font-mono text-xs px-3 py-1 rounded-full bg-[#F0DC00]/20 border border-[#F0DC00]/40 shadow-xs">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#171512]" />
                   <span>SYNCED</span>
                 </div>
               ) : isSyncing ? (
@@ -224,7 +212,7 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
               ) : (
                 <button
                   onClick={handleSync}
-                  title={language === 'es' ? 'Sincronizar en Monad' : 'Sync on Monad'}
+                  title={language === 'es' ? 'Guardar en la historia' : 'Save connection'}
                   className="flex items-center gap-1 text-[#171512] hover:bg-[#F0DC00] font-black font-mono text-xs px-3 py-1 rounded-full bg-[#F0DC00]/20 border border-[#F0DC00]/40 transition-all cursor-pointer active:scale-95 shadow-sm"
                 >
                   <Heart className="w-3.5 h-3.5 fill-[#171512]" />
@@ -236,20 +224,13 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
 
             {/* Target Member */}
             <div className="flex flex-col items-center">
-              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#F0DC00] shadow-sm flex items-center justify-center bg-[#F1EADF]">
-                {member.avatar ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={member.avatar}
-                    alt={member.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-[#F0DC00]/30 text-[#171512] flex items-center justify-center font-display font-black text-lg">
-                    {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
-                  </div>
-                )}
-              </div>
+              <Avatar
+                user={{
+                  avatar: member.avatar,
+                  name: member.name,
+                }}
+                size="lg"
+              />
               <span className="text-xs font-bold mt-1 text-[#171512]">{member.name}</span>
               <ReputationBadge
                 sharedNights={displayedGatherings}
@@ -334,22 +315,26 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
               <span className="text-[#8E887E]">{language === 'es' ? 'USUARIO' : 'HANDLE'}</span>
               <span className="text-[#B8A700] font-bold">{connection.targetUserHandle}</span>
             </div>
-            <div className="flex items-center justify-between font-mono text-[11px]">
-              <span className="text-[#8E887E]">
-                {language === 'es' ? 'REPUTACIÓN DE PAGO' : 'SETTLEMENT REPUTATION'}
-              </span>
-              <span className="text-emerald-700 font-bold">
-                {connection.settlementReputation || '100% Instant Settler'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between font-mono text-[11px]">
-              <span className="text-[#8E887E]">
-                {language === 'es' ? 'JUEGO FAVORITO' : 'FAVORITE GAME'}
-              </span>
-              <span className="text-[#171512] font-bold">
-                {connection.favoriteGame || "Who's Most Likely"}
-              </span>
-            </div>
+            {connection.settlementReputation ? (
+              <div className="flex items-center justify-between font-mono text-[11px]">
+                <span className="text-[#8E887E]">
+                  {language === 'es' ? 'REPUTACIÓN DE PAGO' : 'SETTLEMENT REPUTATION'}
+                </span>
+                <span className="text-emerald-700 font-bold">
+                  {connection.settlementReputation}
+                </span>
+              </div>
+            ) : null}
+            {connection.favoriteGame ? (
+              <div className="flex items-center justify-between font-mono text-[11px]">
+                <span className="text-[#8E887E]">
+                  {language === 'es' ? 'JUEGO FAVORITO' : 'FAVORITE GAME'}
+                </span>
+                <span className="text-[#171512] font-bold">
+                  {connection.favoriteGame}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           {/* Verified On-Chain Card */}
@@ -357,28 +342,28 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs space-y-2 mb-4"
+              className="p-3.5 rounded-2xl bg-[#F0DC00]/15 border border-[#F0DC00]/35 text-xs space-y-2 mb-4"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-emerald-800 font-bold">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <div className="flex items-center gap-1.5 text-[#171512] font-bold">
+                  <CheckCircle2 className="w-4 h-4 text-[#171512]" />
                   <span>
                     {language === 'es'
-                      ? 'Certificado en Monad Blockchain'
-                      : 'Certified on Monad Blockchain'}
+                      ? 'Guardado en la historia del crew'
+                      : 'Saved to crew history'}
                   </span>
                 </div>
-                <span className="text-[10px] font-mono text-emerald-700">
+                <span className="text-[10px] font-mono text-[#6F6A62]">
                   Bloque #{onchainReceipt.blockNumber}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-[11px] font-mono bg-[#F8F3EA] px-2.5 py-1.5 rounded-lg border border-[rgba(35,30,22,0.08)]">
+              <div className="flex items-center justify-between text-[11px] font-mono bg-[#FFFDF8] px-2.5 py-1.5 rounded-lg border border-[rgba(35,30,22,0.08)]">
                 <span className="text-[#6F6A62]">TX</span>
                 <a
                   href={onchainReceipt.explorerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-emerald-700 hover:underline truncate max-w-[200px] flex items-center gap-1 font-bold"
+                  className="text-[#171512] hover:underline truncate max-w-[200px] flex items-center gap-1 font-bold"
                 >
                   <span>
                     {onchainReceipt.txHash.slice(0, 8)}...{onchainReceipt.txHash.slice(-6)}
@@ -407,13 +392,13 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
                   href={onchainReceipt.explorerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-3 px-4 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-800 font-display font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+                  className="w-full py-3 px-4 rounded-2xl bg-[#F0DC00]/20 hover:bg-[#F0DC00]/30 border border-[#F0DC00]/40 text-[#171512] font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
                 >
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <CheckCircle2 className="w-4 h-4 text-[#171512]" />
                   <span>
                     {language === 'es'
-                      ? 'Ver Certificado en Monad Explorer'
-                      : 'View Certificate on Monad Explorer'}
+                      ? 'Ver en el explorador'
+                      : 'View on explorer'}
                   </span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
@@ -423,15 +408,15 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
                   size="md"
                   fullWidth
                   onClick={handleCheers}
-                  icon={<Sparkles className="w-4 h-4 text-[#171512]" />}
+                  icon={<Heart className="w-4 h-4 text-[#171512]" />}
                 >
                   {cheersSent
                     ? language === 'es'
-                      ? '¡Brindis enviado a la fiesta! 🥂'
-                      : 'Cheers sent to party! 🥂'
+                      ? '¡Brindis enviado a la fiesta!'
+                      : 'Cheers sent to party!'
                     : language === 'es'
-                    ? `Brindar con ${member.name} 🥂`
-                    : `Toast with ${member.name} 🥂`}
+                    ? `Brindar con ${member.name}`
+                    : `Toast with ${member.name}`}
                 </GlassButton>
               </>
             ) : (
@@ -446,17 +431,17 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
                     isSyncing ? (
                       <Loader2 className="w-4 h-4 animate-spin text-black" />
                     ) : (
-                      <Zap className="w-4 h-4 text-black fill-black" />
+                      <Heart className="w-4 h-4 text-black fill-black" />
                     )
                   }
                 >
                   {isSyncing
                     ? language === 'es'
-                      ? 'Sincronizando en Monad Testnet...'
-                      : 'Certifying on Monad Testnet...'
+                      ? 'Guardando en la historia...'
+                      : 'Saving to crew history...'
                     : language === 'es'
-                    ? '⚡ Sincronizar Vínculo en Monad Blockchain'
-                    : '⚡ Sync Connection on Monad Blockchain'}
+                    ? 'Guardar en la historia del crew'
+                    : 'Save to crew history'}
                 </GlassButton>
 
                 <GlassButton
@@ -464,15 +449,15 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
                   size="md"
                   fullWidth
                   onClick={handleCheers}
-                  icon={<Sparkles className="w-4 h-4 text-[#171512]" />}
+                  icon={<Heart className="w-4 h-4 text-[#171512]" />}
                 >
                   {cheersSent
                     ? language === 'es'
-                      ? '¡Brindis enviado a la fiesta! 🥂'
-                      : 'Cheers sent to party! 🥂'
+                      ? '¡Brindis enviado a la fiesta!'
+                      : 'Cheers sent to party!'
                     : language === 'es'
-                    ? `Brindar con ${member.name} 🥂`
-                    : `Toast with ${member.name} 🥂`}
+                    ? `Brindar con ${member.name}`
+                    : `Toast with ${member.name}`}
                 </GlassButton>
               </>
             )}
@@ -481,8 +466,8 @@ export const SharedExperienceModal: React.FC<SharedExperienceModalProps> = ({
           <div className="mt-3 text-center">
             <span className="text-[10px] font-mono text-[#8E887E]">
               {language === 'es'
-                ? 'Conexión descentralizada en Monad · Cero datos privados expuestos'
-                : 'Decentralized ties on Monad · Zero private data exposed'}
+                ? 'Conexión verificada · Cero datos privados expuestos'
+                : 'Verified connection · Zero private data exposed'}
             </span>
           </div>
         </motion.div>

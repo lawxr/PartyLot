@@ -14,7 +14,8 @@ import {
   DoorOpen,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
+import { getCoverUrl } from '@/lib/imageOptimization';
+import { Avatar } from '@/components/ui/Avatar';
 import { MonadLogo } from '@/components/ui/TokenLogo';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { persistActivityToSupabase } from '@/services/supabaseService';
@@ -288,13 +289,12 @@ export const ActivityView: React.FC = () => {
                   {(activeParty.members || []).slice(0, 5).map((m, idx) => (
                     <div
                       key={m.id || idx}
-                      className="inline-block w-8 h-8 rounded-full ring-2 ring-[#FFFDF8] dark:ring-[#1C1A16] overflow-hidden bg-black/10 shrink-0"
+                      className="shrink-0"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={getAvatarUrl(m.avatar)}
-                        alt={m.name}
-                        className="w-full h-full object-cover"
+                      <Avatar
+                        user={{ avatar: m.avatar, name: m.name }}
+                        size="md"
+                        border="light"
                       />
                     </div>
                   ))}
@@ -486,13 +486,12 @@ export const ActivityView: React.FC = () => {
                         {(party.members || []).slice(0, 4).map((m, idx) => (
                           <div
                             key={m.id || idx}
-                            className="inline-block w-6 h-6 rounded-full ring-2 ring-[#FFFDF8] dark:ring-[#1C1A16] overflow-hidden bg-black/10 shrink-0"
+                            className="shrink-0"
                           >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={getAvatarUrl(m.avatar)}
-                              alt={m.name}
-                              className="w-full h-full object-cover"
+                            <Avatar
+                              user={{ avatar: m.avatar, name: m.name }}
+                              size="xs"
+                              border="light"
                             />
                           </div>
                         ))}

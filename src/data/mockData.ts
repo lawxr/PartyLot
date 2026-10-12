@@ -129,3 +129,6 @@ export const TRIVIA_QUESTIONS: TriviaQuestion[] = [
     explanationEs: 'Dibujado en una servilleta durante una charla de balcón a las 3 AM.',
   },
 ];
+
+export const DEFAULT_PARTY_COVER =
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%231E1B18"/><stop offset="50%" stop-color="%233A2E1A"/><stop offset="100%" stop-color="%23F0DC00"/></linearGradient></defs><rect width="1200" height="800" fill="url(%23g)"/></svg>';

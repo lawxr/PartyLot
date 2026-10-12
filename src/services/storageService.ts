@@ -1,4 +1,5 @@
 import { getSupabase } from '@/lib/supabase/client';
+import { getClientPrivyToken } from '@/hooks/usePrivySync';
 
 /**
  * Uploads an image file to Supabase Storage and returns the public CDN URL.
@@ -30,9 +31,10 @@ export async function uploadImageFile(
     formData.append('file', fileObj);
     formData.append('folder', folder);
 
+    const effectiveToken = authToken || (await getClientPrivyToken().catch(() => null));
     const headers: Record<string, string> = {};
-    if (authToken) {
-      headers['Authorization'] = `Bearer ${authToken}`;
+    if (effectiveToken) {
+      headers['Authorization'] = `Bearer ${effectiveToken}`;
     }
 
     const res = await fetch('/api/upload', {

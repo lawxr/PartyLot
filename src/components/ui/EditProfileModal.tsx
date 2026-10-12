@@ -94,9 +94,19 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     setIsUploading(true);
     setError(null);
     try {
+      let token: string | null = null;
+      if (authenticated) {
+        try {
+          token = await getAccessToken();
+        } catch {
+          // ignore
+        }
+      }
       const { uploadImageFile } = await import('@/services/storageService');
-      const uploadedUrl = await uploadImageFile(croppedBlob, 'avatars');
+      const uploadedUrl = await uploadImageFile(croppedBlob, 'avatars', token);
       setAvatar(uploadedUrl);
+      // Immediately auto-persist avatar to store and Supabase so cropping is instantly saved!
+      await updateUser({ avatar: uploadedUrl }, token);
     } catch (uploadErr) {
       console.error('Avatar upload failed:', uploadErr);
       setError(uploadErr instanceof Error ? uploadErr.message : (isEs ? 'Error al subir el avatar.' : 'Failed to upload avatar.'));

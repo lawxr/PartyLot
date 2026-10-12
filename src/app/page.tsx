@@ -97,12 +97,14 @@ export default function App() {
       {/* Ambient Desktop Backdrop Photography (Warm Blurred) - only on splash */}
       {isSplash && (
         <>
-          <div
-            className="fixed inset-0 hidden md:block opacity-25 bg-cover bg-center filter blur-3xl pointer-events-none scale-110"
-            style={{
-              backgroundImage: `url("${activeParty?.coverImage || 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1600&q=80'}")`,
-            }}
-          />
+          {activeParty?.coverImage && (
+            <div
+              className="fixed inset-0 hidden md:block opacity-25 bg-cover bg-center filter blur-3xl pointer-events-none scale-110"
+              style={{
+                backgroundImage: `url("${activeParty.coverImage}")`,
+              }}
+            />
+          )}
           {/* Warm Ambient Radial Gradients */}
           <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
             <div className="absolute -top-[10%] left-[15%] w-[450px] h-[450px] rounded-full bg-[#f0dc00]/10 filter blur-[90px]" />

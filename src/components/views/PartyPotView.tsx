@@ -28,6 +28,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { MONAD_CONTRACT_ADDRESSES } from '@/contracts';
 import { useMonPrice } from '@/hooks/useMonPrice';
 import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
+import { Avatar } from '@/components/ui/Avatar';
 import { UsdcLogo, MonadLogo } from '@/components/ui/TokenLogo';
 import {
   formatWeb3Error,
@@ -403,15 +404,13 @@ export const PartyPotView: React.FC = () => {
               {partyMembers.slice(0, 8).map((m, idx) => (
                 <div
                   key={m.id || idx}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 bg-black/40 relative"
+                  className="shrink-0"
                   title={m.name}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={getAvatarUrl(m.avatar, 72)}
-                    alt={m.name}
-                    className="w-full h-full object-cover"
-                    decoding="async"
+                  <Avatar
+                    user={{ avatar: m.avatar, name: m.name }}
+                    size="sm"
+                    border="over-image"
                   />
                 </div>
               ))}
@@ -553,22 +552,22 @@ export const PartyPotView: React.FC = () => {
             )}
           </AnimatePresence>
 
-          {/* Real-time Monad Transaction Confirmation Toast */}
+          {/* Real-time Transaction Confirmation Toast */}
           {lastTxHash && (
-            <div className="mb-4 flex items-center justify-between p-3.5 rounded-[22px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs backdrop-blur-xl shadow-xs">
+            <div className="mb-4 flex items-center justify-between p-3.5 rounded-[22px] bg-[#F0DC00]/15 border border-[#F0DC00]/35 text-[#171512] dark:text-[#F0DC00] text-xs backdrop-blur-xl shadow-xs">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                <Check className="w-4 h-4 text-[#171512] dark:text-[#F0DC00] shrink-0" />
                 <span>
                   {isEs
-                    ? 'Transacción confirmada en Monad Testnet'
-                    : 'Transaction confirmed on Monad Testnet'}
+                    ? 'Aporte confirmado en el Party Pot'
+                    : 'Contribution confirmed in Party Pot'}
                 </span>
               </div>
               <a
                 href={`https://testnet.monadexplorer.com/tx/${lastTxHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-mono underline font-bold flex items-center gap-1 text-[#674FF4]"
+                className="font-mono underline font-bold flex items-center gap-1 text-[#171512] dark:text-[#F0DC00]"
               >
                 <span>{lastTxHash.slice(0, 8)}...</span>
                 <ExternalLink className="w-3 h-3" />
@@ -661,7 +660,7 @@ export const PartyPotView: React.FC = () => {
                   )}
                   <div>
                     <span className="font-bold text-sm text-[#171512] dark:text-white block leading-tight">
-                      {selectedToken === 'USDC' ? 'USDC · Base' : 'MON · Monad Testnet'}
+                      {selectedToken === 'USDC' ? 'USDC · Base' : 'MON'}
                     </span>
                     <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block mt-0.5">
                       {isEs ? 'Rápido, comisiones bajas' : 'Fast, low fees'}
@@ -718,7 +717,7 @@ export const PartyPotView: React.FC = () => {
                     >
                       <div className="flex items-center gap-2.5">
                         <MonadLogo size="lg" className="w-6 h-6" />
-                        <span>MON · Monad Testnet</span>
+                        <span>MON</span>
                       </div>
                       {selectedToken === 'MON' && <Check className="w-4 h-4 text-[#171512] dark:text-white" />}
                     </button>
@@ -873,15 +872,15 @@ export const PartyPotView: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="font-display font-black text-sm sm:text-base text-[#171512] dark:text-white leading-tight">
-                        {isEs ? 'Tesorería onchain' : 'Onchain Treasury'}
+                        {isEs ? 'Bote del crew' : 'Crew Party Pot'}
                       </h4>
                       <span className="text-[11px] text-[#706B66] dark:text-[#A8A196] font-medium block">
-                        Monad Testnet · PartyTreasury
+                        {isEs ? 'Fondo común verificado' : 'Verified group pot'}
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 border border-emerald-500/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-bold text-[#171512] dark:text-[#F0DC00] bg-[#F0DC00]/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 border border-[#F0DC00]/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#F0DC00] animate-pulse" />
                     {isEs ? 'En vivo' : 'Live'}
                   </span>
                 </div>
@@ -976,13 +975,10 @@ export const PartyPotView: React.FC = () => {
                         >
                           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                             {/* Avatar with Tiny Plus/Minus Micro Badge */}
-                            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={getAvatarUrl(user?.avatar, 80)}
-                                alt={tx.userName}
-                                className="w-full h-full rounded-full object-cover border border-black/10 dark:border-white/15"
-                                decoding="async"
+                            <div className="relative shrink-0">
+                              <Avatar
+                                user={{ avatar: user?.avatar, name: tx.userName }}
+                                size="md"
                               />
                               <div
                                 className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white dark:border-[#181613] shadow-xs ${
@@ -1035,82 +1031,13 @@ export const PartyPotView: React.FC = () => {
                       );
                     })
                   ) : (
-                    /* Fallback Social Initial Activity matching design mockup */
-                    [
-                      {
-                        id: 'default-1',
-                        name: partyMembers[0]?.name || 'Ana',
-                        avatar: partyMembers[0]?.avatar,
-                        action: isEs ? 'aportó $10' : 'added $10',
-                        time: '2m ago',
-                        isAdd: true,
-                      },
-                      {
-                        id: 'default-2',
-                        name: partyMembers[1]?.name || 'Carlos',
-                        avatar: partyMembers[1]?.avatar,
-                        action: isEs ? 'aportó $25' : 'added $25',
-                        time: '12m ago',
-                        isAdd: true,
-                      },
-                      {
-                        id: 'default-3',
-                        name: partyMembers[2]?.name || 'Sofi',
-                        avatar: partyMembers[2]?.avatar,
-                        action: isEs ? 'retiró $12' : 'withdrew $12',
-                        time: '1h ago',
-                        isAdd: false,
-                      },
-                      {
-                        id: 'default-4',
-                        name: partyMembers[3]?.name || 'Valen',
-                        avatar: partyMembers[3]?.avatar,
-                        action: isEs ? 'aportó $8' : 'added $8',
-                        time: '3h ago',
-                        isAdd: true,
-                      },
-                    ].map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-2.5 sm:p-3 rounded-[22px] sm:rounded-[24px] bg-white/80 dark:bg-white/[0.04] backdrop-blur-xl border border-white/80 dark:border-white/10 flex items-center justify-between gap-2.5 sm:gap-3 shadow-[0_2px_12px_rgba(65,48,25,0.03),inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.05)]"
-                      >
-                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-                          <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={getAvatarUrl(item.avatar, 80)}
-                              alt={item.name}
-                              className="w-full h-full rounded-full object-cover border border-black/10 dark:border-white/15"
-                              decoding="async"
-                            />
-                            <div
-                              className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white dark:border-[#181613] shadow-xs ${
-                                item.isAdd
-                                  ? 'bg-[#FFE600] text-[#161514]'
-                                  : 'bg-[#FFCCD5] text-[#900B22]'
-                              }`}
-                            >
-                              {item.isAdd ? '+' : '-'}
-                            </div>
-                          </div>
-
-                          <div className="min-w-0 flex-1 pr-1">
-                            <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight truncate">
-                              {item.name}{' '}
-                              <span className="font-normal text-[#8E887E] dark:text-[#A8A196]">
-                                {item.action}
-                              </span>
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="text-right shrink-0 pl-1">
-                          <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium whitespace-nowrap block">
-                            {item.time}
-                          </span>
-                        </div>
-                      </div>
-                    ))
+                    <div className="p-6 rounded-[22px] bg-white/60 dark:bg-white/[0.03] border border-dashed border-black/10 dark:border-white/10 text-center">
+                      <p className="text-xs font-semibold text-[#8E887E] dark:text-[#A8A196]">
+                        {isEs
+                          ? 'Aún no hay aportes en el bote. Sé el primero en contribuir.'
+                          : 'No contributions yet. Be the first to add to the pot.'}
+                      </p>
+                    </div>
                   )}
                 </div>
               </section>
@@ -1161,7 +1088,7 @@ export const PartyPotView: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <Coins className="w-5 h-5 text-[#836EF9]" />
                     <span className="text-xs font-bold">
-                      {isEs ? 'Ver contrato en Monad Explorer' : 'View contract on Monad Explorer'}
+                      {isEs ? 'Detalles técnicos del contrato' : 'Technical contract details'}
                     </span>
                   </div>
                   <ExternalLink className="w-4 h-4 text-[#8E887E]" />

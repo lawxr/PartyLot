@@ -2,9 +2,11 @@
 
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, X, Trash2, CheckCheck, Clock, ExternalLink } from 'lucide-react';
+import { Bell, X, Trash2, CheckCheck, Clock, ExternalLink, Coins, Receipt, BarChart3, Gamepad2, Users } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { Avatar } from '@/components/ui/Avatar';
+import { resolveActivityActor } from '@/lib/activityActor';
 import type { ActivityItem } from '@/types';
 
 interface NotificationsPopoverProps {
@@ -57,33 +59,33 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
     switch (type) {
       case 'pot':
         return {
-          icon: '💰',
+          Icon: Coins,
           bg: 'bg-[#F0DC00]/20 text-[#8F7400] dark:text-[#F0DC00]',
-          label: isEs ? 'Tesorería' : 'Pot',
+          label: isEs ? 'Bote' : 'Pot',
         };
       case 'expense':
         return {
-          icon: '💸',
-          bg: 'bg-blue-500/15 text-blue-700 dark:text-blue-300',
+          Icon: Receipt,
+          bg: 'bg-black/5 dark:bg-white/10 text-[#171512] dark:text-white',
           label: isEs ? 'Gasto' : 'Expense',
         };
       case 'poll':
         return {
-          icon: '📊',
-          bg: 'bg-purple-500/15 text-purple-700 dark:text-purple-300',
+          Icon: BarChart3,
+          bg: 'bg-black/5 dark:bg-white/10 text-[#171512] dark:text-white',
           label: isEs ? 'Votación' : 'Poll',
         };
       case 'game':
         return {
-          icon: '🎮',
-          bg: 'bg-pink-500/15 text-pink-700 dark:text-pink-300',
+          Icon: Gamepad2,
+          bg: 'bg-black/5 dark:bg-white/10 text-[#171512] dark:text-white',
           label: isEs ? 'Juego' : 'Game',
         };
       case 'join':
       default:
         return {
-          icon: '🎉',
-          bg: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+          Icon: Users,
+          bg: 'bg-black/5 dark:bg-white/10 text-[#171512] dark:text-white',
           label: isEs ? 'Reunión' : 'Event',
         };
     }
@@ -196,19 +198,22 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
                       >
                         {/* Leading Avatar / Type Icon */}
                         <div className="relative shrink-0 mt-0.5">
-                          {act.avatar ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={act.avatar}
-                              alt=""
-                              className="w-10 h-10 rounded-full object-cover border border-white dark:border-white/10 shadow-sm"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-[#F0DC00]/30 flex items-center justify-center text-base">
-                              {badge.icon}
-                            </div>
-                          )}
-                          <span className="absolute -bottom-1 -right-1 text-xs">{badge.icon}</span>
+                          {(() => {
+                            const actor = resolveActivityActor(act);
+                            return (
+                              <Avatar
+                                user={{
+                                  avatar: actor.avatar || act.avatar,
+                                  name: actor.name,
+                                  id: actor.id,
+                                }}
+                                size="md"
+                              />
+                            );
+                          })()}
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#F0DC00] text-[#171512] flex items-center justify-center border border-white dark:border-[#1E1B17] shadow-sm">
+                            <badge.Icon className="w-2.5 h-2.5 stroke-[2.5]" />
+                          </div>
                         </div>
 
                         {/* Content */}
@@ -259,8 +264,8 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
               <div className="px-5 py-2.5 border-t border-black/[0.04] dark:border-white/[0.06] bg-black/[0.01] dark:bg-white/[0.02] text-center">
                 <span className="text-[11px] font-semibold text-[#8E887E] dark:text-[#A8A196]">
                   {isEs
-                    ? '💡 Las notificaciones se actualizan en vivo con tu grupo'
-                    : '💡 Notifications update live with your crew'}
+                    ? 'Las notificaciones se actualizan en vivo con tu grupo'
+                    : 'Notifications update live with your crew'}
                 </span>
               </div>
             )}

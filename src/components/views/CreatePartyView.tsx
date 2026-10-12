@@ -21,12 +21,12 @@ import confetti from 'canvas-confetti';
 import { uploadImageFile } from '@/services/storageService';
 
 const SAMPLE_PARTY_COVERS = [
-  { id: '1', url: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=800&q=80' },
-  { id: '2', url: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=800&q=80' },
-  { id: '3', url: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=800&q=80' },
-  { id: '4', url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80' },
-  { id: '5', url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80' },
-  { id: '6', url: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80' },
+  { id: '1', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23F0DC00"/><stop offset="50%" stop-color="%23FF8A00"/><stop offset="100%" stop-color="%23E52E71"/></linearGradient></defs><rect width="800" height="800" fill="url(%23g)"/></svg>' },
+  { id: '2', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%232C241D"/><stop offset="50%" stop-color="%234A3B2C"/><stop offset="100%" stop-color="%23F0DC00"/></linearGradient></defs><rect width="800" height="800" fill="url(%23g)"/></svg>' },
+  { id: '3', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%231E1B18"/><stop offset="100%" stop-color="%232D1515"/></linearGradient></defs><rect width="800" height="800" fill="url(%23g)"/></svg>' },
+  { id: '4', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23FFB300"/><stop offset="100%" stop-color="%23F57C00"/></linearGradient></defs><rect width="800" height="800" fill="url(%23g)"/></svg>' },
+  { id: '5', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23141210"/><stop offset="50%" stop-color="%23231F1C"/><stop offset="100%" stop-color="%2338322D"/></linearGradient></defs><rect width="800" height="800" fill="url(%23g)"/></svg>' },
+  { id: '6', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%233A2E1A"/><stop offset="100%" stop-color="%23F0DC00"/></linearGradient></defs><rect width="800" height="800" fill="url(%23g)"/></svg>' },
 ];
 
 export const CreatePartyView: React.FC = () => {

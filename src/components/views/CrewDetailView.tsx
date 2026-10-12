@@ -94,7 +94,7 @@ export const CrewDetailView: React.FC = () => {
       name: newMemberName.trim(),
       handle: newMemberHandle.trim() ? `@${newMemberHandle.replace('@', '')}` : `@${newMemberName.toLowerCase().replace(/\s+/g, '')}`,
       role: 'member',
-      avatar: `https://images.unsplash.com/photo-${1530000000000 + Math.floor(Math.random() * 5000000)}?auto=format&fit=crop&w=400&q=80`,
+      avatar: '',
     });
 
     setNewMemberName('');

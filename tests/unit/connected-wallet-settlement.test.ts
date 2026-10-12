@@ -188,14 +188,14 @@ describe('Connected-Wallet Settlement Flow & Asset Alignment (MKT-05)', () => {
     it('aligns Spanish translations to MON for settlements', () => {
       expect(translations.es.split.settleOnMonad).toBe('Liquidar en Monad (MON)');
       expect(translations.es.split.settleTitle).toBe('Liquidación de Cuentas (MON)');
-      expect(translations.es.split.settleEngineBadge).toBe('MON Split Engine · Monad Testnet');
+      expect(translations.es.split.settleEngineBadge).toBe('MON Split Engine');
       expect(translations.es.split.confirmSettle(2)).toContain('MON');
       expect(translations.es.split.confirmSettle(2)).not.toContain('USDC');
     });
 
     it('aligns English translations to MON for settlements', () => {
       expect(translations.en.split.settleOnMonad).toBe('Settle on Monad (MON)');
-      expect(translations.en.split.settleEngineBadge).toBe('MON Split Engine · Monad Testnet');
+      expect(translations.en.split.settleEngineBadge).toBe('MON Split Engine');
       expect(translations.en.split.confirmSettle(2)).toContain('MON');
       expect(translations.en.split.confirmSettle(2)).not.toContain('USDC');
     });

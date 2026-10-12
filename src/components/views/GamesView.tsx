@@ -21,6 +21,7 @@ import { CrewTrivia } from '@/components/games/CrewTrivia';
 import { RewardWinnerModal } from '@/components/games/RewardWinnerModal';
 import { TopNav } from '@/components/navigation/TopNav';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { Avatar } from '@/components/ui/Avatar';
 
 export const GamesView: React.FC = () => {
   const { parties, currentPartyId, activeGameId, setActiveGame, goBack } = usePartyStore();
@@ -97,16 +98,15 @@ export const GamesView: React.FC = () => {
           <div className="flex items-center justify-between gap-3">
             {/* Avatar stack */}
             <div className="flex items-center">
-              <div className="flex -space-x-2 overflow-hidden">
-                {members.slice(0, 4).map((m) => (
-                  <img
-                    key={m.id}
-                    src={m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
-                    alt={m.name}
-                    className="inline-block h-6 w-6 rounded-full ring-2 ring-[#FFFDF8] dark:ring-[#171512] object-cover"
-                  />
-                ))}
-              </div>
+                <div className="flex -space-x-1.5 overflow-hidden">
+                  {members.slice(0, 4).map((m) => (
+                    <Avatar
+                      key={m.id}
+                      user={{ avatar: m.avatar, name: m.name }}
+                      size="xs"
+                    />
+                  ))}
+                </div>
               <span className="ml-2 text-xs font-bold text-[#6F6A62] dark:text-[#A8A196]">
                 {members.length} {isEs ? 'en la sala' : 'playing'}
               </span>
@@ -202,10 +202,9 @@ export const GamesView: React.FC = () => {
                       className="flex items-center gap-1.5 py-1 px-2 rounded-lg bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-[11px] font-medium"
                       title={m.name}
                     >
-                      <img
-                        src={m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
-                        alt={m.name}
-                        className="w-4 h-4 rounded-full object-cover"
+                      <Avatar
+                        user={{ avatar: m.avatar, name: m.name }}
+                        size="xs"
                       />
                       <span className="truncate max-w-[80px]">{m.name}</span>
                     </div>

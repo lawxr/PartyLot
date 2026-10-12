@@ -63,9 +63,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (avatar && typeof avatar === 'string' && avatar.trim().length > 600) {
+  const isDataUri = avatar?.startsWith('data:image/');
+  if (avatar && typeof avatar === 'string' && !isDataUri && avatar.trim().length > 600) {
     return NextResponse.json(
       { success: false, error: 'BAD_REQUEST', message: 'Avatar URL is too long.' },
+      { status: 400 }
+    );
+  }
+  if (avatar && isDataUri && avatar.length > 2 * 1024 * 1024) {
+    return NextResponse.json(
+      { success: false, error: 'BAD_REQUEST', message: 'Avatar image cannot exceed 2MB.' },
       { status: 400 }
     );
   }

@@ -104,7 +104,7 @@ describe('Party Service', () => {
       };
 
       const text = formatPartyInviteText(mockParty);
-      expect(text).toContain("You're invited to Neon Night! 🍸");
+      expect(text).toContain("You're invited to Neon Night!");
       expect(text).toContain('When: Oct 15 · 9:00 PM');
       expect(text).toContain('Where: Club Nova');
       expect(text).toContain('Private Code: PARTY');

@@ -15,14 +15,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: `Has sido invitado a una fiesta privada en PartyLot. Ingresa con el código de acceso ${cleanCode}.`,
     openGraph: {
       title: `Invitación a PartyLot · Código ${cleanCode}`,
-      description: `Ingresa a la reunión privada en PartyLot en Monad Testnet.`,
+      description: `Ingresa a la reunión privada en PartyLot con tu crew.`,
       url: `https://partylot.vercel.app/join/${cleanCode}`,
       siteName: 'PartyLot',
     },
     twitter: {
       card: 'summary_large_image',
       title: `Invitación a PartyLot · Código ${cleanCode}`,
-      description: `Ingresa a la reunión privada en PartyLot en Monad Testnet.`,
+      description: `Ingresa a la reunión privada en PartyLot con tu crew.`,
     },
   };
 }

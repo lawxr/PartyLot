@@ -148,7 +148,7 @@ export const CrewTrivia: React.FC = () => {
             className="w-full mb-3 py-3.5 px-5 rounded-2xl bg-[#836EF9] hover:bg-[#7257F2] text-white font-black text-sm shadow-[0_4px_16px_rgba(131,110,249,0.35)] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <Trophy className="w-4 h-4" />
-            <span>{isEs ? '🏆 Premiar Ganador (Monad Pot)' : '🏆 Reward Winner (Monad Pot)'}</span>
+            <span>{isEs ? 'Premiar Ganador' : 'Reward Winner'}</span>
           </button>
 
           <button
@@ -266,7 +266,7 @@ export const CrewTrivia: React.FC = () => {
             className="w-full flex flex-col gap-3"
           >
             <div className="p-4 rounded-2xl bg-[#F0DC00]/15 dark:bg-[#F0DC00]/20 border border-[#F0DC00]/30 text-xs text-[#171512] dark:text-[#F5F1E8] leading-relaxed">
-              💡 <span className="font-bold">{isEs ? 'Dato del lore:' : 'Lore check:'}</span> {explanationText}
+              <span className="font-bold">{isEs ? 'Respuesta:' : 'Answer:'}</span> {explanationText}
             </div>
 
             <button

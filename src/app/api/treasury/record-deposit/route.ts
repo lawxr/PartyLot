@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       type: 'add',
       description: `Deposit of ${amount.toFixed(4)} MON via User Wallet on Monad`,
       user_name: userName,
-      user_avatar: userAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+      user_avatar: userAvatar || '',
       created_at: new Date().toISOString(),
     });
 

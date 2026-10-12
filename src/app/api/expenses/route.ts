@@ -156,9 +156,7 @@ export async function POST(request: NextRequest) {
     }
 
     const paidByName = typeof payer.name === 'string' ? payer.name : '';
-    const paidByAvatar = typeof payer.avatar === 'string' && payer.avatar
-      ? payer.avatar
-      : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
+    const paidByAvatar = typeof payer.avatar === 'string' ? payer.avatar : '';
 
     // 2. Insert only; expense IDs are never update selectors.
     const { error: insertErr } = await supabase.from('expenses').insert({

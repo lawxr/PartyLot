@@ -20,6 +20,7 @@ export const WhosMostLikely: React.FC = () => {
     goBack,
     loadPartyFromSupabase,
     listenToActivePartyRealtime,
+    currentUser,
   } = usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
@@ -45,11 +46,20 @@ export const WhosMostLikely: React.FC = () => {
   const questionText = (isEs && currentQ.questionEs) ? currentQ.questionEs : currentQ.question;
 
   // Real party members strictly (up to 6)
-  const friendsToDisplay = partyMembers.slice(0, 6).map((m) => ({
-    id: m.id,
-    name: m.name,
-    avatar: m.avatar,
-  }));
+  const friendsToDisplay = partyMembers.slice(0, 6).map((m) => {
+    const isMe =
+      (currentUser?.id && m.id === currentUser.id) ||
+      (currentUser?.walletAddress &&
+        m.walletAddress &&
+        m.walletAddress.toLowerCase() === currentUser.walletAddress.toLowerCase()) ||
+      (currentUser?.name && m.name === currentUser.name);
+
+    return {
+      id: m.id,
+      name: isMe && currentUser?.name ? currentUser.name : m.name,
+      avatar: isMe && currentUser?.avatar ? currentUser.avatar : m.avatar,
+    };
+  });
 
   const totalQuestions = questions.length;
   const currentStep = (questionIndex % totalQuestions) + 1;
@@ -232,23 +242,20 @@ export const WhosMostLikely: React.FC = () => {
               onClick={() => handleVote(friend.id)}
               className="flex flex-col items-center cursor-pointer group"
             >
-              <div className="relative">
+              <div className="relative flex items-center justify-center">
                 {/* Circular Avatar */}
-                <div
-                  className={`w-20 h-20 sm:w-22 sm:h-22 rounded-full overflow-hidden transition-all duration-200 ${
+                <Avatar
+                  user={{
+                    avatar: friend.avatar,
+                    name: friend.name,
+                  }}
+                  size="2xl"
+                  className={`transition-all duration-200 ${
                     isSelected
-                      ? 'ring-4 ring-[#F0DC00] ring-offset-2 ring-offset-[#F7F2E8] scale-105 shadow-md'
-                      : 'border-2 border-transparent group-hover:border-black/20 group-hover:scale-102'
+                      ? 'ring-4 ring-[#F0DC00] ring-offset-2 ring-offset-[#F7F2E8] dark:ring-offset-[#12110E] scale-105 shadow-md'
+                      : 'border-2 border-transparent group-hover:border-black/20 dark:group-hover:border-white/20 group-hover:scale-102'
                   }`}
-                >
-                  <Avatar
-                    user={{
-                      avatar: friend.avatar,
-                      name: friend.name,
-                    }}
-                    size="xl"
-                  />
-                </div>
+                />
 
                 {/* Vote Count Badge (Yellow circle top-right on selected) */}
                 <AnimatePresence>
@@ -257,9 +264,9 @@ export const WhosMostLikely: React.FC = () => {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       exit={{ scale: 0 }}
-                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F0DC00] text-[#171512] font-black text-[11px] flex items-center justify-center border-2 border-[#F7F2E8] shadow-sm z-10"
+                      className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#F0DC00] text-[#171512] font-black text-[11px] flex items-center justify-center border-2 border-[#F7F2E8] dark:border-[#12110E] shadow-sm z-10"
                     >
-                      {votesCount > 0 ? votesCount : <Check className="w-3 h-3 stroke-[3]" />}
+                      {votesCount > 0 ? votesCount : <Check className="w-3.5 h-3.5 stroke-[3]" />}
                     </motion.div>
                   )}
                 </AnimatePresence>

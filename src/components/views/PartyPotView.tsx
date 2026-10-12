@@ -293,11 +293,11 @@ export const PartyPotView: React.FC = () => {
 
   if (!party) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-32 flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] flex flex-col items-center justify-center p-6 text-center">
         <div className="w-16 h-16 rounded-full bg-[#FFF5C0] dark:bg-[#F0DC00]/15 border border-[#F0DC00]/40 flex items-center justify-center text-[#B89600] mb-4">
           <Landmark className="w-8 h-8" />
         </div>
-        <h2 className="font-display font-black text-xl mb-2">
+        <h2 className="font-display font-black text-2xl text-[#171512] dark:text-white mb-2">
           {isEs ? 'Sin fiesta seleccionada' : 'No gathering selected'}
         </h2>
         <p className="text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs mb-6 leading-relaxed">
@@ -306,8 +306,11 @@ export const PartyPotView: React.FC = () => {
             : 'Select a gathering to manage its shared onchain treasury.'}
         </p>
         <button
-          onClick={() => setCurrentView('home')}
-          className="px-6 py-3 rounded-full bg-[#F0DC00] text-[#171512] font-bold text-xs"
+          onClick={() => {
+            if (goBack) goBack();
+            else setCurrentView('home');
+          }}
+          className="accent-button px-6 py-3 rounded-full text-xs font-bold cursor-pointer"
         >
           {isEs ? 'Volver al Inicio' : 'Return Home'}
         </button>
@@ -316,155 +319,174 @@ export const PartyPotView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-28 select-none relative transition-colors duration-200">
+    <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-[#F5F1E8] pb-24 select-none relative overflow-x-hidden transition-colors duration-200">
       {/* ============================================================== */}
-      {/* 1. HERO COVER SECTION (MATCHING DESIGN REFERENCE)               */}
+      {/* TOP FLOATING CONTROLS (Back, Menu)                             */}
       {/* ============================================================== */}
-      <div className="relative h-[390px] sm:h-[430px] md:h-[460px] w-full max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto overflow-hidden">
-        {/* Cover Photo Optimized */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={getCoverUrl(party.coverImage, 900)}
-          alt={party.title}
-          className="w-full h-full object-cover"
-          decoding="async"
-          loading="eager"
-        />
+      <header className="absolute top-0 left-0 right-0 z-40 px-4 sm:px-6 md:px-8 py-3 md:pt-6 safe-top flex items-center justify-between pointer-events-none max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto w-full">
+        {/* Back Button */}
+        <button
+          onClick={() => {
+            if (goBack) goBack();
+            else setCurrentView('party-detail');
+          }}
+          className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md pointer-events-auto active:scale-95 transition-transform cursor-pointer p-0"
+          aria-label={isEs ? 'Volver' : 'Back'}
+        >
+          <ArrowLeft className="w-5 h-5 stroke-[2.4]" />
+        </button>
 
-        {/* Cinematic Vignette Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/25 pointer-events-none" />
-
-        {/* Top Floating Controls matching PartyDetailView aesthetics and position */}
-        <header className="absolute top-0 left-0 right-0 z-40 px-4 sm:px-6 md:px-8 py-3 safe-top flex items-center justify-between pointer-events-none max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
-          {/* Back Button */}
+        {/* Options Menu Button */}
+        <div className="flex items-center gap-2 pointer-events-auto">
           <button
-            onClick={() => {
-              if (goBack) goBack();
-              else setCurrentView('party-detail');
-            }}
-            className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md pointer-events-auto active:scale-95 transition-transform cursor-pointer p-0"
-            aria-label={isEs ? 'Volver' : 'Back'}
+            onClick={() => setIsMenuOpen(true)}
+            className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md active:scale-95 transition-transform cursor-pointer p-0"
+            aria-label={isEs ? 'Más opciones' : 'More options'}
           >
-            <ArrowLeft className="w-5 h-5 stroke-[2.4]" />
+            <MoreHorizontal className="w-5 h-5 stroke-[2.2]" />
           </button>
+        </div>
+      </header>
 
-          {/* Options Menu Button */}
-          <div className="flex items-center gap-2 pointer-events-auto">
-            <button
-              onClick={() => setIsMenuOpen(true)}
-              className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md active:scale-95 transition-transform cursor-pointer p-0"
-              aria-label={isEs ? 'Más opciones' : 'More options'}
-            >
-              <MoreHorizontal className="w-5 h-5 stroke-[2.2]" />
-            </button>
-          </div>
-        </header>
+      <main className="max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto w-full md:pt-4 px-0 md:px-6 lg:px-8">
+        {/* ============================================================== */}
+        {/* 1. HERO COVER SECTION (MATCHING PARTY DETAIL AESTHETICS)       */}
+        {/* ============================================================== */}
+        <div className="relative h-[60vh] sm:h-[64vh] min-h-[480px] lg:h-[440px] lg:min-h-0 w-full overflow-hidden md:rounded-[36px] md:shadow-2xl">
+          {/* Cover Photo Optimized */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={getCoverUrl(party.coverImage, 900)}
+            alt={party.title}
+            className="absolute inset-0 w-full h-full object-cover object-center"
+            decoding="async"
+            loading="eager"
+          />
 
-        {/* Content Overlaid at Bottom of Photo (Sitting directly above the floating navigation pill) */}
-        <div className="absolute bottom-16 sm:bottom-18 inset-x-5 sm:inset-x-6 z-20 text-white">
-          <span className="text-white/85 text-xs sm:text-sm font-semibold tracking-tight block">
-            {isEs ? 'Bote de la fiesta' : 'Party Pot'}
-          </span>
+          {/* Cinematic Vignette Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent pointer-events-none" />
 
-          <div className="flex items-baseline gap-2.5 mt-0.5">
-            <h1 className="font-display font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-none text-white drop-shadow-sm">
-              ${potUsdAmount}
-            </h1>
-            <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-xs border border-white/20 text-[#FFF5C0]">
-              {monBalance.toFixed(2)} MON
-            </span>
-          </div>
+          {/* Content Overlaid at Bottom of Photo */}
+          <div className="absolute bottom-16 sm:bottom-18 left-0 right-0 px-5 sm:px-7 md:px-8 z-20 flex flex-col justify-end text-white">
+            <div className="flex items-center gap-2 mb-1.5 drop-shadow">
+              <span className="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-bold text-white uppercase tracking-wider">
+                {isEs ? 'Bote de la fiesta' : 'Party Pot'}
+              </span>
+              <span className="text-xs sm:text-sm font-semibold text-white/90">
+                · {party.title}
+              </span>
+            </div>
 
-          <p className="text-white/75 text-xs font-medium mt-1">
-            {isEs
-              ? `compartido por ${partyMembers.length} personas`
-              : `shared by ${partyMembers.length} people`}
-          </p>
+            <div className="flex items-baseline gap-2.5 sm:gap-3 flex-wrap">
+              <h1 className="font-display font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-none text-white drop-shadow-md">
+                ${potUsdAmount}
+              </h1>
+              <span className="text-xs sm:text-sm font-mono font-bold px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-[#FFF5C0] shadow-sm inline-flex items-center gap-1.5">
+                <MonadLogo size="xs" className="w-3.5 h-3.5" />
+                {monBalance.toFixed(2)} MON
+              </span>
+              {monPrice && (
+                <span className="text-xs font-mono font-medium text-white/80">
+                  (≈ ${((monBalance || 0) * monPrice).toFixed(2)} USD)
+                </span>
+              )}
+            </div>
 
-          {/* Overlapping Avatars Row (Directly above the floating capsule bar) */}
-          <div className="flex items-center -space-x-2 mt-2.5">
-            {partyMembers.slice(0, 8).map((m, idx) => (
-              <div
-                key={m.id || idx}
-                className="w-8 h-8 rounded-full border-2 border-white dark:border-[#181613] overflow-hidden bg-black/20 shadow-sm shrink-0"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getAvatarUrl(m.avatar, 64)}
-                  alt={m.name}
-                  className="w-full h-full object-cover"
-                  decoding="async"
-                />
-              </div>
-            ))}
-            {partyMembers.length > 8 && (
-              <div className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-xs border-2 border-white dark:border-[#181613] flex items-center justify-center text-white text-[10px] font-extrabold shadow-sm shrink-0">
-                +{partyMembers.length - 8}
-              </div>
-            )}
+            <p className="text-xs sm:text-sm text-white/85 font-medium mt-1 mb-2.5 drop-shadow">
+              {isEs
+                ? `Tesorería compartida por ${partyMembers.length} personas`
+                : `Shared treasury held by ${partyMembers.length} people`}
+            </p>
+
+            {/* Overlapping Avatars Row matching PartyDetailView */}
+            <div className="flex items-center -space-x-1.5">
+              {partyMembers.slice(0, 8).map((m, idx) => (
+                <div
+                  key={m.id || idx}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 bg-black/40 relative"
+                  title={m.name}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={getAvatarUrl(m.avatar, 72)}
+                    alt={m.name}
+                    className="w-full h-full object-cover"
+                    decoding="async"
+                  />
+                </div>
+              ))}
+              {partyMembers.length > 8 && (
+                <div className="pl-3">
+                  <span className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-white text-[11px] font-bold border border-white/20 shadow-sm">
+                    +{partyMembers.length - 8}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ============================================================== */}
-      {/* 2. MAIN CARD SURFACE (LIQUID GLASS / WARM IVORY)               */}
-      {/* ============================================================== */}
-      <div className="relative -mt-6 md:-mt-8 z-20 rounded-t-[34px] md:rounded-t-[38px] bg-[#F7F2E8] dark:bg-[#12110E] px-4 sm:px-6 pt-0 pb-20 shadow-[0_-12px_40px_rgba(65,48,25,0.08)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5)] max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full transition-colors duration-200">
-        {/* Floating Action Tabs Pill Container: Exactly matching PartyDetailView aesthetics and position ("arribita del borde y asi") */}
-        <nav
-          aria-label={isEs ? 'Acciones del bote' : 'Party Pot Actions'}
-          className="relative -top-8 md:-top-10 h-[86px] sm:h-[90px] md:h-[96px] max-w-md sm:max-w-lg md:max-w-2xl mx-auto grid grid-cols-3 gap-1.5 sm:gap-2 p-1.5 sm:p-2.5 rounded-[36px] transition-all select-none bg-[rgba(250,248,243,0.85)] dark:bg-[rgba(24,22,19,0.88)] border border-white/90 dark:border-white/15 shadow-[0_12px_32px_rgba(71,55,35,0.12),inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-2xl z-30"
-        >
-          {potActions.map((action) => {
-            const Icon = action.icon;
-            const isActive = activeTab === action.id;
-            const isHovered = hoveredAction === action.id;
+        {/* ============================================================== */}
+        {/* 2. MAIN CONTENT AREA (MATCHING PARTY DETAIL VIEW)              */}
+        {/* ============================================================== */}
+        <div className="relative -mt-6 md:-mt-8 z-20 rounded-t-[34px] md:rounded-none bg-[#F7F2E8] dark:bg-[#12110E] md:bg-transparent px-4 sm:px-6 md:px-0 pt-0 pb-20 shadow-[0_-12px_40px_rgba(65,48,25,0.08)] md:shadow-none transition-colors duration-200">
+          {/* Floating Action Tabs Pill Container */}
+          <nav
+            aria-label={isEs ? 'Acciones del bote' : 'Party Pot Actions'}
+            className="relative -top-8 md:-top-10 h-[86px] sm:h-[90px] md:h-[96px] max-w-md sm:max-w-lg md:max-w-2xl mx-auto grid grid-cols-3 gap-1.5 sm:gap-2 p-1.5 sm:p-2.5 rounded-[36px] transition-all select-none bg-[rgba(250,248,243,0.85)] dark:bg-[rgba(24,22,19,0.88)] border border-white/90 dark:border-white/15 shadow-[0_12px_32px_rgba(71,55,35,0.12),inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-2xl z-30"
+          >
+            {potActions.map((action) => {
+              const Icon = action.icon;
+              const isActive = activeTab === action.id;
+              const isHovered = hoveredAction === action.id;
 
-            return (
-              <motion.button
-                key={action.id}
-                onMouseEnter={() => setHoveredAction(action.id)}
-                onMouseLeave={() => setHoveredAction(null)}
-                onTouchStart={() => setHoveredAction(action.id)}
-                onTouchEnd={() => setHoveredAction(null)}
-                onClick={action.onClick}
-                whileTap={{ scale: 0.94 }}
-                style={
-                  isHovered
-                    ? {
-                        background: 'linear-gradient(145deg, #FFE973, #FFCE18 68%, #F8BF0A)',
-                        boxShadow:
-                          '0 0 24px rgba(255, 212, 41, 0.55), 0 6px 14px rgba(235, 179, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.75)',
-                      }
-                    : {
-                        background:
-                          theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.48)',
-                        boxShadow:
-                          theme === 'dark'
-                            ? '0 3px 9px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)'
-                            : '0 3px 9px rgba(74, 56, 35, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.92)',
-                      }
-                }
-                className={`flex flex-col items-center justify-center gap-1 min-w-0 rounded-[26px] transition-all duration-200 cursor-pointer text-[#161514] dark:text-[#F5F1E8] ${
-                  isHovered || isActive ? 'font-bold' : 'font-medium'
-                }`}
-                aria-label={action.label}
-              >
-                <Icon
-                  className={`w-5 h-5 sm:w-5.5 sm:h-5.5 ${
-                    isHovered || isActive ? 'stroke-[2.5]' : 'stroke-[2.2]'
+              return (
+                <motion.button
+                  key={action.id}
+                  onMouseEnter={() => setHoveredAction(action.id)}
+                  onMouseLeave={() => setHoveredAction(null)}
+                  onTouchStart={() => setHoveredAction(action.id)}
+                  onTouchEnd={() => setHoveredAction(null)}
+                  onClick={action.onClick}
+                  whileTap={{ scale: 0.94 }}
+                  style={
+                    isHovered || isActive
+                      ? {
+                          background: 'linear-gradient(145deg, #FFE973, #FFCE18 68%, #F8BF0A)',
+                          boxShadow:
+                            '0 0 24px rgba(255, 212, 41, 0.55), 0 6px 14px rgba(235, 179, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.75)',
+                        }
+                      : {
+                          background:
+                            theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.48)',
+                          boxShadow:
+                            theme === 'dark'
+                              ? '0 3px 9px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)'
+                              : '0 3px 9px rgba(74, 56, 35, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.92)',
+                        }
+                  }
+                  className={`flex flex-col items-center justify-center gap-1 min-w-0 rounded-[26px] transition-all duration-200 cursor-pointer text-[#161514] dark:text-[#F5F1E8] ${
+                    isHovered || isActive ? 'font-bold' : 'font-medium'
                   }`}
-                />
-                <span className="text-[11px] sm:text-[12px] tracking-tight leading-none">
-                  {action.label}
-                </span>
-              </motion.button>
-            );
-          })}
-        </nav>
+                  aria-label={action.label}
+                >
+                  <Icon
+                    className={`w-5 h-5 sm:w-5.5 sm:h-5.5 ${
+                      isHovered || isActive ? 'stroke-[2.5]' : 'stroke-[2.2]'
+                    }`}
+                  />
+                  <span className="text-[11px] sm:text-[12px] tracking-tight leading-none">
+                    {action.label}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </nav>
 
-        {/* Content Wrapper (Offset below the floating navigation capsule) */}
-        <div className="relative -mt-4 sm:-mt-5">
+          {/* Desktop 12-Column Responsive Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8 lg:items-start -mt-5 lg:mt-0">
+            {/* LEFT COLUMN: Main Interactive Action Workspace */}
+            <div className="lg:col-span-7 xl:col-span-7 lg:col-start-1 space-y-4">
           {/* iOS 27 Liquid Glass Real-time Web3 Error / Notice Banner */}
           <AnimatePresence>
             {txError && (
@@ -835,179 +857,267 @@ export const PartyPotView: React.FC = () => {
         )}
       </section>
 
-      {/* ============================================================== */}
-      {/* 3. RECENT ACTIVITY CARD (MATCHING PARTY DETAIL LIQUID GLASS)   */}
-      {/* ============================================================== */}
-      <section
-        aria-label={isEs ? 'Historial del bote' : 'Pot history'}
-        className="rounded-[32px] bg-white/55 dark:bg-[#1C1A16] border border-white/80 dark:border-white/10 shadow-[0_9px_20px_rgba(66,52,32,0.08)] dark:shadow-[0_9px_20px_rgba(0,0,0,0.45)] backdrop-blur-md p-4 sm:p-5"
-      >
-        <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="font-display font-extrabold text-sm sm:text-base text-[#171512] dark:text-white tracking-tight">
-              {isEs ? 'Actividad reciente' : 'Recent activity'}
-            </h3>
-            <button
-              onClick={() => setIsMenuOpen(true)}
-              className="text-xs font-semibold text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white flex items-center gap-0.5 cursor-pointer"
-            >
-              <span>{isEs ? 'Ver todo' : 'See all'}</span>
-              <span className="text-[10px] ml-0.5">&gt;</span>
-            </button>
-          </div>
+            </div>
 
-          <div className="space-y-2">
-            {partyTransactions.length > 0 ? (
-              partyTransactions.slice(0, 5).map((tx) => {
-                const isDeposit = tx.type === 'add';
-                const user = partyMembers.find((m) => m.name === tx.userName) || partyMembers[0];
-
-                return (
-                  <div
-                    key={tx.id}
-                    className="p-2.5 sm:p-3 rounded-[22px] sm:rounded-[24px] bg-white/80 dark:bg-white/[0.04] backdrop-blur-xl border border-white/80 dark:border-white/10 flex items-center justify-between gap-2.5 sm:gap-3 shadow-[0_2px_12px_rgba(65,48,25,0.03),inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.05)]"
-                  >
-                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-                      {/* Avatar with Tiny Plus/Minus Micro Badge */}
-                      <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={getAvatarUrl(user?.avatar, 80)}
-                          alt={tx.userName}
-                          className="w-full h-full rounded-full object-cover border border-black/10 dark:border-white/15"
-                          decoding="async"
-                        />
-                        <div
-                          className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white dark:border-[#181613] shadow-xs ${
-                            isDeposit
-                              ? 'bg-[#FFE600] text-[#161514]'
-                              : 'bg-[#FFCCD5] text-[#900B22]'
-                          }`}
-                        >
-                          {isDeposit ? '+' : '-'}
-                        </div>
-                      </div>
-
-                      <div className="min-w-0 flex-1 pr-1">
-                        <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight truncate">
-                          {tx.userName}{' '}
-                          <span className="font-normal text-[#8E887E] dark:text-[#A8A196]">
-                            {isDeposit
-                              ? isEs
-                                ? `aportó $${(tx.amount * effectiveMonPrice).toFixed(0)}`
-                                : `added $${(tx.amount * effectiveMonPrice).toFixed(0)}`
-                              : isEs
-                                ? `retiró $${(tx.amount * effectiveMonPrice).toFixed(0)}`
-                                : `withdrew $${(tx.amount * effectiveMonPrice).toFixed(0)}`}
-                          </span>
-                        </span>
-                        {tx.description && (
-                          <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196] block mt-0.5 truncate max-w-[130px] sm:max-w-xs">
-                            {tx.description}
-                          </span>
-                        )}
-                      </div>
+            {/* RIGHT COLUMN: Onchain Treasury Summary & Recent Activity */}
+            <div className="lg:col-span-5 xl:col-span-5 lg:col-start-8 space-y-6 mt-6 lg:mt-0">
+              {/* ONCHAIN TREASURY SUMMARY CARD (Matching PartyDetailView aesthetics) */}
+              <section
+                aria-label={isEs ? 'Información de la tesorería onchain' : 'Onchain treasury details'}
+                className="rounded-[32px] bg-white/55 dark:bg-[#1C1A16] border border-white/80 dark:border-white/10 shadow-[0_9px_20px_rgba(66,52,32,0.08)] dark:shadow-[0_9px_20px_rgba(0,0,0,0.45)] backdrop-blur-md p-5"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-[#24201c] dark:text-[#F0DC00] bg-[#EEE9E1] dark:bg-white/10 shadow-inner shrink-0">
+                      <Coins className="w-6 h-6 stroke-[2.35]" />
                     </div>
-
-                    <div className="text-right shrink-0 pl-1">
-                      <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium whitespace-nowrap block">
-                        {formatShortRelativeTime(tx.timestamp)}
-                      </span>
-                      {tx.txHash && (
-                        <a
-                          href={`https://testnet.monadexplorer.com/tx/${tx.txHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] text-[#836EF9] hover:underline block font-mono"
-                        >
-                          explorer
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              /* Fallback Social Initial Activity matching design mockup */
-              [
-                {
-                  id: 'default-1',
-                  name: partyMembers[0]?.name || 'Ana',
-                  avatar: partyMembers[0]?.avatar,
-                  action: isEs ? 'aportó $10' : 'added $10',
-                  time: '2m ago',
-                  isAdd: true,
-                },
-                {
-                  id: 'default-2',
-                  name: partyMembers[1]?.name || 'Carlos',
-                  avatar: partyMembers[1]?.avatar,
-                  action: isEs ? 'aportó $25' : 'added $25',
-                  time: '12m ago',
-                  isAdd: true,
-                },
-                {
-                  id: 'default-3',
-                  name: partyMembers[2]?.name || 'Sofi',
-                  avatar: partyMembers[2]?.avatar,
-                  action: isEs ? 'retiró $12' : 'withdrew $12',
-                  time: '1h ago',
-                  isAdd: false,
-                },
-                {
-                  id: 'default-4',
-                  name: partyMembers[3]?.name || 'Valen',
-                  avatar: partyMembers[3]?.avatar,
-                  action: isEs ? 'aportó $8' : 'added $8',
-                  time: '3h ago',
-                  isAdd: true,
-                },
-              ].map((item) => (
-                <div
-                  key={item.id}
-                  className="p-2.5 sm:p-3 rounded-[22px] sm:rounded-[24px] bg-white/80 dark:bg-white/[0.04] backdrop-blur-xl border border-white/80 dark:border-white/10 flex items-center justify-between gap-2.5 sm:gap-3 shadow-[0_2px_12px_rgba(65,48,25,0.03),inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.05)]"
-                >
-                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-                    <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={getAvatarUrl(item.avatar, 80)}
-                        alt={item.name}
-                        className="w-full h-full rounded-full object-cover border border-black/10 dark:border-white/15"
-                        decoding="async"
-                      />
-                      <div
-                        className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white dark:border-[#181613] shadow-xs ${
-                          item.isAdd
-                            ? 'bg-[#FFE600] text-[#161514]'
-                            : 'bg-[#FFCCD5] text-[#900B22]'
-                        }`}
-                      >
-                        {item.isAdd ? '+' : '-'}
-                      </div>
-                    </div>
-
-                    <div className="min-w-0 flex-1 pr-1">
-                      <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight truncate">
-                        {item.name}{' '}
-                        <span className="font-normal text-[#8E887E] dark:text-[#A8A196]">
-                          {item.action}
-                        </span>
+                    <div>
+                      <h4 className="font-display font-black text-sm sm:text-base text-[#171512] dark:text-white leading-tight">
+                        {isEs ? 'Tesorería onchain' : 'Onchain Treasury'}
+                      </h4>
+                      <span className="text-[11px] text-[#706B66] dark:text-[#A8A196] font-medium block">
+                        Monad Testnet · PartyTreasury
                       </span>
                     </div>
                   </div>
+                  <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {isEs ? 'En vivo' : 'Live'}
+                  </span>
+                </div>
 
-                  <div className="text-right shrink-0 pl-1">
-                    <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium whitespace-nowrap block">
-                      {item.time}
+                <div className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/10 space-y-2.5 mb-3.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#706B66] dark:text-[#A8A196]">
+                      {isEs ? 'Balance total' : 'Total balance'}
+                    </span>
+                    <span className="font-display font-extrabold text-[#171512] dark:text-white">
+                      {monBalance.toFixed(2)} MON{' '}
+                      <span className="font-sans font-medium text-[#706B66] dark:text-[#A8A196]">
+                        (≈ ${potUsdAmount} USD)
+                      </span>
                     </span>
                   </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#706B66] dark:text-[#A8A196]">
+                      {isEs ? 'Participantes' : 'Contributors'}
+                    </span>
+                    <span className="font-bold text-[#171512] dark:text-white">
+                      {partyMembers.length} {isEs ? 'personas' : 'people'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#706B66] dark:text-[#A8A196]">
+                      {isEs ? 'Contrato inteligente' : 'Smart contract'}
+                    </span>
+                    <a
+                      href={`https://testnet.monadexplorer.com/address/${depositAddress}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-[11px] text-[#836EF9] hover:underline inline-flex items-center gap-1 font-semibold"
+                    >
+                      <span>
+                        {depositAddress.slice(0, 6)}...{depositAddress.slice(-4)}
+                      </span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
                 </div>
-              ))
-            )}
+
+                {associatedCrew && (
+                  <button
+                    onClick={() => setIsRolloverOpen(true)}
+                    className="w-full p-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 text-[#171512] dark:text-white flex items-center justify-between transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <ArrowRightLeft className="w-4 h-4 text-[#B89600]" />
+                      <div className="text-left">
+                        <span className="text-xs font-bold block leading-tight">
+                          {isEs ? 'Transferir remanente a Crew' : 'Rollover pot to Crew'}
+                        </span>
+                        <span className="text-[10px] text-[#706B66] dark:text-[#A8A196] block">
+                          {associatedCrew.name}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-[#8E887E] -rotate-90" />
+                  </button>
+                )}
+              </section>
+
+              {/* RECENT ACTIVITY CARD (MATCHING PARTY DETAIL LIQUID GLASS) */}
+              <section
+                aria-label={isEs ? 'Historial del bote' : 'Pot history'}
+                className="rounded-[32px] bg-white/55 dark:bg-[#1C1A16] border border-white/80 dark:border-white/10 shadow-[0_9px_20px_rgba(66,52,32,0.08)] dark:shadow-[0_9px_20px_rgba(0,0,0,0.45)] backdrop-blur-md p-4 sm:p-5"
+              >
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h3 className="font-display font-extrabold text-sm sm:text-base text-[#171512] dark:text-white tracking-tight">
+                    {isEs ? 'Actividad reciente' : 'Recent activity'}
+                  </h3>
+                  <button
+                    onClick={() => setIsMenuOpen(true)}
+                    className="text-xs font-semibold text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <span>{isEs ? 'Ver opciones' : 'View options'}</span>
+                    <span className="text-[10px] ml-0.5">&gt;</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {partyTransactions.length > 0 ? (
+                    partyTransactions.slice(0, 5).map((tx) => {
+                      const isDeposit = tx.type === 'add';
+                      const user = partyMembers.find((m) => m.name === tx.userName) || partyMembers[0];
+
+                      return (
+                        <div
+                          key={tx.id}
+                          className="p-2.5 sm:p-3 rounded-[22px] sm:rounded-[24px] bg-white/80 dark:bg-white/[0.04] backdrop-blur-xl border border-white/80 dark:border-white/10 flex items-center justify-between gap-2.5 sm:gap-3 shadow-[0_2px_12px_rgba(65,48,25,0.03),inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.05)]"
+                        >
+                          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                            {/* Avatar with Tiny Plus/Minus Micro Badge */}
+                            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={getAvatarUrl(user?.avatar, 80)}
+                                alt={tx.userName}
+                                className="w-full h-full rounded-full object-cover border border-black/10 dark:border-white/15"
+                                decoding="async"
+                              />
+                              <div
+                                className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white dark:border-[#181613] shadow-xs ${
+                                  isDeposit
+                                    ? 'bg-[#FFE600] text-[#161514]'
+                                    : 'bg-[#FFCCD5] text-[#900B22]'
+                                }`}
+                              >
+                                {isDeposit ? '+' : '-'}
+                              </div>
+                            </div>
+
+                            <div className="min-w-0 flex-1 pr-1">
+                              <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight truncate">
+                                {tx.userName}{' '}
+                                <span className="font-normal text-[#8E887E] dark:text-[#A8A196]">
+                                  {isDeposit
+                                    ? isEs
+                                      ? `aportó $${(tx.amount * effectiveMonPrice).toFixed(0)}`
+                                      : `added $${(tx.amount * effectiveMonPrice).toFixed(0)}`
+                                    : isEs
+                                      ? `retiró $${(tx.amount * effectiveMonPrice).toFixed(0)}`
+                                      : `withdrew $${(tx.amount * effectiveMonPrice).toFixed(0)}`}
+                                </span>
+                              </span>
+                              {tx.description && (
+                                <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196] block mt-0.5 truncate max-w-[130px] sm:max-w-xs">
+                                  {tx.description}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0 pl-1">
+                            <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium whitespace-nowrap block">
+                              {formatShortRelativeTime(tx.timestamp)}
+                            </span>
+                            {tx.txHash && (
+                              <a
+                                href={`https://testnet.monadexplorer.com/tx/${tx.txHash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-[#836EF9] hover:underline block font-mono"
+                              >
+                                explorer
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    /* Fallback Social Initial Activity matching design mockup */
+                    [
+                      {
+                        id: 'default-1',
+                        name: partyMembers[0]?.name || 'Ana',
+                        avatar: partyMembers[0]?.avatar,
+                        action: isEs ? 'aportó $10' : 'added $10',
+                        time: '2m ago',
+                        isAdd: true,
+                      },
+                      {
+                        id: 'default-2',
+                        name: partyMembers[1]?.name || 'Carlos',
+                        avatar: partyMembers[1]?.avatar,
+                        action: isEs ? 'aportó $25' : 'added $25',
+                        time: '12m ago',
+                        isAdd: true,
+                      },
+                      {
+                        id: 'default-3',
+                        name: partyMembers[2]?.name || 'Sofi',
+                        avatar: partyMembers[2]?.avatar,
+                        action: isEs ? 'retiró $12' : 'withdrew $12',
+                        time: '1h ago',
+                        isAdd: false,
+                      },
+                      {
+                        id: 'default-4',
+                        name: partyMembers[3]?.name || 'Valen',
+                        avatar: partyMembers[3]?.avatar,
+                        action: isEs ? 'aportó $8' : 'added $8',
+                        time: '3h ago',
+                        isAdd: true,
+                      },
+                    ].map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-2.5 sm:p-3 rounded-[22px] sm:rounded-[24px] bg-white/80 dark:bg-white/[0.04] backdrop-blur-xl border border-white/80 dark:border-white/10 flex items-center justify-between gap-2.5 sm:gap-3 shadow-[0_2px_12px_rgba(65,48,25,0.03),inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.05)]"
+                      >
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                          <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getAvatarUrl(item.avatar, 80)}
+                              alt={item.name}
+                              className="w-full h-full rounded-full object-cover border border-black/10 dark:border-white/15"
+                              decoding="async"
+                            />
+                            <div
+                              className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white dark:border-[#181613] shadow-xs ${
+                                item.isAdd
+                                  ? 'bg-[#FFE600] text-[#161514]'
+                                  : 'bg-[#FFCCD5] text-[#900B22]'
+                              }`}
+                            >
+                              {item.isAdd ? '+' : '-'}
+                            </div>
+                          </div>
+
+                          <div className="min-w-0 flex-1 pr-1">
+                            <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight truncate">
+                              {item.name}{' '}
+                              <span className="font-normal text-[#8E887E] dark:text-[#A8A196]">
+                                {item.action}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0 pl-1">
+                          <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium whitespace-nowrap block">
+                            {item.time}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            </div>
           </div>
-        </section>
-      </div>
-    </div>
+        </div>
+      </main>
 
       {/* ============================================================== */}
       {/* 4. OPTIONS MENU MODAL                                          */}

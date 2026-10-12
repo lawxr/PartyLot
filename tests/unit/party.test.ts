@@ -108,7 +108,7 @@ describe('Party Service', () => {
       expect(text).toContain('When: Oct 15 · 9:00 PM');
       expect(text).toContain('Where: Club Nova');
       expect(text).toContain('Private Code: PARTY');
-      expect(text).toContain('https://partylot.app/join?code=PARTY');
+      expect(text).toContain('https://partylot.vercel.app/join/PARTY');
     });
   });
 });

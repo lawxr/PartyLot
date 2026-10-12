@@ -87,4 +87,13 @@ product.md
 .atl/
 .codegraph/
 
+# Skills & Agent Tooling
+.agents/
+.claude/
+skills-lock.json
 
+# Video experiments & launch assets
+brag-output*/
+launch-film/
+*.mp4
+odd/tasks/*launch-film*

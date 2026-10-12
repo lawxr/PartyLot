@@ -244,7 +244,7 @@ export const PartyDetailView: React.FC = () => {
       {/* ============================================================== */}
       {/* PHONE 2 TOP FLOATING CONTROLS (Back, Share, More)             */}
       {/* ============================================================== */}
-      <header className="absolute top-0 left-0 right-0 z-40 px-4 sm:px-6 md:px-8 py-3 safe-top flex items-center justify-between pointer-events-none max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto w-full">
+      <header className="absolute top-0 left-0 right-0 z-40 px-4 sm:px-6 md:px-8 py-3 md:pt-6 safe-top flex items-center justify-between pointer-events-none max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto w-full">
         <button
           onClick={() => {
             if (goBack) goBack();
@@ -276,7 +276,7 @@ export const PartyDetailView: React.FC = () => {
       </header>
 
       
-      <main className="max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto w-full md:pt-4">
+      <main className="max-w-md sm:max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto w-full md:pt-4 px-0 md:px-6 lg:px-8">
         {/* ============================================================== */}
         {/* Hero header */}
         {/* ============================================================== */}
@@ -295,8 +295,8 @@ export const PartyDetailView: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent pointer-events-none" />
 
           {/* Hero details */}
-          <div className="absolute bottom-16 sm:bottom-18 left-0 right-0 px-5 z-20 flex flex-col justify-end text-white">
-            <h1 className="font-display font-black text-4xl sm:text-5xl text-white tracking-tight leading-none mb-2 drop-shadow-md">
+          <div className="absolute bottom-16 sm:bottom-18 left-0 right-0 px-5 sm:px-7 md:px-8 z-20 flex flex-col justify-end text-white">
+            <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-none mb-2 drop-shadow-md">
               {party.title}
             </h1>
 

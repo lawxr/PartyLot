@@ -125,7 +125,7 @@ export function usePrivySync() {
           id: user.id,
           name: persisted.name || displayName,
           handle: persisted.handle || defaultUniqueHandle,
-          avatar: persisted.avatar || '',
+          avatar: persisted.avatar || store.currentUser.avatar || '',
           email: email || undefined,
           walletAddress: walletAddress || undefined,
           authMethod,

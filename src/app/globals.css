@@ -1,7 +1,30 @@
-@import url('https://fonts.googleapis.com/css2?family=Modak&family=Fredoka:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Modak&family=Fredoka:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-party-yellow: var(--party-yellow);
+  --color-party-yellow-hover: var(--party-yellow-hover);
+  --color-party-yellow-pressed: var(--party-yellow-pressed);
+  --color-party-yellow-soft: var(--party-yellow-soft);
+  --color-on-party-yellow: var(--on-party-yellow);
+
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-surface-primary: var(--surface-primary);
+  --color-surface-secondary: var(--surface-secondary);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+
+  --color-divider: var(--divider);
+
+  --font-bubble: 'Modak', cursive;
+  --font-display: 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
 
 :root {
   --background: #F7F2E8;
@@ -34,7 +57,8 @@
   --radius-pill: 999px;
 
   --font-bubble: 'Modak', cursive;
-  --font-ui: 'Fredoka', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 .dark {

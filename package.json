@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:legacy": "node scripts/run-e2e.mjs",
-    "release:check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
+    "check:slop": "node scripts/check-slop.mjs",
+    "check:slop:strict": "node scripts/check-slop.mjs --strict",
+    "release:check": "pnpm check:slop && pnpm typecheck && pnpm lint && pnpm test && pnpm build"
   },
   "dependencies": {
     "@privy-io/react-auth": "^3.45.0",

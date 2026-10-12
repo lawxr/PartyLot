@@ -93,27 +93,4 @@ export function formatWeb3Error(err: unknown, isEs = true): FormattedWeb3Error {
   };
 }
 
-/**
- * Formats timestamps into compact relative times matching iOS/social standards (e.g., '2m ago', '1h ago').
- */
-export function formatShortRelativeTime(timestamp?: string | number): string {
-  if (!timestamp) return '2m ago';
-  const str = String(timestamp).trim();
-  if (str === 'Just now') return '1m ago';
-  if (/^\d+[mhd]\s*(ago)?$/i.test(str)) return str;
-
-  const date = new Date(str);
-  if (isNaN(date.getTime())) return str.slice(0, 10);
-
-  const now = Date.now();
-  const diffSec = Math.max(0, Math.floor((now - date.getTime()) / 1000));
-
-  if (diffSec < 60) return '1m ago';
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return `${Math.floor(diffDays / 7)}w ago`;
-}
+export { formatShortRelativeTime } from './time';

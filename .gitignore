@@ -95,5 +95,6 @@ skills-lock.json
 # Video experiments & launch assets
 brag-output*/
 launch-film/
+trailer-film/
 *.mp4
 odd/tasks/*launch-film*

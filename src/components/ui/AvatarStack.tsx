@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Member } from '@/types';
+import { Avatar } from './Avatar';
 
 interface AvatarStackProps {
   members: Member[];
@@ -47,30 +48,17 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
           <div
             key={member.id || index}
             onClick={() => onMemberClick?.(member)}
-            className={`relative rounded-full overflow-hidden shrink-0 shadow-sm ${avatarSize} ${
-              isOverImage
-                ? 'border-white bg-[#171512]'
-                : 'border-[#FFFDF8] bg-[#F1EADF]'
-            } ${
+            className={`relative rounded-full shrink-0 shadow-sm ${
               onMemberClick ? 'cursor-pointer hover:scale-110 hover:z-20 transition-transform' : ''
             }`}
             style={{ zIndex: maxDisplay - index }}
             title={member.name}
           >
-            {member.avatar ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={member.avatar}
-                alt={member.name}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
-            ) : (
-              <div className="w-full h-full bg-[#F0DC00]/30 text-[#171512] flex items-center justify-center font-bold text-[10px]">
-                {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
-              </div>
-            )}
+            <Avatar
+              user={member}
+              size={size}
+              border={isOverImage ? 'over-image' : true}
+            />
           </div>
         ))}
 

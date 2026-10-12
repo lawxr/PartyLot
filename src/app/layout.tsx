@@ -31,6 +31,8 @@ export const viewport: Viewport = {
   themeColor: "#F7F2E8",
 };
 
+import { ToastContainer } from "@/components/ui/ToastContainer";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,12 +40,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="bg-[#F7F2E8] text-[#171512]">
-      <head>
-        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://images.unsplash.com" />
-      </head>
       <body className="min-h-screen bg-[#F7F2E8] text-[#171512] font-ui antialiased selection:bg-[#F0DC00] selection:text-[#171512] relative">
         <div className="grain" aria-hidden="true" />
+        <ToastContainer />
         <PrivyClientProvider>
           {children}
           <CookieConsentBanner />

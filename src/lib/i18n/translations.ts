@@ -347,6 +347,19 @@ export interface TranslationDictionary {
     peopleAttended: string;
     mvpTitle: string;
   };
+  glossary: {
+    partyPot: string;
+    saveToHistory: string;
+    whoCame: string;
+    requestToJoin: string;
+    answer: string;
+    spentTogether: string;
+    nightsTogether: (count: number) => string;
+    technicalDetails: string;
+    pay: string;
+    yourAccount: string;
+    topVoted: string;
+  };
 }
 
 export const translations: Record<Language, TranslationDictionary> = {
@@ -687,15 +700,28 @@ export const translations: Record<Language, TranslationDictionary> = {
     recap: {
       badge: 'LA MAÑANA SIGUIENTE',
       title: 'Resumen de la Noche',
-      attest: 'Atestar en Monad',
-      attesting: 'Atestando en Monad...',
-      attested: 'Atestado en Monad',
+      attest: 'Guardar en la historia del crew',
+      attesting: 'Guardando en la historia...',
+      attested: 'Guardado en la historia',
       download: 'Descargar Póster',
-      totalDamage: 'GASTO TOTAL',
+      totalDamage: 'GASTADO JUNTOS',
       memoriesCount: 'FOTOS COMPARTIDAS',
       gamesPlayed: 'RONDAS JUGADAS',
-      peopleAttended: 'ASISTENTES',
-      mvpTitle: 'ALMA DE LA FIESTA',
+      peopleAttended: 'QUIÉNES VINIERON',
+      mvpTitle: 'MÁS VOTADO',
+    },
+    glossary: {
+      partyPot: 'Bote de la fiesta',
+      saveToHistory: 'Guardar en la historia del crew',
+      whoCame: 'Quiénes vinieron',
+      requestToJoin: 'Pedir unirme',
+      answer: 'Respuesta',
+      spentTogether: 'Gastado juntos',
+      nightsTogether: (count: number) => `${count} ${count === 1 ? 'noche juntos' : 'noches juntos'}`,
+      technicalDetails: 'Detalles técnicos',
+      pay: 'Pagar',
+      yourAccount: 'Tu cuenta',
+      topVoted: 'Más votado',
     },
   },
   en: {
@@ -1035,15 +1061,28 @@ export const translations: Record<Language, TranslationDictionary> = {
     recap: {
       badge: 'THE MORNING AFTER',
       title: 'Party Recap',
-      attest: 'Attest on Monad',
-      attesting: 'Attesting on Monad...',
-      attested: 'Attested on Monad',
+      attest: 'Save to crew history',
+      attesting: 'Saving to crew history...',
+      attested: 'Saved to crew history',
       download: 'Download Poster',
-      totalDamage: 'TOTAL DAMAGE',
+      totalDamage: 'SPENT TOGETHER',
       memoriesCount: 'SHARED PHOTOS',
       gamesPlayed: 'GAMES PLAYED',
-      peopleAttended: 'PEOPLE ATTENDED',
-      mvpTitle: 'PARTY MVP',
+      peopleAttended: 'WHO CAME',
+      mvpTitle: 'MOST VOTED',
+    },
+    glossary: {
+      partyPot: 'Party Pot',
+      saveToHistory: 'Save to crew history',
+      whoCame: 'Who came',
+      requestToJoin: 'Request to join',
+      answer: 'Answer',
+      spentTogether: 'Spent together',
+      nightsTogether: (count: number) => `${count} ${count === 1 ? 'night together' : 'nights together'}`,
+      technicalDetails: 'Technical details',
+      pay: 'Pay',
+      yourAccount: 'Your account',
+      topVoted: 'Most voted',
     },
   },
 };

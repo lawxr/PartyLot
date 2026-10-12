@@ -328,36 +328,42 @@ export const SplitView: React.FC = () => {
         </section>
 
         {/* Segmented Control Pill: Equal / Custom / Items */}
-        <div className="bg-[#ECE6DC]/85 dark:bg-white/10 p-1 rounded-full flex gap-1 mb-4">
+        <div role="tablist" aria-label="Split modes" className="bg-[#ECE6DC]/85 dark:bg-white/10 p-1 rounded-full flex gap-1 mb-4">
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'equal'}
             onClick={() => setActiveTab('equal')}
-            className={`py-2 px-5 rounded-full text-xs sm:text-sm font-bold flex-1 text-center transition-all cursor-pointer ${
+            className={`py-2 px-5 rounded-full text-xs sm:text-sm font-bold flex-1 text-center transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-party-yellow ${
               activeTab === 'equal'
-                ? 'bg-[#F0DC00] text-[#171512] shadow-xs'
-                : 'text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white'
+                ? 'bg-party-yellow text-on-party-yellow shadow-xs'
+                : 'text-secondary hover:text-primary dark:hover:text-white'
             }`}
           >
             {t.split.tabEqual}
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'custom'}
             onClick={() => setActiveTab('custom')}
-            className={`py-2 px-5 rounded-full text-xs sm:text-sm font-bold flex-1 text-center transition-all cursor-pointer ${
+            className={`py-2 px-5 rounded-full text-xs sm:text-sm font-bold flex-1 text-center transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-party-yellow ${
               activeTab === 'custom'
-                ? 'bg-[#F0DC00] text-[#171512] shadow-xs'
-                : 'text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white'
+                ? 'bg-party-yellow text-on-party-yellow shadow-xs'
+                : 'text-secondary hover:text-primary dark:hover:text-white'
             }`}
           >
             {t.split.tabCustom}
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'items'}
             onClick={() => setActiveTab('items')}
-            className={`py-2 px-5 rounded-full text-xs sm:text-sm font-bold flex-1 text-center transition-all cursor-pointer ${
+            className={`py-2 px-5 rounded-full text-xs sm:text-sm font-bold flex-1 text-center transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-party-yellow ${
               activeTab === 'items'
-                ? 'bg-[#F0DC00] text-[#171512] shadow-xs'
-                : 'text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white'
+                ? 'bg-party-yellow text-on-party-yellow shadow-xs'
+                : 'text-secondary hover:text-primary dark:hover:text-white'
             }`}
           >
             {t.split.tabItems}

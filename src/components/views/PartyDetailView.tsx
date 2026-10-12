@@ -426,34 +426,37 @@ export const PartyDetailView: React.FC = () => {
             {/* Party Pot Summary Card (Directly below Quick Actions on mobile, right column on desktop) */}
             <article
               aria-label={isEs ? 'Bote de la fiesta' : 'Party Pot'}
-              className="lg:col-span-5 xl:col-span-4 lg:col-start-8 xl:col-start-9 lg:row-start-1 min-h-[108px] sm:min-h-[118px] grid grid-cols-[48px_1fr_auto] sm:grid-cols-[58px_1fr_auto] items-center gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-[32px] transition-all bg-white/50 dark:bg-[#1C1A16] border border-white/75 dark:border-white/10 shadow-[0_9px_20px_rgba(66,52,32,0.09)] dark:shadow-[0_9px_20px_rgba(0,0,0,0.45)] backdrop-blur-md"
+              className="lg:col-span-5 xl:col-span-4 lg:col-start-8 xl:col-start-9 lg:row-start-1 min-h-[108px] sm:min-h-[118px] grid grid-cols-[1fr_auto] items-center gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-[32px] transition-all bg-surface/80 border border-divider shadow-xs backdrop-blur-md"
             >
-            <div
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-[#24201c] dark:text-[#F0DC00] bg-[#EEE9E1] dark:bg-white/10 shadow-inner shrink-0 cursor-pointer"
-              onClick={() => setCurrentView('party-pot')}
-              aria-hidden="true"
-            >
-              <Coins className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.35]" />
-            </div>
-            <div
-              className="min-w-0 cursor-pointer"
-              onClick={() => setCurrentView('party-pot')}
-            >
-              <span className="text-xs sm:text-sm font-medium text-primary tracking-tight block leading-none">
-                {isEs ? 'Bote de la fiesta' : 'Party Pot'}
-              </span>
-              <div className="flex items-center gap-1.5 mt-1 mb-0.5">
-                <span className="font-display font-black text-xl sm:text-[26px] text-primary tracking-tight leading-none">
-                  ${(party?.potBalance ?? 0).toFixed(2)}
-                </span>
-                <span className="text-xs font-bold text-secondary bg-surface-secondary border border-divider px-2 py-0.5 rounded-full inline-flex items-center">
-                  {isEs ? 'Fondo común' : 'Pool'}
-                </span>
-              </div>
-              <span className="text-xs text-secondary font-medium tracking-tight block truncate">
-                {isEs ? 'Aportes del grupo para la noche' : 'Group pool for tonight'}
-              </span>
-            </div>
+              <button
+                type="button"
+                onClick={() => setCurrentView('party-pot')}
+                className="flex items-center gap-3 sm:gap-3.5 text-left min-w-0 cursor-pointer rounded-2xl focus-visible:outline-2 focus-visible:outline-party-yellow"
+                aria-label={isEs ? `Ver bote de la fiesta: $${(party?.potBalance ?? 0).toFixed(2)}` : `View party pot: $${(party?.potBalance ?? 0).toFixed(2)}`}
+              >
+                <div
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-primary dark:text-party-yellow bg-surface-muted shadow-inner shrink-0"
+                  aria-hidden="true"
+                >
+                  <Coins className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.35]" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs sm:text-sm font-medium text-primary tracking-tight block leading-none">
+                    {isEs ? 'Bote de la fiesta' : 'Party Pot'}
+                  </span>
+                  <div className="flex items-center gap-1.5 mt-1 mb-0.5">
+                    <span className="font-display font-black text-xl sm:text-[26px] text-primary tracking-tight leading-none">
+                      ${(party?.potBalance ?? 0).toFixed(2)}
+                    </span>
+                    <span className="text-xs font-bold text-secondary bg-surface-secondary border border-divider px-2 py-0.5 rounded-full inline-flex items-center">
+                      {isEs ? 'Fondo común' : 'Pool'}
+                    </span>
+                  </div>
+                  <span className="text-xs text-secondary font-medium tracking-tight block truncate">
+                    {isEs ? 'Aportes del grupo para la noche' : 'Group pool for tonight'}
+                  </span>
+                </div>
+              </button>
 
             {/* Add Button with Flat Party Yellow */}
             <motion.button

@@ -41,5 +41,25 @@ describe('Phase 0 Foundation Primitives', () => {
       expect(translations.es.recap.totalDamage).toBe('GASTADO JUNTOS');
       expect(translations.en.recap.totalDamage).toBe('SPENT TOGETHER');
     });
+
+    it('nav translations provide accessible standard labels', () => {
+      expect(translations.es.nav.home).toBe('Inicio');
+      expect(translations.en.nav.home).toBe('Home');
+      expect(translations.es.nav.crews).toBe('Crews');
+      expect(translations.en.nav.crews).toBe('Crews');
+      expect(translations.es.nav.activity).toBe('Actividad');
+      expect(translations.en.nav.activity).toBe('Activity');
+      expect(translations.es.nav.profile).toBe('Perfil');
+      expect(translations.en.nav.profile).toBe('Profile');
+    });
+
+    it('formats member counts for 0, 1, and many members gracefully', () => {
+      expect(translations.es.home.membersCount(0)).toBe('0 miembros');
+      expect(translations.en.home.membersCount(0)).toBe('0 members');
+      expect(translations.es.home.membersCount(1)).toBe('1 miembro');
+      expect(translations.en.home.membersCount(1)).toBe('1 member');
+      expect(translations.es.home.membersCount(200)).toBe('200 miembros');
+      expect(translations.en.home.membersCount(200)).toBe('200 members');
+    });
   });
 });

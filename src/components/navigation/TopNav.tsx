@@ -5,6 +5,7 @@ import { ArrowLeft, Share2 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { formatPartyInviteText } from '@/services/party';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { toast } from '@/store/useToastStore';
 
 interface TopNavProps {
   title?: string;
@@ -51,7 +52,7 @@ export const TopNav: React.FC<TopNavProps> = ({
       }
     } else {
       await navigator.clipboard.writeText(text);
-      alert(t.common.copied);
+      toast.success(t.common.copied);
     }
   };
 

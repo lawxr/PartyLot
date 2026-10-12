@@ -6,8 +6,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const TabBar: React.FC = () => {
   const { activeTab, setActiveTab, currentView, setCurrentView } = usePartyStore();
-  const { language } = useTranslation();
-  const isEs = language === 'es';
+  const { t } = useTranslation();
 
   // TabBar belongs to the dashboard/tabs views and profile view
   if (currentView !== 'home' && currentView !== 'profile') {
@@ -15,10 +14,10 @@ export const TabBar: React.FC = () => {
   }
 
   const tabs: { id: MainTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: 'home', label: isEs ? 'Inicio' : 'Home', icon: Home },
-    { id: 'crews', label: 'Crews', icon: Users },
-    { id: 'activity', label: isEs ? 'Actividad' : 'Activity', icon: Activity },
-    { id: 'profile', label: isEs ? 'Perfil' : 'Profile', icon: User },
+    { id: 'home', label: t.nav.home, icon: Home },
+    { id: 'crews', label: t.nav.crews, icon: Users },
+    { id: 'activity', label: t.nav.activity, icon: Activity },
+    { id: 'profile', label: t.nav.profile, icon: User },
   ];
 
   return (
@@ -39,6 +38,7 @@ export const TabBar: React.FC = () => {
                 key={tab.id}
                 role="tab"
                 aria-selected={isActive}
+                aria-current={isActive ? 'page' : undefined}
                 aria-label={tab.label}
                 tabIndex={0}
                 onClick={() => {
@@ -47,23 +47,23 @@ export const TabBar: React.FC = () => {
                   }
                   setActiveTab(tab.id);
                 }}
-                className="relative py-2 px-3.5 sm:px-4.5 rounded-[24px] flex flex-col items-center justify-center transition-transform active:scale-95 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#F0DC00] focus-visible:outline-offset-2"
+                className="relative py-2 px-3.5 sm:px-4.5 rounded-[24px] flex flex-col items-center justify-center transition-transform active:scale-95 cursor-pointer focus-visible:outline-2 focus-visible:outline-party-yellow focus-visible:outline-offset-2"
               >
                 {isActive && (
                   <motion.div
                     layoutId="activeTabBadge"
-                    className="absolute inset-0 rounded-[24px] bg-[#F0DC00] shadow-xs"
+                    className="absolute inset-0 rounded-[24px] bg-party-yellow shadow-xs"
                     transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                   />
                 )}
                 <Icon
                   className={`relative z-10 w-5 h-5 transition-colors duration-200 ${
-                    isActive ? 'text-[#171512] stroke-[2.2]' : 'text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white'
+                    isActive ? 'text-primary stroke-[2.2]' : 'text-secondary hover:text-primary dark:hover:text-white'
                   }`}
                 />
                 <span
-                  className={`relative z-10 text-[10px] mt-0.5 tracking-tight font-semibold transition-colors ${
-                    isActive ? 'text-[#171512] font-bold' : 'text-[#6F6A62] dark:text-[#A8A196]'
+                  className={`relative z-10 text-[11px] mt-0.5 tracking-tight font-semibold transition-colors ${
+                    isActive ? 'text-primary font-bold' : 'text-secondary'
                   }`}
                 >
                   {tab.label}

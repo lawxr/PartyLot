@@ -7,6 +7,8 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { TopNav } from '@/components/navigation/TopNav';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { PressableCard } from '@/components/ui/PressableCard';
+import { toast } from '@/store/useToastStore';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
@@ -23,6 +25,7 @@ export const PollsView: React.FC = () => {
 
   const handleVote = (pollId: string, optionId: string) => {
     votePoll(pollId, optionId);
+    toast.success(isEs ? 'Voto registrado' : 'Vote recorded');
     confetti({
       particleCount: 25,
       spread: 45,
@@ -137,14 +140,16 @@ export const PollsView: React.FC = () => {
                   const isSelected = poll.userVoteId === opt.id;
 
                   return (
-                    <motion.div
+                    <PressableCard
                       key={opt.id}
-                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleVote(poll.id, opt.id)}
-                      className={`relative p-3.5 sm:p-4 rounded-2xl overflow-hidden cursor-pointer border transition-all ${
+                      asButton={true}
+                      aria-label={`${opt.label}, ${percentage}% (${opt.votes} ${isEs ? 'votos' : 'votes'})`}
+                      aria-pressed={isSelected}
+                      className={`relative p-3.5 sm:p-4 rounded-2xl overflow-hidden border transition-all ${
                         isSelected
-                          ? 'border-[#F0DC00] bg-[#FFF5C0]/40 dark:bg-[#F0DC00]/20 shadow-xs'
-                          : 'border-black/[0.08] dark:border-white/10 bg-[#F7F2E8] dark:bg-white/5 hover:border-black/[0.15] dark:hover:border-white/20'
+                          ? 'border-party-yellow bg-party-yellow/20 shadow-xs'
+                          : 'border-divider bg-surface-muted hover:border-black/20 dark:hover:border-white/20'
                       }`}
                     >
                       {/* Fluid Background Fill */}
@@ -152,38 +157,38 @@ export const PollsView: React.FC = () => {
                         initial={{ width: 0 }}
                         animate={{ width: `${percentage}%` }}
                         transition={{ duration: 0.45, ease: 'easeOut' }}
-                        className={`absolute inset-y-0 left-0 ${
-                          isSelected ? 'bg-[#F0DC00]/30' : 'bg-black/[0.04] dark:bg-white/[0.04]'
+                        className={`absolute inset-y-0 left-0 pointer-events-none ${
+                          isSelected ? 'bg-party-yellow/30' : 'bg-black/[0.04] dark:bg-white/[0.04]'
                         }`}
                       />
 
                       {/* Content Overlay */}
-                      <div className="relative z-10 flex items-center justify-between">
+                      <div className="relative z-10 flex items-center justify-between pointer-events-none">
                         <div className="flex items-center gap-2.5">
                           {isSelected && (
-                            <span className="w-5 h-5 rounded-full bg-[#F0DC00] text-[#171512] flex items-center justify-center shrink-0">
+                            <span className="w-5 h-5 rounded-full bg-party-yellow text-on-party-yellow flex items-center justify-center shrink-0">
                               <Check className="w-3.5 h-3.5 stroke-[3]" />
                             </span>
                           )}
-                          <span className="font-display font-bold text-sm sm:text-base text-[#171512] dark:text-white">
+                          <span className="font-display font-bold text-sm sm:text-base text-primary">
                             {opt.label}
                           </span>
                         </div>
 
                         <div className="text-right flex items-center gap-2">
-                          <span className="text-xs font-semibold text-[#8E887E] dark:text-[#A8A196]">
+                          <span className="text-xs font-semibold text-secondary">
                             {opt.votes}
                           </span>
                           <span
                             className={`font-display font-black text-sm sm:text-base ${
-                              isSelected ? 'text-[#171512] dark:text-[#F0DC00]' : 'text-[#6F6A62] dark:text-[#A8A196]'
+                              isSelected ? 'text-primary dark:text-party-yellow' : 'text-secondary'
                             }`}
                           >
                             {percentage}%
                           </span>
                         </div>
                       </div>
-                    </motion.div>
+                    </PressableCard>
                   );
                 })}
               </div>

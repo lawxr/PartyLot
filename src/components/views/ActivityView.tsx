@@ -119,6 +119,7 @@ export const ActivityView: React.FC = () => {
             <button
               key={f.id}
               onClick={() => setActiveFilter(f.id)}
+              aria-pressed={isActive}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 isActive
                   ? 'bg-primary text-surface dark:bg-primary dark:text-bg-primary shadow-xs'

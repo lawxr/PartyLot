@@ -12,6 +12,7 @@ import { NotificationsPopover } from '@/components/notifications/NotificationsPo
 import { CreateActionSheet } from '@/components/navigation/CreateActionSheet';
 import { CreateCrewModal } from '@/components/ui/CreateCrewModal';
 import { Avatar } from '@/components/ui/Avatar';
+import { PressableCard } from '@/components/ui/PressableCard';
 import { getCoverUrl } from '@/lib/imageOptimization';
 
 export const HomeView: React.FC = () => {
@@ -26,7 +27,7 @@ export const HomeView: React.FC = () => {
     activities,
     notificationsLastSeenAt,
   } = usePartyStore();
-  const { language } = useTranslation();
+  const { t, language } = useTranslation();
   const isEs = language === 'es';
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
@@ -121,15 +122,15 @@ export const HomeView: React.FC = () => {
         {/* Main Party Card (Hero) */}
         <section className="lg:col-span-7 xl:col-span-8 mb-6 lg:mb-0">
           {!heroParty ? (
-            <div className="w-full rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 shadow-[0_12px_36px_rgba(65,48,25,0.06)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.35)] flex flex-col justify-between min-h-[220px] sm:min-h-[260px]">
+            <div className="w-full rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 bg-surface border border-divider shadow-xs flex flex-col justify-between min-h-[220px] sm:min-h-[260px]">
               <div>
-                <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#F0DC00]/20 text-[#171512] dark:text-[#F0DC00] font-bold text-xs">
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-party-yellow/20 text-on-party-yellow dark:text-party-yellow font-bold text-xs">
                   {isEs ? 'Comienza la noche' : 'Start the night'}
                 </span>
-                <h2 className="font-display font-black text-2xl sm:text-3xl text-[#171512] dark:text-white tracking-tight leading-tight mt-3">
-                  {isEs ? 'No tienes fiestas activas' : 'No active parties yet'}
+                <h2 className="font-display font-black text-2xl sm:text-3xl text-primary tracking-tight leading-tight mt-3">
+                  {t.home.noParties}
                 </h2>
-                <p className="text-xs sm:text-sm text-[#6F6A62] dark:text-[#A8A196] font-medium mt-1.5 max-w-md">
+                <p className="text-xs sm:text-sm text-secondary font-medium mt-1.5 max-w-md">
                   {isEs
                     ? 'Organiza una fiesta con tus amigos o ingresa el código de una reunión para unirte.'
                     : 'Host a gathering with your friends or enter an invite code to join.'}
@@ -142,15 +143,15 @@ export const HomeView: React.FC = () => {
                   className="accent-button flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold shadow-md cursor-pointer"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
-                  <span>{isEs ? 'Organizar una fiesta' : 'Host a party'}</span>
+                  <span>{t.home.createParty}</span>
                 </button>
               </div>
             </div>
           ) : (
-            <motion.div
-              whileTap={{ scale: 0.985 }}
+            <PressableCard
               onClick={() => selectParty(heroParty.id)}
-              className="w-full aspect-[1.12/1] lg:aspect-[16/10] rounded-[28px] sm:rounded-[32px] relative overflow-hidden cursor-pointer shadow-[0_16px_44px_rgba(65,48,25,0.13)] border border-white/60 group"
+              aria-label={heroParty.title}
+              className="w-full aspect-[1.12/1] lg:aspect-[16/10] rounded-[28px] sm:rounded-[32px] relative overflow-hidden shadow-[0_16px_44px_rgba(65,48,25,0.13)] border border-white/60 group"
             >
               {/* Background Photo */}
               {heroParty.coverImage ? (
@@ -226,19 +227,19 @@ export const HomeView: React.FC = () => {
                   </span>
                 </div>
               </div>
-            </motion.div>
+            </PressableCard>
           )}
         </section>
 
         {/* Your Crews Section */}
         <section className="lg:col-span-5 xl:col-span-4 lg:col-start-8 xl:col-start-9 lg:row-start-1 mb-8 lg:mb-6">
           <div className="flex items-center justify-between mb-3 px-0.5">
-            <h3 className="font-display font-extrabold text-lg sm:text-xl text-[#171512] dark:text-white tracking-tight">
-              {isEs ? 'Tus crews' : 'Your crews'}
+            <h3 className="font-display font-extrabold text-lg sm:text-xl text-primary tracking-tight">
+              {t.home.yourCrews}
             </h3>
             <button
               onClick={() => setActiveTab('crews')}
-              className="text-xs font-bold text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white flex items-center gap-0.5 transition-colors cursor-pointer"
+              className="text-xs font-bold text-secondary hover:text-primary dark:hover:text-white flex items-center gap-0.5 transition-colors cursor-pointer"
             >
               <span>{isEs ? 'Ver todos' : 'See all'}</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -247,28 +248,29 @@ export const HomeView: React.FC = () => {
 
           {/* Crews cards or empty state */}
           {displayCrews.length === 0 ? (
-            <div
+            <PressableCard
               onClick={() => setActiveTab('crews')}
-              className="rounded-[20px] p-4 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 text-center cursor-pointer hover:border-[#F0DC00] transition-colors"
+              aria-label={t.home.exploreCrews}
+              className="rounded-[20px] p-4 bg-surface border border-divider text-center hover:border-party-yellow transition-colors"
             >
-              <p className="text-xs font-semibold text-[#6F6A62] dark:text-[#A8A196]">
+              <p className="text-xs font-semibold text-secondary">
                 {isEs ? 'Aún no perteneces a ningún crew.' : 'No crews yet.'}
               </p>
-              <span className="text-xs font-bold text-[#171512] dark:text-white mt-1 inline-block">
-                {isEs ? 'Explorar crews →' : 'Explore crews →'}
+              <span className="text-xs font-bold text-primary mt-1 inline-block">
+                {t.home.exploreCrews} →
               </span>
-            </div>
+            </PressableCard>
           ) : (
             <div className="grid grid-cols-3 lg:grid-cols-1 gap-2.5 sm:gap-3.5 lg:gap-3">
               {displayCrews.slice(0, 3).map((crew) => (
-                <motion.div
+                <PressableCard
                   key={crew.id}
-                  whileTap={{ scale: 0.96 }}
                   onClick={() => {
                     usePartyStore.getState().selectCrew(crew.id);
                     setCurrentView('crew-detail');
                   }}
-                  className="rounded-[20px] overflow-hidden bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 shadow-[0_6px_20px_rgba(65,48,25,0.06)] dark:shadow-[0_6px_20px_rgba(0,0,0,0.4)] hover:shadow-md transition-all cursor-pointer group flex flex-col lg:flex-row lg:items-center lg:h-20"
+                  aria-label={crew.name}
+                  className="rounded-[20px] overflow-hidden bg-surface border border-divider shadow-[0_6px_20px_rgba(65,48,25,0.06)] dark:shadow-[0_6px_20px_rgba(0,0,0,0.4)] hover:shadow-md transition-all group flex flex-col lg:flex-row lg:items-center lg:h-20"
                 >
                   {/* Top Photo on mobile / Left square on desktop */}
                   <div className="h-24 sm:h-28 lg:h-full lg:w-20 w-full overflow-hidden relative shrink-0">
@@ -288,7 +290,7 @@ export const HomeView: React.FC = () => {
                           {crew.name}
                         </h4>
                         <p className="text-xs text-secondary font-medium mt-0.5">
-                          {crew.membersCount} {isEs ? 'miembros' : 'members'}
+                          {t.home.membersCount(crew.membersCount)}
                         </p>
                       </div>
                       <ChevronRight className="hidden lg:block w-4 h-4 text-secondary group-hover:translate-x-0.5 transition-transform shrink-0" />
@@ -311,7 +313,7 @@ export const HomeView: React.FC = () => {
                       )}
                     </div>
                   </div>
-                </motion.div>
+                </PressableCard>
               ))}
             </div>
           )}
@@ -320,13 +322,13 @@ export const HomeView: React.FC = () => {
         {/* Upcoming Section */}
         <section className="lg:col-span-7 xl:col-span-8 lg:row-start-2 mb-6">
           <div className="flex items-center justify-between mb-3 px-0.5">
-            <h3 className="font-display font-extrabold text-lg sm:text-xl text-[#171512] dark:text-white tracking-tight">
+            <h3 className="font-display font-extrabold text-lg sm:text-xl text-primary tracking-tight">
               {isEs ? 'Próximas fiestas' : 'Upcoming'}
             </h3>
             {parties.length > 1 && (
               <button
                 onClick={() => setActiveTab('activity')}
-                className="text-xs font-bold text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white flex items-center gap-0.5 transition-colors cursor-pointer"
+                className="text-xs font-bold text-secondary hover:text-primary dark:hover:text-white flex items-center gap-0.5 transition-colors cursor-pointer"
               >
                 <span>{isEs ? 'Ver todas' : 'See all'}</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -339,8 +341,8 @@ export const HomeView: React.FC = () => {
             const upcomingParties = parties.slice(1);
             if (upcomingParties.length === 0) {
               return (
-                <div className="rounded-[24px] p-5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 text-center">
-                  <p className="font-semibold text-xs sm:text-sm text-[#6F6A62] dark:text-[#A8A196]">
+                <div className="rounded-[24px] p-5 bg-surface border border-divider shadow-xs text-center">
+                  <p className="font-semibold text-xs sm:text-sm text-secondary">
                     {parties.length <= 1
                       ? (isEs ? 'No tienes más fiestas próximas agendadas.' : 'No other upcoming parties scheduled.')
                       : (isEs ? 'No tienes más fiestas programadas.' : 'No more upcoming parties scheduled.')}
@@ -351,10 +353,10 @@ export const HomeView: React.FC = () => {
 
             const nextParty = upcomingParties[0];
             return (
-              <motion.div
-                whileTap={{ scale: 0.98 }}
+              <PressableCard
                 onClick={() => selectParty(nextParty.id)}
-                className="rounded-[24px] p-3 sm:p-3.5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 shadow-[0_8px_24px_rgba(65,48,25,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:shadow-md transition-all cursor-pointer flex items-center gap-3.5 sm:gap-4"
+                aria-label={nextParty.title}
+                className="rounded-[24px] p-3 sm:p-3.5 bg-surface border border-divider shadow-[0_8px_24px_rgba(65,48,25,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:shadow-md transition-all flex items-center gap-3.5 sm:gap-4"
               >
                 {/* Square Photo with Date Overlay */}
                 <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-[18px] overflow-hidden relative shrink-0 bg-[#352B23]">
@@ -408,7 +410,7 @@ export const HomeView: React.FC = () => {
                 <div className="text-[#8E887E] dark:text-[#A8A196] pr-1">
                   <ChevronRight className="w-5 h-5" />
                 </div>
-              </motion.div>
+              </PressableCard>
             );
           })()}
         </section>

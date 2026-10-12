@@ -19,25 +19,28 @@
 
 La parte del trailer que **no** se traslada: el 3D, la proyección en perspectiva, los tres teléfonos a la vez y el leaderboard con puntos (la app no calcula puntos hoy, ver Fase 5).
 
-## 2. Decisiones que necesito de ti antes de empezar
+## 2. Decisiones tomadas
 
-1. **Escenario oscuro en ambos temas.** Es lo que se ve en el video. `DESIGN.md` permite pantallas inmersivas para Games, pero dice "bright by default". Recomiendo: Games y Recap siempre en el escenario oscuro cálido (nunca negro puro), y el resto de la app sigue claro.
-2. **Quitar el flujo de recompensa de la vista de juegos** (botón morado "Premiar", MON, modal con explorador). Ya está marcado como jerga cripto en el plan de limpieza. Recomiendo sacarlo de esta pantalla y dejar "Premiar" dentro del Party Pot.
-3. **Resultado por ronda:** ¿se muestra después de que vote todo el mundo, o cuando alguien toca "Ver resultado"? Recomiendo lo segundo, porque en una fiesta no todos votan y no se debe bloquear a nadie.
+1. **Escenario según el tema.** Con modo oscuro activo se ve el escenario oscuro del video; con modo claro, una variante crema con la misma estructura, tamaños y movimiento. Los componentes solo usan tokens `--stage-*`, que cambian con el tema.
+2. **Premiar vive solo en el Party Pot.** Se elimina de Games (botón, aviso, modal) y de Who's Most Likely / Trivia.
+3. **El resultado se abre con un botón "Ver resultado".** Nada se bloquea esperando a los demás.
 
 ## 3. Tokens y base visual (Fase 0)
 
-Agregar a `globals.css` (junto a los tokens que ya existen, sin hex sueltos en los componentes):
+Agregar a `globals.css`. Los valores claros van en `:root`, los oscuros en `.dark` (el proyecto ya usa `@custom-variant dark`), y nunca hay hex sueltos en los componentes:
 
-```css
---stage-top:    #2b2309;   /* radial superior del escenario */
---stage-bottom: #0e0c09;   /* nunca #000 */
---stage-card:   rgba(255,255,255,.07);
---stage-card-border: rgba(255,255,255,.09);
---stage-text:   #fff8e6;
---stage-muted:  rgba(255,255,255,.6);
---game-orange:  #ff7a3d;   /* opción A de This or That */
-```
+| Token | Claro (`:root`) | Oscuro (`.dark`, igual al video) |
+|---|---|---|
+| `--stage-bg` | `radial #FFFDF8 → #F7F2E8` | `radial #2b2309 → #0e0c09` (nunca `#000`) |
+| `--stage-card` | `#FFFDF8` | `rgba(255,255,255,.07)` |
+| `--stage-card-border` | `rgba(23,21,18,.08)` | `rgba(255,255,255,.09)` |
+| `--stage-text` | `#171512` | `#fff8e6` |
+| `--stage-muted` | `#6F6A62` | `rgba(255,255,255,.6)` |
+| `--stage-track` | `rgba(23,21,18,.08)` | `rgba(255,255,255,.1)` |
+| `--stage-ring-outline` | `#171512` | `transparent` |
+| `--game-orange` | `#ff7a3d` | `#ff7a3d` |
+
+El amarillo `--party-yellow` y su texto oscuro son iguales en los dos temas, así que "seleccionado = amarillo" se ve idéntico. Lo que cambia en claro: las tarjetas llevan borde y sombra suave en vez de transparencia, y el aro del ganador suma un contorno oscuro de 2px (amarillo sobre crema pierde contraste).
 
 Componentes nuevos en `src/components/games/stage/`:
 
@@ -58,7 +61,7 @@ Reutilizar lo que ya existe: `Avatar`, `PressableCard` (para que las tarjetas se
 ### 4.1 `GamesView` (lobby y contenedor)
 - Reemplazar el banner de fiesta + pastillas + sidebar de "catálogo" por: `GameStage` → cabecera mínima (volver, nombre de la fiesta, avatares de quién está jugando) → selector de juego como **tres pestañas** con el mismo lenguaje (amarillo activo).
 - Lobby de la ronda (el de `act1` al tocar Play): etiqueta `GAME NIGHT · ROUND 1`, título del juego en 50px y un anillo de avatares. Se usa como pantalla de "Empezar" cuando no hay votos aún; después de la primera ronda se salta.
-- Eliminar: `Coins`, `Sparkles`, saldo MON, botón morado, textos "Party Pot (Monad)", "Social Graph". En desktop, sin sidebar: el escenario centrado y el catálogo como pestañas arriba.
+- Eliminar: `Coins`, `Sparkles`, saldo MON, botón morado y su `RewardWinnerModal`, textos "Party Pot (Monad)", "Social Graph". En desktop, sin sidebar: el escenario centrado y el catálogo como pestañas arriba.
 
 ### 4.2 `WhosMostLikely`
 - Cabecera → `GameEyebrow`. Pregunta: 31px/700, interlineado 1.08, sin tarjeta ni icono de rayo.
@@ -66,8 +69,9 @@ Reutilizar lo que ya existe: `Avatar`, `PressableCard` (para que las tarjetas se
 - Al votar: la tarjeta se llena de amarillo con rebote (`scale 1 → 0.93 → 1.04 → 1`, 0.28s), check negro y onda de toque. El confeti de 45 partículas se quita aquí y se mueve al resultado.
 - Contador `n of N voted` en vivo (ver Fase 3 para el dato).
 - Pie: "Anterior" y "Omitir" como botones fantasma de ancho completo; los puntos de progreso se quedan, pero dentro del `GameEyebrow` (`1/5`).
+- Botón **"Ver resultado"** (amarillo, ancho completo) en el pie, junto a "Omitir". Está deshabilitado mientras no haya votos en la pregunta y muestra el contador (`Ver resultado · 3`). Se puede abrir en cualquier momento, y el resultado trae "Seguir votando" para volver sin perder nada. Si llegan votos nuevos con el resultado abierto, las barras se actualizan en vivo.
 - Nueva pantalla de **resultado** (`WinnerReveal` + 4 `VoteBar`): entra con `translateX 120px → 0` (0.3s, `out4`), el ganador crece con `back` (0.4s), las barras se llenan en cascada (0.7s, 50ms entre ellas) y el confeti sale desde el avatar.
-- Quitar el aviso morado "¿Quieres premiar…?".
+- Quitar el aviso morado "¿Quieres premiar…?" y el modal de recompensa. En un empate, `WinnerReveal` muestra los avatares empatados juntos.
 
 ### 4.3 `ThisOrThat`
 - Quitar naipes: coronas, rayos, esquinas invertidas, borde interior ámbar, fuentes mono.
@@ -77,10 +81,12 @@ Reutilizar lo que ya existe: `Avatar`, `PressableCard` (para que las tarjetas se
 - `data-disable-swipe-back` se mantiene.
 
 ### 4.4 `CrewTrivia`
-- Mismo escenario y `GameEyebrow`. Opciones como tarjetas verticales de ancho completo (`FriendVoteCard` en variante texto). Correcta = amarillo con check; incorrecta = atenuada. Explicación en una tarjeta `--stage-card`. Quitar el "💡 Lore check" y el botón morado "Premiar".
+- Mismo escenario y `GameEyebrow`. Opciones como tarjetas verticales de ancho completo (`FriendVoteCard` en variante texto). Correcta = amarillo con check; incorrecta = atenuada. Explicación en una tarjeta `--stage-card`. Quitar el "Lore check" con emoji y el botón "Premiar".
 
-### 4.5 `RewardWinnerModal`
-- Fuera del flujo de juegos (decisión 2). Si se conserva, vive en el Party Pot, con tokens de marca y sin MON/Monad en la UI.
+### 4.5 Premiar (solo en Party Pot)
+- Se quita `RewardWinnerModal` de `GamesView`, `WhosMostLikely` y `CrewTrivia`.
+- En `PartyPotView` queda una acción "Premiar a alguien" con el selector de miembro y de monto. Los montos se muestran en moneda local; MON y el explorador solo en "Detalles técnicos" (según el plan de limpieza).
+- Opcional, para que no se pierda el vínculo con el juego: guardar en el store el ganador del último resultado (`lastGameWinner`) y que el Party Pot lo proponga como destinatario por defecto. No hay botón en Games.
 
 ## 5. Movimiento (framer-motion, no GSAP)
 
@@ -110,20 +116,21 @@ Valores tomados del video, para que se sienta igual:
 - Contraste: texto crema sobre `--stage-bottom` ≥ 12:1; texto oscuro sobre amarillo ≥ 10:1; el gris `--stage-muted` solo para texto ≥ 14px.
 - Objetivos táctiles ≥ 44px (las tarjetas miden 168px de alto).
 - Probar 360×640, 390×844, 768 y 1440; el escenario nunca más ancho que ~430px.
-- La variante clara para quien tenga el tema claro se descarta (ver decisión 1); si se decide lo contrario, los tokens `--stage-*` se duplican bajo `:root:not(.dark)`.
+- Verificar contraste en **los dos temas**: texto sobre tarjeta ≥ 4.5:1; texto oscuro sobre amarillo ≥ 10:1; `--stage-muted` solo ≥ 14px. El naranja de This or That lleva texto `#1c0d04` en ambos.
+- El tema se lee de la clase `dark` que ya activa `app/page.tsx`; sin lógica extra en los componentes.
 
 ## 8. Fases
 
 | Fase | Entregable | Cómo se comprueba |
 |---|---|---|
-| 0. Base | Tokens `--stage-*`, `GameStage`, `GameEyebrow`, `FriendVoteCard`, `PickBlock`, `VoteBar`, `WinnerReveal`, `GameProgress` + prueba visual de cada uno en un solo caso | `pnpm typecheck` y `pnpm lint`; captura de cada componente |
-| 1. Who's Most Likely | Nueva votación 2×2 + resultado con barras y confeti | Prueba de unidad de ganador/porcentajes; captura del flujo en 390×844 |
-| 2. This or That | Bloques de color + VS + porcentajes tras votar, con gesto y botones | Captura de estados (sin voto / A / B); prueba de que el swipe sigue sumando el voto correcto |
-| 3. Datos | Contador en vivo (opción a) y, si se aprueba, `voters` | `tests/unit/games-view.test.ts` ampliado |
-| 4. Contenedor y Trivia | `GamesView` sin sidebar ni jerga cripto, pestañas de juego, Trivia con el nuevo lenguaje | Captura en 360, 390, 768 y 1440; revisión de teclado |
-| 5. Pulido | `prefers-reduced-motion`, `aria-live`, `check-slop` en verde, leaderboard (si se aprueba) | `pnpm release:check` y un re-audit con `$impeccable audit` sobre `GamesView` |
+| 0. Base | Tokens `--stage-*` claro/oscuro, `GameStage`, `GameEyebrow`, `FriendVoteCard`, `PickBlock`, `VoteBar`, `WinnerReveal`, `GameProgress` | `pnpm typecheck` y `pnpm lint`; captura de cada componente en claro y oscuro |
+| 1. Who's Most Likely | Votación 2×2, botón "Ver resultado", resultado con barras, empate y confeti | Prueba de unidad de ganador/empate/porcentajes; capturas del flujo en 390×844, claro y oscuro |
+| 2. This or That | Bloques de color + VS + porcentajes tras votar, con gesto y botones | Capturas (sin voto / A / B); el swipe sigue sumando el voto correcto |
+| 3. Contenedor y Trivia | `GamesView` sin sidebar ni jerga cripto, pestañas de juego, Trivia con el nuevo lenguaje | Capturas en 360, 390, 768 y 1440; revisión de teclado |
+| 4. Party Pot | "Premiar a alguien" en `PartyPotView`, `RewardWinnerModal` fuera de Games, `lastGameWinner` opcional | Prueba de que no queda ninguna referencia a `RewardWinnerModal` en `components/games` ni en `GamesView`; flujo de recompensa probado en el Pot |
+| 5. Datos y pulido | Contador en vivo ("n votes", y `voters` si se aprueba), `prefers-reduced-motion`, `aria-live`, `check-slop` en verde | `tests/unit/games-view.test.ts` ampliado, `pnpm release:check` y `$impeccable audit` sobre `GamesView` |
 
-Orden recomendado: 0 → 1 → 2 (los dos juegos que salen en el video) → 4 → 3 → 5.
+Orden recomendado: 0 → 1 → 2 (los dos juegos que salen en el video) → 3 → 4 → 5. La Fase 4 puede ir en paralelo a la 3, porque toca otro archivo.
 
 ## 9. Riesgos
 

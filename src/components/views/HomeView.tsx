@@ -2,13 +2,15 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, MapPin, Calendar, Heart, Bell, ChevronRight, Sparkles, KeyRound } from 'lucide-react';
+import { Plus, MapPin, Calendar, Bell, ChevronRight } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { ActivityView } from '@/components/views/ActivityView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { CrewsView } from '@/components/views/CrewsView';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { NotificationsPopover } from '@/components/notifications/NotificationsPopover';
+import { CreateActionSheet } from '@/components/navigation/CreateActionSheet';
+import { CreateCrewModal } from '@/components/ui/CreateCrewModal';
 import { Avatar } from '@/components/ui/Avatar';
 import { getCoverUrl } from '@/lib/imageOptimization';
 
@@ -25,8 +27,9 @@ export const HomeView: React.FC = () => {
   } = usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
-  const [isFavorited, setIsFavorited] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
+  const [isCreateCrewOpen, setIsCreateCrewOpen] = useState(false);
 
   const displayCrews = crews;
 
@@ -88,11 +91,11 @@ export const HomeView: React.FC = () => {
             onClose={() => setIsNotificationsOpen(false)}
           />
 
-          {/* Quick Create Action */}
+          {/* Unified Create Action */}
           <button
-            onClick={() => setCurrentView('create-party')}
-            className="w-11 h-11 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] flex items-center justify-center font-bold shadow-[0_4px_16px_rgba(240,220,0,0.3)] active:scale-95 transition-transform shrink-0 cursor-pointer p-0"
-            aria-label="Create Party"
+            onClick={() => setIsCreateSheetOpen(true)}
+            className="w-11 h-11 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] flex items-center justify-center font-bold shadow-sm active:scale-95 transition-transform shrink-0 cursor-pointer p-0"
+            aria-label={isEs ? 'Crear o unirse' : 'Create or join'}
           >
             <Plus className="w-5 h-5 stroke-[2.5]" />
           </button>
@@ -119,20 +122,13 @@ export const HomeView: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mt-6">
+              <div className="mt-6">
                 <button
-                  onClick={() => setCurrentView('create-party')}
-                  className="accent-button flex items-center justify-center gap-2 py-3 px-5 rounded-full text-sm font-bold shadow-md cursor-pointer"
+                  onClick={() => setIsCreateSheetOpen(true)}
+                  className="accent-button flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold shadow-md cursor-pointer"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
-                  <span>{isEs ? 'Crear fiesta' : 'Create party'}</span>
-                </button>
-                <button
-                  onClick={() => setCurrentView('join-party')}
-                  className="pill-outline flex items-center justify-center gap-2 py-3 px-5 rounded-full text-sm font-bold cursor-pointer"
-                >
-                  <KeyRound className="w-4 h-4 stroke-[2]" />
-                  <span>{isEs ? 'Unirse con código' : 'Join with code'}</span>
+                  <span>{isEs ? 'Organizar una fiesta' : 'Host a party'}</span>
                 </button>
               </div>
             </div>
@@ -159,26 +155,11 @@ export const HomeView: React.FC = () => {
               {/* Gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent pointer-events-none" />
 
-              {/* Top Pill Tags & Favorite Action */}
-              <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+              {/* Top Date Pill */}
+              <div className="absolute top-4 left-4 z-10">
                 <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-[#F0DC00] text-[#171512] font-display font-extrabold text-xs shadow-sm">
                   {heroParty.date || (isEs ? 'Esta noche' : 'Tonight')}
                 </span>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsFavorited(!isFavorited);
-                  }}
-                  className="w-10 h-10 rounded-full glass-light flex items-center justify-center text-white border border-white/60 shadow-sm active:scale-90 transition-transform cursor-pointer"
-                  aria-label="Favorite party"
-                >
-                  <Heart
-                    className={`w-4 h-4 transition-colors ${
-                      isFavorited ? 'fill-[#F0DC00] text-[#F0DC00]' : 'text-white'
-                    }`}
-                  />
-                </button>
               </div>
 
               {/* Bottom Details Content */}
@@ -342,20 +323,15 @@ export const HomeView: React.FC = () => {
           {/* Upcoming Party Card */}
           {(() => {
             const upcomingParties = parties.slice(1);
-            if (upcomingParties.length === 0) {
               return (
-                <div
-                  onClick={() => setCurrentView('create-party')}
-                  className="rounded-[24px] p-5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-dashed border-black/15 dark:border-white/15 text-center cursor-pointer hover:border-[#F0DC00] transition-colors"
-                >
-                  <p className="font-bold text-sm text-[#171512] dark:text-white">
-                    {parties.length === 0
-                      ? (isEs ? 'No hay fiestas próximas. ¡Crea una!' : 'No upcoming parties. Create one!')
+                <div className="rounded-[24px] p-5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-dashed border-black/15 dark:border-white/15 text-center">
+                  <p className="font-semibold text-xs sm:text-sm text-[#6F6A62] dark:text-[#A8A196]">
+                    {parties.length <= 1
+                      ? (isEs ? 'No tienes más fiestas próximas agendadas.' : 'No other upcoming parties scheduled.')
                       : (isEs ? 'No tienes más fiestas programadas.' : 'No more upcoming parties scheduled.')}
                   </p>
                 </div>
               );
-            }
 
             const nextParty = upcomingParties[0];
             return (
@@ -421,6 +397,19 @@ export const HomeView: React.FC = () => {
           })()}
         </section>
       </div>
+
+      {/* Unified Create Action Sheet */}
+      <CreateActionSheet
+        isOpen={isCreateSheetOpen}
+        onClose={() => setIsCreateSheetOpen(false)}
+        onOpenCreateCrew={() => setIsCreateCrewOpen(true)}
+      />
+
+      {/* Create Crew Modal */}
+      <CreateCrewModal
+        isOpen={isCreateCrewOpen}
+        onClose={() => setIsCreateCrewOpen(false)}
+      />
     </div>
   );
 };

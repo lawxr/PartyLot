@@ -333,6 +333,13 @@ export const usePartyStore = create<PartyStoreState>()(
       setCurrentView: (view) => {
         set((state) => {
           if (state.currentView === view) return state;
+          if (typeof window !== 'undefined' && view !== 'splash') {
+            try {
+              window.history.pushState({ view }, '', window.location.pathname);
+            } catch {
+              // Ignore
+            }
+          }
           return {
             previousView: state.currentView,
             currentView: view,
@@ -341,6 +348,13 @@ export const usePartyStore = create<PartyStoreState>()(
       },
 
       selectParty: (partyId) => {
+        if (typeof window !== 'undefined') {
+          try {
+            window.history.pushState({ view: 'party-detail', partyId }, '', window.location.pathname);
+          } catch {
+            // Ignore
+          }
+        }
         set((state) => ({
           currentPartyId: partyId,
           previousView:
@@ -442,6 +456,13 @@ export const usePartyStore = create<PartyStoreState>()(
       },
 
       selectCrew: (crewId) => {
+        if (typeof window !== 'undefined') {
+          try {
+            window.history.pushState({ view: 'crew-detail', crewId }, '', window.location.pathname);
+          } catch {
+            // Ignore
+          }
+        }
         set((state) => ({
           currentCrewId: crewId,
           previousView: state.currentView,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, Users, Calendar, User } from 'lucide-react';
+import { Home, Users, Activity, User } from 'lucide-react';
 import { usePartyStore, MainTab } from '@/store/usePartyStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
@@ -17,7 +17,7 @@ export const TabBar: React.FC = () => {
   const tabs: { id: MainTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: 'home', label: isEs ? 'Inicio' : 'Home', icon: Home },
     { id: 'crews', label: 'Crews', icon: Users },
-    { id: 'activity', label: isEs ? 'Esta noche' : 'Tonight', icon: Calendar },
+    { id: 'activity', label: isEs ? 'Actividad' : 'Activity', icon: Activity },
     { id: 'profile', label: isEs ? 'Perfil' : 'Profile', icon: User },
   ];
 
@@ -52,12 +52,7 @@ export const TabBar: React.FC = () => {
                 {isActive && (
                   <motion.div
                     layoutId="activeTabBadge"
-                    className="absolute inset-0 rounded-[24px]"
-                    style={{
-                      background: 'linear-gradient(145deg, #FFE973, #FFCE18 68%, #F8BF0A)',
-                      boxShadow:
-                        '0 0 20px rgba(255, 212, 41, 0.5), 0 4px 12px rgba(235, 179, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.75)',
-                    }}
+                    className="absolute inset-0 rounded-[24px] bg-[#F0DC00] shadow-xs"
                     transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                   />
                 )}

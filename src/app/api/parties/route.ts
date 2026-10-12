@@ -185,6 +185,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const hostName = verifiedUser.name;
+    const hostAvatar = verifiedUser.avatar || null;
+
     // 3. Insert only: a party ID can never become an update selector.
     const { error: partyErr } = await supabase.from('parties').insert(
       {
@@ -198,7 +201,7 @@ export async function POST(request: NextRequest) {
         description,
         cover_image: coverImage,
         host_id: verifiedUser.userId,
-        host_name: verifiedUser.name,
+        host_name: hostName,
         pot_balance: 0,
         status: 'live',
       },
@@ -223,8 +226,8 @@ export async function POST(request: NextRequest) {
       {
         party_id: partyId,
         user_id: verifiedUser.userId,
-        name: verifiedUser.name,
-        avatar: verifiedUser.avatar,
+        name: hostName,
+        avatar: hostAvatar,
         role: 'host',
         status: 'going',
         nights_together: 1,
@@ -249,9 +252,9 @@ export async function POST(request: NextRequest) {
         id: `act-${Date.now()}`,
         party_id: partyId,
         type: 'join',
-        text: `${verifiedUser.name} created the party: ${title}`,
+        text: `${hostName} created the party: ${title}`,
         time: 'Just now',
-        avatar: verifiedUser.avatar,
+        avatar: hostAvatar,
       });
       activityErr = result.error;
     } catch (err) {

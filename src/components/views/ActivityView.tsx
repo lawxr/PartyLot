@@ -149,7 +149,7 @@ export const ActivityView: React.FC = () => {
           </div>
         ) : (
           filteredActivities.map((act) => {
-            const actor = resolveActivityActor(act, undefined, allMembers);
+            const actor = resolveActivityActor(act, undefined, allMembers, currentUser);
             const partyInfo = act.partyId ? partyMap.get(act.partyId) : null;
 
             return (

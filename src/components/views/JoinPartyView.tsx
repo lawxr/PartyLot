@@ -12,6 +12,8 @@ import { PrivyAuthModal } from '@/components/ui/PrivyAuthModal';
 import { validateServerInviteCode } from '@/services/supabaseService';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { QRScannerModal } from '@/components/ui/QRScannerModal';
+import { Avatar } from '@/components/ui/Avatar';
+import { DEFAULT_PARTY_COVER } from '@/data/mockData';
 import confetti from 'canvas-confetti';
 import { isPrivyConfigured } from '@/lib/runtimeMode';
 
@@ -41,6 +43,12 @@ export const JoinPartyView: React.FC = () => {
     title: string;
     location: string;
     code: string;
+    coverImage?: string | null;
+    date?: string | null;
+    time?: string | null;
+    description?: string | null;
+    hostName?: string | null;
+    hostId?: string | null;
   } | null>(null);
 
   const pendingPartyRef = useRef<Party | null>(null);
@@ -89,6 +97,12 @@ export const JoinPartyView: React.FC = () => {
               title: res.partyTitle || 'Private Gathering',
               location: res.partyLocation || 'Secret Location',
               code: fullCode,
+              coverImage: res.partyCoverImage,
+              date: res.partyDate,
+              time: res.partyTime,
+              description: res.partyDescription,
+              hostName: res.partyHostName,
+              hostId: res.partyHostId,
             });
             hydrateFromSupabase().catch(() => {});
           } else {
@@ -134,15 +148,24 @@ export const JoinPartyView: React.FC = () => {
           code: fullCode,
           title: serverPreview.title,
           location: serverPreview.location,
-          date: 'Upcoming',
-          time: 'TBA',
-          description: 'Private gathering invitation confirmed by server.',
-          coverImage: '',
-          members: [],
+          date: serverPreview.date || 'Upcoming',
+          time: serverPreview.time || 'TBA',
+          description: serverPreview.description || 'Private gathering invitation confirmed by server.',
+          coverImage: serverPreview.coverImage || DEFAULT_PARTY_COVER,
+          members: [
+            {
+              id: serverPreview.hostId || 'host',
+              name: serverPreview.hostName || 'Host',
+              avatar: '',
+              role: 'host',
+              status: 'going',
+              nightsTogether: 1,
+            },
+          ],
           potBalance: 0,
           status: 'upcoming',
-          hostId: 'host',
-          hostName: 'Host',
+          hostId: serverPreview.hostId || 'host',
+          hostName: serverPreview.hostName || 'Host',
           createdAt: new Date().toISOString(),
         }
       : null);
@@ -313,11 +336,14 @@ export const JoinPartyView: React.FC = () => {
                 <div className="relative h-64 sm:h-80 w-full overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={activeParty.coverImage}
+                    src={activeParty.coverImage || DEFAULT_PARTY_COVER}
                     alt={activeParty.title}
                     className="w-full h-full object-cover"
                     loading="eager"
                     decoding="async"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = DEFAULT_PARTY_COVER;
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#FFFDF8] via-[#FFFDF8]/30 to-black/20" />
 
@@ -336,22 +362,12 @@ export const JoinPartyView: React.FC = () => {
                   {/* Host info floating on bottom of image */}
                   {hostMember && (
                     <div className="absolute bottom-4 left-5 right-5 flex items-center gap-3 z-10">
-                      <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#F0DC00] shadow-md bg-[#FFFDF8] flex items-center justify-center shrink-0">
-                        {hostMember.avatar ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={hostMember.avatar}
-                            alt={hostMember.name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-[#F0DC00]/30 text-[#171512] font-black flex items-center justify-center text-sm">
-                            {hostMember.name ? hostMember.name.charAt(0).toUpperCase() : 'H'}
-                          </div>
-                        )}
-                      </div>
+                      <Avatar
+                        user={hostMember}
+                        size="lg"
+                        border="over-image"
+                        className="shadow-md shrink-0"
+                      />
                       <div className="min-w-0">
                         <span className="text-[11px] uppercase font-bold text-[#6F6A62] tracking-wider block truncate">
                           {t.joinParty.invitedBy(hostMember.name || 'Host')}

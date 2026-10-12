@@ -26,9 +26,9 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
   variant = 'light',
 }) => {
   const sizeMap = {
-    sm: 'w-6 h-6 -space-x-1.5 text-[10px]',
-    md: 'w-8 h-8 -space-x-2 text-xs',
-    lg: 'w-10 h-10 -space-x-2.5 text-sm',
+    sm: '-space-x-1.5 text-[10px]',
+    md: '-space-x-2 text-xs',
+    lg: '-space-x-2.5 text-sm',
   }[size];
 
   const avatarSize = {

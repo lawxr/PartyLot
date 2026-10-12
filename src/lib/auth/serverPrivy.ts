@@ -52,17 +52,43 @@ export async function verifyPrivyToken(authToken: string): Promise<VerifiedPrivy
     user?.linkedAccounts?.find((a) => a.type === 'wallet')?.address ||
     null;
 
-  const displayName =
+  let displayName =
     user?.google?.name ||
     (email ? email.split('@')[0] : 'PartyMember');
 
-  const handle = `@${displayName.toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
+  let handle = `@${displayName.toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
+  let avatar: string | null = null;
+
+  // Enrich with user's customized profile stored in Supabase users table
+  try {
+    const { getServerSupabase } = await import('@/lib/supabase/server');
+    const supabase = getServerSupabase();
+    const { data: dbUser } = await supabase
+      .from('users')
+      .select('name, handle, avatar')
+      .eq('id', claims.userId)
+      .maybeSingle();
+
+    if (dbUser) {
+      if (dbUser.name && dbUser.name.trim() && dbUser.name !== 'PartyMember' && dbUser.name !== 'Guest') {
+        displayName = dbUser.name.trim();
+      }
+      if (dbUser.handle && dbUser.handle.trim()) {
+        handle = dbUser.handle.trim();
+      }
+      if (dbUser.avatar && dbUser.avatar.trim()) {
+        avatar = dbUser.avatar.trim();
+      }
+    }
+  } catch {
+    // Graceful fallback to Privy profile when Supabase is unreachable or not configured
+  }
 
   return {
     userId: claims.userId,
     name: displayName,
     handle,
-    avatar: null,
+    avatar,
     walletAddress: wallet,
     claims,
   };

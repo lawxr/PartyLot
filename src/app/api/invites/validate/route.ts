@@ -60,12 +60,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(data, {
-      status: 200,
-      headers: {
-        'X-RateLimit-Remaining': String(rateLimit.remaining),
+    // Enrich invite validation payload with real party data from Supabase (cover_image, date, time, description, etc.)
+    let partyDetails: Record<string, unknown> | null = null;
+    if (data.party_id) {
+      const { data: pData } = await supabase
+        .from('parties')
+        .select('id, title, location, date, time, description, cover_image, host_name, host_id')
+        .eq('id', data.party_id)
+        .maybeSingle();
+
+      if (pData) {
+        partyDetails = pData;
+      }
+    }
+
+    return NextResponse.json(
+      {
+        ...data,
+        party_cover_image: (partyDetails?.cover_image as string) || null,
+        party_date: (partyDetails?.date as string) || null,
+        party_time: (partyDetails?.time as string) || null,
+        party_description: (partyDetails?.description as string) || null,
+        party_host_name: (partyDetails?.host_name as string) || null,
+        party_host_id: (partyDetails?.host_id as string) || null,
       },
-    });
+      {
+        status: 200,
+        headers: {
+          'X-RateLimit-Remaining': String(rateLimit.remaining),
+        },
+      }
+    );
   } catch (err) {
     console.error('Unexpected error validating invite code:', err);
     return NextResponse.json(

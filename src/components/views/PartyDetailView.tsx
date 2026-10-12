@@ -343,24 +343,21 @@ export const PartyDetailView: React.FC = () => {
               />
             </div>
 
-            {/* Real Attendees Avatar Stack with Social Graph Modal trigger */}
             <div className="flex items-center -space-x-1.5">
               {partyMembers.slice(0, 7).map((m, idx) => (
-                <button
+                <div
                   key={m.id || idx}
-                  onClick={() => setSelectedMember(m)}
-                  className="rounded-full border-2 border-white shadow-sm shrink-0 bg-black/40 cursor-pointer hover:scale-110 hover:z-20 transition-transform relative group focus:outline-none"
+                  className="shrink-0 relative hover:z-20 transition-transform hover:scale-110"
                   title={`${m.name} · ${m.nightsTogether || 1} ${isEs ? 'noches juntos' : 'nights together'}`}
-                  aria-label={`Ver vínculo social con ${m.name}`}
                 >
                   <Avatar
-                    user={{
-                      avatar: m.avatar,
-                      name: m.name,
-                    }}
+                    user={m}
                     size="sm"
+                    border="over-image"
+                    onClick={() => setSelectedMember(m)}
+                    className="shadow-sm"
                   />
-                </button>
+                </div>
               ))}
               {partyMembers.length > 7 && (
                 <div className="pl-3">
@@ -519,7 +516,7 @@ export const PartyDetailView: React.FC = () => {
                   };
                   const Icon = getActivityIcon(act.type);
 
-                  const actor = resolveActivityActor(act, hostName, partyMembers);
+                  const actor = resolveActivityActor(act, hostName, partyMembers, currentUser);
 
                   return (
                     <div

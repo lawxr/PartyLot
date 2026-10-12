@@ -143,7 +143,13 @@ const AvatarCropDialog: React.FC<AvatarCropDialogProps> = ({
       // Map scale from screen preview to export resolution
       const screenToExport = exportSize / VIEWPORT_SIZE;
 
+      // Ensure canvas is explicitly clipped to a perfect circle so exported image has transparent corners
       ctx.save();
+      ctx.beginPath();
+      ctx.arc(exportSize / 2, exportSize / 2, exportSize / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+
       // Move to center of canvas
       ctx.translate(exportSize / 2, exportSize / 2);
 
@@ -162,18 +168,17 @@ const AvatarCropDialog: React.FC<AvatarCropDialogProps> = ({
         async (blob) => {
           if (!blob) {
             canvas.toBlob(
-              async (jpegBlob) => {
-                if (!jpegBlob) {
+              async (pngBlob) => {
+                if (!pngBlob) {
                   setIsProcessing(false);
                   return;
                 }
-                const fallbackUrl = URL.createObjectURL(jpegBlob);
-                await onCropComplete(jpegBlob, fallbackUrl);
+                const fallbackUrl = URL.createObjectURL(pngBlob);
+                await onCropComplete(pngBlob, fallbackUrl);
                 setIsProcessing(false);
                 onClose();
               },
-              'image/jpeg',
-              0.88
+              'image/png'
             );
             return;
           }

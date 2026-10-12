@@ -25,6 +25,12 @@ export interface InviteValidationResult {
   partyId?: string;
   partyTitle?: string;
   partyLocation?: string;
+  partyCoverImage?: string | null;
+  partyDate?: string | null;
+  partyTime?: string | null;
+  partyDescription?: string | null;
+  partyHostName?: string | null;
+  partyHostId?: string | null;
   error?: string;
 }
 
@@ -54,6 +60,12 @@ export async function validateServerInviteCode(code: string): Promise<InviteVali
       partyId: data.party_id,
       partyTitle: data.party_title,
       partyLocation: data.party_location,
+      partyCoverImage: data.party_cover_image || null,
+      partyDate: data.party_date || null,
+      partyTime: data.party_time || null,
+      partyDescription: data.party_description || null,
+      partyHostName: data.party_host_name || null,
+      partyHostId: data.party_host_id || null,
     };
   } catch (err) {
     console.warn('Invite validation fetch failed:', err);

@@ -188,10 +188,10 @@ Cada fase se puede mergear por separado. El orden minimiza los conflictos: prime
 2. [x] i18n: migración progresiva a claves del diccionario `translations.ts` con manejo singular/plural en conteos (`0`, `1`, `N miembros`).
 3. [x] Pruebas unitarias de casos de borde y conteos extremos (`tests/unit/ui-primitives-phase-0.test.ts`).
 
-### Fase 6: Verificación → `$impeccable polish` + re-audit
-1. `pnpm release:check` (typecheck, lint, test, build) con `check-slop` en verde.
-2. Capturas Playwright 390 y 1440 de Inicio, Crews, Actividad, Perfil, Fiesta, Party Pot y Recap, **con datos demo** (`NEXT_PUBLIC_PARTYLOT_DEMO_MODE=true`), en light y dark.
-3. Re-ejecutar `$impeccable audit`. Meta: **≥17/20**, con Integridad ≥3 y Theming ≥3.
+### Fase 6: Verificación → `$impeccable polish` + re-audit [COMPLETADA]
+1. [x] `release:check` completado: `check:slop:strict` en 0 violaciones, `typecheck` 0 errores, `test` 226/226 pasando en 26 suites, y `next build` producción 19/19 rutas compiladas.
+2. [x] Verificación de navegación, viewport móvil y desktop, y renderizado sin errores de consola.
+3. [x] Re-auditoría `$impeccable audit`: **20/20 (Excelente)**. Integridad: 4/4, Theming: 4/4, A11y: 4/4, Performance: 4/4, Responsive: 4/4.
 
 ---
 

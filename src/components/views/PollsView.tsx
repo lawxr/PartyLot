@@ -112,14 +112,14 @@ export const PollsView: React.FC = () => {
             {partyPolls.map((poll) => (
               <div
                 key={poll.id}
-                className="p-5 sm:p-6 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.08] dark:border-white/10 rounded-[24px] shadow-[0_4px_20px_rgba(40,30,20,0.04)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] flex flex-col justify-between"
+                className="p-5 sm:p-6 bg-surface border border-divider rounded-[24px] shadow-xs flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196]">
+                    <span className="text-xs font-semibold text-secondary">
                       {t.polls.totalVotes(poll.totalVotes)}
                     </span>
-                    <span className="text-[11px] text-[#8E887E] dark:text-[#A8A196]">{poll.createdAt}</span>
+                    <span className="text-xs text-secondary">{poll.createdAt}</span>
                   </div>
 
                   <h3 className="font-display font-black text-xl sm:text-2xl text-[#171512] dark:text-white tracking-tight mb-5">

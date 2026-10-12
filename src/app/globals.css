@@ -14,12 +14,18 @@
   --color-bg-secondary: var(--bg-secondary);
   --color-surface-primary: var(--surface-primary);
   --color-surface-secondary: var(--surface-secondary);
+  --color-surface: var(--surface-primary);
+  --color-surface-muted: var(--surface-secondary);
 
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-tertiary: var(--text-tertiary);
 
   --color-divider: var(--divider);
+  --color-border-divider: var(--divider);
 
   --font-bubble: 'Modak', cursive;
   --font-display: 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;

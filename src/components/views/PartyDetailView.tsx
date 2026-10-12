@@ -413,7 +413,7 @@ export const PartyDetailView: React.FC = () => {
                   aria-label={action.label}
                 >
                   <Icon className={`w-5 h-5 sm:w-5.5 sm:h-5.5 ${isHovered ? 'stroke-[2.5]' : 'stroke-[2.2]'}`} />
-                  <span className="text-[10.5px] sm:text-[12px] tracking-tight leading-none truncate max-w-full">
+                  <span className="text-xs tracking-tight leading-none truncate max-w-full">
                     {action.label}
                   </span>
                 </motion.button>
@@ -439,39 +439,30 @@ export const PartyDetailView: React.FC = () => {
               className="min-w-0 cursor-pointer"
               onClick={() => setCurrentView('party-pot')}
             >
-              <span className="text-xs sm:text-[14px] font-medium text-[#161514] dark:text-white tracking-tight block leading-none">
+              <span className="text-xs sm:text-sm font-medium text-primary tracking-tight block leading-none">
                 {isEs ? 'Bote de la fiesta' : 'Party Pot'}
               </span>
               <div className="flex items-center gap-1.5 mt-1 mb-0.5">
-                <span className="font-display font-black text-xl sm:text-[26px] text-[#161514] dark:text-white tracking-tight leading-none">
-                  {(party?.potBalance ?? 0).toFixed(2)}
+                <span className="font-display font-black text-xl sm:text-[26px] text-primary tracking-tight leading-none">
+                  ${(party?.potBalance ?? 0).toFixed(2)}
                 </span>
-                <span className="text-[10px] font-bold text-[#836EF9] bg-[#836EF9]/10 dark:bg-[#836EF9]/20 px-1.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                  <MonadLogo size="xs" className="w-2.5 h-2.5" />
-                  MON
+                <span className="text-xs font-bold text-secondary bg-surface-secondary border border-divider px-2 py-0.5 rounded-full inline-flex items-center">
+                  {isEs ? 'Fondo común' : 'Pool'}
                 </span>
-                {monPrice && (
-                  <span className="text-[11px] font-mono font-medium text-[#706B66] dark:text-[#A8A196]">
-                    (≈ ${((party?.potBalance ?? 0) * monPrice).toFixed(2)} USD)
-                  </span>
-                )}
               </div>
-              <span className="text-[11px] sm:text-xs text-[#706B66] dark:text-[#A8A196] font-medium tracking-tight block truncate">
-                {isEs ? 'Fondo común del crew' : 'Shared crew fund'}
+              <span className="text-xs text-secondary font-medium tracking-tight block truncate">
+                {isEs ? 'Aportes del grupo para la noche' : 'Group pool for tonight'}
               </span>
             </div>
 
-            {/* Add Button with Yellow Gradient & Black Plus Badge */}
+            {/* Add Button with Flat Party Yellow */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsPotSheetOpen(true)}
-              className="flex items-center gap-1.5 sm:gap-2 rounded-full py-2 sm:py-2.5 px-3.5 sm:px-4 text-[#1B1915] text-xs sm:text-sm font-bold shadow-[0_5px_12px_rgba(213,163,0,0.25)] cursor-pointer shrink-0"
-              style={{
-                background: 'linear-gradient(135deg, #FFE967, #FFCF1E)',
-              }}
+              className="flex items-center gap-1.5 sm:gap-2 rounded-full py-2 sm:py-2.5 px-3.5 sm:px-4 bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow text-xs sm:text-sm font-bold shadow-xs cursor-pointer shrink-0"
               aria-label={isEs ? 'Añadir dinero al bote' : 'Add money to party pot'}
             >
-              <div className="w-4 h-4 rounded-full bg-[#191714] text-white flex items-center justify-center p-0.5">
+              <div className="w-4 h-4 rounded-full bg-black/80 text-white flex items-center justify-center p-0.5">
                 <Plus className="w-2.5 h-2.5 stroke-[3] text-white" />
               </div>
               <span>{isEs ? 'Añadir' : 'Add'}</span>
@@ -633,15 +624,15 @@ export const PartyDetailView: React.FC = () => {
                     <Gamepad2 className="w-4 h-4 stroke-[2.5]" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-[#171512] dark:text-white block">Who&apos;s Most Likely</span>
-                    <span className="text-[10px] text-[#6F6A62] dark:text-[#A8A196]">
+                    <span className="text-xs font-bold text-primary block">Who&apos;s Most Likely</span>
+                    <span className="text-xs text-secondary">
                       {partyMembers.length > 0
                         ? (isEs ? `${partyMembers.length} participantes` : `${partyMembers.length} active players`)
                         : (isEs ? 'Juegos de fiesta' : 'Party games')}
                     </span>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#8E887E]" />
+                <ChevronRight className="w-4 h-4 text-secondary" />
               </div>
             </div>
           </section>
@@ -710,10 +701,10 @@ export const PartyDetailView: React.FC = () => {
 
                   {/* Amount Value */}
                   <div className="flex items-baseline gap-1.5 select-none">
-                    <span className="font-display font-extrabold text-5xl sm:text-6xl text-[#171512] dark:text-white tracking-tight">
+                    <span className="font-display font-extrabold text-5xl sm:text-6xl text-primary tracking-tight">
                       {potAmount}
                     </span>
-                    <span className="font-display font-bold text-xl text-[#836EF9]">
+                    <span className="font-display font-bold text-xl text-primary">
                       MON
                     </span>
                   </div>
@@ -722,14 +713,14 @@ export const PartyDetailView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setPotAmount((prev) => Number((prev + 0.1).toFixed(2)))}
-                    className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 flex items-center justify-center text-2xl font-bold text-[#171512] dark:text-white active:scale-90 transition-transform cursor-pointer"
+                    className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/10 border border-divider flex items-center justify-center text-2xl font-bold text-primary active:scale-90 transition-transform cursor-pointer"
                   >
                     <Plus className="w-5 h-5 stroke-[2.5]" />
                   </button>
                 </div>
 
                 {monPrice !== null && (
-                  <span className="text-xs font-mono font-semibold text-[#6F6A62] dark:text-[#A8A196] mt-2">
+                  <span className="text-xs font-mono font-semibold text-secondary mt-2">
                     ≈ ${(potAmount * monPrice).toFixed(2)} USD
                   </span>
                 )}
@@ -744,8 +735,8 @@ export const PartyDetailView: React.FC = () => {
                     onClick={() => setPotAmount(preset)}
                     className={`py-2 rounded-full text-xs font-display font-bold transition-all cursor-pointer ${
                       potAmount === preset
-                        ? 'bg-[#F0DC00] text-[#171512] shadow-sm scale-102 font-extrabold'
-                        : 'bg-black/5 dark:bg-white/10 text-[#171512] dark:text-white border border-black/5 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/15'
+                        ? 'bg-party-yellow text-on-party-yellow shadow-xs scale-102 font-extrabold'
+                        : 'bg-black/5 dark:bg-white/10 text-primary border border-divider hover:bg-black/10 dark:hover:bg-white/15'
                     }`}
                   >
                     {preset} MON
@@ -754,14 +745,14 @@ export const PartyDetailView: React.FC = () => {
               </div>
 
               {/* Payment Source Selection Row */}
-              <div className="w-full p-3 rounded-2xl bg-white/70 dark:bg-white/5 border border-black/[0.06] dark:border-white/10 flex items-center justify-between mb-3 shadow-sm">
+              <div className="w-full p-3 rounded-2xl bg-surface border border-divider flex items-center justify-between mb-3 shadow-xs">
                 <div className="flex items-center gap-3">
                   <TokenLogo token="mon" size="md" />
                   <div className="text-left">
-                    <span className="font-display font-bold text-xs text-[#171512] dark:text-white block">
+                    <span className="font-display font-bold text-xs text-primary block">
                       MON · Monad
                     </span>
-                    <span className="text-[10px] text-[#6F6A62] dark:text-[#A8A196] font-medium block">
+                    <span className="text-xs text-secondary font-medium block">
                       {isEs ? 'Aporte directo al fondo común' : 'Direct deposit to crew fund'}
                     </span>
                   </div>
@@ -771,20 +762,20 @@ export const PartyDetailView: React.FC = () => {
 
               {/* User Connected Wallet Status Card */}
               {activeWallet ? (
-                <div className="w-full p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/10 mb-4 text-left">
+                <div className="w-full p-3 rounded-2xl bg-surface-secondary border border-divider mb-4 text-left">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#6F6A62] dark:text-[#A8A196]">
+                    <span className="text-secondary">
                       {isEs ? 'Firmando con tu cuenta:' : 'Signing with your account:'}
                     </span>
-                    <span className="font-mono font-bold text-[#171512] dark:text-white">
+                    <span className="font-mono font-bold text-primary">
                       {activeWallet.address.slice(0, 6)}...{activeWallet.address.slice(-4)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
-                    <span className="text-[#6F6A62] dark:text-[#A8A196]">
+                  <div className="flex items-center justify-between text-xs mt-1.5 pt-1.5 border-t border-divider">
+                    <span className="text-secondary">
                       {isEs ? 'Saldo disponible:' : 'Available balance:'}
                     </span>
-                    <span className="font-mono font-bold text-[#836EF9]">
+                    <span className="font-mono font-bold text-primary">
                       {userBalance !== null ? `${Number(userBalance).toFixed(4)} MON` : '...'}
                     </span>
                   </div>
@@ -805,7 +796,7 @@ export const PartyDetailView: React.FC = () => {
                       ? `Saldo insuficiente (${Number(userBalance).toFixed(4)} MON)`
                       : `Insufficient balance (${Number(userBalance).toFixed(4)} MON)`}
                   </p>
-                  <p className="text-[11px] opacity-80 mb-3">
+                  <p className="text-xs opacity-80 mb-3">
                     {isEs
                       ? 'Para transferir con tus fondos necesitas saldo de prueba.'
                       : 'To deposit with your own funds you need demo balance.'}
@@ -819,7 +810,7 @@ export const PartyDetailView: React.FC = () => {
                           toast.info(isEs ? 'Dirección copiada' : 'Address copied');
                         }
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 text-[11px] font-bold cursor-pointer transition-colors flex items-center gap-1.5"
+                      className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 text-xs font-bold cursor-pointer transition-colors flex items-center gap-1.5"
                     >
                       <Copy className="w-3 h-3" />
                       <span>{isEs ? 'Copiar Dirección' : 'Copy Address'}</span>
@@ -828,7 +819,7 @@ export const PartyDetailView: React.FC = () => {
                       type="button"
                       onClick={handleSponsoredDemoDeposit}
                       disabled={isPotSubmitting}
-                      className="px-3 py-1.5 rounded-xl bg-[#836EF9]/20 hover:bg-[#836EF9]/30 text-[#674FF4] dark:text-[#A78BFA] text-[11px] font-bold cursor-pointer transition-colors"
+                      className="px-3 py-1.5 rounded-xl bg-party-yellow/20 hover:bg-party-yellow/30 text-primary dark:text-party-yellow text-xs font-bold cursor-pointer transition-colors"
                     >
                       {isEs ? 'Aporte Demo (Patrocinado)' : 'Demo Deposit (Sponsored)'}
                     </button>
@@ -849,10 +840,10 @@ export const PartyDetailView: React.FC = () => {
                 type="button"
                 onClick={handleAddToPot}
                 disabled={isPotSubmitting}
-                className="w-full py-4 rounded-[22px] bg-[#F0DC00] hover:bg-[#E6D300] active:scale-98 text-[#171512] font-display font-extrabold text-base shadow-[0_8px_24px_rgba(240,220,0,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-[22px] bg-party-yellow hover:bg-party-yellow-hover active:scale-98 text-on-party-yellow font-display font-extrabold text-base shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 {isPotSubmitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-[#171512]" />
+                  <Loader2 className="w-5 h-5 animate-spin text-on-party-yellow" />
                 ) : (
                   <>
                     <Check className="w-5 h-5 stroke-[2.5]" />
@@ -862,7 +853,7 @@ export const PartyDetailView: React.FC = () => {
               </button>
 
               {/* Micro-copy footer */}
-              <p className="text-[11px] text-[#6F6A62] dark:text-[#A8A196] mt-3 font-medium">
+              <p className="text-xs text-secondary mt-3 font-medium">
                 {isEs ? 'Reparto justo. Más noches juntos.' : 'Split fairly. More nights together.'}
               </p>
             </motion.div>

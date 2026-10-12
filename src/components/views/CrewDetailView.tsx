@@ -21,6 +21,7 @@ import { uploadImageFile } from '@/services/storageService';
 import { Member } from '@/types';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { Avatar } from '@/components/ui/Avatar';
 
 export const CrewDetailView: React.FC = () => {
   const {
@@ -118,12 +119,12 @@ export const CrewDetailView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F2E8] text-[#171512] pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
+    <div className="min-h-screen bg-bg-primary text-primary pb-32 pt-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] mx-auto safe-top select-none w-full">
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between py-3 mb-4">
         <button
           onClick={() => setCurrentView('home')}
-          className="flex items-center gap-2 text-xs font-mono tracking-wider uppercase text-[#6F6A62] hover:text-[#171512] transition-colors cursor-pointer"
+          className="flex items-center gap-2 text-xs font-semibold text-secondary hover:text-primary transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{isEs ? 'Volver al Inicio' : 'Back to Dashboard'}</span>
@@ -134,7 +135,7 @@ export const CrewDetailView: React.FC = () => {
             variant="glass"
             size="sm"
             onClick={handleCopyInvite}
-            icon={copiedLink ? <Check className="w-4 h-4 text-[#B89600]" /> : <Share2 className="w-4 h-4 text-[#171512]" />}
+            icon={copiedLink ? <Check className="w-4 h-4 text-party-yellow" /> : <Share2 className="w-4 h-4 text-primary" />}
           >
             {copiedLink ? t.crewDetail.copied : t.crewDetail.copyLink}
           </GlassButton>
@@ -143,7 +144,7 @@ export const CrewDetailView: React.FC = () => {
             variant="accent"
             size="sm"
             onClick={() => setCurrentView('create-party')}
-            icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
+            icon={<Plus className="w-4 h-4 text-primary stroke-[3]" />}
           >
             {isEs ? 'Organizar Fiesta' : 'Host Gathering'}
           </GlassButton>
@@ -151,7 +152,7 @@ export const CrewDetailView: React.FC = () => {
       </div>
 
       {/* Hero Cover Banner */}
-      <div className="relative rounded-3xl overflow-hidden border border-black/5 h-72 sm:h-96 mb-8 group shadow-[0_8px_30px_rgba(40,30,20,0.06)]">
+      <div className="relative rounded-3xl overflow-hidden border border-black/5 dark:border-white/10 h-72 sm:h-96 mb-8 group shadow-xs">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={crew.coverImage}
@@ -163,7 +164,7 @@ export const CrewDetailView: React.FC = () => {
         {/* Content Overlay */}
         <div className="absolute inset-0 p-6 sm:p-10 flex flex-col justify-end">
           <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-xs font-mono font-bold text-[#171512] shadow-sm">
+            <span className="px-3 py-1 rounded-full bg-white/90 dark:bg-black/80 backdrop-blur-md text-xs font-mono font-bold text-primary shadow-xs">
               {crew.membersCount} {isEs ? 'MIEMBROS ACTIVOS' : 'ACTIVE MEMBERS'}
             </span>
             <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-xs text-white">
@@ -186,67 +187,67 @@ export const CrewDetailView: React.FC = () => {
 
       {/* Collective Metrics Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="p-4 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_4px_16px_rgba(40,30,20,0.03)] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#FFF5C0] border border-[#F0DC00]/50 flex items-center justify-center text-[#B89600]">
+        <div className="p-4 rounded-2xl bg-surface border border-divider shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-party-yellow/20 flex items-center justify-center text-text-primary dark:text-party-yellow">
             <Flame className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">
+            <span className="text-xs text-secondary block font-medium">
               {isEs ? 'Noches Juntos' : 'Nights Together'}
             </span>
-            <span className="font-display font-extrabold text-xl text-[#171512]">
+            <span className="font-display font-extrabold text-xl text-primary">
               {crew.nightsTogether ?? 1} {isEs ? 'noches' : 'nights'}
             </span>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_4px_16px_rgba(40,30,20,0.03)] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600">
+        <div className="p-4 rounded-2xl bg-surface border border-divider shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-surface-secondary flex items-center justify-center text-primary">
             <Coins className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">
+            <span className="text-xs text-secondary block font-medium">
               {isEs ? 'Gasto Compartido' : 'Shared Spend'}
             </span>
-            <span className="font-display font-extrabold text-xl text-[#171512]">${(crew.totalSpent ?? 0).toFixed(2)}</span>
+            <span className="font-display font-extrabold text-xl text-primary">${(crew.totalSpent ?? 0).toFixed(2)}</span>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_4px_16px_rgba(40,30,20,0.03)] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+        <div className="p-4 rounded-2xl bg-surface border border-divider shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-surface-secondary flex items-center justify-center text-primary">
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">
+            <span className="text-xs text-secondary block font-medium">
               {isEs ? 'Juego Favorito' : 'Top Party Game'}
             </span>
-            <span className="font-display font-extrabold text-sm sm:text-base text-[#171512] truncate max-w-[130px] block">
+            <span className="font-display font-extrabold text-sm sm:text-base text-primary truncate max-w-[130px] block">
               {crew.topGame || (isEs ? 'Ninguno aún' : 'None yet')}
             </span>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_4px_16px_rgba(40,30,20,0.03)] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+        <div className="p-4 rounded-2xl bg-surface border border-divider shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-surface-secondary flex items-center justify-center text-primary">
             <PartyPopper className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-[#6F6A62] block">
+            <span className="text-xs text-secondary block font-medium">
               {t.crewDetail.treasury}
             </span>
-            <span className="font-display font-extrabold text-xl text-emerald-700">${(crew.treasuryBalance ?? 0).toFixed(2)}</span>
+            <span className="font-display font-extrabold text-xl text-primary">${(crew.treasuryBalance ?? 0).toFixed(2)}</span>
           </div>
         </div>
       </div>
 
       {/* Sub-Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-[rgba(35,30,22,0.08)] pb-4 mb-6">
+      <div className="flex items-center gap-2 border-b border-divider pb-4 mb-6">
         <button
           onClick={() => setActiveSubTab('gatherings')}
           className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
             activeSubTab === 'gatherings'
-              ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
-              : 'text-[#6F6A62] hover:text-[#171512] bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)]'
+              ? 'bg-party-yellow text-primary shadow-xs'
+              : 'text-secondary hover:text-primary bg-surface border border-divider'
           }`}
         >
           <Calendar className="w-4 h-4" />
@@ -257,8 +258,8 @@ export const CrewDetailView: React.FC = () => {
           onClick={() => setActiveSubTab('members')}
           className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
             activeSubTab === 'members'
-              ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
-              : 'text-[#6F6A62] hover:text-[#171512] bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)]'
+              ? 'bg-party-yellow text-primary shadow-xs'
+              : 'text-secondary hover:text-primary bg-surface border border-divider'
           }`}
         >
           <Users className="w-4 h-4" />
@@ -269,8 +270,8 @@ export const CrewDetailView: React.FC = () => {
           onClick={() => setActiveSubTab('memories')}
           className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
             activeSubTab === 'memories'
-              ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
-              : 'text-[#6F6A62] hover:text-[#171512] bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)]'
+              ? 'bg-party-yellow text-primary shadow-xs'
+              : 'text-secondary hover:text-primary bg-surface border border-divider'
           }`}
         >
           <Camera className="w-4 h-4" />
@@ -282,12 +283,12 @@ export const CrewDetailView: React.FC = () => {
       {activeSubTab === 'gatherings' && (
         <div>
           {crewParties.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-sm">
-              <PartyPopper className="w-12 h-12 text-[#B89600] mx-auto mb-4 opacity-80" />
-              <h3 className="font-display font-extrabold text-2xl text-[#171512] mb-2">
+            <div className="p-12 text-center rounded-3xl bg-surface border border-divider shadow-xs">
+              <PartyPopper className="w-12 h-12 text-party-yellow mx-auto mb-4 opacity-90" />
+              <h3 className="font-display font-extrabold text-2xl text-primary mb-2">
                 {isEs ? 'No hay fiestas todavía' : 'No Gatherings Yet'}
               </h3>
-              <p className="text-sm text-[#6F6A62] max-w-md mx-auto mb-6">
+              <p className="text-sm text-secondary max-w-md mx-auto mb-6">
                 {isEs
                   ? 'Las fiestas fortalecen el Crew. Organiza el primer encuentro privado para este círculo.'
                   : 'Gatherings strengthen the Crew. Host the first private gathering for this circle.'}
@@ -296,7 +297,7 @@ export const CrewDetailView: React.FC = () => {
                 variant="accent"
                 size="md"
                 onClick={() => setCurrentView('create-party')}
-                icon={<Plus className="w-4 h-4 text-[#171512] stroke-[3]" />}
+                icon={<Plus className="w-4 h-4 text-primary stroke-[3]" />}
               >
                 {isEs ? `Crear fiesta para ${crew.name}` : `Host Party for ${crew.name}`}
               </GlassButton>
@@ -306,11 +307,11 @@ export const CrewDetailView: React.FC = () => {
               {crewParties.map((party) => (
                 <div
                   key={party.id}
-                  className="flex flex-col justify-between h-[340px] rounded-[24px] bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_4px_24px_rgba(40,30,20,0.04)] overflow-hidden cursor-pointer group hover:shadow-[0_12px_36px_rgba(40,30,20,0.08)] transition-all"
+                  className="flex flex-col justify-between h-[340px] rounded-[24px] bg-surface border border-divider shadow-xs overflow-hidden cursor-pointer group hover:shadow-sm transition-all"
                   onClick={() => selectParty(party.id)}
                 >
                   {/* Photo Top */}
-                  <div className="relative h-[180px] w-full overflow-hidden bg-[#F1EADF]">
+                  <div className="relative h-[180px] w-full overflow-hidden bg-bg-secondary">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={party.coverImage}
@@ -319,12 +320,12 @@ export const CrewDetailView: React.FC = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                     <div className="absolute top-3 left-3">
-                      <span className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-[10px] font-mono font-bold text-[#171512] shadow-sm">
+                      <span className="px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-xs font-mono font-bold text-primary shadow-xs">
                         CODE: {party.code}
                       </span>
                     </div>
                     <div className="absolute top-3 right-3">
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border border-emerald-500/30">
+                      <span className="px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-xs font-bold text-primary border border-divider shadow-xs">
                         ● {party.status}
                       </span>
                     </div>
@@ -333,24 +334,24 @@ export const CrewDetailView: React.FC = () => {
                   {/* Surface Bottom */}
                   <div className="p-5 flex-1 flex flex-col justify-between">
                     <div>
-                      <h3 className="font-display font-extrabold text-xl text-[#171512] mb-1 group-hover:text-[#B89600] transition-colors">
+                      <h3 className="font-display font-extrabold text-xl text-primary mb-1 group-hover:text-party-yellow transition-colors">
                         {party.title}
                       </h3>
-                      <div className="flex items-center gap-3 text-xs text-[#6F6A62] mb-3">
+                      <div className="flex items-center gap-3 text-xs text-secondary mb-3">
                         <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-[#B89600]" /> {party.date} · {party.time}
+                          <Calendar className="w-3.5 h-3.5 text-party-yellow" /> {party.date} · {party.time}
                         </span>
                         <span className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-[#B89600]" /> {party.location}
+                          <MapPin className="w-3.5 h-3.5 text-party-yellow" /> {party.location}
                         </span>
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-[rgba(35,30,22,0.06)] flex items-center justify-between">
-                      <span className="text-[11px] font-medium text-[#8E887E]">
+                    <div className="pt-3 border-t border-divider flex items-center justify-between">
+                      <span className="text-xs font-medium text-secondary">
                         {party.members.length} {isEs ? 'asistiendo' : 'going'} · ${party.potBalance.toFixed(2)} {isEs ? 'bote' : 'pot'}
                       </span>
-                      <span className="text-xs font-bold text-[#171512]">
+                      <span className="text-xs font-bold text-primary">
                         {isEs ? 'Entrar a la Fiesta →' : 'Enter Party →'}
                       </span>
                     </div>
@@ -366,14 +367,14 @@ export const CrewDetailView: React.FC = () => {
       {activeSubTab === 'members' && (
         <div>
           <div className="flex items-center justify-between mb-5">
-            <span className="text-xs font-mono uppercase tracking-wider text-[#6F6A62]">
-              {isEs ? 'RED DE CONFIANZA · AUTENTICADA EIP-712' : 'TRUST NETWORK · EIP-712 AUTHENTICATED'}
+            <span className="text-xs font-semibold text-secondary">
+              {isEs ? 'CÍRCULO DE CONFIANZA' : 'TRUST CIRCLE'}
             </span>
             <GlassButton
               variant="glass"
               size="sm"
               onClick={() => setIsInviteOpen(true)}
-              icon={<Plus className="w-4 h-4 text-[#171512]" />}
+              icon={<Plus className="w-4 h-4 text-primary" />}
             >
               {isEs ? 'Añadir Miembro' : 'Add Member'}
             </GlassButton>
@@ -395,43 +396,41 @@ export const CrewDetailView: React.FC = () => {
                     handle: m.handle,
                   })
                 }
-                className="p-4 rounded-2xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_4px_16px_rgba(40,30,20,0.03)] hover:shadow-md transition-all flex items-center justify-between cursor-pointer group active:scale-[0.99]"
+                className="p-4 rounded-2xl bg-surface border border-divider shadow-xs hover:shadow-sm transition-all flex items-center justify-between cursor-pointer group active:scale-[0.99]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#FFFDF8] shrink-0 flex items-center justify-center bg-[#F1EADF] shadow-sm">
-                    {m.avatar ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-[#FFF5C0] text-[#171512] flex items-center justify-center font-display font-black text-sm">
-                        {m.name ? m.name.charAt(0).toUpperCase() : 'M'}
-                      </div>
-                    )}
-                  </div>
+                  <Avatar
+                    user={{
+                      name: m.name,
+                      avatar: m.avatar,
+                      id: m.userId || m.id,
+                    }}
+                    size="lg"
+                  />
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h4 className="font-bold text-sm text-[#171512]">{m.name}</h4>
+                      <h4 className="font-bold text-sm text-primary">{m.name}</h4>
                       {m.role === 'owner' && (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-[#FFF5C0] text-[#8C7300] font-bold">
+                        <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-party-yellow/20 text-primary font-bold">
                           OWNER
                         </span>
                       )}
                       {m.role === 'admin' && (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-purple-100 text-purple-700 font-bold">
+                        <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-surface-secondary text-primary font-bold border border-divider">
                           ADMIN
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-[#8E887E] font-mono block">{m.handle}</span>
+                    <span className="text-xs text-secondary font-mono block">{m.handle}</span>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-xs font-bold text-[#171512] block">
+                  <span className="text-xs font-bold text-primary block">
                     {t.crewDetail.nightsTogether(m.nightsTogether || 1)}
                   </span>
                   {m.walletAddress && (
-                    <span className="text-[10px] font-mono text-[#8E887E]">{m.walletAddress.slice(0, 6)}...</span>
+                    <span className="text-xs font-mono text-tertiary">{m.walletAddress.slice(0, 6)}...</span>
                   )}
                 </div>
               </div>
@@ -441,37 +440,37 @@ export const CrewDetailView: React.FC = () => {
           {/* Add Member Modal */}
           {isInviteOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
-              <div className="w-full max-w-md rounded-3xl border border-[rgba(35,30,22,0.12)] bg-[#FFFDF8] p-6 shadow-2xl text-[#171512]">
-                <h3 className="font-display font-bold text-xl text-[#171512] mb-1">
+              <div className="w-full max-w-md rounded-3xl border border-divider bg-surface p-6 shadow-xl text-primary">
+                <h3 className="font-display font-bold text-xl text-primary mb-1">
                   {isEs ? `Añadir Miembro a ${crew.name}` : `Add Member to ${crew.name}`}
                 </h3>
-                <p className="text-xs text-[#6F6A62] mb-4">
+                <p className="text-xs text-secondary mb-4">
                   {isEs ? 'Añade a un amigo directamente a tu círculo de confianza.' : 'Add a friend directly to your trust circle.'}
                 </p>
                 <form onSubmit={handleAddMember} className="space-y-4">
                   <div>
-                    <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1">
+                    <label className="block text-xs font-semibold text-secondary mb-1">
                       {isEs ? 'Nombre' : 'Name'}
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder={isEs ? 'Ej. Satoshi' : 'e.g. Satoshi'}
+                      placeholder={isEs ? 'Ej. Alex' : 'e.g. Alex'}
                       value={newMemberName}
                       onChange={(e) => setNewMemberName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.12)] text-[#171512] text-sm outline-none focus:border-[#F0DC00]"
+                      className="w-full px-4 py-2.5 rounded-xl bg-bg-primary border border-divider text-primary text-sm outline-none focus:border-party-yellow"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1">
+                    <label className="block text-xs font-semibold text-secondary mb-1">
                       {isEs ? 'Usuario / Red Social' : 'Social Handle'}
                     </label>
                     <input
                       type="text"
-                      placeholder={isEs ? 'Ej. @satoshi.monad' : 'e.g. @satoshi.monad'}
+                      placeholder={isEs ? 'Ej. @alex' : 'e.g. @alex'}
                       value={newMemberHandle}
                       onChange={(e) => setNewMemberHandle(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.12)] text-[#171512] text-sm outline-none focus:border-[#F0DC00]"
+                      className="w-full px-4 py-2.5 rounded-xl bg-bg-primary border border-divider text-primary text-sm outline-none focus:border-party-yellow"
                     />
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
@@ -493,26 +492,26 @@ export const CrewDetailView: React.FC = () => {
       {activeSubTab === 'memories' && (
         <div>
           <div className="flex items-center justify-between mb-5">
-            <span className="text-xs font-mono uppercase tracking-wider text-[#6F6A62]">
-              {isEs ? 'LÍNEA DE TIEMPO COLECTIVA Y CÁPSULA DEL TIEMPO' : 'COLLECTIVE TIMELINE & TIME CAPSULE'}
+            <span className="text-xs font-semibold text-secondary">
+              {isEs ? 'LÍNEA DE TIEMPO Y CÁPSULA DE RECUERDOS' : 'TIMELINE & MEMORY CAPSULE'}
             </span>
             <GlassButton
               variant="glass"
               size="sm"
               onClick={() => setIsMemoryOpen(true)}
-              icon={<Camera className="w-4 h-4 text-[#171512]" />}
+              icon={<Camera className="w-4 h-4 text-primary" />}
             >
               {isEs ? 'Añadir Recuerdo' : 'Add Memory'}
             </GlassButton>
           </div>
 
           {(crew.memories || []).length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-sm">
-              <Camera className="w-12 h-12 text-[#B89600] mx-auto mb-4 opacity-80" />
-              <h3 className="font-display font-extrabold text-2xl text-[#171512] mb-2">
+            <div className="p-12 text-center rounded-3xl bg-surface border border-divider shadow-xs">
+              <Camera className="w-12 h-12 text-party-yellow mx-auto mb-4 opacity-90" />
+              <h3 className="font-display font-extrabold text-2xl text-primary mb-2">
                 {isEs ? 'Sin Recuerdos Guardados Aún' : 'No Memories Stored Yet'}
               </h3>
-              <p className="text-sm text-[#6F6A62] max-w-md mx-auto mb-6">
+              <p className="text-sm text-secondary max-w-md mx-auto mb-6">
                 {isEs
                   ? 'Sube los momentos de tu grupo después de cada fiesta para inmortalizar el legado de la crew.'
                   : 'Upload your group moments after each gathering to cement the crew’s legacy.'}
@@ -521,7 +520,7 @@ export const CrewDetailView: React.FC = () => {
                 variant="accent"
                 size="md"
                 onClick={() => setIsMemoryOpen(true)}
-                icon={<Camera className="w-4 h-4 text-[#171512] stroke-[3]" />}
+                icon={<Camera className="w-4 h-4 text-primary stroke-[3]" />}
               >
                 {isEs ? 'Subir Primer Recuerdo' : 'Upload First Memory'}
               </GlassButton>
@@ -531,25 +530,25 @@ export const CrewDetailView: React.FC = () => {
               {crew.memories.map((mem) => (
                 <div
                   key={mem.id}
-                  className="rounded-3xl overflow-hidden bg-[#FFFDF8] border border-[rgba(35,30,22,0.08)] shadow-[0_4px_20px_rgba(40,30,20,0.04)] flex flex-col group"
+                  className="rounded-3xl overflow-hidden bg-surface border border-divider shadow-xs flex flex-col group"
                 >
-                  <div className="relative aspect-video overflow-hidden bg-[#F1EADF]">
+                  <div className="relative aspect-video overflow-hidden bg-bg-secondary">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={mem.imageUrl}
                       alt={mem.caption}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-[10px] font-mono font-bold text-[#171512] shadow-sm">
+                    <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-xs font-mono font-bold text-primary shadow-xs">
                       {mem.partyTitle || crew.name}
                     </div>
                   </div>
 
                   <div className="p-4 flex-1 flex flex-col justify-between">
-                    <p className="text-sm text-[#171512] font-semibold mb-3 leading-relaxed">
+                    <p className="text-sm text-primary font-semibold mb-3 leading-relaxed">
                       &quot;{mem.caption}&quot;
                     </p>
-                    <div className="flex items-center justify-between text-[11px] text-[#8E887E] border-t border-[rgba(35,30,22,0.06)] pt-3">
+                    <div className="flex items-center justify-between text-xs text-secondary border-t border-divider pt-3">
                       <span>{isEs ? 'Subido por' : 'Uploaded by'} {mem.uploadedBy}</span>
                       <span>{mem.uploadedAt}</span>
                     </div>
@@ -562,11 +561,11 @@ export const CrewDetailView: React.FC = () => {
           {/* Add Memory Modal */}
           {isMemoryOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
-              <div className="w-full max-w-md rounded-3xl border border-[rgba(35,30,22,0.12)] bg-[#FFFDF8] p-6 shadow-2xl text-[#171512]">
-                <h3 className="font-display font-bold text-xl text-[#171512] mb-1">
+              <div className="w-full max-w-md rounded-3xl border border-divider bg-surface p-6 shadow-xl text-primary">
+                <h3 className="font-display font-bold text-xl text-primary mb-1">
                   {isEs ? 'Añadir Foto de Recuerdo' : 'Add Photo Memory'}
                 </h3>
-                <p className="text-xs text-[#6F6A62] mb-4">
+                <p className="text-xs text-secondary mb-4">
                   {isEs ? 'Publica un recuerdo de una fiesta reciente.' : 'Post a memory from a recent gathering.'}
                 </p>
                 <form onSubmit={handleAddMemory} className="space-y-4">
@@ -580,13 +579,13 @@ export const CrewDetailView: React.FC = () => {
                   />
 
                   <div>
-                    <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1.5 flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-secondary mb-1.5 flex items-center justify-between">
                       <span>{isEs ? 'Foto' : 'Photo'}</span>
                       <button
                         type="button"
                         onClick={() => memoryFileInputRef.current?.click()}
                         disabled={isUploadingMemory}
-                        className="text-xs text-[#B89600] font-bold hover:underline cursor-pointer disabled:opacity-50"
+                        className="text-xs text-primary font-bold hover:underline cursor-pointer disabled:opacity-50"
                       >
                         {isUploadingMemory
                           ? (isEs ? 'Subiendo...' : 'Uploading...')
@@ -595,7 +594,7 @@ export const CrewDetailView: React.FC = () => {
                     </label>
 
                     {memoryUrl ? (
-                      <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-black/10 mb-2 group">
+                      <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 mb-2 group">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={memoryUrl} alt="Memory preview" className="w-full h-full object-cover" />
                         <button
@@ -609,17 +608,17 @@ export const CrewDetailView: React.FC = () => {
                     ) : (
                       <div
                         onClick={() => memoryFileInputRef.current?.click()}
-                        className="w-full h-28 rounded-2xl border-2 border-dashed border-black/15 hover:border-[#F0DC00] bg-[#F7F2E8] flex flex-col items-center justify-center cursor-pointer transition-all mb-2"
+                        className="w-full h-28 rounded-2xl border-2 border-dashed border-divider hover:border-party-yellow bg-bg-primary flex flex-col items-center justify-center cursor-pointer transition-all mb-2"
                       >
                         {isUploadingMemory ? (
-                          <div className="w-6 h-6 border-2 border-[#F0DC00] border-t-transparent rounded-full animate-spin" />
+                          <div className="w-6 h-6 border-2 border-party-yellow border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <>
-                            <Camera className="w-6 h-6 text-[#B89600] mb-1.5" />
-                            <span className="text-xs font-bold text-[#171512]">
+                            <Camera className="w-6 h-6 text-party-yellow mb-1.5" />
+                            <span className="text-xs font-bold text-primary">
                               {isEs ? 'Seleccionar o tomar foto' : 'Select or take photo'}
                             </span>
-                            <span className="text-[10px] text-[#8E887E]">
+                            <span className="text-xs text-secondary">
                               {isEs ? 'PNG, JPG o WEBP hasta 10MB' : 'PNG, JPG or WEBP up to 10MB'}
                             </span>
                           </>
@@ -633,7 +632,7 @@ export const CrewDetailView: React.FC = () => {
 
                   </div>
                   <div>
-                    <label className="block text-xs uppercase font-mono text-[#6F6A62] mb-1">
+                    <label className="block text-xs font-semibold text-secondary mb-1">
                       {isEs ? 'Descripción / Momento' : 'Caption / Moment'}
                     </label>
                     <input
@@ -642,7 +641,7 @@ export const CrewDetailView: React.FC = () => {
                       placeholder={isEs ? 'Ej. Atardecer en el rooftop con la crew' : 'e.g. Sunrise rooftop set on the terrace'}
                       value={memoryCaption}
                       onChange={(e) => setMemoryCaption(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-[#F7F2E8] border border-[rgba(35,30,22,0.1)] text-[#171512] text-sm outline-none focus:border-[#F0DC00]"
+                      className="w-full px-4 py-2.5 rounded-xl bg-bg-primary border border-divider text-primary text-sm outline-none focus:border-party-yellow"
                     />
                   </div>
                   <div className="flex justify-end gap-3 pt-2">

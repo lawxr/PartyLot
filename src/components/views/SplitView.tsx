@@ -397,7 +397,7 @@ export const SplitView: React.FC = () => {
                   {member.type === 'debtor' && (
                     <div className="bg-[#EBF7EE] dark:bg-emerald-950/40 border border-[#BDE8CA] dark:border-emerald-800/50 rounded-2xl px-2.5 py-1 flex items-center gap-2 shadow-2xs">
                       <div className="text-left">
-                        <span className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 leading-none block mb-0.5">
+                        <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 leading-none block mb-0.5">
                           {t.split.youWillReceive}
                         </span>
                         <span className="font-display font-black text-sm text-emerald-700 dark:text-emerald-400 leading-none block">
@@ -482,10 +482,10 @@ export const SplitView: React.FC = () => {
 
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <span className="font-display font-bold text-xs text-[#171512] dark:text-white block">
+                          <span className="font-display font-bold text-xs text-primary block">
                             ${memberAmount.toFixed(2)}
                           </span>
-                          <span className="text-[10px] text-[#8A8173] dark:text-[#A8A196] font-medium">
+                          <span className="text-xs text-secondary font-medium">
                             {weight}x share
                           </span>
                         </div>
@@ -594,54 +594,54 @@ export const SplitView: React.FC = () => {
 
           <div className="grid grid-cols-3 gap-2.5">
             {/* Drinks */}
-            <div className="p-3 rounded-[20px] bg-[#FFFDF8] dark:bg-[#1C1A16] border border-[rgba(35,30,22,0.06)] dark:border-white/10 shadow-xs flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-[#FFE600] flex items-center justify-center shrink-0 text-[#171512]">
+            <div className="p-3 rounded-[20px] bg-surface border border-divider shadow-xs flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-full bg-party-yellow/20 flex items-center justify-center shrink-0 text-text-primary dark:text-party-yellow">
                 <Wine className="w-4 h-4 stroke-[2.2]" />
               </div>
               <div className="min-w-0">
-                <span className="text-[11px] font-medium text-[#8A8173] dark:text-[#A8A196] leading-none mb-1 block truncate">
+                <span className="text-xs font-medium text-secondary leading-none mb-1 block truncate">
                   {t.split.drinks}
                 </span>
-                <span className="font-display font-bold text-xs sm:text-sm text-[#171512] dark:text-white leading-none mb-0.5 block">
+                <span className="font-display font-bold text-xs sm:text-sm text-primary leading-none mb-0.5 block">
                   ${drinksTotal.toFixed(2)}
                 </span>
-                <span className="text-[10px] font-medium text-[#8A8173] dark:text-[#A8A196] leading-none block">
+                <span className="text-xs font-medium text-secondary leading-none block">
                   {drinksPercent}%
                 </span>
               </div>
             </div>
 
             {/* Snacks */}
-            <div className="p-3 rounded-[20px] bg-[#FFFDF8] dark:bg-[#1C1A16] border border-[rgba(35,30,22,0.06)] dark:border-white/10 shadow-xs flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-[#FF7A00]/20 flex items-center justify-center shrink-0 text-[#E06000]">
+            <div className="p-3 rounded-[20px] bg-surface border border-divider shadow-xs flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-full bg-surface-secondary flex items-center justify-center shrink-0 text-primary">
                 <Pizza className="w-4 h-4 stroke-[2.2]" />
               </div>
               <div className="min-w-0">
-                <span className="text-[11px] font-medium text-[#8A8173] dark:text-[#A8A196] leading-none mb-1 block truncate">
+                <span className="text-xs font-medium text-secondary leading-none mb-1 block truncate">
                   {t.split.snacks}
                 </span>
-                <span className="font-display font-bold text-xs sm:text-sm text-[#171512] dark:text-white leading-none mb-0.5 block">
+                <span className="font-display font-bold text-xs sm:text-sm text-primary leading-none mb-0.5 block">
                   ${snacksTotal.toFixed(2)}
                 </span>
-                <span className="text-[10px] font-medium text-[#8A8173] dark:text-[#A8A196] leading-none block">
+                <span className="text-xs font-medium text-secondary leading-none block">
                   {snacksPercent}%
                 </span>
               </div>
             </div>
 
             {/* Ride */}
-            <div className="p-3 rounded-[20px] bg-[#FFFDF8] dark:bg-[#1C1A16] border border-[rgba(35,30,22,0.06)] dark:border-white/10 shadow-xs flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-[#EDE5FF] dark:bg-[#6B46C1]/25 flex items-center justify-center shrink-0 text-[#6B46C1] dark:text-[#A78BFA]">
+            <div className="p-3 rounded-[20px] bg-surface border border-divider shadow-xs flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-full bg-surface-secondary flex items-center justify-center shrink-0 text-primary">
                 <Car className="w-4 h-4 stroke-[2.2]" />
               </div>
               <div className="min-w-0">
-                <span className="text-[11px] font-medium text-[#8A8173] dark:text-[#A8A196] leading-none mb-1 block truncate">
+                <span className="text-xs font-medium text-secondary leading-none mb-1 block truncate">
                   {t.split.ride}
                 </span>
-                <span className="font-display font-bold text-xs sm:text-sm text-[#171512] dark:text-white leading-none mb-0.5 block">
+                <span className="font-display font-bold text-xs sm:text-sm text-primary leading-none mb-0.5 block">
                   ${rideTotal.toFixed(2)}
                 </span>
-                <span className="text-[10px] font-medium text-[#8A8173] dark:text-[#A8A196] leading-none block">
+                <span className="text-xs font-medium text-secondary leading-none block">
                   {ridePercent}%
                 </span>
               </div>

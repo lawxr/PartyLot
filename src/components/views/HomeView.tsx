@@ -93,7 +93,7 @@ export const HomeView: React.FC = () => {
           >
             <Bell className="w-5 h-5 stroke-[2.2]" />
             {unreadNotificationsCount > 0 && !isNotificationsOpen && (
-              <span className="min-w-4.5 h-4.5 px-1 rounded-full bg-[#F0DC00] text-[#171512] font-black text-[10px] leading-tight flex items-center justify-center border-2 border-[#F7F2E8] dark:border-[#12110E] absolute -top-0.5 -right-0.5 shadow-xs">
+              <span className="min-w-4.5 h-4.5 px-1 rounded-full bg-party-yellow text-on-party-yellow font-black text-[11px] leading-tight flex items-center justify-center border-2 border-[#F7F2E8] dark:border-[#12110E] absolute -top-0.5 -right-0.5 shadow-xs">
                 {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
               </span>
             )}
@@ -281,21 +281,21 @@ export const HomeView: React.FC = () => {
                   </div>
 
                   {/* Bottom on mobile / Right text info on desktop */}
-                  <div className="p-2.5 lg:px-3.5 lg:py-2 bg-[#FFFDF8] dark:bg-[#1C1A16] flex flex-col justify-between flex-1 min-w-0">
+                  <div className="p-2.5 lg:px-3.5 lg:py-2 bg-surface flex flex-col justify-between flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-display font-bold text-xs sm:text-sm text-[#171512] dark:text-white truncate">
+                        <h4 className="font-display font-bold text-xs sm:text-sm text-primary truncate">
                           {crew.name}
                         </h4>
-                        <p className="text-[10px] sm:text-[11px] text-[#6F6A62] dark:text-[#A8A196] font-medium mt-0.5">
+                        <p className="text-xs text-secondary font-medium mt-0.5">
                           {crew.membersCount} {isEs ? 'miembros' : 'members'}
                         </p>
                       </div>
-                      <ChevronRight className="hidden lg:block w-4 h-4 text-[#8E887E] dark:text-[#A8A196] group-hover:translate-x-0.5 transition-transform shrink-0" />
+                      <ChevronRight className="hidden lg:block w-4 h-4 text-secondary group-hover:translate-x-0.5 transition-transform shrink-0" />
                     </div>
 
                     {/* Tiny Avatar Stack */}
-                    <div className="flex items-center -space-x-1.5 mt-2 pt-1 border-t border-black/[0.05] dark:border-white/10 lg:mt-1 lg:pt-0.5 lg:border-t-0">
+                    <div className="flex items-center -space-x-1.5 mt-2 pt-1 border-t border-divider lg:mt-1 lg:pt-0.5 lg:border-t-0">
                       {(crew.members && crew.members.length > 0 ? crew.members.slice(0, 3) : []).map((m, idx) => (
                         <Avatar
                           key={m.id || idx}
@@ -305,7 +305,7 @@ export const HomeView: React.FC = () => {
                         />
                       ))}
                       {(crew.membersCount || 0) > 3 && (
-                        <span className="text-[9px] font-bold text-[#8E887E] dark:text-[#A8A196] pl-1.5">
+                        <span className="text-[11px] font-bold text-secondary pl-1.5">
                           +{crew.membersCount - 3}
                         </span>
                       )}
@@ -371,7 +371,7 @@ export const HomeView: React.FC = () => {
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white text-center p-1">
-                    <span className="text-[10px] font-extrabold tracking-wider uppercase opacity-90 block leading-tight">
+                    <span className="text-xs font-bold uppercase opacity-90 block leading-tight">
                       {nextParty.date}
                     </span>
                   </div>
@@ -379,10 +379,10 @@ export const HomeView: React.FC = () => {
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-display font-black text-sm sm:text-base text-[#171512] dark:text-white truncate">
+                  <h4 className="font-display font-black text-sm sm:text-base text-primary truncate">
                     {nextParty.title}
                   </h4>
-                  <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] font-semibold mt-0.5 mb-2 truncate">
+                  <p className="text-xs text-secondary font-semibold mt-0.5 mb-2 truncate">
                     {nextParty.time} · {nextParty.location}
                   </p>
 
@@ -397,7 +397,7 @@ export const HomeView: React.FC = () => {
                       />
                     ))}
                     {(nextParty.members || []).length > 4 && (
-                      <span className="text-[10px] font-bold text-[#8E887E] dark:text-[#A8A196] pl-2">
+                      <span className="text-[11px] font-bold text-secondary pl-2">
                         +{nextParty.members.length - 4}
                       </span>
                     )}

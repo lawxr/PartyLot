@@ -81,17 +81,17 @@ export const GamesView: React.FC = () => {
 
       <main className="px-4 sm:px-6 max-w-lg md:max-w-2xl lg:max-w-6xl mx-auto w-full pt-1">
         {/* Mobile Party Banner (Hidden on desktop) */}
-        <div className="lg:hidden mb-4 p-4 rounded-3xl bg-white/70 dark:bg-white/[0.04] border border-black/8 dark:border-white/10 shadow-sm backdrop-blur-md">
+        <div className="lg:hidden mb-4 p-4 rounded-3xl bg-surface border border-divider shadow-xs backdrop-blur-md">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] uppercase font-black tracking-widest text-[#6F6A62] dark:text-[#A8A196]">
+              <span className="w-2 h-2 rounded-full bg-party-yellow animate-pulse" />
+              <span className="text-xs font-semibold text-secondary">
                 {party?.title || (isEs ? 'Fiesta Activa' : 'Active Gathering')}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F0DC00]/20 border border-[#F0DC00]/40 text-xs font-mono font-black text-[#171512] dark:text-white">
-              <Coins className="w-3.5 h-3.5 text-[#F0DC00]" />
-              <span>{potBalance.toFixed(2)} MON</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-party-yellow/20 border border-party-yellow/40 text-xs font-mono font-bold text-primary">
+              <Coins className="w-3.5 h-3.5 text-party-yellow" />
+              <span>${potBalance.toFixed(2)}</span>
             </div>
           </div>
 
@@ -107,7 +107,7 @@ export const GamesView: React.FC = () => {
                     />
                   ))}
                 </div>
-              <span className="ml-2 text-xs font-bold text-[#6F6A62] dark:text-[#A8A196]">
+              <span className="ml-2 text-xs font-bold text-secondary">
                 {members.length} {isEs ? 'en la sala' : 'playing'}
               </span>
             </div>
@@ -115,7 +115,7 @@ export const GamesView: React.FC = () => {
             {/* Quick Reward Winner button */}
             <button
               onClick={() => setIsRewardModalOpen(true)}
-              className="py-1.5 px-3 rounded-full bg-[#836EF9] hover:bg-[#7257F2] text-white text-xs font-black flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+              className="py-1.5 px-3 rounded-full bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow text-xs font-black flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
             >
               <Trophy className="w-3.5 h-3.5" />
               <span>{isEs ? 'Premiar' : 'Reward'}</span>
@@ -148,36 +148,36 @@ export const GamesView: React.FC = () => {
           {/* Left Column: Party Context & Games Navigation (Desktop Sidebar) */}
           <aside className="hidden lg:block lg:col-span-4 xl:col-span-4 space-y-4">
             {/* Party Context Card */}
-            <div className="p-5 rounded-3xl bg-white/70 dark:bg-white/[0.04] border border-black/8 dark:border-white/10 shadow-sm backdrop-blur-md">
+            <div className="p-5 rounded-3xl bg-surface border border-divider shadow-xs backdrop-blur-md">
               <div className="flex items-center gap-2 mb-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#836EF9] dark:text-[#A78BFA] flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
+                <span className="w-2.5 h-2.5 rounded-full bg-party-yellow animate-pulse" />
+                <span className="text-xs font-semibold text-secondary flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-party-yellow" />
                   {isEs ? 'FIESTA EN CURSO' : 'LIVE GATHERING'}
                 </span>
               </div>
 
-              <h2 className="font-display font-black text-xl text-[#171512] dark:text-white tracking-tight leading-snug">
+              <h2 className="font-display font-black text-xl text-primary tracking-tight leading-snug">
                 {party?.title || (isEs ? 'Fiesta Privada' : 'Private Party')}
               </h2>
 
-              <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] mt-1 line-clamp-2">
-                {party?.description || (isEs ? 'Minijuegos sociales sincronizados en vivo con el Social Graph.' : 'Social party games synced live to the Social Graph.')}
+              <p className="text-xs text-secondary mt-1 line-clamp-2">
+                {party?.description || (isEs ? 'Minijuegos sociales sincronizados en vivo con tu grupo.' : 'Social party games synced live with your crew.')}
               </p>
 
               {/* Pot Balance Banner */}
-              <div className="mt-4 p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] border border-black/8 dark:border-white/10 flex items-center justify-between">
+              <div className="mt-4 p-3.5 rounded-2xl bg-surface-secondary border border-divider flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-[#6F6A62] dark:text-[#A8A196] block">
-                    {isEs ? 'Party Pot (Monad):' : 'Party Pot (Monad):'}
+                  <span className="text-xs font-semibold text-secondary block">
+                    {isEs ? 'Bote de la fiesta:' : 'Party Pot:'}
                   </span>
-                  <span className="font-mono font-black text-lg text-[#171512] dark:text-white">
-                    {potBalance.toFixed(2)} MON
+                  <span className="font-mono font-bold text-lg text-primary">
+                    ${potBalance.toFixed(2)}
                   </span>
                 </div>
                 <button
                   onClick={() => setIsRewardModalOpen(true)}
-                  className="py-2 px-3 rounded-xl bg-[#836EF9] hover:bg-[#7257F2] text-white text-xs font-black flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+                  className="py-2 px-3 rounded-xl bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow text-xs font-black flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
                 >
                   <Trophy className="w-3.5 h-3.5" />
                   <span>{isEs ? 'Premiar Ganador' : 'Reward Winner'}</span>
@@ -214,8 +214,8 @@ export const GamesView: React.FC = () => {
             </div>
 
             {/* Games Selector Card List (Desktop Sidebar) */}
-            <div className="p-3 rounded-3xl bg-white/70 dark:bg-white/[0.04] border border-black/8 dark:border-white/10 shadow-sm backdrop-blur-md space-y-1.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196] px-3 pt-2 block">
+            <div className="p-3 rounded-3xl bg-surface border border-divider shadow-xs backdrop-blur-md space-y-1.5">
+              <span className="text-xs font-semibold text-secondary px-3 pt-2 block">
                 {isEs ? 'CATÁLOGO DE JUEGOS' : 'GAME CATALOG'}
               </span>
 
@@ -228,31 +228,31 @@ export const GamesView: React.FC = () => {
                     onClick={() => setActiveGame(g.id)}
                     className={`w-full p-3 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-left ${
                       isActive
-                        ? 'bg-[#F0DC00] text-[#171512] shadow-sm font-bold'
-                        : 'hover:bg-black/5 dark:hover:bg-white/5 text-[#6F6A62] dark:text-[#A8A196]'
+                        ? 'bg-party-yellow text-on-party-yellow shadow-xs font-bold'
+                        : 'hover:bg-black/5 dark:hover:bg-white/5 text-secondary'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-9 h-9 rounded-xl flex items-center justify-center ${
                           isActive
-                            ? 'bg-[#171512] text-[#F0DC00]'
-                            : 'bg-black/5 dark:bg-white/10 text-[#171512] dark:text-white'
+                            ? 'bg-black/80 text-party-yellow'
+                            : 'bg-surface-secondary text-primary'
                         }`}
                       >
                         <IconComponent className="w-4 h-4" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono opacity-60 font-black">
+                          <span className="text-xs font-mono opacity-60 font-bold">
                             {g.number}
                           </span>
                           <span className="font-display font-bold text-xs">
                             {g.label}
                           </span>
                         </div>
-                        <span className={`text-[11px] block line-clamp-1 ${
-                          isActive ? 'text-[#171512]/80' : 'text-[#6F6A62] dark:text-[#A8A196]'
+                        <span className={`text-xs block line-clamp-1 ${
+                          isActive ? 'text-primary/80' : 'text-secondary'
                         }`}>
                           {isEs ? g.descEs : g.desc}
                         </span>

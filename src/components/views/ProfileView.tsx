@@ -637,10 +637,10 @@ export const ProfileView: React.FC = () => {
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-2 md:p-2.5">
-                      <span className="text-[11px] md:text-xs font-bold text-white leading-tight truncate">
+                      <span className="text-xs font-bold text-white leading-tight truncate">
                         {party.title}
                       </span>
-                      <span className="text-[9px] md:text-[10px] text-[#F0DC00] font-semibold mt-0.5">
+                      <span className="text-xs text-party-yellow font-semibold mt-0.5">
                         {party.date}
                       </span>
                     </div>
@@ -650,12 +650,12 @@ export const ProfileView: React.FC = () => {
                 {/* Dashed Add Night Squircle Button */}
                 <button
                   onClick={() => setIsAddNightOpen(true)}
-                  className="h-28 w-24 sm:h-32 sm:w-26 md:h-36 md:w-full rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-all shrink-0 cursor-pointer active:scale-95 group"
+                  className="h-28 w-24 sm:h-32 sm:w-26 md:h-36 md:w-full rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-secondary hover:text-primary transition-all shrink-0 cursor-pointer active:scale-95 group"
                   aria-label={isEs ? 'Registrar noche asistida' : 'Log attended night'}
                   title={isEs ? 'Registrar evento asistido' : 'Log attended event'}
                 >
                   <Plus className="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] md:text-xs font-bold mt-1">
+                  <span className="text-xs font-bold mt-1">
                     {isEs ? 'Añadir' : 'Add'}
                   </span>
                 </button>
@@ -708,13 +708,13 @@ export const ProfileView: React.FC = () => {
                         loading="lazy"
                       />
                       {crew.ownerId === currentUser.id && (
-                        <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9px] font-bold text-[#F0DC00] uppercase tracking-wider">
+                        <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-xs font-bold text-party-yellow uppercase tracking-wider">
                           {isEs ? 'Líder' : 'Owner'}
                         </span>
                       )}
                     </div>
-                    <h4 className="font-bold text-xs text-[#171512] dark:text-white truncate">{crew.name}</h4>
-                    <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196] font-medium block mt-0.5">
+                    <h4 className="font-bold text-xs text-primary truncate">{crew.name}</h4>
+                    <span className="text-xs text-secondary font-medium block mt-0.5">
                       {crew.membersCount} {isEs ? 'miembros' : 'members'}
                     </span>
                   </div>
@@ -723,11 +723,11 @@ export const ProfileView: React.FC = () => {
                 {/* Add Crew Button */}
                 <button
                   onClick={() => setIsCreateCrewOpen(true)}
-                  className="w-40 h-[156px] rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-all shrink-0 cursor-pointer active:scale-95 group"
+                  className="w-40 h-[156px] rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-secondary hover:text-primary transition-all shrink-0 cursor-pointer active:scale-95 group"
                   aria-label={isEs ? 'Crear crew' : 'Create crew'}
                 >
                   <Plus className="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] md:text-xs font-bold mt-1">
+                  <span className="text-xs font-bold mt-1">
                     {isEs ? 'Crear Crew' : 'Create Crew'}
                   </span>
                 </button>
@@ -789,12 +789,12 @@ export const ProfileView: React.FC = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 sm:p-2.5">
                       {photo.caption && (
-                        <span className="text-[10px] sm:text-xs font-bold text-white leading-tight truncate">
+                        <span className="text-xs font-bold text-white leading-tight truncate">
                           {photo.caption}
                         </span>
                       )}
                       {photo.createdAt && (
-                        <span className="text-[9px] text-[#F0DC00] font-semibold mt-0.5">
+                        <span className="text-xs text-party-yellow font-semibold mt-0.5">
                           {photo.createdAt}
                         </span>
                       )}
@@ -806,7 +806,7 @@ export const ProfileView: React.FC = () => {
                 <button
                   onClick={() => photoInputRef.current?.click()}
                   disabled={isUploadingPhoto}
-                  className="aspect-square rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-all cursor-pointer active:scale-95 group"
+                  className="aspect-square rounded-2xl border-2 border-dashed border-[#D9D1C3] dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 flex flex-col items-center justify-center text-secondary hover:text-primary transition-all cursor-pointer active:scale-95 group"
                   aria-label={isEs ? 'Añadir foto' : 'Add photo'}
                   title={isEs ? 'Subir foto a tu perfil' : 'Upload photo to profile'}
                 >
@@ -815,7 +815,7 @@ export const ProfileView: React.FC = () => {
                   ) : (
                     <>
                       <Plus className="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform" />
-                      <span className="text-[10px] sm:text-xs font-bold mt-1">
+                      <span className="text-xs font-bold mt-1">
                         {isEs ? 'Añadir' : 'Add'}
                       </span>
                     </>

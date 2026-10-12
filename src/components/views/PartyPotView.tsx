@@ -538,11 +538,11 @@ export const PartyPotView: React.FC = () => {
                 {/* Collapsible Technical Details for Developer Tracing (Cleanly Truncated) */}
                 {txError.technicalDetails && !txError.isUserRejection && (
                   <div className="mt-2.5 pt-2 border-t border-black/5 dark:border-white/10">
-                    <details className="text-[10px] text-[#8E887E] dark:text-[#A8A196] font-mono">
+                    <details className="text-xs text-secondary font-mono">
                       <summary className="cursor-pointer hover:underline font-sans font-semibold">
                         {isEs ? 'Detalles técnicos' : 'Technical details'}
                       </summary>
-                      <pre className="mt-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 text-[9px] overflow-x-auto whitespace-pre-wrap break-all max-h-24">
+                      <pre className="mt-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 text-[11px] overflow-x-auto whitespace-pre-wrap break-all max-h-24">
                         {txError.technicalDetails}
                       </pre>
                     </details>
@@ -879,41 +879,41 @@ export const PartyPotView: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-[#171512] dark:text-[#F0DC00] bg-[#F0DC00]/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 border border-[#F0DC00]/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F0DC00] animate-pulse" />
+                  <span className="text-xs font-bold text-primary dark:text-party-yellow bg-party-yellow/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 border border-party-yellow/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-party-yellow animate-pulse" />
                     {isEs ? 'En vivo' : 'Live'}
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/10 space-y-2.5 mb-3.5">
+                <div className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-divider space-y-2.5 mb-3.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#706B66] dark:text-[#A8A196]">
+                    <span className="text-secondary">
                       {isEs ? 'Balance total' : 'Total balance'}
                     </span>
-                    <span className="font-display font-extrabold text-[#171512] dark:text-white">
+                    <span className="font-display font-extrabold text-primary">
                       {monBalance.toFixed(2)} MON{' '}
-                      <span className="font-sans font-medium text-[#706B66] dark:text-[#A8A196]">
+                      <span className="font-sans font-medium text-secondary">
                         (≈ ${potUsdAmount} USD)
                       </span>
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#706B66] dark:text-[#A8A196]">
+                    <span className="text-secondary">
                       {isEs ? 'Participantes' : 'Contributors'}
                     </span>
-                    <span className="font-bold text-[#171512] dark:text-white">
+                    <span className="font-bold text-primary">
                       {partyMembers.length} {isEs ? 'personas' : 'people'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#706B66] dark:text-[#A8A196]">
+                    <span className="text-secondary">
                       {isEs ? 'Contrato inteligente' : 'Smart contract'}
                     </span>
                     <a
                       href={`https://testnet.monadexplorer.com/address/${depositAddress}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-mono text-[11px] text-[#836EF9] hover:underline inline-flex items-center gap-1 font-semibold"
+                      className="font-mono text-xs text-secondary hover:text-primary hover:underline inline-flex items-center gap-1 font-semibold"
                     >
                       <span>
                         {depositAddress.slice(0, 6)}...{depositAddress.slice(-4)}
@@ -926,20 +926,20 @@ export const PartyPotView: React.FC = () => {
                 {associatedCrew && (
                   <button
                     onClick={() => setIsRolloverOpen(true)}
-                    className="w-full p-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 text-[#171512] dark:text-white flex items-center justify-between transition-colors cursor-pointer"
+                    className="w-full p-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 text-primary flex items-center justify-between transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5">
-                      <ArrowRightLeft className="w-4 h-4 text-[#B89600]" />
+                      <ArrowRightLeft className="w-4 h-4 text-party-yellow" />
                       <div className="text-left">
                         <span className="text-xs font-bold block leading-tight">
                           {isEs ? 'Transferir remanente a Crew' : 'Rollover pot to Crew'}
                         </span>
-                        <span className="text-[10px] text-[#706B66] dark:text-[#A8A196] block">
+                        <span className="text-xs text-secondary block">
                           {associatedCrew.name}
                         </span>
                       </div>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-[#8E887E] -rotate-90" />
+                    <ChevronDown className="w-4 h-4 text-secondary -rotate-90" />
                   </button>
                 )}
               </section>
@@ -947,18 +947,18 @@ export const PartyPotView: React.FC = () => {
               {/* RECENT ACTIVITY CARD (MATCHING PARTY DETAIL LIQUID GLASS) */}
               <section
                 aria-label={isEs ? 'Historial del bote' : 'Pot history'}
-                className="rounded-[32px] bg-white/55 dark:bg-[#1C1A16] border border-white/80 dark:border-white/10 shadow-[0_9px_20px_rgba(66,52,32,0.08)] dark:shadow-[0_9px_20px_rgba(0,0,0,0.45)] backdrop-blur-md p-4 sm:p-5"
+                className="rounded-[32px] bg-surface/90 border border-divider shadow-xs backdrop-blur-md p-4 sm:p-5"
               >
                 <div className="flex items-center justify-between mb-3 px-1">
-                  <h3 className="font-display font-extrabold text-sm sm:text-base text-[#171512] dark:text-white tracking-tight">
+                  <h3 className="font-display font-extrabold text-sm sm:text-base text-primary tracking-tight">
                     {isEs ? 'Actividad reciente' : 'Recent activity'}
                   </h3>
                   <button
                     onClick={() => setIsMenuOpen(true)}
-                    className="text-xs font-semibold text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white flex items-center gap-0.5 cursor-pointer"
+                    className="text-xs font-semibold text-secondary hover:text-primary flex items-center gap-0.5 cursor-pointer"
                   >
                     <span>{isEs ? 'Ver opciones' : 'View options'}</span>
-                    <span className="text-[10px] ml-0.5">&gt;</span>
+                    <span className="text-xs ml-0.5">&gt;</span>
                   </button>
                 </div>
 
@@ -981,7 +981,7 @@ export const PartyPotView: React.FC = () => {
                                 size="md"
                               />
                               <div
-                                className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-white dark:border-[#181613] shadow-xs ${
+                                className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-xs font-black border border-white dark:border-[#181613] shadow-xs ${
                                   isDeposit
                                     ? 'bg-[#FFE600] text-[#161514]'
                                     : 'bg-[#FFCCD5] text-[#900B22]'
@@ -992,9 +992,9 @@ export const PartyPotView: React.FC = () => {
                             </div>
 
                             <div className="min-w-0 flex-1 pr-1">
-                              <span className="text-xs sm:text-sm font-bold text-[#171512] dark:text-white block leading-tight truncate">
+                              <span className="text-xs sm:text-sm font-bold text-primary block leading-tight truncate">
                                 {tx.userName}{' '}
-                                <span className="font-normal text-[#8E887E] dark:text-[#A8A196]">
+                                <span className="font-normal text-secondary">
                                   {isDeposit
                                     ? isEs
                                       ? `aportó $${(tx.amount * effectiveMonPrice).toFixed(0)}`
@@ -1005,7 +1005,7 @@ export const PartyPotView: React.FC = () => {
                                 </span>
                               </span>
                               {tx.description && (
-                                <span className="text-[10px] text-[#8E887E] dark:text-[#A8A196] block mt-0.5 truncate max-w-[130px] sm:max-w-xs">
+                                <span className="text-xs text-secondary block mt-0.5 truncate max-w-[130px] sm:max-w-xs">
                                   {tx.description}
                                 </span>
                               )}
@@ -1013,7 +1013,7 @@ export const PartyPotView: React.FC = () => {
                           </div>
 
                           <div className="text-right shrink-0 pl-1">
-                            <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium whitespace-nowrap block">
+                            <span className="text-xs text-secondary font-medium whitespace-nowrap block">
                               {formatShortRelativeTime(tx.timestamp)}
                             </span>
                             {tx.txHash && (
@@ -1021,7 +1021,7 @@ export const PartyPotView: React.FC = () => {
                                 href={`https://testnet.monadexplorer.com/tx/${tx.txHash}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-[10px] text-[#836EF9] hover:underline block font-mono"
+                                className="text-xs text-secondary hover:text-primary hover:underline block font-mono"
                               >
                                 explorer
                               </a>
@@ -1108,7 +1108,7 @@ export const PartyPotView: React.FC = () => {
                         <span className="text-xs font-bold block">
                           {isEs ? 'Transferir remanente a Crew' : 'Rollover pot to Crew'}
                         </span>
-                        <span className="text-[10px] text-[#8E887E] block mt-0.5">
+                        <span className="text-xs text-secondary block mt-0.5">
                           {associatedCrew.name}
                         </span>
                       </div>

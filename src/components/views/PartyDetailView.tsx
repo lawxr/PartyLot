@@ -21,6 +21,7 @@ import {
   Copy,
   Camera,
   Users,
+  Heart,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useWallets } from '@privy-io/react-auth';
@@ -38,6 +39,7 @@ import { useMonPrice } from '@/hooks/useMonPrice';
 import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
 import { ReputationBadge } from '@/components/ui/ReputationBadge';
 import { Avatar } from '@/components/ui/Avatar';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import { toast } from '@/store/useToastStore';
 import { resolveActivityActor } from '@/lib/activityActor';
 import { DEFAULT_PARTY_COVER } from '@/data/mockData';
@@ -56,6 +58,8 @@ export const PartyDetailView: React.FC = () => {
     addPartyMemory,
     addToPot,
     theme,
+    currentUser,
+    toggleMemoryReaction,
   } = usePartyStore();
   const { t, language } = useTranslation();
   const isEs = language === 'es';
@@ -559,13 +563,12 @@ export const PartyDetailView: React.FC = () => {
           {/* Memories */}
           <section className="mt-8 lg:mt-6 lg:col-span-7 xl:col-span-8 lg:col-start-1 lg:row-start-2">
             <div className="flex items-center justify-between mb-3 px-1">
-              <h3 className="font-display font-extrabold text-base text-[#171512] tracking-tight flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-[#F0DC00]" />
+              <h3 className="font-display font-extrabold text-base text-[#171512] dark:text-white tracking-tight flex items-center gap-1.5">
                 <span>{isEs ? 'Álbum compartido' : 'Shared album'}</span>
               </h3>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="py-1 px-3 rounded-full bg-[#F0DC00]/20 hover:bg-[#F0DC00]/30 text-[#171512] text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                className="py-1 px-3 rounded-full bg-[#F0DC00]/20 hover:bg-[#F0DC00]/30 text-[#171512] dark:text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>{isEs ? 'Subir foto' : 'Add photo'}</span>
@@ -593,7 +596,7 @@ export const PartyDetailView: React.FC = () => {
                   </div>
                 ))
               ) : (
-                <div className="col-span-full py-8 px-4 text-center rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-dashed border-black/10 dark:border-white/10">
+                <div className="col-span-full py-8 px-4 text-center rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.07] dark:border-white/10">
                   <Camera className="w-7 h-7 text-[#8E887E] dark:text-[#A8A196] mx-auto mb-2 opacity-60" />
                   <p className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium">
                     {isEs ? 'Aún no hay fotos en este álbum.' : 'No photos in this album yet.'}
@@ -922,12 +925,59 @@ export const PartyDetailView: React.FC = () => {
                       {selectedPhoto.caption}
                     </p>
                   )}
-                  <span className="text-xs text-white/50">
-                    {language === 'es' ? 'Subido por' : 'Uploaded by'}{' '}
-                    <strong className="text-white">{selectedPhoto.uploadedByName}</strong> ·{' '}
-                    {selectedPhoto.createdAt}
-                  </span>
+                  <div className="flex items-center gap-2 text-xs text-white/60">
+                    <Avatar
+                      user={{
+                        name: selectedPhoto.uploadedByName,
+                        avatar: selectedPhoto.uploadedByAvatar,
+                      }}
+                      size="xs"
+                    />
+                    <span>
+                      {language === 'es' ? 'Subido por' : 'Uploaded by'}{' '}
+                      <strong className="text-white">{selectedPhoto.uploadedByName}</strong> ·{' '}
+                      <RelativeTime date={selectedPhoto.createdAt} className="text-white/60" />
+                    </span>
+                  </div>
                 </div>
+
+                {/* Single-tap Heart Reaction (P2-8) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleMemoryReaction(selectedPhoto.id);
+                    setSelectedPhoto((prev) => {
+                      if (!prev) return null;
+                      const likedBy = prev.likedBy || [];
+                      const hasLiked = likedBy.includes(currentUser.id);
+                      const newLikedBy = hasLiked
+                        ? likedBy.filter((id) => id !== currentUser.id)
+                        : [...likedBy, currentUser.id];
+                      return {
+                        ...prev,
+                        likedBy: newLikedBy,
+                        likesCount: Math.max(0, (prev.likesCount || 0) + (hasLiked ? -1 : 1)),
+                      };
+                    });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                    (selectedPhoto.likedBy || []).includes(currentUser.id)
+                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                      : 'bg-white/10 hover:bg-white/15 text-white/80 border border-white/10'
+                  }`}
+                  aria-label="Reaccionar"
+                >
+                  <Heart
+                    className={`w-4 h-4 transition-transform ${
+                      (selectedPhoto.likedBy || []).includes(currentUser.id)
+                        ? 'fill-rose-500 text-rose-500 scale-110'
+                        : 'text-white'
+                    }`}
+                  />
+                  <span className="text-xs font-bold font-mono">
+                    {selectedPhoto.likesCount || 0}
+                  </span>
+                </button>
               </div>
             </motion.div>
           </div>

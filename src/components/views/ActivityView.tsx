@@ -182,7 +182,9 @@ export const ActivityView: React.FC = () => {
                     </span>
                     {/* Clean activity narrative */}
                     <span>
-                      {act.text.startsWith(actor.name)
+                      {act.verb
+                        ? act.verb
+                        : act.text.startsWith(actor.name)
                         ? act.text.slice(actor.name.length).trim()
                         : act.text}
                     </span>
@@ -201,6 +203,19 @@ export const ActivityView: React.FC = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Optional Party Cover Thumbnail */}
+                {partyInfo?.coverImage && (
+                  <div className="shrink-0 w-9 h-9 rounded-xl overflow-hidden border border-black/5 dark:border-white/10 self-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={partyInfo.coverImage}
+                      alt={partyInfo.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
 
                 {/* Right Arrow Chevron if actionable */}
                 {act.partyId && (

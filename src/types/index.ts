@@ -86,6 +86,8 @@ export interface PartyMemory {
   uploadedByName: string;
   uploadedByAvatar?: string;
   createdAt: string;
+  likesCount?: number;
+  likedBy?: string[];
 }
 
 export interface Crew {
@@ -184,10 +186,17 @@ export interface ActivityItem {
   partyId: string;
   text: string;
   time: string;
-  avatar: string;
+  avatar?: string;
   userName?: string;
   userId?: string;
   type: 'join' | 'pot' | 'poll' | 'game' | 'expense';
+  actorId?: string;
+  actorName?: string;
+  verb?: string;
+  objectType?: 'party' | 'pot' | 'poll' | 'game' | 'expense' | 'task';
+  objectId?: string;
+  meta?: Record<string, unknown>;
+  createdAt?: string;
   txHash?: string;
   blockNumber?: number;
   isEnvioIndexed?: boolean;

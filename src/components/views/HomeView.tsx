@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, MapPin, Calendar, Bell, ChevronRight } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
@@ -24,12 +24,24 @@ export const HomeView: React.FC = () => {
     activeTab,
     setActiveTab,
     activities,
+    notificationsLastSeenAt,
   } = usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
   const [isCreateCrewOpen, setIsCreateCrewOpen] = useState(false);
+
+  const unreadNotificationsCount = useMemo(() => {
+    if (!notificationsLastSeenAt) return activities.length;
+    const lastSeenMs = new Date(notificationsLastSeenAt).getTime();
+    return activities.filter((act) => {
+      if (act.createdAt) {
+        return new Date(act.createdAt).getTime() > lastSeenMs;
+      }
+      return /just now|hace \d+ m/i.test(act.time);
+    }).length;
+  }, [activities, notificationsLastSeenAt]);
 
   const displayCrews = crews;
 
@@ -68,20 +80,22 @@ export const HomeView: React.FC = () => {
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-2.5 relative">
-          {/* Circular Glass Notification Bell with Yellow Unread Indicator */}
+          {/* Circular Notification Bell with Real Unread Count */}
           <button
             onClick={() => setIsNotificationsOpen((prev) => !prev)}
             className={`relative w-11 h-11 rounded-full ${
               isNotificationsOpen
-                ? 'bg-[#F0DC00] text-[#171512] shadow-[0_4px_16px_rgba(240,220,0,0.35)]'
-                : 'glass-light dark:bg-white/10 text-[#171512] dark:text-white border border-white/80 dark:border-white/15 shadow-[0_4px_14px_rgba(65,48,25,0.08)]'
+                ? 'bg-[#F0DC00] text-[#171512] shadow-sm'
+                : 'glass-light dark:bg-white/10 text-[#171512] dark:text-white border border-white/80 dark:border-white/15 shadow-sm'
             } flex items-center justify-center active:scale-95 transition-all cursor-pointer p-0`}
             aria-label={isEs ? 'Notificaciones' : 'Notifications'}
             aria-expanded={isNotificationsOpen}
           >
             <Bell className="w-5 h-5 stroke-[2.2]" />
-            {activities.length > 0 && !isNotificationsOpen && (
-              <span className="w-2.5 h-2.5 rounded-full bg-[#F0DC00] border-2 border-[#F7F2E8] dark:border-[#12110E] absolute top-2 right-2.5" />
+            {unreadNotificationsCount > 0 && !isNotificationsOpen && (
+              <span className="min-w-4.5 h-4.5 px-1 rounded-full bg-[#F0DC00] text-[#171512] font-black text-[10px] leading-tight flex items-center justify-center border-2 border-[#F7F2E8] dark:border-[#12110E] absolute -top-0.5 -right-0.5 shadow-xs">
+                {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+              </span>
             )}
           </button>
 
@@ -235,7 +249,7 @@ export const HomeView: React.FC = () => {
           {displayCrews.length === 0 ? (
             <div
               onClick={() => setActiveTab('crews')}
-              className="rounded-[20px] p-4 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-dashed border-black/15 dark:border-white/15 text-center cursor-pointer hover:border-[#F0DC00] transition-colors"
+              className="rounded-[20px] p-4 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 text-center cursor-pointer hover:border-[#F0DC00] transition-colors"
             >
               <p className="text-xs font-semibold text-[#6F6A62] dark:text-[#A8A196]">
                 {isEs ? 'Aún no perteneces a ningún crew.' : 'No crews yet.'}
@@ -323,8 +337,9 @@ export const HomeView: React.FC = () => {
           {/* Upcoming Party Card */}
           {(() => {
             const upcomingParties = parties.slice(1);
+            if (upcomingParties.length === 0) {
               return (
-                <div className="rounded-[24px] p-5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-dashed border-black/15 dark:border-white/15 text-center">
+                <div className="rounded-[24px] p-5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 text-center">
                   <p className="font-semibold text-xs sm:text-sm text-[#6F6A62] dark:text-[#A8A196]">
                     {parties.length <= 1
                       ? (isEs ? 'No tienes más fiestas próximas agendadas.' : 'No other upcoming parties scheduled.')
@@ -332,6 +347,7 @@ export const HomeView: React.FC = () => {
                   </p>
                 </div>
               );
+            }
 
             const nextParty = upcomingParties[0];
             return (

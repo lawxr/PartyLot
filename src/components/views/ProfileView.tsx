@@ -17,6 +17,7 @@ import {
   Calendar,
   Gamepad2,
   X,
+  Heart,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { usePartyStore } from '@/store/usePartyStore';
@@ -29,7 +30,6 @@ import { ProfileAddNightModal } from '@/components/profile/ProfileAddNightModal'
 import { ProfileSettingsModal } from '@/components/profile/ProfileSettingsModal';
 import { CreateCrewModal } from '@/components/ui/CreateCrewModal';
 import { getCoverUrl, getAvatarUrl, getOptimizedImageUrl } from '@/lib/imageOptimization';
-import { ReputationBadge } from '@/components/ui/ReputationBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { AvatarCropModal } from '@/components/ui/AvatarCropModal';
 import { usePrivy } from '@privy-io/react-auth';
@@ -68,6 +68,7 @@ export const ProfileView: React.FC = () => {
     thisOrThat,
     memories,
     addPartyMemory,
+    toggleMemoryReaction,
   } = usePartyStore();
 
   const { language } = useTranslation();
@@ -90,6 +91,8 @@ export const ProfileView: React.FC = () => {
     caption?: string;
     createdAt?: string;
     sourceTitle?: string;
+    likesCount?: number;
+    likedBy?: string[];
   } | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -101,22 +104,67 @@ export const ProfileView: React.FC = () => {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const activeAddress = currentUser.walletAddress;
 
-  // Real social network connections list
+  // Real social network connections list ordered by nights shared (P2-7)
   const peopleConnections: Member[] = useMemo(() => {
-    const list: Member[] = [];
-    const seen = new Set<string>();
+    const countMap = new Map<string, { member: Member; nights: number }>();
 
     parties.forEach((p) => {
+      const userInParty =
+        (p.members || []).some((m) => m.id === currentUser.id) ||
+        p.hostId === currentUser.id;
+      if (!userInParty) return;
+
       (p.members || []).forEach((m) => {
-        if (m.id !== currentUser.id && !seen.has(m.id)) {
-          seen.add(m.id);
-          list.push(m);
+        if (m.id === currentUser.id) return;
+        const existing = countMap.get(m.id);
+        if (existing) {
+          existing.nights += 1;
+        } else {
+          countMap.set(m.id, { member: m, nights: m.nightsTogether || 1 });
         }
       });
     });
 
-    return list;
+    return Array.from(countMap.values())
+      .sort((a, b) => b.nights - a.nights)
+      .map(({ member, nights }) => ({
+        ...member,
+        nightsTogether: nights,
+      }));
   }, [currentUser.id, parties]);
+
+  const handleShareProfile = async () => {
+    const shareUrl =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}?user=${currentUser.handle || currentUser.id}`
+        : '';
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: currentUser.name || 'PartyLot Profile',
+          text: isEs
+            ? `Mira el perfil de ${currentUser.name} en PartyLot`
+            : `Check out ${currentUser.name}'s profile on PartyLot`,
+          url: shareUrl,
+        });
+        return;
+      } catch {
+        // user cancelled or share failed, fallback
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl || window.location.href);
+      showToast(
+        isEs ? 'Enlace copiado al portapapeles' : 'Profile link copied to clipboard',
+        'success'
+      );
+    } catch {
+      showToast(
+        isEs ? 'No se pudo copiar el enlace' : 'Could not copy link',
+        'error'
+      );
+    }
+  };
 
   const userNightsCount = currentUser.gatheringsCount || attendedPartyIds.length;
 
@@ -177,6 +225,8 @@ export const ProfileView: React.FC = () => {
       caption?: string;
       createdAt?: string;
       sourceTitle?: string;
+      likesCount?: number;
+      likedBy?: string[];
     }[] = [];
     const seenUrls = new Set<string>();
 
@@ -189,6 +239,8 @@ export const ProfileView: React.FC = () => {
           caption: mem.caption,
           createdAt: mem.createdAt,
           sourceTitle: mem.uploadedByName,
+          likesCount: mem.likesCount || 0,
+          likedBy: mem.likedBy || [],
         });
       }
     });
@@ -418,11 +470,6 @@ export const ProfileView: React.FC = () => {
                 <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl text-[#171512] dark:text-white tracking-tight leading-tight">
                   {currentUser.name || (currentUser.walletAddress ? `${currentUser.walletAddress.slice(0, 6)}...${currentUser.walletAddress.slice(-4)}` : (isEs ? 'Mi Perfil' : 'My Profile'))}
                 </h2>
-                <ReputationBadge
-                  sharedNights={userNightsCount}
-                  gatheringsCount={userNightsCount}
-                  size="sm"
-                />
               </div>
               <span className="text-xs sm:text-sm font-semibold text-[#8E887E] dark:text-[#A8A196] block mt-0.5">
                 {currentUser.handle?.startsWith('@') ? currentUser.handle : currentUser.handle ? `@${currentUser.handle}` : currentUser.walletAddress ? `${currentUser.walletAddress.slice(0, 6)}...${currentUser.walletAddress.slice(-4)}` : '@member'}
@@ -521,9 +568,25 @@ export const ProfileView: React.FC = () => {
           </div>
         </div>
 
-        {/* Floating Translucent Glass Options Container */}
+        {/* Profile Action Buttons: [Editar perfil] [Compartir perfil] (P2-7) */}
+        <div className="flex items-center gap-2.5 max-w-sm sm:max-w-md mx-auto mb-6">
+          <button
+            onClick={() => setIsEditProfileOpen(true)}
+            className="flex-1 py-2.5 px-4 rounded-full bg-[#171512] dark:bg-white text-white dark:text-[#171512] font-bold text-xs sm:text-sm hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <span>{isEs ? 'Editar perfil' : 'Edit profile'}</span>
+          </button>
+          <button
+            onClick={handleShareProfile}
+            className="flex-1 py-2.5 px-4 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-[#171512] dark:text-white font-bold text-xs sm:text-sm active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <span>{isEs ? 'Compartir perfil' : 'Share profile'}</span>
+          </button>
+        </div>
+
+        {/* Profile Tabs Navigation: Noches · Crews · Fotos */}
         <nav
-          className="relative rounded-[27px] p-1.5 sm:p-2 flex items-center justify-between gap-1.5 sm:gap-2 max-w-sm sm:max-w-md mx-auto mb-6 transition-all bg-[rgba(250,248,243,0.78)] dark:bg-[rgba(28,25,22,0.88)] border border-white/90 dark:border-white/15 shadow-[0_10px_25px_rgba(71,55,35,0.14)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+          className="relative rounded-[27px] p-1.5 sm:p-2 flex items-center justify-between gap-1.5 sm:gap-2 max-w-sm sm:max-w-md mx-auto mb-6 transition-all bg-[#FAF8F3] dark:bg-[#1C1916] border border-black/[0.08] dark:border-white/12 shadow-sm"
           aria-label="Profile options"
         >
           {(
@@ -540,24 +603,9 @@ export const ProfileView: React.FC = () => {
                 key={tab.id}
                 onClick={() => setActiveProfileTab(tab.id)}
                 whileTap={{ scale: 0.96 }}
-                style={
-                  isActive
-                    ? {
-                        background: 'linear-gradient(145deg, #ffe973, #ffce18 68%, #f8bf0a)',
-                        boxShadow:
-                          '0 8px 14px rgba(235, 179, 0, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.72)',
-                      }
-                    : {
-                        background: theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.47)',
-                        boxShadow:
-                          theme === 'dark'
-                            ? '0 3px 9px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1)'
-                            : '0 3px 9px rgba(74, 56, 35, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.9)',
-                      }
-                }
                 className={`flex-1 py-2 sm:py-2.5 px-3 rounded-[20px] text-xs sm:text-sm transition-all duration-200 cursor-pointer flex items-center justify-center font-bold tracking-tight ${
                   isActive
-                    ? 'text-[#161514] font-black'
+                    ? 'bg-[#F0DC00] text-[#161514] font-black shadow-xs'
                     : 'text-[#706B66] dark:text-[#A8A196] hover:text-[#161514] dark:hover:text-white font-semibold'
                 }`}
               >
@@ -975,6 +1023,44 @@ export const ProfileView: React.FC = () => {
                     {selectedPhoto.createdAt || (isEs ? 'Recuerdo' : 'Memory')}
                   </span>
                 </div>
+
+                {/* Single-tap Heart Reaction (P2-8) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleMemoryReaction(selectedPhoto.id);
+                    setSelectedPhoto((prev) => {
+                      if (!prev) return null;
+                      const likedBy = prev.likedBy || [];
+                      const hasLiked = likedBy.includes(currentUser.id);
+                      const newLikedBy = hasLiked
+                        ? likedBy.filter((id) => id !== currentUser.id)
+                        : [...likedBy, currentUser.id];
+                      return {
+                        ...prev,
+                        likedBy: newLikedBy,
+                        likesCount: Math.max(0, (prev.likesCount || 0) + (hasLiked ? -1 : 1)),
+                      };
+                    });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                    (selectedPhoto.likedBy || []).includes(currentUser.id)
+                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                      : 'bg-white/10 hover:bg-white/15 text-white/80 border border-white/10'
+                  }`}
+                  aria-label="Reaccionar"
+                >
+                  <Heart
+                    className={`w-4 h-4 transition-transform ${
+                      (selectedPhoto.likedBy || []).includes(currentUser.id)
+                        ? 'fill-rose-500 text-rose-500 scale-110'
+                        : 'text-white'
+                    }`}
+                  />
+                  <span className="text-xs font-bold font-mono">
+                    {selectedPhoto.likesCount || 0}
+                  </span>
+                </button>
               </div>
             </motion.div>
           </div>

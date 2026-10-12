@@ -169,6 +169,7 @@ interface PartyStoreState {
   ) => Promise<{ success: boolean; party?: Party; message?: string }>;
   memories: PartyMemory[];
   addPartyMemory: (params: { imageUrl: string; caption?: string }) => Promise<void>;
+  toggleMemoryReaction: (memoryId: string) => void;
   toggleRsvp: (partyId: string) => void;
 
   // Expense & Split Actions
@@ -251,6 +252,8 @@ interface PartyStoreState {
   addAttendedNight: (partyId: string) => void;
 
   // Activity & Notifications
+  notificationsLastSeenAt: string | null;
+  markNotificationsAsRead: () => void;
   dismissActivity: (activityId: string) => void;
   clearAllActivities: () => void;
 
@@ -673,6 +676,8 @@ export const usePartyStore = create<PartyStoreState>()(
           uploadedByName: state.currentUser.name || 'Anonymous',
           uploadedByAvatar: state.currentUser.avatar,
           createdAt: 'Just now',
+          likesCount: 0,
+          likedBy: [],
         };
 
         const newActivity: ActivityItem = {
@@ -682,6 +687,11 @@ export const usePartyStore = create<PartyStoreState>()(
           text: `${state.currentUser.name} añadió una nueva foto al álbum`,
           time: 'Just now',
           avatar: state.currentUser.avatar || '',
+          actorId: state.currentUser.id,
+          actorName: state.currentUser.name || 'Anonymous',
+          verb: 'añadió una foto al álbum',
+          objectType: 'party',
+          objectId: partyId,
         };
 
         set((s) => ({
@@ -695,6 +705,28 @@ export const usePartyStore = create<PartyStoreState>()(
             persistActivityToSupabase(newActivity),
           ]);
         }
+      },
+
+      toggleMemoryReaction: (memoryId: string) => {
+        set((state) => {
+          const currentUserId = state.currentUser.id || 'usr_active';
+          return {
+            memories: state.memories.map((m) => {
+              if (m.id !== memoryId) return m;
+              const likedBy = m.likedBy || [];
+              const hasLiked = likedBy.includes(currentUserId);
+              const newLikedBy = hasLiked
+                ? likedBy.filter((id) => id !== currentUserId)
+                : [...likedBy, currentUserId];
+              const newLikesCount = Math.max(0, (m.likesCount || 0) + (hasLiked ? -1 : 1));
+              return {
+                ...m,
+                likedBy: newLikedBy,
+                likesCount: newLikesCount,
+              };
+            }),
+          };
+        });
       },
 
       toggleRsvp: (partyId) => {
@@ -961,9 +993,14 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId,
           type: 'pot',
-          text: `💰 ${state.currentUser.name} aportó ${numAmount.toFixed(4)} MON al Party Pot (Monad)`,
+          text: `${state.currentUser.name} aportó $${numAmount.toFixed(2)} al Party Pot`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
+          actorId: state.currentUser.id,
+          actorName: state.currentUser.name,
+          verb: 'aportó al bote',
+          objectType: 'pot',
+          objectId: partyId,
         };
 
         set({
@@ -1019,9 +1056,14 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId,
           type: 'pot',
-          text: `💸 Gasto de ${numAmount.toFixed(4)} MON pagado del Party Pot: "${description}"`,
+          text: `Gasto de $${numAmount.toFixed(2)} pagado del Party Pot: "${description}"`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
+          actorId: state.currentUser.id,
+          actorName: state.currentUser.name,
+          verb: 'pagó gasto del bote',
+          objectType: 'expense',
+          objectId: partyId,
         };
 
         set({
@@ -1037,7 +1079,7 @@ export const usePartyStore = create<PartyStoreState>()(
 
         return {
           status: 'available',
-          message: `${numAmount.toFixed(4)} MON reimbursement processed on Monad`,
+          message: `$${numAmount.toFixed(2)} reimbursement processed`,
           receipt,
         };
       },
@@ -1069,9 +1111,14 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId,
           type: 'pot',
-          text: `🔄 ${currentBalance.toFixed(2)} MON transferidos para la próxima fiesta de la Crew (Monad)`,
+          text: `$${currentBalance.toFixed(2)} transferidos para la próxima fiesta del crew`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
+          actorId: state.currentUser.id,
+          actorName: state.currentUser.name,
+          verb: 'transfirió fondos al crew',
+          objectType: 'pot',
+          objectId: crewId,
         };
 
         set({
@@ -1082,7 +1129,7 @@ export const usePartyStore = create<PartyStoreState>()(
 
         return {
           status: 'available',
-          message: `${currentBalance.toFixed(2)} MON rolled over successfully on Monad`,
+          message: `$${currentBalance.toFixed(2)} rolled over successfully`,
           receipt,
         };
       },
@@ -1102,9 +1149,14 @@ export const usePartyStore = create<PartyStoreState>()(
             id: `act-${Date.now()}`,
             partyId,
             type: 'pot',
-            text: `New bounty created: "${title}" ($${rewardAmount.toFixed(2)} reward) 🎯`,
+            text: `Nueva tarea creada: "${title}" ($${rewardAmount.toFixed(2)})`,
             time: 'Just now',
             avatar: state.currentUser.avatar,
+            actorId: state.currentUser.id,
+            actorName: state.currentUser.name,
+            verb: 'creó una tarea',
+            objectType: 'task',
+            objectId: newTask.id,
           };
 
           persistTaskToSupabase(newTask);
@@ -1139,9 +1191,14 @@ export const usePartyStore = create<PartyStoreState>()(
             id: `act-${Date.now()}`,
             partyId: task.partyId,
             type: 'pot',
-            text: `${member.name} claimed bounty: "${task.title}" 🙋‍♂️`,
+            text: `${member.name} aceptó la tarea: "${task.title}"`,
             time: 'Just now',
             avatar: member.avatar,
+            actorId: member.id,
+            actorName: member.name,
+            verb: 'aceptó la tarea',
+            objectType: 'task',
+            objectId: task.id,
           };
 
           updateTaskInSupabase(updatedTask);
@@ -1169,9 +1226,14 @@ export const usePartyStore = create<PartyStoreState>()(
             id: `act-${Date.now()}`,
             partyId: task.partyId,
             type: 'pot',
-            text: `${task.claimedByName || 'Attendee'} completed: "${task.title}"! Awaiting host verification 📦`,
+            text: `${task.claimedByName || 'Asistente'} completó: "${task.title}"`,
             time: 'Just now',
             avatar: task.claimedByAvatar || state.currentUser.avatar,
+            actorId: task.claimedById,
+            actorName: task.claimedByName || 'Asistente',
+            verb: 'completó la tarea',
+            objectType: 'task',
+            objectId: task.id,
           };
 
           updateTaskInSupabase(updatedTask);
@@ -1207,7 +1269,7 @@ export const usePartyStore = create<PartyStoreState>()(
           partyId: task.partyId,
           amount: task.rewardAmount,
           type: 'reward',
-          description: `Bounty paid: "${task.title}"`,
+          description: `Task reward paid: "${task.title}"`,
           userName: task.claimedByName || state.currentUser.name,
           userAvatar: task.claimedByAvatar || state.currentUser.avatar,
           timestamp: 'Just now',
@@ -1218,9 +1280,14 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId: task.partyId,
           type: 'pot',
-          text: `🎯 Recompensa de ${task.rewardAmount.toFixed(2)} MON pagada a ${task.claimedByName || 'Asistente'} por "${task.title}" (Monad)`,
+          text: `Recompensa de $${task.rewardAmount.toFixed(2)} pagada a ${task.claimedByName || 'Asistente'} por "${task.title}"`,
           time: 'Just now',
           avatar: task.claimedByAvatar || state.currentUser.avatar,
+          actorId: state.currentUser.id,
+          actorName: state.currentUser.name,
+          verb: 'pagó la recompensa',
+          objectType: 'task',
+          objectId: task.id,
         };
 
         updateTaskInSupabase(updatedTask);
@@ -1402,9 +1469,14 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId,
           type: 'game',
-          text: `🏆 ${member.name} ganó ${amount.toFixed(2)} MON jugando a ${gameTitle}! (Monad)`,
+          text: `${member.name} ganó ${amount.toFixed(2)} MON jugando a ${gameTitle}!`,
           time: 'Just now',
           avatar: member.avatar,
+          actorId: member.id,
+          actorName: member.name,
+          verb: `ganó ${amount.toFixed(2)} MON en`,
+          objectType: 'game',
+          objectId: partyId,
         };
 
         set({
@@ -1414,7 +1486,7 @@ export const usePartyStore = create<PartyStoreState>()(
 
         return {
           status: 'available',
-          message: `Reward of ${amount.toFixed(2)} MON sent to ${member.name} on Monad`,
+          message: `Reward sent to ${member.name}`,
           receipt,
         };
       },
@@ -1776,6 +1848,12 @@ export const usePartyStore = create<PartyStoreState>()(
         };
       },
 
+      notificationsLastSeenAt: null,
+
+      markNotificationsAsRead: () => {
+        set({ notificationsLastSeenAt: new Date().toISOString() });
+      },
+
       dismissActivity: (activityId: string) => {
         set((state) => ({
           activities: state.activities.filter((a) => a.id !== activityId),
@@ -1797,6 +1875,7 @@ export const usePartyStore = create<PartyStoreState>()(
           polls: [],
           activities: [],
           memories: [],
+          notificationsLastSeenAt: null,
           whosMostLikely: WHOS_MOST_LIKELY_QUESTIONS,
           thisOrThat: THIS_OR_THAT_QUESTIONS,
           trivia: TRIVIA_QUESTIONS,
@@ -1819,6 +1898,7 @@ export const usePartyStore = create<PartyStoreState>()(
         polls: state.polls,
         activities: state.activities,
         memories: state.memories,
+        notificationsLastSeenAt: state.notificationsLastSeenAt,
         currentPartyId: state.currentPartyId,
         language: state.language,
         theme: state.theme,

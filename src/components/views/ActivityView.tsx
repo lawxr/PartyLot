@@ -1,14 +1,12 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import {
   Activity,
   Calendar,
   Wallet,
   Gamepad2,
   ChevronRight,
-  Flame,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';

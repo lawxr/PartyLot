@@ -1,13 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import {
   Trophy,
   Coins,
   Users,
   Sparkles,
-  Gamepad2,
   HelpCircle,
   Vote,
   Flame,

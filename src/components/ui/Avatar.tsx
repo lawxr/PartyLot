@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 export interface AvatarUser {
   id?: string;
@@ -125,7 +125,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   indicator,
   onClick,
 }) => {
-  const [imgError, setImgError] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
   const rawName = cleanProfileName(nameProp ?? user?.name ?? '');
   const walletAddr = user?.address || user?.walletAddress || '';
@@ -133,11 +133,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   const rawSrc = srcProp ?? user?.avatar ?? null;
 
   const validSrc = isValidAvatarUrl(rawSrc) ? rawSrc : null;
-
-  // Reset imgError whenever source changes so newly uploaded photos render immediately
-  useEffect(() => {
-    setImgError(false);
-  }, [validSrc]);
+  const showImage = Boolean(validSrc) && failedSrc !== validSrc;
 
   const initials = getInitials(rawName, walletAddr);
   // Anchor colorSeed to clean name or identifier so user has identical theme across all views
@@ -172,15 +168,16 @@ export const Avatar: React.FC<AvatarProps> = ({
         sizeConfig.box
       } ${borderClass} ${onClick ? 'cursor-pointer hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0DC00]' : ''} ${className}`}
     >
-      {validSrc && !imgError ? (
+      {showImage && validSrc ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
+          key={validSrc}
           src={validSrc}
           alt={rawName || 'Avatar'}
           className="w-full h-full object-cover rounded-full aspect-square pointer-events-none block"
           loading="lazy"
           decoding="async"
-          onError={() => setImgError(true)}
+          onError={() => setFailedSrc(validSrc)}
         />
       ) : (
         <span

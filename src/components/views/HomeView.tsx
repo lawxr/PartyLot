@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { Plus, MapPin, Calendar, Bell, ChevronRight } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { ActivityView } from '@/components/views/ActivityView';

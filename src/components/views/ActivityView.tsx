@@ -191,7 +191,7 @@ export const ActivityView: React.FC = () => {
                   </p>
 
                   <div className="flex items-center gap-2 mt-1.5 text-[11px] text-[#6F6A62] dark:text-[#A8A196]">
-                    <RelativeTime date={act.time} />
+                    <RelativeTime date={act.createdAt || act.time} />
 
                     {partyInfo && (
                       <>

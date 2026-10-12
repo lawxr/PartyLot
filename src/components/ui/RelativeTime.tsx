@@ -22,7 +22,11 @@ export const RelativeTime: React.FC<RelativeTimeProps> = ({
     ? formatShortRelativeTime(date, locale)
     : formatRelativeTime(date, locale);
 
-  const iso = date instanceof Date ? date.toISOString() : (typeof date === 'string' || typeof date === 'number' ? new Date(date).toISOString() : undefined);
+  const iso = (() => {
+    if (!date) return undefined;
+    const d = date instanceof Date ? date : new Date(date);
+    return isNaN(d.getTime()) ? undefined : d.toISOString();
+  })();
 
   return (
     <time

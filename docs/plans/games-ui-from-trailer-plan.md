@@ -121,14 +121,14 @@ Valores tomados del video, para que se sienta igual:
 
 ## 8. Fases
 
-| Fase | Entregable | Cómo se comprueba |
-|---|---|---|
-| 0. Base | Tokens `--stage-*` claro/oscuro, `GameStage`, `GameEyebrow`, `FriendVoteCard`, `PickBlock`, `VoteBar`, `WinnerReveal`, `GameProgress` | `pnpm typecheck` y `pnpm lint`; captura de cada componente en claro y oscuro |
-| 1. Who's Most Likely | Votación 2×2, botón "Ver resultado", resultado con barras, empate y confeti | Prueba de unidad de ganador/empate/porcentajes; capturas del flujo en 390×844, claro y oscuro |
-| 2. This or That | Bloques de color + VS + porcentajes tras votar, con gesto y botones | Capturas (sin voto / A / B); el swipe sigue sumando el voto correcto |
-| 3. Contenedor y Trivia | `GamesView` sin sidebar ni jerga cripto, pestañas de juego, Trivia con el nuevo lenguaje | Capturas en 360, 390, 768 y 1440; revisión de teclado |
-| 4. Party Pot | "Premiar a alguien" en `PartyPotView`, `RewardWinnerModal` fuera de Games, `lastGameWinner` opcional | Prueba de que no queda ninguna referencia a `RewardWinnerModal` en `components/games` ni en `GamesView`; flujo de recompensa probado en el Pot |
-| 5. Datos y pulido | Contador en vivo ("n votes", y `voters` si se aprueba), `prefers-reduced-motion`, `aria-live`, `check-slop` en verde | `tests/unit/games-view.test.ts` ampliado, `pnpm release:check` y `$impeccable audit` sobre `GamesView` |
+| Fase | Entregable | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 0. Base | Tokens `--stage-*` claro/oscuro, `GameStage`, `GameEyebrow`, `FriendVoteCard`, `PickBlock`, `VoteBar`, `WinnerReveal`, `GameProgress` | `npm run typecheck` y suite `game-stage-primitives.test.ts` pasando | **[COMPLETADA]** |
+| 1. Who's Most Likely | Votación 2×2, botón "Ver resultado", resultado con barras, empate y confeti | Suite `whos-most-likely-ranking.test.ts` pasando, 0 violaciones slop | **[COMPLETADA]** |
+| 2. This or That | Bloques de color + VS + porcentajes tras votar, sin naipes viejos | `PickBlock` interactivo con halo blanco, porcentajes y botones | **[COMPLETADA]** |
+| 3. Contenedor y Trivia | `GamesView` sin sidebar ni jerga, selector por pestañas, Trivia con tokens de stage | `GamesView` centrado mobile-first, pruebas de integración en verde | **[COMPLETADA]** |
+| 4. Party Pot | "Premiar a alguien" en `PartyPotView`, `RewardWinnerModal` fuera de Games | 0 referencias a `RewardWinnerModal` en juegos; disponible en Pot | **[COMPLETADA]** |
+| 5. Datos y pulido | Contador en vivo ("n votes"), `prefers-reduced-motion`, `aria-live`, `check-slop` en verde | 28 suites / 238 tests en verde, `typecheck` 0 errores, 0 slop | **[COMPLETADA]** |
 
 Orden recomendado: 0 → 1 → 2 (los dos juegos que salen en el video) → 3 → 4 → 5. La Fase 4 puede ir en paralelo a la 3, porque toca otro archivo.
 

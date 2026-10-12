@@ -19,6 +19,7 @@ import {
   Coins,
   ArrowRightLeft,
   Sparkles,
+  Trophy,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
@@ -30,6 +31,7 @@ import { useMonPrice } from '@/hooks/useMonPrice';
 import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
 import { Avatar } from '@/components/ui/Avatar';
 import { UsdcLogo, MonadLogo } from '@/components/ui/TokenLogo';
+import { RewardWinnerModal } from '@/components/games/RewardWinnerModal';
 import {
   formatWeb3Error,
   formatShortRelativeTime,
@@ -115,6 +117,7 @@ export const PartyPotView: React.FC = () => {
   // Menu Modal State
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isRolloverOpen, setIsRolloverOpen] = useState<boolean>(false);
+  const [isRewardModalOpen, setIsRewardModalOpen] = useState<boolean>(false);
 
   // Feedback & Processing State
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -1094,6 +1097,27 @@ export const PartyPotView: React.FC = () => {
                   <ExternalLink className="w-4 h-4 text-[#8E887E]" />
                 </a>
 
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsRewardModalOpen(true);
+                  }}
+                  className="w-full p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] flex items-center justify-between hover:bg-black/[0.06] transition-colors cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Trophy className="w-5 h-5 text-party-yellow" />
+                    <div>
+                      <span className="text-xs font-bold block">
+                        {isEs ? 'Premiar a un amigo' : 'Reward someone from pot'}
+                      </span>
+                      <span className="text-xs text-secondary block mt-0.5">
+                        {isEs ? 'Asigna una recompensa del bote' : 'Send a bounty from the pot'}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+
                 {associatedCrew && (
                   <button
                     onClick={() => {
@@ -1172,6 +1196,13 @@ export const PartyPotView: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Reward Winner Modal */}
+      <RewardWinnerModal
+        isOpen={isRewardModalOpen}
+        onClose={() => setIsRewardModalOpen(false)}
+        gameTitle={party?.title || 'Party Pot'}
+      />
     </div>
   );
 };

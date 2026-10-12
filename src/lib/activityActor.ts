@@ -146,3 +146,34 @@ export function resolveActivityActor(
     isSystem: true,
   };
 }
+
+/**
+ * Strips leading emojis and isolates the narrative action of an activity,
+ * preventing duplicate names or stale random handle leaks.
+ */
+export function resolveActivityNarrative(
+  activity: Partial<ActivityItem>,
+  actorName: string
+): string {
+  if (activity.verb) return activity.verb;
+  if (!activity.text) return '';
+
+  // 1. Strip leading emojis, money bags, or confetti
+  const text = activity.text.replace(/^[\p{Emoji}\s]+/u, '').trim();
+
+  // 2. Check if a known action verb follows a subject prefix
+  const verbMatch = text.match(
+    /^([^:–—\n]+?)(?:\s+((?:created the party|creó la fiesta|joined the|se unió|added expense|añadió gasto|aportó|contributed|deposited|liquidó|settled|pagada a|paid to|ganó|won|jugó|played|voted|votó|transferred|rolled over).*))/i
+  );
+
+  if (verbMatch && verbMatch[2]) {
+    return verbMatch[2].trim();
+  }
+
+  // 3. If text begins with actor's name, strip it
+  if (actorName && text.toLowerCase().startsWith(actorName.toLowerCase())) {
+    return text.slice(actorName.length).trim();
+  }
+
+  return text;
+}

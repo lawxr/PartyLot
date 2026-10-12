@@ -32,9 +32,9 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
   }[size];
 
   const avatarSize = {
-    sm: 'w-6 h-6 border-[1.5px]',
-    md: 'w-8 h-8 border-2',
-    lg: 'w-10 h-10 border-2',
+    sm: 'w-7 h-7 min-w-7 min-h-7 aspect-square border-[1.5px]',
+    md: 'w-9 h-9 min-w-9 min-h-9 aspect-square border-2',
+    lg: 'w-12 h-12 min-w-12 min-h-12 aspect-square border-2',
   }[size];
 
   const visibleMembers = members.slice(0, maxDisplay);
@@ -48,7 +48,7 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
           <div
             key={member.id || index}
             onClick={() => onMemberClick?.(member)}
-            className={`relative rounded-full shrink-0 shadow-sm ${
+            className={`relative rounded-full shrink-0 aspect-square shadow-sm ${
               onMemberClick ? 'cursor-pointer hover:scale-110 hover:z-20 transition-transform' : ''
             }`}
             style={{ zIndex: maxDisplay - index }}

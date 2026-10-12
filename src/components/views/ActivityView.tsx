@@ -13,7 +13,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Avatar } from '@/components/ui/Avatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { PressableCard } from '@/components/ui/PressableCard';
-import { resolveActivityActor } from '@/lib/activityActor';
+import { resolveActivityActor, resolveActivityNarrative } from '@/lib/activityActor';
 import type { ActivityItem, Member } from '@/types';
 
 type ActivityFilter = 'all' | 'parties' | 'pot' | 'games';
@@ -181,11 +181,7 @@ export const ActivityView: React.FC = () => {
                     </span>
                     {/* Clean activity narrative */}
                     <span>
-                      {act.verb
-                        ? act.verb
-                        : act.text.startsWith(actor.name)
-                        ? act.text.slice(actor.name.length).trim()
-                        : act.text}
+                      {resolveActivityNarrative(act, actor.name)}
                     </span>
                   </p>
 

@@ -25,6 +25,7 @@ import {
 } from '@/features/expenses';
 import type { ExpenseCategory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { Avatar } from '@/components/ui/Avatar';
 import confetti from 'canvas-confetti';
 
 export const SplitView: React.FC = () => {
@@ -381,14 +382,10 @@ export const SplitView: React.FC = () => {
                 >
                   {/* Member Avatar + Name */}
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full overflow-hidden border border-black/5 dark:border-white/10 shrink-0 bg-[#EFEAE2] dark:bg-white/10">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={member.avatar}
-                        alt={member.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    <Avatar
+                      user={{ name: member.name, avatar: member.avatar }}
+                      size="md"
+                    />
                     <div className="text-left">
                       <span className="font-display font-bold text-sm sm:text-base text-[#171512] dark:text-white block leading-tight">
                         {member.name}
@@ -479,10 +476,10 @@ export const SplitView: React.FC = () => {
                       className="p-3 rounded-xl bg-[#FAF7F2] dark:bg-white/5 border border-[rgba(35,30,22,0.05)] dark:border-white/5 flex items-center justify-between"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full overflow-hidden bg-[#EFEAE2] dark:bg-white/10 shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" />
-                        </div>
+                        <Avatar
+                          user={{ name: m.name, avatar: m.avatar }}
+                          size="sm"
+                        />
                         <span className="font-bold text-xs text-[#171512] dark:text-white">{m.name}</span>
                       </div>
 

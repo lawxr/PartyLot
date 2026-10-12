@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       id: `act-treasury-${Date.now()}`,
       party_id: partyId,
       type: 'pot',
-      text: `💰 ${userName} aportó ${amount.toFixed(4)} MON al Party Pot desde su billetera`,
+      text: `${userName} aportó ${amount.toFixed(4)} MON al Party Pot desde su billetera`,
       time: 'Just now',
     });
 

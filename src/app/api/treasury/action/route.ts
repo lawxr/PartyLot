@@ -370,14 +370,14 @@ export async function POST(request: NextRequest) {
         party_id: partyId,
         type: 'pot',
         text: action === 'register'
-          ? `🎉 Tesorería onchain registrada en Monad Testnet`
+          ? `Tesorería registrada para la fiesta`
           : action === 'deposit'
-          ? `💰 ${userName || 'Alguien'} aportó ${numAmount.toFixed(4)} MON al Party Pot (Monad)`
+          ? `${userName || 'Alguien'} aportó ${numAmount.toFixed(4)} MON al Party Pot`
           : action === 'reward'
-          ? `🏆 Recompensa de ${numAmount.toFixed(4)} MON para ${recipientName || 'contribuidor'} (${role})`
+          ? `Recompensa de ${numAmount.toFixed(4)} MON para ${recipientName || 'contribuidor'} (${role})`
           : action === 'settle'
-          ? `⚡ Liquidación de deuda de ${numAmount.toFixed(4)} MON registrada en Monad`
-          : `💸 Gasto de ${numAmount.toFixed(4)} MON registrado en el Pot`,
+          ? `Liquidación de deuda de ${numAmount.toFixed(4)} MON registrada`
+          : `Gasto de ${numAmount.toFixed(4)} MON registrado en el bote`,
         time: 'Just now',
       });
     } catch (dbErr) {

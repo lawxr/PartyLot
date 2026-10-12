@@ -41,7 +41,7 @@ import { ReputationBadge } from '@/components/ui/ReputationBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { toast } from '@/store/useToastStore';
-import { resolveActivityActor } from '@/lib/activityActor';
+import { resolveActivityActor, resolveActivityNarrative } from '@/lib/activityActor';
 import { DEFAULT_PARTY_COVER } from '@/data/mockData';
 
 export const PartyDetailView: React.FC = () => {
@@ -527,12 +527,17 @@ export const PartyDetailView: React.FC = () => {
                             }}
                             size="md"
                           />
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#F0DC00] text-[#171512] flex items-center justify-center border border-white dark:border-[#1C1A16] shadow-sm">
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-party-yellow text-on-party-yellow flex items-center justify-center border border-surface shadow-xs">
                             <Icon className="w-2.5 h-2.5 stroke-[2.5]" />
                           </div>
                         </div>
-                        <p className="text-xs sm:text-sm text-[#171512] dark:text-[#F5F1E8] truncate font-medium">
-                          {act.text}
+                        <p className="text-xs sm:text-sm text-primary truncate font-medium">
+                          <span className="font-bold text-primary mr-1">
+                            {actor.name}
+                          </span>
+                          <span>
+                            {resolveActivityNarrative(act, actor.name)}
+                          </span>
                         </p>
                       </div>
                       <span className="text-[11px] text-[#8E887E] dark:text-[#A8A196] font-medium shrink-0 ml-2">

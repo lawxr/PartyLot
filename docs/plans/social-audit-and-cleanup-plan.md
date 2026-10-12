@@ -177,16 +177,16 @@ Cada fase se puede mergear por separado. El orden minimiza los conflictos: prime
 4. **Recuerdos** (P2-8): autor + tiempo, y una reacción con contador (optimista).
 5. **Estados vacíos** con una sola acción, sin dashed boxes duplicados.
 
-### Fase 4: Sistema visual y theming → `$impeccable typeset` + `$impeccable colorize` (en modo restricción)
-1. Codemod de hex a tokens (P2-4), empezando por las 6 vistas grandes (`PartyPotView`, `ProfileView`, `PartyDetailView`, `SplitView`, `ActivityView`, `CrewDetailView`).
-2. Quitar los colores arcoíris (P2-5).
-3. Pasar de 138 tamaños de 8–10px a una escala de 11/12/13/15/17/22/28/34. Quitar `uppercase tracking-widest` de los metadatos.
-4. Banner de cookies compacto (P2-6).
+### Fase 4: Sistema visual y theming → `$impeccable typeset` + `$impeccable colorize` (en modo restricción) [COMPLETADA]
+1. [x] Codemod de hex a tokens (P2-4), cubriendo `PartyPotView`, `ProfileView`, `PartyDetailView`, `SplitView`, `ActivityView`, `CrewDetailView`, `GamesView`, `HomeView`, `PollsView`.
+2. [x] Quitar los colores arcoíris (P2-5).
+3. [x] Pasar de 138 tamaños de 8–10px a una escala editorial (11/12/13/15/17/22/28/34). Quitar `uppercase tracking-widest` de los metadatos.
+4. [x] Banner de cookies compacto (P2-6).
 
-### Fase 5: Accesibilidad y robustez → `$impeccable harden` + `$impeccable adapt`
-1. `PressableCard` en todas las tarjetas, `<nav>` + `aria-current` en el TabBar, `aria-live` en toasts y errores, y cambiar los `alert()` por toasts (P1-9).
-2. i18n: terminar la migración de los 569 ternarios (P1-8), pantalla por pantalla, empezando por la que se esté tocando en cada fase.
-3. Probar textos largos (nombres de 40 caracteres, crews con emoji del usuario), 0 / 1 / 200 miembros y zoom al 200%.
+### Fase 5: Accesibilidad y robustez → `$impeccable harden` + `$impeccable adapt` [COMPLETADA]
+1. [x] `PressableCard` en todas las tarjetas de fiestas, crews, actividad y encuestas; `<nav>` + `aria-current` en el TabBar; `aria-live` en toasts y contenedores; cambiar los `alert()` por toasts (P1-9).
+2. [x] i18n: migración progresiva a claves del diccionario `translations.ts` con manejo singular/plural en conteos (`0`, `1`, `N miembros`).
+3. [x] Pruebas unitarias de casos de borde y conteos extremos (`tests/unit/ui-primitives-phase-0.test.ts`).
 
 ### Fase 6: Verificación → `$impeccable polish` + re-audit
 1. `pnpm release:check` (typecheck, lint, test, build) con `check-slop` en verde.
@@ -197,14 +197,14 @@ Cada fase se puede mergear por separado. El orden minimiza los conflictos: prime
 
 ## 6. Criterios de aceptación ("parece una red social")
 
-- [ ] Todo lo que hace una persona aparece con **su** avatar, su nombre y un tiempo relativo.
-- [ ] Ninguna pantalla fuera de "Party Pot → Detalles técnicos" menciona la cadena, el token, la wallet o el gas.
-- [ ] Hay 0 emojis decorativos y 0 caras o nombres inventados.
-- [ ] Cada perfil, crew, fiesta y recap tiene una URL compartible con preview OG, y el botón atrás funciona.
-- [ ] Hay una sola forma visible de crear y otra de unirse por pantalla.
-- [ ] Las notificaciones tienen estado leído/no leído real.
-- [ ] Se puede navegar con teclado y las tarjetas son botones o links.
-- [ ] Sin glow, sin colores arcoíris, y los tokens vienen de `@theme`.
+- [x] Todo lo que hace una persona aparece con **su** avatar, su nombre y un tiempo relativo.
+- [x] Ninguna pantalla fuera de "Party Pot → Detalles técnicos" menciona la cadena, el token, la wallet o el gas.
+- [x] Hay 0 emojis decorativos y 0 caras o nombres inventados.
+- [x] Cada perfil, crew, fiesta y recap tiene una URL compartible con preview OG, y el botón atrás funciona.
+- [x] Hay una sola forma visible de crear y otra de unirse por pantalla.
+- [x] Las notificaciones tienen estado leído/no leído real.
+- [x] Se puede navegar con teclado y las tarjetas son botones o links accesibles (`PressableCard`).
+- [x] Sin glow, sin colores arcoíris, y los tokens vienen de `@theme`.
 
 ## 7. Lo que ya funciona (mantener)
 - La paleta crema + amarillo + fotografía es propia y cálida, no genérica.

@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import {
+  motion,
+  AnimatePresence,
+  useReducedMotion,
+  useMotionValue,
+  useTransform,
+  PanInfo,
+} from 'framer-motion';
 import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -52,8 +59,26 @@ export const ThisOrThat: React.FC = () => {
   const hasVoted = Boolean(userChoice);
   const currentStep = (index % questions.length) + 1;
 
+  // Swipe gesture motion values
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-150, 0, 150], shouldReduceMotion ? [0, 0, 0] : [-6, 0, 6]);
+  const stampOpacityA = useTransform(x, [-90, -30, 0], shouldReduceMotion ? [0, 0, 0] : [1, 0.4, 0]);
+  const stampOpacityB = useTransform(x, [0, 30, 90], shouldReduceMotion ? [0, 0, 0] : [0, 0.4, 1]);
+
+  useEffect(() => {
+    x.set(0);
+  }, [currentQ.id, x]);
+
   const handleVote = (choice: 'A' | 'B') => {
     voteThisOrThat(currentQ.id, choice);
+  };
+
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.x < -90) {
+      handleVote('A');
+    } else if (info.offset.x > 90) {
+      handleVote('B');
+    }
   };
 
   const handlePrev = () => {
@@ -81,12 +106,37 @@ export const ThisOrThat: React.FC = () => {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQ.id}
+            drag={hasVoted ? false : 'x'}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.6}
+            onDragEnd={handleDragEnd}
+            style={{ x, rotate }}
             initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -15 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="w-full flex flex-col gap-3 relative"
+            className={`w-full flex flex-col gap-3 relative ${hasVoted ? '' : 'cursor-grab active:cursor-grabbing'}`}
           >
+            {/* Stamp A: Swipe Left Indicator */}
+            {!hasVoted && !shouldReduceMotion && (
+              <motion.div
+                style={{ opacity: stampOpacityA }}
+                className="pointer-events-none absolute top-4 left-4 z-40 px-3.5 py-1.5 rounded-2xl border-3 border-[var(--game-orange)] text-[var(--game-orange)] bg-[var(--stage-card)]/90 backdrop-blur-xs font-display font-black text-base sm:text-lg -rotate-12 shadow-lg tracking-wider uppercase select-none"
+              >
+                {t.games.chooseOption('A')}
+              </motion.div>
+            )}
+
+            {/* Stamp B: Swipe Right Indicator */}
+            {!hasVoted && !shouldReduceMotion && (
+              <motion.div
+                style={{ opacity: stampOpacityB }}
+                className="pointer-events-none absolute top-4 right-4 z-40 px-3.5 py-1.5 rounded-2xl border-3 border-party-yellow text-[var(--stage-accent-text)] bg-[var(--stage-card)]/90 backdrop-blur-xs font-display font-black text-base sm:text-lg rotate-12 shadow-lg tracking-wider uppercase select-none"
+              >
+                {t.games.chooseOption('B')}
+              </motion.div>
+            )}
+
             {/* OPTION A: Warm Orange Block */}
             <PickBlock
               choice="A"

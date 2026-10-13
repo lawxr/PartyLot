@@ -345,6 +345,7 @@ export interface TranslationDictionary {
     votesRegistered: (n: number) => string;
     voteFor: (name: string) => string;
     choose: (title: string) => string;
+    chooseOption: (choice: 'A' | 'B' | string) => string;
     backToParty: string;
     liveGathering: string;
     inRoom: (count: number) => string;
@@ -756,6 +757,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       votesRegistered: (n) => `${n} ${n === 1 ? 'voto registrado' : 'votos registrados'}`,
       voteFor: (name) => `Votar por ${name}`,
       choose: (title) => `Elegir ${title}`,
+      chooseOption: (choice) => `ELEGIR ${choice}`,
       backToParty: 'Volver a la fiesta',
       liveGathering: 'FIESTA EN CURSO',
       inRoom: (count) => `${count} en la sala`,
@@ -1165,6 +1167,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       votesRegistered: (n) => `${n} ${n === 1 ? 'vote registered' : 'votes registered'}`,
       voteFor: (name) => `Vote for ${name}`,
       choose: (title) => `Choose ${title}`,
+      chooseOption: (choice) => `CHOOSE ${choice}`,
       backToParty: 'Back to party',
       liveGathering: 'LIVE GATHERING',
       inRoom: (count) => `${count} playing`,

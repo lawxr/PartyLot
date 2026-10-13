@@ -9,7 +9,7 @@
 | **Track** | Metropolis — **Track 03: Social, Attention & Culture** |
 | **Demo video (≤3 min)** | _add link before submitting_ |
 | **Pitch video (≤2 min)** | _add link before submitting_ |
-| **Product ad (30 s)** | [![Watch Partylot product ad](https://img.youtube.com/vi/EmNsRLpgXoI/hqdefault.jpg)](https://youtu.be/EmNsRLpgXoI) |
+| **Product ad (30 s)** | [Watch Product Video](https://youtu.be/EmNsRLpgXoI) |
 | **Logo** | <img src="public/brand/partylot-logo-1024.png" alt="Partylot Logo" width="160"> |
 | **License** | [MIT](LICENSE) |
 

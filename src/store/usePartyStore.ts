@@ -23,6 +23,34 @@ import {
   DebtSettlement,
 } from '@/types';
 import { generatePartyCode } from '@/services/party';
+import { formatHandle } from '@/lib/handle';
+import {
+  addMemberRemote,
+  deletePartyRemote,
+  leavePartyRemote,
+  removeMemberRemote,
+  rotateCodeRemote,
+  updatePartyRemote,
+  type PartyEditableFields,
+} from '@/services/partyAdmin';
+
+export interface AdminActionResult {
+  success: boolean;
+  /** stable code for UI copy: AUTH_REQUIRED | FORBIDDEN | POT_NOT_EMPTY | NOT_FOUND | INVALID | NETWORK_ERROR | FAILED */
+  code?: string;
+  message?: string;
+}
+
+const adminCode = (status: number, message?: string): string => {
+  if (message === 'POT_NOT_EMPTY') return 'POT_NOT_EMPTY';
+  if (status === 401) return 'AUTH_REQUIRED';
+  if (status === 403) return 'FORBIDDEN';
+  if (status === 404) return 'NOT_FOUND';
+  if (status === 409) return 'CONFLICT';
+  if (status === 400) return 'INVALID';
+  if (status === 0) return 'NETWORK_ERROR';
+  return 'FAILED';
+};
 import {
   persistPartyToSupabase,
   joinPartyWithInviteCode,
@@ -70,6 +98,7 @@ import {
 import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
 import { recordGatheringOnchain } from '@/services/socialGraphService';
 import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
+import { deduplicateActivities } from '@/lib/activityDeduplication';
 
 const demoMode = isExplicitDevelopmentDemoMode();
 const signedOutUser: User = {
@@ -172,6 +201,14 @@ interface PartyStoreState {
     code: string,
     authToken?: string | null
   ) => Promise<{ success: boolean; party?: Party; message?: string }>;
+
+  // Host administration (server-authorised; optimistic with rollback)
+  updatePartyDetails: (partyId: string, updates: PartyEditableFields) => Promise<AdminActionResult>;
+  removePartyMember: (partyId: string, userId: string) => Promise<AdminActionResult>;
+  addPartyMember: (partyId: string, userId: string) => Promise<AdminActionResult>;
+  rotatePartyCode: (partyId: string) => Promise<AdminActionResult & { code?: string }>;
+  deleteParty: (partyId: string) => Promise<AdminActionResult>;
+  leaveParty: (partyId: string) => Promise<AdminActionResult>;
   memories: PartyMemory[];
   addPartyMemory: (params: { imageUrl: string; caption?: string }) => Promise<void>;
   toggleMemoryReaction: (memoryId: string) => void;
@@ -633,6 +670,84 @@ export const usePartyStore = create<PartyStoreState>()(
         return newParty;
       },
 
+      updatePartyDetails: async (partyId, updates) => {
+        const before = get().parties.find((p) => p.id === partyId);
+        if (!before) return { success: false, code: 'NOT_FOUND' };
+        const clean = Object.fromEntries(
+          Object.entries(updates).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v]),
+        ) as PartyEditableFields;
+        set((s) => ({ parties: s.parties.map((p) => (p.id === partyId ? { ...p, ...clean } : p)) }));
+        const res = await updatePartyRemote(partyId, clean);
+        if (!res.success) {
+          set((s) => ({ parties: s.parties.map((p) => (p.id === partyId ? before : p)) }));
+          return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        }
+        return { success: true };
+      },
+
+      removePartyMember: async (partyId, userId) => {
+        const before = get().parties.find((p) => p.id === partyId);
+        if (!before) return { success: false, code: 'NOT_FOUND' };
+        set((s) => ({
+          parties: s.parties.map((p) =>
+            p.id === partyId ? { ...p, members: p.members.filter((m) => m.id !== userId) } : p,
+          ),
+        }));
+        const res = await removeMemberRemote(partyId, userId);
+        if (!res.success) {
+          set((s) => ({ parties: s.parties.map((p) => (p.id === partyId ? before : p)) }));
+          return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        }
+        return { success: true };
+      },
+
+      addPartyMember: async (partyId, userId) => {
+        const res = await addMemberRemote(partyId, userId);
+        if (!res.success) return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        const member = res.data?.member;
+        if (member) {
+          set((s) => ({
+            parties: s.parties.map((p) =>
+              p.id === partyId && !p.members.some((m) => m.id === member.id)
+                ? { ...p, members: [...p.members, member] }
+                : p,
+            ),
+          }));
+        }
+        return { success: true };
+      },
+
+      rotatePartyCode: async (partyId) => {
+        const res = await rotateCodeRemote(partyId);
+        const code = res.data?.code;
+        if (!res.success || !code) return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        set((s) => ({ parties: s.parties.map((p) => (p.id === partyId ? { ...p, code } : p)) }));
+        return { success: true, code };
+      },
+
+      deleteParty: async (partyId) => {
+        const res = await deletePartyRemote(partyId);
+        if (!res.success) return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        set((s) => ({
+          parties: s.parties.filter((p) => p.id !== partyId),
+          activities: s.activities.filter((a) => a.partyId !== partyId),
+          currentPartyId: s.currentPartyId === partyId ? '' : s.currentPartyId,
+          currentView: s.currentPartyId === partyId ? 'home' : s.currentView,
+        }));
+        return { success: true };
+      },
+
+      leaveParty: async (partyId) => {
+        const res = await leavePartyRemote(partyId);
+        if (!res.success) return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        set((s) => ({
+          parties: s.parties.filter((p) => p.id !== partyId),
+          currentPartyId: s.currentPartyId === partyId ? '' : s.currentPartyId,
+          currentView: s.currentPartyId === partyId ? 'home' : s.currentView,
+        }));
+        return { success: true };
+      },
+
       joinPartyByCode: async (code, authToken) => {
         const state = get();
         const normalized = code.trim().toUpperCase();
@@ -786,7 +901,7 @@ export const usePartyStore = create<PartyStoreState>()(
           };
 
           const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
+            id: `act-expense-${newExpense.id}`,
             partyId,
             type: 'expense',
             text: `${payer.name} added ${category !== 'general' ? `[${category.toUpperCase()}] ` : ''}expense: "${description}" ($${amount.toFixed(2)})`,
@@ -795,11 +910,10 @@ export const usePartyStore = create<PartyStoreState>()(
           };
 
           persistExpenseToSupabase(newExpense);
-          persistActivityToSupabase(newActivity);
 
           return {
             expenses: [newExpense, ...state.expenses],
-            activities: [newActivity, ...state.activities],
+            activities: deduplicateActivities([newActivity, ...state.activities]),
           };
         });
       },
@@ -890,21 +1004,21 @@ export const usePartyStore = create<PartyStoreState>()(
           };
 
           const newActivity: ActivityItem = {
-            id: `act-${Date.now()}-${receipt.txHash.slice(0, 8)}`,
+            id: `act-expense-${settlementExpense.id}`,
             partyId: party.id,
             type: 'pot',
             text: `Pago liquidado: ${s.fromName} transfirió $${s.amount.toFixed(2)} a ${s.toName}`,
             time: 'Just now',
             avatar: currentState.currentUser.avatar,
+            txHash: receipt.txHash,
           };
 
           set((st) => ({
             expenses: [settlementExpense, ...st.expenses],
-            activities: [newActivity, ...st.activities],
+            activities: deduplicateActivities([newActivity, ...st.activities]),
           }));
 
           persistExpenseToSupabase(settlementExpense);
-          persistActivityToSupabase(newActivity);
         };
 
         try {
@@ -975,8 +1089,11 @@ export const usePartyStore = create<PartyStoreState>()(
           userAvatar: state.currentUser.avatar,
         });
 
+        const txId = receipt.txHash ? `pot-tx-${receipt.txHash.slice(2, 18)}` : `tx-${Date.now()}`;
+        const actId = receipt.txHash ? `act-deposit-${receipt.txHash.slice(2, 18)}` : `act-${Date.now()}`;
+
         const newTx: PotTransaction = {
-          id: `tx-${Date.now()}`,
+          id: txId,
           partyId,
           amount: numAmount,
           type: 'add',
@@ -995,7 +1112,7 @@ export const usePartyStore = create<PartyStoreState>()(
         );
 
         const newActivity: ActivityItem = {
-          id: `act-${Date.now()}`,
+          id: actId,
           partyId,
           type: 'pot',
           text: `${state.currentUser.name} aportó $${numAmount.toFixed(2)} al Party Pot`,
@@ -1006,15 +1123,17 @@ export const usePartyStore = create<PartyStoreState>()(
           verb: 'aportó al bote',
           objectType: 'pot',
           objectId: partyId,
+          txHash: receipt.txHash,
         };
 
         set({
           parties: updatedParties,
           transactions: [newTx, ...state.transactions],
-          activities: [newActivity, ...state.activities],
+          activities: deduplicateActivities([newActivity, ...state.activities]),
         });
 
-        if (!demoMode && partyId) {
+        // The onchain deposit flow already persists transaction and activity via BFF endpoint
+        if (!demoMode && partyId && !receipt.txHash) {
           persistPotTransactionToSupabase(newTx, newBalance).catch(() => {});
           persistActivityToSupabase(newActivity).catch(() => {});
         }
@@ -1038,8 +1157,11 @@ export const usePartyStore = create<PartyStoreState>()(
           state.currentUser.name
         );
 
+        const txId = receipt.txHash ? `pot-tx-${receipt.txHash.slice(2, 18)}` : `tx-${Date.now()}`;
+        const actId = receipt.txHash ? `act-treasury-${receipt.txHash.slice(2, 18)}` : `act-${Date.now()}`;
+
         const newTx: PotTransaction = {
-          id: `tx-${Date.now()}`,
+          id: txId,
           partyId,
           amount: numAmount,
           type: 'spend',
@@ -1058,7 +1180,7 @@ export const usePartyStore = create<PartyStoreState>()(
         );
 
         const newActivity: ActivityItem = {
-          id: `act-${Date.now()}`,
+          id: actId,
           partyId,
           type: 'pot',
           text: `Gasto de $${numAmount.toFixed(2)} pagado del Party Pot: "${description}"`,
@@ -1069,15 +1191,16 @@ export const usePartyStore = create<PartyStoreState>()(
           verb: 'pagó gasto del bote',
           objectType: 'expense',
           objectId: partyId,
+          txHash: receipt.txHash,
         };
 
         set({
           parties: updatedParties,
           transactions: [newTx, ...state.transactions],
-          activities: [newActivity, ...state.activities],
+          activities: deduplicateActivities([newActivity, ...state.activities]),
         });
 
-        if (!demoMode && partyId) {
+        if (!demoMode && partyId && !receipt.txHash) {
           persistPotTransactionToSupabase(newTx, newBalance).catch(() => {});
           persistActivityToSupabase(newActivity).catch(() => {});
         }
@@ -1615,13 +1738,9 @@ export const usePartyStore = create<PartyStoreState>()(
           sparkLevel = 'Kindling';
         }
 
-        let cleanHandle = targetMember.handle;
-        if (!cleanHandle) {
-          cleanHandle = `@${targetMember.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-        }
-        if (!cleanHandle.startsWith('@')) {
-          cleanHandle = `@${cleanHandle}`;
-        }
+        const cleanHandle =
+          formatHandle(targetMember.handle) ||
+          formatHandle(targetMember.name.toLowerCase().replace(/[^a-z0-9]/g, ''));
 
         return {
           targetUserId: targetId,
@@ -1792,7 +1911,7 @@ export const usePartyStore = create<PartyStoreState>()(
         }
 
         if (dbActivities.length > 0) {
-          set({ activities: dbActivities });
+          set({ activities: deduplicateActivities(dbActivities) });
         }
       },
 
@@ -1829,7 +1948,9 @@ export const usePartyStore = create<PartyStoreState>()(
           expenses: details.expenses.length > 0 ? details.expenses : s.expenses,
           transactions: details.transactions.length > 0 ? details.transactions : s.transactions,
           tasks: details.tasks.length > 0 ? details.tasks : s.tasks,
-          activities: details.activities.length > 0 ? details.activities : s.activities,
+          activities: deduplicateActivities(
+            details.activities.length > 0 ? [...details.activities, ...s.activities] : s.activities
+          ),
           memories: details.memories && details.memories.length > 0 ? details.memories : s.memories,
           polls: dbPolls.length > 0 ? dbPolls : s.polls,
         }));

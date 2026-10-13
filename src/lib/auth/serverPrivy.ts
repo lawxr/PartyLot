@@ -1,4 +1,5 @@
 import { PrivyClient, AuthTokenClaims, User as PrivyUser } from '@privy-io/server-auth';
+import { formatHandle } from '@/lib/handle';
 
 let privyClientInstance: PrivyClient | null = null;
 
@@ -56,7 +57,7 @@ export async function verifyPrivyToken(authToken: string): Promise<VerifiedPrivy
     user?.google?.name ||
     (email ? email.split('@')[0] : 'PartyMember');
 
-  let handle = `@${displayName.toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
+  let handle = formatHandle(displayName.toLowerCase().replace(/[^a-z0-9_]/g, ''));
   let avatar: string | null = null;
 
   // Enrich with user's customized profile stored in Supabase users table
@@ -74,7 +75,7 @@ export async function verifyPrivyToken(authToken: string): Promise<VerifiedPrivy
         displayName = dbUser.name.trim();
       }
       if (dbUser.handle && dbUser.handle.trim()) {
-        handle = dbUser.handle.trim();
+        handle = formatHandle(dbUser.handle);
       }
       if (dbUser.avatar && dbUser.avatar.trim()) {
         avatar = dbUser.avatar.trim();

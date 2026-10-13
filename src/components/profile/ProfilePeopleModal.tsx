@@ -2,10 +2,11 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Star, X } from 'lucide-react';
-import { usePartyStore } from '@/store/usePartyStore';
+import { Search, X, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import type { Member } from '@/types';
+import { Avatar } from '@/components/ui/Avatar';
+import { formatHandle } from '@/lib/handle';
 
 interface ProfilePeopleModalProps {
   isOpen: boolean;
@@ -20,7 +21,6 @@ export const ProfilePeopleModal: React.FC<ProfilePeopleModalProps> = ({
   peopleConnections,
   onSelectMember,
 }) => {
-  const { isUserStarred, toggleStarUser } = usePartyStore();
   const { language } = useTranslation();
   const isEs = language === 'es';
   const [search, setSearch] = useState('');
@@ -61,8 +61,10 @@ export const ProfilePeopleModal: React.FC<ProfilePeopleModalProps> = ({
                 </span>
               </div>
               <button
+                type="button"
                 onClick={onClose}
                 className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white hover:bg-black/10 cursor-pointer"
+                aria-label={isEs ? 'Cerrar' : 'Close'}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -82,54 +84,45 @@ export const ProfilePeopleModal: React.FC<ProfilePeopleModalProps> = ({
 
             {/* People List */}
             <div className="space-y-2 overflow-y-auto flex-1 pr-1">
-              {filteredPeople.map((person) => {
-                const starred = isUserStarred(person.id);
+              {filteredPeople.length > 0 ? (
+                filteredPeople.map((person) => {
+                  const handleDisplay = formatHandle(person.handle);
 
-                return (
-                  <div
-                    key={person.id}
-                    className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors"
-                  >
-                    <div
+                  return (
+                    <button
+                      type="button"
+                      key={person.id}
                       onClick={() => {
                         onClose();
                         onSelectMember(person);
                       }}
-                      className="flex items-center gap-3 cursor-pointer flex-1"
+                      className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-[0.99] transition-all text-left cursor-pointer"
                     >
-                      <div className="w-11 h-11 rounded-full overflow-hidden border border-black/10 dark:border-white/15 shadow-sm shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={person.avatar}
-                          alt={person.name}
-                          className="w-full h-full object-cover rounded-full"
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar
+                          user={{ avatar: person.avatar, name: person.name }}
+                          size="lg"
                         />
+                        <div className="min-w-0">
+                          <span className="font-bold text-sm text-[#171512] dark:text-white block truncate">
+                            {person.name}
+                          </span>
+                          <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block truncate">
+                            {handleDisplay ? `${handleDisplay} • ` : ''}
+                            {person.nightsTogether ?? 1} {isEs ? 'noches juntos' : 'nights together'}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-bold text-sm text-[#171512] dark:text-white block">
-                          {person.name}
-                        </span>
-                        <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
-                          {person.nightsTogether ?? 1} {isEs ? 'noches juntos' : 'nights together'}
-                        </span>
-                      </div>
-                    </div>
 
-                    <motion.button
-                      onClick={() => toggleStarUser(person.id)}
-                      whileTap={{ scale: 0.85 }}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center shadow-sm cursor-pointer transition-colors duration-200 ${
-                        starred
-                          ? 'bg-[#F0DC00] text-[#171512]'
-                          : 'bg-black/5 dark:bg-white/10 hover:bg-black/10 text-[#8E887E] dark:text-[#A8A196]'
-                      }`}
-                      aria-label={`Follow ${person.name}`}
-                    >
-                      <Star className={`w-4 h-4 ${starred ? 'fill-current stroke-[1.5]' : 'stroke-[2]'}`} />
-                    </motion.button>
-                  </div>
-                );
-              })}
+                      <ChevronRight className="w-4 h-4 text-[#8E887E] dark:text-[#A8A196] shrink-0" />
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="py-8 text-center text-xs text-[#8E887E] dark:text-[#A8A196]">
+                  {isEs ? 'No se encontraron contactos' : 'No connections found'}
+                </div>
+              )}
             </div>
           </motion.div>
         </div>

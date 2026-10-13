@@ -4,6 +4,7 @@ import React from 'react';
 import { Wine, Pizza, Car } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { Avatar } from '@/components/ui/Avatar';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import type { ExpenseCategory, Member } from '../types';
 
@@ -135,10 +136,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                     : 'bg-[#F7F2E8] dark:bg-white/5 text-[#6F6A62] dark:text-[#A8A196] border border-[rgba(35,30,22,0.08)] dark:border-white/10'
                 }`}
               >
-                <div className="w-5 h-5 rounded-full overflow-hidden bg-[#EFEAE2]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
-                </div>
+                <Avatar user={member} size="xs" />
                 <span>{member.name}</span>
               </button>
             ))}
@@ -164,10 +162,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                       : 'border-[rgba(35,30,22,0.08)] dark:border-white/10 bg-[#F7F2E8] dark:bg-white/5 text-[#6F6A62] dark:text-[#A8A196]'
                   }`}
                 >
-                  <div className="w-5 h-5 rounded-full overflow-hidden bg-[#EFEAE2] shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
-                  </div>
+                  <Avatar user={member} size="xs" />
                   <span className="truncate">{member.name}</span>
                 </button>
               );

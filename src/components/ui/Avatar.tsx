@@ -24,13 +24,13 @@ export interface AvatarProps {
   onClick?: () => void;
 }
 
-const SIZE_MAP: Record<AvatarSize, { box: string; text: string }> = {
-  xs: { box: 'w-5 h-5 min-w-5 min-h-5 aspect-square', text: 'text-[9px]' },
-  sm: { box: 'w-7 h-7 min-w-7 min-h-7 aspect-square', text: 'text-[11px]' },
-  md: { box: 'w-9 h-9 min-w-9 min-h-9 aspect-square', text: 'text-xs' },
-  lg: { box: 'w-12 h-12 min-w-12 min-h-12 aspect-square', text: 'text-sm' },
-  xl: { box: 'w-16 h-16 min-w-16 min-h-16 aspect-square', text: 'text-base' },
-  '2xl': { box: 'w-20 h-20 min-w-20 min-h-20 aspect-square', text: 'text-xl' },
+const SIZE_MAP: Record<AvatarSize, { box: string; text: string; pixels: number }> = {
+  xs: { box: 'w-5 h-5 min-w-[20px] max-w-[20px] min-h-[20px] max-h-[20px] aspect-square', text: 'text-[9px]', pixels: 20 },
+  sm: { box: 'w-7 h-7 min-w-[28px] max-w-[28px] min-h-[28px] max-h-[28px] aspect-square', text: 'text-[11px]', pixels: 28 },
+  md: { box: 'w-9 h-9 min-w-[36px] max-w-[36px] min-h-[36px] max-h-[36px] aspect-square', text: 'text-xs', pixels: 36 },
+  lg: { box: 'w-12 h-12 min-w-[48px] max-w-[48px] min-h-[48px] max-h-[48px] aspect-square', text: 'text-sm', pixels: 48 },
+  xl: { box: 'w-16 h-16 min-w-[64px] max-w-[64px] min-h-[64px] max-h-[64px] aspect-square', text: 'text-base', pixels: 64 },
+  '2xl': { box: 'w-20 h-20 min-w-[80px] max-w-[80px] min-h-[80px] max-h-[80px] aspect-square', text: 'text-xl', pixels: 80 },
 };
 
 // Curated warm, editorial palette aligned with DESIGN.md (no electric neon).
@@ -142,7 +142,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   const theme = PALETTE[colorIndex];
   const sizeConfig = SIZE_MAP[size];
 
-  let borderClass = '';
+  let borderClass = 'border-0';
   if (border === true || border === 'light') {
     borderClass = 'border-2 border-[#FFFDF8] dark:border-[#1C1A16]';
   } else if (border === 'dark') {
@@ -161,10 +161,16 @@ export const Avatar: React.FC<AvatarProps> = ({
       {...roleProps}
       aria-label={rawName || 'User avatar'}
       style={{
+        width: `${sizeConfig.pixels}px`,
+        height: `${sizeConfig.pixels}px`,
+        minWidth: `${sizeConfig.pixels}px`,
+        maxWidth: `${sizeConfig.pixels}px`,
+        minHeight: `${sizeConfig.pixels}px`,
+        maxHeight: `${sizeConfig.pixels}px`,
         WebkitMaskImage: '-webkit-radial-gradient(white, black)',
         isolation: 'isolate',
       }}
-      className={`relative inline-flex items-center justify-center shrink-0 rounded-full aspect-square overflow-hidden select-none box-border transition-transform ${
+      className={`relative inline-flex items-center justify-center shrink-0 rounded-full aspect-square overflow-hidden select-none box-border p-0 m-0 leading-none align-middle transition-transform ${
         sizeConfig.box
       } ${borderClass} ${onClick ? 'cursor-pointer hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0DC00]' : ''} ${className}`}
     >
@@ -174,14 +180,15 @@ export const Avatar: React.FC<AvatarProps> = ({
           key={validSrc}
           src={validSrc}
           alt={rawName || 'Avatar'}
-          className="w-full h-full object-cover rounded-full aspect-square pointer-events-none block"
+          className="w-full h-full max-w-full max-h-full min-w-full min-h-full object-cover rounded-full aspect-square pointer-events-none block shrink-0"
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           loading="lazy"
           decoding="async"
           onError={() => setFailedSrc(validSrc)}
         />
       ) : (
         <span
-          className={`w-full h-full flex items-center justify-center font-bold tracking-tight ${sizeConfig.text}`}
+          className={`w-full h-full flex items-center justify-center font-bold tracking-tight rounded-full leading-none shrink-0 ${sizeConfig.text}`}
           style={{ backgroundColor: theme.bg, color: theme.text }}
         >
           {initials}

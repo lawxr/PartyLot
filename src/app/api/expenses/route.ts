@@ -190,15 +190,22 @@ export async function POST(request: NextRequest) {
     const categoryTag = category !== 'general' ? `[${category.toUpperCase()}] ` : '';
     let activityErr: unknown = null;
     try {
-      const result = await supabase.from('activities').insert({
-        id: `act-${Date.now()}`,
+      const actTable = supabase.from('activities');
+      const actPayload = {
+        id: `act-expense-${expenseId}`,
         party_id: partyId,
         type: 'expense',
         text: `${paidByName} added ${categoryTag}expense: "${description}" ($${amount.toFixed(2)})`,
         time: 'Just now',
         avatar: paidByAvatar,
-      });
-      activityErr = result.error;
+      };
+      if (typeof actTable?.upsert === 'function') {
+        const result = await actTable.upsert(actPayload);
+        activityErr = result.error;
+      } else if (typeof actTable?.insert === 'function') {
+        const result = await actTable.insert(actPayload);
+        activityErr = result.error;
+      }
     } catch (err) {
       activityErr = err;
     }

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AvatarCropModal } from '@/components/ui/AvatarCropModal';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { stripHandle, formatHandle } from '@/lib/handle';
 
 const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -43,12 +44,12 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   // Standard Social Profile Fields
   const [name, setName] = useState(currentUser.name || '');
-  const [handle, setHandle] = useState(currentUser.handle?.replace(/^@/, '') || '');
+  const [handle, setHandle] = useState(stripHandle(currentUser.handle));
   const [bio, setBio] = useState(currentUser.bio || '');
   const [location, setLocation] = useState(currentUser.location || '');
   const [website, setWebsite] = useState(currentUser.website || '');
-  const [instagram, setInstagram] = useState(currentUser.instagram?.replace(/^@/, '') || '');
-  const [twitter, setTwitter] = useState(currentUser.twitter?.replace(/^@/, '') || '');
+  const [instagram, setInstagram] = useState(stripHandle(currentUser.instagram));
+  const [twitter, setTwitter] = useState(stripHandle(currentUser.twitter));
   const [avatar, setAvatar] = useState(currentUser.avatar || '');
   const [coverImage, setCoverImage] = useState(currentUser.coverImage || '');
 
@@ -126,13 +127,13 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     setIsSaving(true);
     setError(null);
 
-    const handleRaw = handle.trim().replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+    const handleRaw = stripHandle(handle).toLowerCase().replace(/[^a-z0-9_]/g, '');
     if (handleRaw.length < 3 || handleRaw.length > 24) {
       setError(isEs ? 'El @handle debe tener entre 3 y 24 caracteres (letras, números o guión bajo).' : 'Handle must be 3-24 characters (letters, numbers, underscores).');
       setIsSaving(false);
       return;
     }
-    const formattedHandle = `@${handleRaw}`;
+    const formattedHandle = formatHandle(handleRaw);
 
     try {
       let token: string | null = null;

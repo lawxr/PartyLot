@@ -6,7 +6,7 @@ import { Bell, X, Trash2, CheckCheck, Clock, ExternalLink, Coins, Receipt, BarCh
 import { usePartyStore } from '@/store/usePartyStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Avatar } from '@/components/ui/Avatar';
-import { resolveActivityActor } from '@/lib/activityActor';
+import { resolveActivityActor, deduplicateActivities } from '@/lib/activityActor';
 import type { ActivityItem } from '@/types';
 
 interface NotificationsPopoverProps {
@@ -116,9 +116,10 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
     return true;
   };
 
-  const todayActivities = activities.filter(isToday);
-  const earlierActivities = activities.filter((a) => !isToday(a));
-  const unreadCount = activities.filter(isUnread).length;
+  const uniqueActivities = deduplicateActivities(activities);
+  const todayActivities = uniqueActivities.filter(isToday);
+  const earlierActivities = uniqueActivities.filter((a) => !isToday(a));
+  const unreadCount = uniqueActivities.filter(isUnread).length;
 
   const handleOpenParty = (partyId?: string) => {
     if (!partyId) return;
@@ -266,7 +267,7 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
                     <span className="hidden sm:inline">{isEs ? 'Leídas' : 'Read'}</span>
                   </button>
                 )}
-                {activities.length > 0 && (
+                {uniqueActivities.length > 0 && (
                   <button
                     onClick={clearAllActivities}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-[#8E887E] dark:text-[#A8A196] hover:text-[#FF3B30] dark:hover:text-[#FF453A] hover:bg-[#FF3B30]/10 transition-colors cursor-pointer"
@@ -288,7 +289,7 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
 
             {/* Scrollable Notification List */}
             <div className="p-3 sm:p-4 overflow-y-auto max-h-[460px] space-y-3">
-              {activities.length === 0 ? (
+              {uniqueActivities.length === 0 ? (
                 /* Warm Empty State */
                 <div className="py-12 px-6 text-center flex flex-col items-center justify-center">
                   <div className="w-14 h-14 rounded-full bg-[#F0DC00]/20 flex items-center justify-center text-[#171512] dark:text-[#F0DC00] mb-3">
@@ -331,7 +332,7 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
             </div>
 
             {/* Footer Tip */}
-            {activities.length > 0 && (
+            {uniqueActivities.length > 0 && (
               <div className="px-5 py-2.5 border-t border-black/[0.04] dark:border-white/[0.06] bg-black/[0.01] dark:bg-white/[0.02] text-center">
                 <span className="text-[11px] font-semibold text-[#8E887E] dark:text-[#A8A196]">
                   {isEs

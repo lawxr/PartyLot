@@ -28,6 +28,7 @@ import { formatEther } from 'viem';
 import { publicMonadClient } from '@/lib/web3/monad';
 import { usePartyStore } from '@/store/usePartyStore';
 import { PartyInviteModal } from '@/components/ui/PartyInviteModal';
+import { PartyManageSheet } from '@/components/party/PartyManageSheet';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
@@ -36,12 +37,13 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { uploadImageFile } from '@/services/storageService';
 import { useMonPrice } from '@/hooks/useMonPrice';
 import { getCoverUrl } from '@/lib/imageOptimization';
-import { ReputationBadge } from '@/components/ui/ReputationBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { toast } from '@/store/useToastStore';
-import { resolveActivityActor, resolveActivityNarrative } from '@/lib/activityActor';
+import { resolveActivityActor, resolveActivityNarrative, deduplicateActivities } from '@/lib/activityActor';
 import { DEFAULT_PARTY_COVER } from '@/data/mockData';
+import { Web3ErrorBanner } from '@/components/ui/Web3ErrorBanner';
+import { formatWeb3Error, type FormattedWeb3Error } from '@/lib/web3Error';
 
 export const PartyDetailView: React.FC = () => {
   const {
@@ -65,13 +67,14 @@ export const PartyDetailView: React.FC = () => {
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const partyMemories = (memories || []).filter((m) => m.partyId === party?.id);
-  const partyActivities = (activities || []).filter((a) => a.partyId === party?.id);
+  const partyActivities = deduplicateActivities((activities || []).filter((a) => a.partyId === party?.id));
   const partyMembers = party?.members || [];
   const hostMember = partyMembers.find((m) => m.role === 'host' || m.id === party?.hostId);
   const hostName = party?.hostName || hostMember?.name || (isEs ? 'Anfitrión' : 'Host');
   const hostAvatar = hostMember?.avatar;
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isManageOpen, setIsManageOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<PartyMemory | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -92,7 +95,7 @@ export const PartyDetailView: React.FC = () => {
   const [isPotSheetOpen, setIsPotSheetOpen] = useState(false);
   const [potAmount, setPotAmount] = useState<number>(0.5);
   const [isPotSubmitting, setIsPotSubmitting] = useState(false);
-  const [potError, setPotError] = useState<string | null>(null);
+  const [potError, setPotError] = useState<FormattedWeb3Error | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -184,7 +187,7 @@ export const PartyDetailView: React.FC = () => {
       }
     } catch (err) {
       console.error('Error adding to party pot:', err);
-      setPotError(err instanceof Error ? err.message : (isEs ? 'Error al aportar al bote.' : 'Failed to deposit into party pot.'));
+      setPotError(formatWeb3Error(err, isEs));
     } finally {
       setIsPotSubmitting(false);
     }
@@ -209,7 +212,7 @@ export const PartyDetailView: React.FC = () => {
       setIsPotSheetOpen(false);
     } catch (err) {
       console.error('Sponsored demo deposit error:', err);
-      setPotError(err instanceof Error ? err.message : 'Failed to deposit with demo sponsor.');
+      setPotError(formatWeb3Error(err, isEs));
     } finally {
       setIsPotSubmitting(false);
     }
@@ -272,9 +275,9 @@ export const PartyDetailView: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setIsInviteOpen(true)}
+            onClick={() => setIsManageOpen(true)}
             className="w-11 h-11 rounded-full glass-light flex items-center justify-center text-white border border-white/35 shadow-md active:scale-95 transition-transform cursor-pointer p-0"
-            aria-label="More options"
+            aria-label={t.partyAdmin.partyOptions}
           >
             <MoreHorizontal className="w-5 h-5 stroke-[2.2]" />
           </button>
@@ -323,7 +326,7 @@ export const PartyDetailView: React.FC = () => {
 
             {/* Host Row */}
             <div className="flex items-center gap-2 mb-3 drop-shadow">
-              <div className="shrink-0">
+              <div className="shrink-0 flex items-center justify-center">
                 <Avatar
                   user={{
                     avatar: hostAvatar,
@@ -335,18 +338,13 @@ export const PartyDetailView: React.FC = () => {
               <span className="text-xs sm:text-sm font-semibold text-white">
                 {isEs ? `Organizado por ${hostName}` : `Hosted by ${hostName}`}
               </span>
-              <ReputationBadge
-                sharedNights={hostMember?.nightsTogether || 3}
-                gatheringsCount={hostMember?.nightsTogether || 3}
-                size="xs"
-              />
             </div>
 
             <div className="flex items-center -space-x-1.5">
               {partyMembers.slice(0, 7).map((m, idx) => (
                 <div
                   key={m.id || idx}
-                  className="shrink-0 relative hover:z-20 transition-transform hover:scale-110"
+                  className="w-7 h-7 min-w-[28px] max-w-[28px] min-h-[28px] max-h-[28px] shrink-0 relative flex items-center justify-center rounded-full hover:z-20 transition-transform hover:scale-110"
                   title={`${m.name} · ${m.nightsTogether || 1} ${isEs ? 'noches juntos' : 'nights together'}`}
                 >
                   <Avatar
@@ -835,12 +833,12 @@ export const PartyDetailView: React.FC = () => {
               )}
 
               {/* Error Alert Banner */}
-              {potError && (
-                <div className="w-full p-3 mb-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 dark:text-rose-400 text-xs text-left leading-relaxed">
-                  <strong className="block mb-0.5">{isEs ? 'Error en el aporte:' : 'Deposit error:'}</strong>
-                  {potError}
-                </div>
-              )}
+              <Web3ErrorBanner
+                error={potError}
+                isEs={isEs}
+                onDismiss={() => setPotError(null)}
+                className="mb-4"
+              />
 
               {/* Primary Yellow CTA Button */}
               <button
@@ -873,6 +871,14 @@ export const PartyDetailView: React.FC = () => {
         party={party}
         isOpen={isInviteOpen}
         onClose={() => setIsInviteOpen(false)}
+      />
+
+      <PartyManageSheet
+        key={isManageOpen ? 'manage-open' : 'manage-closed'}
+        party={party}
+        isOpen={isManageOpen}
+        onClose={() => setIsManageOpen(false)}
+        onShareInvite={() => setIsInviteOpen(true)}
       />
 
       <SharedExperienceModal

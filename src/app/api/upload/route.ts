@@ -95,8 +95,14 @@ export async function POST(request: NextRequest) {
     }
 
     const cleanFolder = ALLOWED_FOLDERS.has(folder) ? folder : 'uploads';
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const safeExt = ext.replace(/[^a-z0-9]/g, '') || 'jpg';
+    const MIME_TO_EXT: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+      'image/avif': 'avif',
+    };
+    const safeExt = MIME_TO_EXT[file.type] || 'jpg';
     const safeUserId = authenticatedUserId.replace(/[^a-zA-Z0-9_-]/g, '_');
     const fileName = `${cleanFolder}/${safeUserId}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${safeExt}`;
 

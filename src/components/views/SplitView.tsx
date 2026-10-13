@@ -27,6 +27,7 @@ import type { ExpenseCategory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Avatar } from '@/components/ui/Avatar';
 import confetti from 'canvas-confetti';
+import { formatWeb3Error, type FormattedWeb3Error } from '@/lib/web3Error';
 
 export const SplitView: React.FC = () => {
   const { parties, currentPartyId, expenses, addExpense, settleAllDebts, goBack, setCurrentView, currentUser } = usePartyStore();
@@ -34,7 +35,7 @@ export const SplitView: React.FC = () => {
   const isEs = language === 'es';
   const { wallets } = useWallets();
   const activeWallet = wallets.find((w) => w.walletClientType === 'privy') || wallets[0];
-  const [settleError, setSettleError] = useState<string | null>(null);
+  const [settleError, setSettleError] = useState<FormattedWeb3Error | null>(null);
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const partyMembers = party?.members || [];
@@ -123,7 +124,7 @@ export const SplitView: React.FC = () => {
     try {
       const result = await settleAllDebts(party.id, { wallet: activeWallet });
       if (result.partial) {
-        setSettleError(result.message);
+        setSettleError(formatWeb3Error(result.message, isEs));
       } else {
         confetti({
           particleCount: 70,
@@ -134,9 +135,8 @@ export const SplitView: React.FC = () => {
         setIsSettleOpen(false);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error settling debts on Monad.';
-      setSettleError(msg);
       console.error('Error settling debts:', err);
+      setSettleError(formatWeb3Error(err, isEs));
     } finally {
       setIsSettling(false);
     }
@@ -714,6 +714,7 @@ export const SplitView: React.FC = () => {
         debtorsList={realCreditorsList}
         onSettle={handleSettleOnchain}
         errorMessage={settleError}
+        onClearError={() => setSettleError(null)}
       />
     </div>
   );

@@ -6,6 +6,7 @@ import { Sparkles, Camera, Check, AlertCircle, ArrowRight, User } from 'lucide-r
 import { usePartyStore } from '@/store/usePartyStore';
 import { usePrivy } from '@privy-io/react-auth';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { stripHandle, formatHandle } from '@/lib/handle';
 import confetti from 'canvas-confetti';
 import { uploadImageFile } from '@/services/storageService';
 import { User as UserType } from '@/types';
@@ -27,7 +28,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
       : '';
   const initialHandle =
     currentUser.handle && !currentUser.handle.startsWith('@partymember') && currentUser.handle !== '@guest'
-      ? currentUser.handle.replace(/^@/, '')
+      ? stripHandle(currentUser.handle)
       : '';
 
   const [name, setName] = useState(initialName);
@@ -95,7 +96,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
     }
   };
 
-  const cleanHandle = handle.trim().replace(/^@/, '').toLowerCase();
+  const cleanHandle = stripHandle(handle).toLowerCase();
   const isHandleValid = cleanHandle.length >= 3 && cleanHandle.length <= 24 && /^[a-z0-9_]+$/.test(cleanHandle);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,7 +115,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
     setIsSubmitting(true);
     setError(null);
 
-    const formattedHandle = `@${cleanHandle}`;
+    const formattedHandle = formatHandle(cleanHandle);
 
     try {
       let token: string | null = null;

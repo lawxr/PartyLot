@@ -177,3 +177,10 @@ export function resolveActivityNarrative(
 
   return text;
 }
+
+export {
+  deduplicateActivities,
+  areActivitiesDuplicate,
+  normalizeActivityText,
+  extractMonetaryAmount,
+} from './activityDeduplication';

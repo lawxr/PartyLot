@@ -12,8 +12,6 @@ import {
   Check,
   Copy,
   ExternalLink,
-  AlertTriangle,
-  AlertCircle,
   X,
   Landmark,
   Coins,
@@ -31,6 +29,7 @@ import { getCoverUrl } from '@/lib/imageOptimization';
 import { Avatar } from '@/components/ui/Avatar';
 import { UsdcLogo, MonadLogo } from '@/components/ui/TokenLogo';
 import { RewardMemberModal } from '@/components/pot/RewardMemberModal';
+import { Web3ErrorBanner } from '@/components/ui/Web3ErrorBanner';
 import {
   formatWeb3Error,
   formatShortRelativeTime,
@@ -488,71 +487,13 @@ export const PartyPotView: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8 lg:items-start -mt-5 lg:mt-0">
             {/* LEFT COLUMN: Main Interactive Action Workspace */}
             <div className="lg:col-span-7 xl:col-span-7 lg:col-start-1 space-y-4">
-          {/* iOS 27 Liquid Glass Real-time Web3 Error / Notice Banner */}
-          <AnimatePresence>
-            {txError && (
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                transition={{ type: 'spring', stiffness: 450, damping: 30 }}
-                className={`mb-5 p-3.5 sm:p-4 rounded-[26px] backdrop-blur-2xl border transition-all ${
-                  txError.isUserRejection
-                    ? 'bg-amber-500/[0.08] dark:bg-amber-400/[0.12] border-amber-500/25 dark:border-amber-400/30 text-[#171512] dark:text-[#FBF8F2] shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_1px_rgba(255,255,255,0.7)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)]'
-                    : 'bg-rose-500/[0.08] dark:bg-rose-500/[0.14] border-rose-500/25 dark:border-rose-400/30 text-[#171512] dark:text-[#FBF8F2] shadow-[0_8px_30px_rgba(244,63,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.7)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)]'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-xs ${
-                        txError.isUserRejection
-                          ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
-                          : 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
-                      }`}
-                    >
-                      {txError.isUserRejection ? (
-                        <AlertCircle className="w-4 h-4 stroke-[2.5]" />
-                      ) : (
-                        <AlertTriangle className="w-4 h-4 stroke-[2.5]" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <span className="font-display font-bold text-xs sm:text-sm block leading-tight">
-                        {txError.title}
-                      </span>
-                      <p className="text-[11px] sm:text-xs text-[#706B66] dark:text-[#A8A196] font-medium mt-0.5 leading-relaxed">
-                        {txError.message}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setTxError(null)}
-                    className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 flex items-center justify-center text-[#706B66] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-colors cursor-pointer shrink-0"
-                    aria-label="Dismiss error"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                {/* Collapsible Technical Details for Developer Tracing (Cleanly Truncated) */}
-                {txError.technicalDetails && !txError.isUserRejection && (
-                  <div className="mt-2.5 pt-2 border-t border-black/5 dark:border-white/10">
-                    <details className="text-xs text-secondary font-mono">
-                      <summary className="cursor-pointer hover:underline font-sans font-semibold">
-                        {isEs ? 'Detalles técnicos' : 'Technical details'}
-                      </summary>
-                      <pre className="mt-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 text-[11px] overflow-x-auto whitespace-pre-wrap break-all max-h-24">
-                        {txError.technicalDetails}
-                      </pre>
-                    </details>
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Web3 Error / Notice Banner */}
+          <Web3ErrorBanner
+            error={txError}
+            isEs={isEs}
+            onDismiss={() => setTxError(null)}
+            className="mb-5"
+          />
 
           {/* Real-time Transaction Confirmation Toast */}
           {lastTxHash && (

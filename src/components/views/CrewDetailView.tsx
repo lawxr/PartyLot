@@ -22,6 +22,7 @@ import { Member } from '@/types';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Avatar } from '@/components/ui/Avatar';
+import { formatHandle } from '@/lib/handle';
 
 export const CrewDetailView: React.FC = () => {
   const {
@@ -93,7 +94,7 @@ export const CrewDetailView: React.FC = () => {
 
     addCrewMember(crew.id, {
       name: newMemberName.trim(),
-      handle: newMemberHandle.trim() ? `@${newMemberHandle.replace('@', '')}` : `@${newMemberName.toLowerCase().replace(/\s+/g, '')}`,
+      handle: newMemberHandle.trim() ? formatHandle(newMemberHandle) : formatHandle(newMemberName.toLowerCase().replace(/\s+/g, '')),
       role: 'member',
       avatar: '',
     });
@@ -421,7 +422,7 @@ export const CrewDetailView: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-secondary font-mono block">{m.handle}</span>
+                    <span className="text-xs text-secondary font-mono block">{formatHandle(m.handle)}</span>
                   </div>
                 </div>
 

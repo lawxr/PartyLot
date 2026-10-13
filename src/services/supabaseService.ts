@@ -14,6 +14,7 @@ import {
   PartyMemory,
   Poll,
 } from '@/types';
+import { deduplicateActivities } from '@/lib/activityDeduplication';
 
 /**
  * Service providing database persistence and Realtime synchronization
@@ -760,7 +761,7 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
       createdAt: String(tk.created_at || 'Just now'),
     }));
 
-    const activities: ActivityItem[] = (data.activities || []).map((a: Record<string, unknown>) => ({
+    const rawActivities: ActivityItem[] = (data.activities || []).map((a: Record<string, unknown>) => ({
       id: String(a.id),
       partyId: String(a.party_id),
       type: (a.type === 'deposit' ? 'pot' : a.type) as 'join' | 'pot' | 'poll' | 'game' | 'expense',
@@ -768,6 +769,7 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
       time: String(a.time || a.timestamp || ''),
       avatar: a.avatar ? String(a.avatar) : undefined,
     }));
+    const activities = deduplicateActivities(rawActivities);
 
     const memories: PartyMemory[] = (data.memories || []).map((m: Record<string, unknown>) => ({
       id: String(m.id),
@@ -890,7 +892,7 @@ export async function fetchActivitiesFromDb(partyId?: string): Promise<ActivityI
     const data = await response.json();
     if (!Array.isArray(data.activities)) return [];
 
-    return data.activities.map((a: Record<string, unknown>) => ({
+    const rawActivities: ActivityItem[] = data.activities.map((a: Record<string, unknown>) => ({
       id: String(a.id),
       partyId: String(a.party_id),
       type: (a.type === 'deposit' ? 'pot' : a.type) as 'join' | 'pot' | 'poll' | 'game' | 'expense',
@@ -898,6 +900,7 @@ export async function fetchActivitiesFromDb(partyId?: string): Promise<ActivityI
       time: String(a.time || a.timestamp || ''),
       avatar: a.avatar ? String(a.avatar) : undefined,
     }));
+    return deduplicateActivities(rawActivities);
   } catch (err) {
     console.warn('Failed to fetch activities from server:', err);
     return [];

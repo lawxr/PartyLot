@@ -102,7 +102,7 @@ export const ThisOrThat: React.FC = () => {
             {/* Central Overlapping Floating VS Circle */}
             <div
               aria-hidden="true"
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-[#0e0c09] text-white font-mono font-black text-xs flex items-center justify-center border-4 border-white shadow-xl pointer-events-none"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-[var(--stage-vs)] text-white font-mono font-black text-xs flex items-center justify-center border-4 border-white shadow-xl pointer-events-none"
             >
               VS
             </div>

@@ -66,7 +66,7 @@ export const CrewTrivia: React.FC = () => {
           particleCount: 45,
           spread: 60,
           origin: { y: 0.65 },
-          colors: ['#F0DC00', '#10B981', '#FFFFFF'],
+          colors: [...GAME_CONFETTI_COLORS],
           disableForReducedMotion: true,
         });
       }

@@ -89,7 +89,7 @@ export const FriendVoteCard: React.FC<FriendVoteCardProps> = ({
           <motion.div
             initial={shouldReduceMotion ? { scale: 1 } : { scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#171512] text-white flex items-center justify-center shadow-md z-10"
+            className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--stage-ink)] text-white flex items-center justify-center shadow-md z-10"
           >
             <Check className="w-3.5 h-3.5 stroke-[3]" />
           </motion.div>

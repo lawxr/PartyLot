@@ -24,6 +24,33 @@ import {
 } from '@/types';
 import { generatePartyCode } from '@/services/party';
 import {
+  addMemberRemote,
+  deletePartyRemote,
+  leavePartyRemote,
+  removeMemberRemote,
+  rotateCodeRemote,
+  updatePartyRemote,
+  type PartyEditableFields,
+} from '@/services/partyAdmin';
+
+export interface AdminActionResult {
+  success: boolean;
+  /** stable code for UI copy: AUTH_REQUIRED | FORBIDDEN | POT_NOT_EMPTY | NOT_FOUND | INVALID | NETWORK_ERROR | FAILED */
+  code?: string;
+  message?: string;
+}
+
+const adminCode = (status: number, message?: string): string => {
+  if (message === 'POT_NOT_EMPTY') return 'POT_NOT_EMPTY';
+  if (status === 401) return 'AUTH_REQUIRED';
+  if (status === 403) return 'FORBIDDEN';
+  if (status === 404) return 'NOT_FOUND';
+  if (status === 409) return 'CONFLICT';
+  if (status === 400) return 'INVALID';
+  if (status === 0) return 'NETWORK_ERROR';
+  return 'FAILED';
+};
+import {
   persistPartyToSupabase,
   joinPartyWithInviteCode,
   persistExpenseToSupabase,
@@ -172,6 +199,14 @@ interface PartyStoreState {
     code: string,
     authToken?: string | null
   ) => Promise<{ success: boolean; party?: Party; message?: string }>;
+
+  // Host administration (server-authorised; optimistic with rollback)
+  updatePartyDetails: (partyId: string, updates: PartyEditableFields) => Promise<AdminActionResult>;
+  removePartyMember: (partyId: string, userId: string) => Promise<AdminActionResult>;
+  addPartyMember: (partyId: string, userId: string) => Promise<AdminActionResult>;
+  rotatePartyCode: (partyId: string) => Promise<AdminActionResult & { code?: string }>;
+  deleteParty: (partyId: string) => Promise<AdminActionResult>;
+  leaveParty: (partyId: string) => Promise<AdminActionResult>;
   memories: PartyMemory[];
   addPartyMemory: (params: { imageUrl: string; caption?: string }) => Promise<void>;
   toggleMemoryReaction: (memoryId: string) => void;
@@ -631,6 +666,84 @@ export const usePartyStore = create<PartyStoreState>()(
         persistActivityToSupabase(newActivity);
 
         return newParty;
+      },
+
+      updatePartyDetails: async (partyId, updates) => {
+        const before = get().parties.find((p) => p.id === partyId);
+        if (!before) return { success: false, code: 'NOT_FOUND' };
+        const clean = Object.fromEntries(
+          Object.entries(updates).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v]),
+        ) as PartyEditableFields;
+        set((s) => ({ parties: s.parties.map((p) => (p.id === partyId ? { ...p, ...clean } : p)) }));
+        const res = await updatePartyRemote(partyId, clean);
+        if (!res.success) {
+          set((s) => ({ parties: s.parties.map((p) => (p.id === partyId ? before : p)) }));
+          return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        }
+        return { success: true };
+      },
+
+      removePartyMember: async (partyId, userId) => {
+        const before = get().parties.find((p) => p.id === partyId);
+        if (!before) return { success: false, code: 'NOT_FOUND' };
+        set((s) => ({
+          parties: s.parties.map((p) =>
+            p.id === partyId ? { ...p, members: p.members.filter((m) => m.id !== userId) } : p,
+          ),
+        }));
+        const res = await removeMemberRemote(partyId, userId);
+        if (!res.success) {
+          set((s) => ({ parties: s.parties.map((p) => (p.id === partyId ? before : p)) }));
+          return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        }
+        return { success: true };
+      },
+
+      addPartyMember: async (partyId, userId) => {
+        const res = await addMemberRemote(partyId, userId);
+        if (!res.success) return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        const member = res.data?.member;
+        if (member) {
+          set((s) => ({
+            parties: s.parties.map((p) =>
+              p.id === partyId && !p.members.some((m) => m.id === member.id)
+                ? { ...p, members: [...p.members, member] }
+                : p,
+            ),
+          }));
+        }
+        return { success: true };
+      },
+
+      rotatePartyCode: async (partyId) => {
+        const res = await rotateCodeRemote(partyId);
+        const code = res.data?.code;
+        if (!res.success || !code) return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        set((s) => ({ parties: s.parties.map((p) => (p.id === partyId ? { ...p, code } : p)) }));
+        return { success: true, code };
+      },
+
+      deleteParty: async (partyId) => {
+        const res = await deletePartyRemote(partyId);
+        if (!res.success) return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        set((s) => ({
+          parties: s.parties.filter((p) => p.id !== partyId),
+          activities: s.activities.filter((a) => a.partyId !== partyId),
+          currentPartyId: s.currentPartyId === partyId ? '' : s.currentPartyId,
+          currentView: s.currentPartyId === partyId ? 'home' : s.currentView,
+        }));
+        return { success: true };
+      },
+
+      leaveParty: async (partyId) => {
+        const res = await leavePartyRemote(partyId);
+        if (!res.success) return { success: false, code: adminCode(res.status, res.message), message: res.message };
+        set((s) => ({
+          parties: s.parties.filter((p) => p.id !== partyId),
+          currentPartyId: s.currentPartyId === partyId ? '' : s.currentPartyId,
+          currentView: s.currentPartyId === partyId ? 'home' : s.currentView,
+        }));
+        return { success: true };
       },
 
       joinPartyByCode: async (code, authToken) => {

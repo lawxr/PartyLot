@@ -409,6 +409,59 @@ export interface TranslationDictionary {
     yourAccount: string;
     topVoted: string;
   };
+  partyAdmin: {
+    manageTitle: string;
+    partyOptions: string;
+    tabDetails: string;
+    tabPeople: string;
+    tabMore: string;
+    name: string;
+    date: string;
+    time: string;
+    location: string;
+    description: string;
+    cover: string;
+    changePhoto: string;
+    uploading: string;
+    save: string;
+    saving: string;
+    saved: string;
+    nothingChanged: string;
+    requiredField: string;
+    host: string;
+    you: string;
+    invited: string;
+    going: string;
+    remove: string;
+    removeConfirm: string;
+    removeHint: string;
+    removed: string;
+    addPeople: string;
+    addFromYourPeople: string;
+    noCandidates: string;
+    add: string;
+    added: string;
+    shareInvite: string;
+    inviteCode: string;
+    newCode: string;
+    newCodeHint: string;
+    newCodeDone: string;
+    deleteParty: string;
+    deleteHint: string;
+    deleteConfirmLabel: string;
+    deleteConfirmButton: string;
+    deleted: string;
+    potNotEmpty: string;
+    leaveParty: string;
+    leaveConfirm: string;
+    left: string;
+    cancel: string;
+    confirm: string;
+    errorAuth: string;
+    errorForbidden: string;
+    errorNetwork: string;
+    errorGeneric: string;
+  };
 }
 
 export const translations: Record<Language, TranslationDictionary> = {
@@ -821,6 +874,59 @@ export const translations: Record<Language, TranslationDictionary> = {
       yourAccount: 'Tu cuenta',
       topVoted: 'Más votado',
     },
+    partyAdmin: {
+      manageTitle: 'Administrar fiesta',
+      partyOptions: 'Opciones de la fiesta',
+      tabDetails: 'Detalles',
+      tabPeople: 'Personas',
+      tabMore: 'Más',
+      name: 'Nombre',
+      date: 'Fecha',
+      time: 'Hora',
+      location: 'Ubicación',
+      description: 'Descripción',
+      cover: 'Foto de portada',
+      changePhoto: 'Cambiar foto',
+      uploading: 'Subiendo…',
+      save: 'Guardar cambios',
+      saving: 'Guardando…',
+      saved: 'Cambios guardados',
+      nothingChanged: 'No hay cambios para guardar',
+      requiredField: 'Este campo es obligatorio',
+      host: 'Anfitrión',
+      you: 'Tú',
+      invited: 'Invitado',
+      going: 'Va',
+      remove: 'Sacar',
+      removeConfirm: '¿Sacar a esta persona de la fiesta?',
+      removeHint: 'Podrá volver a entrar con el código actual. Genera un código nuevo si no quieres que vuelva.',
+      removed: 'Persona eliminada de la fiesta',
+      addPeople: 'Agregar personas',
+      addFromYourPeople: 'De tus crews y fiestas anteriores',
+      noCandidates: 'No hay más personas que conozcas por agregar. Comparte la invitación.',
+      add: 'Agregar',
+      added: 'Persona agregada',
+      shareInvite: 'Compartir invitación',
+      inviteCode: 'Código de invitación',
+      newCode: 'Generar código nuevo',
+      newCodeHint: 'El código anterior dejará de funcionar.',
+      newCodeDone: 'Código nuevo listo',
+      deleteParty: 'Eliminar fiesta',
+      deleteHint: 'Se borran la fiesta, sus juegos, gastos y recuerdos para todos. No se puede deshacer.',
+      deleteConfirmLabel: 'Escribe el nombre de la fiesta para confirmar',
+      deleteConfirmButton: 'Eliminar para siempre',
+      deleted: 'Fiesta eliminada',
+      potNotEmpty: 'Primero reembolsa o retira el bote de la fiesta.',
+      leaveParty: 'Salir de la fiesta',
+      leaveConfirm: '¿Salir de esta fiesta? Puedes volver con el código.',
+      left: 'Saliste de la fiesta',
+      cancel: 'Cancelar',
+      confirm: 'Confirmar',
+      errorAuth: 'Inicia sesión para hacer cambios.',
+      errorForbidden: 'Solo el anfitrión puede hacer esto.',
+      errorNetwork: 'Sin conexión. Inténtalo de nuevo.',
+      errorGeneric: 'No se pudo completar. Inténtalo de nuevo.',
+    },
   },
   en: {
     common: {
@@ -1230,6 +1336,59 @@ export const translations: Record<Language, TranslationDictionary> = {
       pay: 'Pay',
       yourAccount: 'Your account',
       topVoted: 'Most voted',
+    },
+    partyAdmin: {
+      manageTitle: 'Manage party',
+      partyOptions: 'Party options',
+      tabDetails: 'Details',
+      tabPeople: 'People',
+      tabMore: 'More',
+      name: 'Name',
+      date: 'Date',
+      time: 'Time',
+      location: 'Location',
+      description: 'Description',
+      cover: 'Cover photo',
+      changePhoto: 'Change photo',
+      uploading: 'Uploading…',
+      save: 'Save changes',
+      saving: 'Saving…',
+      saved: 'Changes saved',
+      nothingChanged: 'No changes to save',
+      requiredField: 'This field is required',
+      host: 'Host',
+      you: 'You',
+      invited: 'Invited',
+      going: 'Going',
+      remove: 'Remove',
+      removeConfirm: 'Remove this person from the party?',
+      removeHint: 'They can rejoin with the current code. Generate a new code if you don\'t want them back.',
+      removed: 'Removed from the party',
+      addPeople: 'Add people',
+      addFromYourPeople: 'From your crews and past parties',
+      noCandidates: 'No one else you know to add. Share the invite instead.',
+      add: 'Add',
+      added: 'Person added',
+      shareInvite: 'Share invite',
+      inviteCode: 'Invite code',
+      newCode: 'Generate new code',
+      newCodeHint: 'The old code will stop working.',
+      newCodeDone: 'New code ready',
+      deleteParty: 'Delete party',
+      deleteHint: 'This deletes the party, its games, expenses and memories for everyone. It cannot be undone.',
+      deleteConfirmLabel: 'Type the party name to confirm',
+      deleteConfirmButton: 'Delete forever',
+      deleted: 'Party deleted',
+      potNotEmpty: 'Refund or withdraw the Party Pot first.',
+      leaveParty: 'Leave party',
+      leaveConfirm: 'Leave this party? You can come back with the code.',
+      left: 'You left the party',
+      cancel: 'Cancel',
+      confirm: 'Confirm',
+      errorAuth: 'Log in to make changes.',
+      errorForbidden: 'Only the host can do this.',
+      errorNetwork: 'No connection. Try again.',
+      errorGeneric: 'Could not complete that. Try again.',
     },
   },
 };

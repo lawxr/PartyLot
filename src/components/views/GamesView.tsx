@@ -10,6 +10,8 @@ import { CrewTrivia } from '@/components/games/CrewTrivia';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Avatar } from '@/components/ui/Avatar';
 
+import { GameStage } from '@/components/games/stage';
+
 export const GamesView: React.FC = () => {
   const { parties, currentPartyId, activeGameId, setActiveGame, goBack, setCurrentView } = usePartyStore();
   const { t, language } = useTranslation();
@@ -41,14 +43,12 @@ export const GamesView: React.FC = () => {
   ];
 
   return (
-    <div
-      className="min-h-[100dvh] w-full flex flex-col items-center justify-start transition-colors duration-300"
-      style={{
-        background: 'var(--stage-bg)',
-      }}
+    <GameStage
+      partyCoverImage={party?.coverImage}
+      className="pb-[calc(1.5rem+var(--cookie-banner-h,0px))]"
     >
       {/* Top Stage Control Header */}
-      <header className="w-full max-w-xl mx-auto px-4 sm:px-6 pt-3 pb-2 flex flex-col gap-2.5 z-20 shrink-0">
+      <header className="w-full flex flex-col gap-2.5 z-20 shrink-0 mb-1">
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -61,13 +61,13 @@ export const GamesView: React.FC = () => {
 
           {/* Party title & room attendees */}
           <div className="text-center min-w-0 px-2">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-party-yellow block">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-[var(--stage-accent-text)] block">
               {party?.title || (isEs ? 'FIESTA EN CURSO' : 'LIVE GATHERING')}
             </span>
             <div className="flex items-center justify-center gap-1.5 text-xs text-[var(--stage-muted)] font-bold">
               <Users className="w-3.5 h-3.5" />
               <span>
-                {members.length} {members.length === 1 ? (isEs ? 'en la sala' : 'playing') : (isEs ? 'en la sala' : 'playing')}
+                {members.length} {isEs ? 'en la sala' : 'playing'}
               </span>
             </div>
           </div>
@@ -89,7 +89,7 @@ export const GamesView: React.FC = () => {
         <nav
           role="tablist"
           aria-label={isEs ? 'Juegos disponibles' : 'Available games'}
-          className="flex items-center justify-center gap-1 p-1 rounded-full bg-[var(--stage-card)] border border-[var(--stage-card-border)] w-full max-w-sm mx-auto shadow-2xs"
+          className="flex items-center justify-center gap-1 p-1 rounded-full bg-[var(--stage-card)] border border-[var(--stage-card-border)] w-full mx-auto shadow-2xs"
         >
           {games.map((g) => {
             const isActive = activeGameId === g.id;
@@ -114,11 +114,11 @@ export const GamesView: React.FC = () => {
       </header>
 
       {/* Main Game Stage Area */}
-      <main className="w-full flex-1 flex flex-col items-center justify-start pb-6">
+      <main className="w-full flex-1 flex flex-col items-center justify-start">
         {activeGameId === 'whos-most-likely' && <WhosMostLikely />}
         {activeGameId === 'this-or-that' && <ThisOrThat />}
         {activeGameId === 'crew-trivia' && <CrewTrivia />}
       </main>
-    </div>
+    </GameStage>
   );
 };

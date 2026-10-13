@@ -15,7 +15,6 @@ import {
   GAME_CONFETTI_COLORS,
 } from '@/lib/games';
 import {
-  GameStage,
   GameEyebrow,
   FriendVoteCard,
   WinnerReveal,
@@ -133,10 +132,9 @@ export const WhosMostLikely: React.FC = () => {
   // Safe fallback if less than 2 friends in party
   if (!party || partyMembers.length < 2) {
     return (
-      <GameStage partyCoverImage={party?.coverImage}>
+      <div className="w-full flex-1 flex flex-col justify-between">
         <GameEyebrow
           label={isEs ? '¿QUIÉN ENCAJA MÁS?' : "WHO'S MOST LIKELY?"}
-          onBack={goBack || (() => setCurrentView('party-detail'))}
           currentUser={currentUser}
         />
 
@@ -193,27 +191,22 @@ export const WhosMostLikely: React.FC = () => {
             {isEs ? 'Volver al detalle' : 'Back to gathering'}
           </button>
         </div>
-      </GameStage>
+      </div>
     );
   }
 
   return (
-    <GameStage partyCoverImage={party?.coverImage}>
-      {/* ============================================================== */}
-      {/* 1. TOP STAGE EYEBROW                                           */}
-      {/* ============================================================== */}
+    <div className="w-full flex-1 flex flex-col justify-between">
+      {/* 1. TOP STAGE EYEBROW */}
       <GameEyebrow
         label={isEs ? '¿QUIÉN ENCAJA MÁS?' : "WHO'S MOST LIKELY?"}
         stepIndicator={`${currentStep}/${totalQuestions}`}
-        onBack={goBack || (() => setCurrentView('party-detail'))}
         currentUser={currentUser}
       />
 
       <AnimatePresence mode="wait">
         {viewMode === 'voting' ? (
-          /* ============================================================ */
-          /* 2A. VOTING MODE (2x2 Grid matching Trailer choreography)      */
-          /* ============================================================ */
+          /* 2A. VOTING MODE (2x2 Grid matching Trailer choreography) */
           <motion.div
             key={`voting-${currentQ.id}`}
             initial={{ opacity: 0, y: 10 }}
@@ -230,7 +223,7 @@ export const WhosMostLikely: React.FC = () => {
             </div>
 
             {/* 2-Column Responsive Participant Grid */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-3.5 my-3 w-full max-h-[380px] overflow-y-auto scrollbar-none py-1">
+            <div className="grid grid-cols-2 gap-3 sm:gap-3.5 my-2.5 w-full py-1">
               {friendsToDisplay.map((friend) => {
                 const isSelected = votedMemberId === friend.id;
                 const votesCount = (currentQ.votes || {})[friend.id] || 0;
@@ -361,6 +354,6 @@ export const WhosMostLikely: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </GameStage>
+    </div>
   );
 };

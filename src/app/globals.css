@@ -30,10 +30,14 @@
   --color-stage-card: var(--stage-card);
   --color-stage-card-border: var(--stage-card-border);
   --color-stage-text: var(--stage-text);
+  --color-stage-accent-text: var(--stage-accent-text);
   --color-stage-muted: var(--stage-muted);
   --color-stage-track: var(--stage-track);
   --color-stage-ring-outline: var(--stage-ring-outline);
+  --color-stage-ink: var(--stage-ink);
+  --color-stage-vs: var(--stage-vs);
   --color-game-orange: var(--game-orange);
+  --color-game-orange-ink: var(--game-orange-ink);
 
   --font-bubble: 'Modak', cursive;
   --font-display: 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -66,10 +70,15 @@
   --stage-card: #FFFDF8;
   --stage-card-border: rgba(23, 21, 18, 0.08);
   --stage-text: #171512;
+  --stage-accent-text: #171512;
   --stage-muted: #6F6A62;
   --stage-track: rgba(23, 21, 18, 0.08);
   --stage-ring-outline: #171512;
+  --stage-ink: #171512;
+  --stage-vs: #0e0c09;
   --game-orange: #ff7a3d;
+  --game-orange-ink: #1c0d04;
+  --cookie-banner-h: 0px;
 
   --radius-xs: 10px;
   --radius-sm: 14px;
@@ -108,10 +117,14 @@
   --stage-card: rgba(255, 255, 255, 0.07);
   --stage-card-border: rgba(255, 255, 255, 0.09);
   --stage-text: #fff8e6;
+  --stage-accent-text: var(--party-yellow);
   --stage-muted: rgba(255, 255, 255, 0.6);
   --stage-track: rgba(255, 255, 255, 0.1);
   --stage-ring-outline: transparent;
+  --stage-ink: #171512;
+  --stage-vs: #0e0c09;
   --game-orange: #ff7a3d;
+  --game-orange-ink: #1c0d04;
 }
 
 html {

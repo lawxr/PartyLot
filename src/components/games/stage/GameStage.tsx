@@ -35,7 +35,7 @@ export const GameStage: React.FC<GameStageProps> = ({
 
       {/* Centered stage frame (max-w-[430px]) */}
       <div
-        className={`relative z-10 w-full max-w-[430px] min-h-[100dvh] flex flex-col justify-between px-4 sm:px-5 py-4 pb-10 sm:pb-12 text-[var(--stage-text)] select-none ${className}`}
+        className={`relative z-10 w-full max-w-[430px] flex-1 flex flex-col justify-between px-4 sm:px-5 py-3 text-[var(--stage-text)] select-none ${className}`}
       >
         {children}
       </div>

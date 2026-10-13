@@ -7,7 +7,8 @@ import { usePartyStore } from '@/store/usePartyStore';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { TRIVIA_QUESTIONS } from '@/data/mockData';
-import { GameStage, GameEyebrow } from './stage';
+import { GAME_CONFETTI_COLORS } from '@/lib/games';
+import { GameEyebrow } from './stage';
 
 export const CrewTrivia: React.FC = () => {
   const {
@@ -87,7 +88,7 @@ export const CrewTrivia: React.FC = () => {
           particleCount: 90,
           spread: 75,
           origin: { y: 0.4 },
-          colors: ['#F0DC00', '#FFF8E6', '#FF7A3D', '#171512'],
+          colors: [...GAME_CONFETTI_COLORS],
           disableForReducedMotion: true,
         });
       }
@@ -104,10 +105,9 @@ export const CrewTrivia: React.FC = () => {
 
   if (isGameOver) {
     return (
-      <GameStage partyCoverImage={party?.coverImage}>
+      <div className="w-full flex-1 flex flex-col justify-between">
         <GameEyebrow
           label={isEs ? 'CREW TRIVIA' : 'CREW TRIVIA'}
-          onBack={goBack || (() => setCurrentView('party-detail'))}
           currentUser={currentUser}
         />
 
@@ -151,17 +151,16 @@ export const CrewTrivia: React.FC = () => {
             <span>{isEs ? 'Jugar de nuevo' : 'Play again'}</span>
           </button>
         </div>
-      </GameStage>
+      </div>
     );
   }
 
   return (
-    <GameStage partyCoverImage={party?.coverImage}>
+    <div className="w-full flex-1 flex flex-col justify-between">
       {/* Eyebrow Header */}
       <GameEyebrow
         label={isEs ? 'CREW TRIVIA' : 'CREW TRIVIA'}
         stepIndicator={`${currentRound + 1}/${totalRounds}`}
-        onBack={goBack || (() => setCurrentView('party-detail'))}
         currentUser={currentUser}
       />
 
@@ -260,6 +259,6 @@ export const CrewTrivia: React.FC = () => {
           </AnimatePresence>
         </div>
       </div>
-    </GameStage>
+    </div>
   );
 };

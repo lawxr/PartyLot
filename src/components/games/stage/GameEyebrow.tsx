@@ -26,7 +26,7 @@ export const GameEyebrow: React.FC<GameEyebrowProps> = ({
   className = '',
 }) => {
   return (
-    <header className={`w-full flex items-center justify-between gap-3 pt-1 pb-3 shrink-0 ${className}`}>
+    <div className={`w-full flex items-center justify-between gap-3 pt-0.5 pb-2 shrink-0 ${className}`}>
       {/* Left: Back or Close button */}
       <div className="flex items-center gap-2">
         {onBack ? (
@@ -49,8 +49,8 @@ export const GameEyebrow: React.FC<GameEyebrowProps> = ({
           </button>
         ) : null}
 
-        {/* Yellow Tracking Eyebrow Label */}
-        <div className="flex items-center gap-1.5 font-mono text-xs sm:text-[13px] font-black uppercase tracking-wider text-party-yellow">
+        {/* Tracking Eyebrow Label with contrast-safe accent token */}
+        <div className="flex items-center gap-1.5 font-mono text-xs sm:text-[13px] font-black uppercase tracking-wider text-[var(--stage-accent-text)]">
           <span>{label}</span>
           {stepIndicator && (
             <span className="text-[var(--stage-muted)] font-bold">
@@ -66,6 +66,6 @@ export const GameEyebrow: React.FC<GameEyebrowProps> = ({
           <Avatar user={currentUser} size="xs" border="light" />
         </div>
       )}
-    </header>
+    </div>
   );
 };

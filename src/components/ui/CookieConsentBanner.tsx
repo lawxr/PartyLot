@@ -24,6 +24,12 @@ export const CookieConsentBanner: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.style.setProperty('--cookie-banner-h', isVisible ? '72px' : '0px');
+    }
+  }, [isVisible]);
+
   const handleAccept = () => {
     localStorage.setItem(STORAGE_KEY, 'accepted');
     setIsVisible(false);

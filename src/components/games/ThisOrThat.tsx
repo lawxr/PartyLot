@@ -7,7 +7,7 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { THIS_OR_THAT_QUESTIONS } from '@/data/mockData';
 import { percentages, votersCount } from '@/lib/games';
-import { GameStage, GameEyebrow, PickBlock } from './stage';
+import { GameEyebrow, PickBlock } from './stage';
 
 export const ThisOrThat: React.FC = () => {
   const {
@@ -68,12 +68,11 @@ export const ThisOrThat: React.FC = () => {
   };
 
   return (
-    <GameStage partyCoverImage={party?.coverImage}>
+    <div className="w-full flex-1 flex flex-col justify-between">
       {/* 1. Header with Eyebrow */}
       <GameEyebrow
         label={isEs ? 'ESTO O AQUELLO' : 'THIS OR THAT'}
         stepIndicator={`${currentStep}/${questions.length}`}
-        onBack={goBack || (() => setCurrentView('party-detail'))}
         currentUser={currentUser}
       />
 
@@ -165,6 +164,6 @@ export const ThisOrThat: React.FC = () => {
           </button>
         </div>
       </footer>
-    </GameStage>
+    </div>
   );
 };

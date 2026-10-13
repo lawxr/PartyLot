@@ -98,6 +98,7 @@ import {
 import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
 import { recordGatheringOnchain } from '@/services/socialGraphService';
 import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
+import { deduplicateActivities } from '@/lib/activityDeduplication';
 
 const demoMode = isExplicitDevelopmentDemoMode();
 const signedOutUser: User = {
@@ -900,7 +901,7 @@ export const usePartyStore = create<PartyStoreState>()(
           };
 
           const newActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
+            id: `act-expense-${newExpense.id}`,
             partyId,
             type: 'expense',
             text: `${payer.name} added ${category !== 'general' ? `[${category.toUpperCase()}] ` : ''}expense: "${description}" ($${amount.toFixed(2)})`,
@@ -909,11 +910,10 @@ export const usePartyStore = create<PartyStoreState>()(
           };
 
           persistExpenseToSupabase(newExpense);
-          persistActivityToSupabase(newActivity);
 
           return {
             expenses: [newExpense, ...state.expenses],
-            activities: [newActivity, ...state.activities],
+            activities: deduplicateActivities([newActivity, ...state.activities]),
           };
         });
       },
@@ -1004,21 +1004,21 @@ export const usePartyStore = create<PartyStoreState>()(
           };
 
           const newActivity: ActivityItem = {
-            id: `act-${Date.now()}-${receipt.txHash.slice(0, 8)}`,
+            id: `act-expense-${settlementExpense.id}`,
             partyId: party.id,
             type: 'pot',
             text: `Pago liquidado: ${s.fromName} transfirió $${s.amount.toFixed(2)} a ${s.toName}`,
             time: 'Just now',
             avatar: currentState.currentUser.avatar,
+            txHash: receipt.txHash,
           };
 
           set((st) => ({
             expenses: [settlementExpense, ...st.expenses],
-            activities: [newActivity, ...st.activities],
+            activities: deduplicateActivities([newActivity, ...st.activities]),
           }));
 
           persistExpenseToSupabase(settlementExpense);
-          persistActivityToSupabase(newActivity);
         };
 
         try {
@@ -1089,8 +1089,11 @@ export const usePartyStore = create<PartyStoreState>()(
           userAvatar: state.currentUser.avatar,
         });
 
+        const txId = receipt.txHash ? `pot-tx-${receipt.txHash.slice(2, 18)}` : `tx-${Date.now()}`;
+        const actId = receipt.txHash ? `act-deposit-${receipt.txHash.slice(2, 18)}` : `act-${Date.now()}`;
+
         const newTx: PotTransaction = {
-          id: `tx-${Date.now()}`,
+          id: txId,
           partyId,
           amount: numAmount,
           type: 'add',
@@ -1109,7 +1112,7 @@ export const usePartyStore = create<PartyStoreState>()(
         );
 
         const newActivity: ActivityItem = {
-          id: `act-${Date.now()}`,
+          id: actId,
           partyId,
           type: 'pot',
           text: `${state.currentUser.name} aportó $${numAmount.toFixed(2)} al Party Pot`,
@@ -1120,15 +1123,17 @@ export const usePartyStore = create<PartyStoreState>()(
           verb: 'aportó al bote',
           objectType: 'pot',
           objectId: partyId,
+          txHash: receipt.txHash,
         };
 
         set({
           parties: updatedParties,
           transactions: [newTx, ...state.transactions],
-          activities: [newActivity, ...state.activities],
+          activities: deduplicateActivities([newActivity, ...state.activities]),
         });
 
-        if (!demoMode && partyId) {
+        // The onchain deposit flow already persists transaction and activity via BFF endpoint
+        if (!demoMode && partyId && !receipt.txHash) {
           persistPotTransactionToSupabase(newTx, newBalance).catch(() => {});
           persistActivityToSupabase(newActivity).catch(() => {});
         }
@@ -1152,8 +1157,11 @@ export const usePartyStore = create<PartyStoreState>()(
           state.currentUser.name
         );
 
+        const txId = receipt.txHash ? `pot-tx-${receipt.txHash.slice(2, 18)}` : `tx-${Date.now()}`;
+        const actId = receipt.txHash ? `act-treasury-${receipt.txHash.slice(2, 18)}` : `act-${Date.now()}`;
+
         const newTx: PotTransaction = {
-          id: `tx-${Date.now()}`,
+          id: txId,
           partyId,
           amount: numAmount,
           type: 'spend',
@@ -1172,7 +1180,7 @@ export const usePartyStore = create<PartyStoreState>()(
         );
 
         const newActivity: ActivityItem = {
-          id: `act-${Date.now()}`,
+          id: actId,
           partyId,
           type: 'pot',
           text: `Gasto de $${numAmount.toFixed(2)} pagado del Party Pot: "${description}"`,
@@ -1183,15 +1191,16 @@ export const usePartyStore = create<PartyStoreState>()(
           verb: 'pagó gasto del bote',
           objectType: 'expense',
           objectId: partyId,
+          txHash: receipt.txHash,
         };
 
         set({
           parties: updatedParties,
           transactions: [newTx, ...state.transactions],
-          activities: [newActivity, ...state.activities],
+          activities: deduplicateActivities([newActivity, ...state.activities]),
         });
 
-        if (!demoMode && partyId) {
+        if (!demoMode && partyId && !receipt.txHash) {
           persistPotTransactionToSupabase(newTx, newBalance).catch(() => {});
           persistActivityToSupabase(newActivity).catch(() => {});
         }
@@ -1902,7 +1911,7 @@ export const usePartyStore = create<PartyStoreState>()(
         }
 
         if (dbActivities.length > 0) {
-          set({ activities: dbActivities });
+          set({ activities: deduplicateActivities(dbActivities) });
         }
       },
 
@@ -1939,7 +1948,9 @@ export const usePartyStore = create<PartyStoreState>()(
           expenses: details.expenses.length > 0 ? details.expenses : s.expenses,
           transactions: details.transactions.length > 0 ? details.transactions : s.transactions,
           tasks: details.tasks.length > 0 ? details.tasks : s.tasks,
-          activities: details.activities.length > 0 ? details.activities : s.activities,
+          activities: deduplicateActivities(
+            details.activities.length > 0 ? [...details.activities, ...s.activities] : s.activities
+          ),
           memories: details.memories && details.memories.length > 0 ? details.memories : s.memories,
           polls: dbPolls.length > 0 ? dbPolls : s.polls,
         }));

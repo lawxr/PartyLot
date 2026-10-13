@@ -13,7 +13,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Avatar } from '@/components/ui/Avatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { PressableCard } from '@/components/ui/PressableCard';
-import { resolveActivityActor, resolveActivityNarrative } from '@/lib/activityActor';
+import { resolveActivityActor, resolveActivityNarrative, deduplicateActivities } from '@/lib/activityActor';
 import type { ActivityItem, Member } from '@/types';
 
 type ActivityFilter = 'all' | 'parties' | 'pot' | 'games';
@@ -61,7 +61,8 @@ export const ActivityView: React.FC = () => {
 
   // Filter activities
   const filteredActivities = useMemo(() => {
-    return activities.filter((act) => {
+    const unique = deduplicateActivities(activities);
+    return unique.filter((act) => {
       if (activeFilter === 'all') return true;
       if (activeFilter === 'parties') return act.type === 'join';
       if (activeFilter === 'pot') return act.type === 'pot' || act.type === 'expense';

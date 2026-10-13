@@ -332,8 +332,8 @@ export async function POST(request: NextRequest) {
     // Synchronize Supabase persistent state upon confirmed onchain transaction
     try {
       const supabase = getServerSupabase();
-      const txId = `pot-tx-${Date.now()}`;
-      await supabase.from('pot_transactions').insert({
+      const txId = txHash ? `pot-tx-${txHash.slice(2, 18)}` : `pot-tx-${Date.now()}`;
+      const potTxData = {
         id: txId,
         party_id: partyId,
         amount: numAmount,
@@ -342,7 +342,14 @@ export async function POST(request: NextRequest) {
         user_name: userName || 'Member',
         user_avatar: '',
         created_at: new Date().toISOString(),
-      });
+        tx_hash: txHash || null,
+      };
+      const potTable = supabase.from('pot_transactions');
+      if (typeof potTable?.upsert === 'function') {
+        await potTable.upsert(potTxData);
+      } else if (typeof potTable?.insert === 'function') {
+        await potTable.insert(potTxData);
+      }
 
       // Update parties table pot_balance (skip for registration)
       if (action !== 'register') {
@@ -365,8 +372,9 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      await supabase.from('activities').insert({
-        id: `act-treasury-${Date.now()}`,
+      const actId = txHash ? `act-treasury-${txHash.slice(2, 18)}` : `act-treasury-${Date.now()}`;
+      const actData = {
+        id: actId,
         party_id: partyId,
         type: 'pot',
         text: action === 'register'
@@ -379,7 +387,13 @@ export async function POST(request: NextRequest) {
           ? `Liquidación de deuda de ${numAmount.toFixed(4)} MON registrada`
           : `Gasto de ${numAmount.toFixed(4)} MON registrado en el bote`,
         time: 'Just now',
-      });
+      };
+      const actTable = supabase.from('activities');
+      if (typeof actTable?.upsert === 'function') {
+        await actTable.upsert(actData);
+      } else if (typeof actTable?.insert === 'function') {
+        await actTable.insert(actData);
+      }
     } catch (dbErr) {
       console.warn('Supabase treasury sync notice:', dbErr);
     }

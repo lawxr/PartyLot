@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     const updatedBalance = Number((prevBal + amount).toFixed(4));
 
     // 3. Insert pot transaction
-    await supabase.from('pot_transactions').upsert({
+    const potTxPayload = {
       id: `pot-tx-${txHash.slice(2, 16)}`,
       party_id: partyId,
       amount,
@@ -136,7 +136,13 @@ export async function POST(request: NextRequest) {
       user_name: userName,
       user_avatar: userAvatar || '',
       created_at: new Date().toISOString(),
-    });
+    };
+    const potTable = supabase.from('pot_transactions');
+    if (typeof potTable?.upsert === 'function') {
+      await potTable.upsert(potTxPayload);
+    } else if (typeof potTable?.insert === 'function') {
+      await potTable.insert(potTxPayload);
+    }
 
     // 4. Update party balance
     await supabase
@@ -144,14 +150,21 @@ export async function POST(request: NextRequest) {
       .update({ pot_balance: updatedBalance })
       .eq('id', partyId);
 
-    // 5. Insert activity
-    await supabase.from('activities').insert({
-      id: `act-treasury-${Date.now()}`,
+    // 5. Insert activity idempotently
+    const actPayload = {
+      id: `act-deposit-${txHash.slice(2, 18)}`,
       party_id: partyId,
       type: 'pot',
       text: `${userName} aportó ${amount.toFixed(4)} MON al Party Pot desde su billetera`,
       time: 'Just now',
-    });
+      avatar: userAvatar || '',
+    };
+    const actTable = supabase.from('activities');
+    if (typeof actTable?.upsert === 'function') {
+      await actTable.upsert(actPayload);
+    } else if (typeof actTable?.insert === 'function') {
+      await actTable.insert(actPayload);
+    }
 
     return NextResponse.json({
       success: true,

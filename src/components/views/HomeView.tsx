@@ -13,6 +13,7 @@ import { CreateCrewModal } from '@/components/ui/CreateCrewModal';
 import { Avatar } from '@/components/ui/Avatar';
 import { PressableCard } from '@/components/ui/PressableCard';
 import { getCoverUrl } from '@/lib/imageOptimization';
+import { deduplicateActivities } from '@/lib/activityActor';
 
 export const HomeView: React.FC = () => {
   const {
@@ -33,9 +34,10 @@ export const HomeView: React.FC = () => {
   const [isCreateCrewOpen, setIsCreateCrewOpen] = useState(false);
 
   const unreadNotificationsCount = useMemo(() => {
-    if (!notificationsLastSeenAt) return activities.length;
+    const uniqueActivities = deduplicateActivities(activities);
+    if (!notificationsLastSeenAt) return uniqueActivities.length;
     const lastSeenMs = new Date(notificationsLastSeenAt).getTime();
-    return activities.filter((act) => {
+    return uniqueActivities.filter((act) => {
       if (act.createdAt) {
         return new Date(act.createdAt).getTime() > lastSeenMs;
       }

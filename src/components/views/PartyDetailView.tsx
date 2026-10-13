@@ -41,7 +41,7 @@ import { ReputationBadge } from '@/components/ui/ReputationBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { toast } from '@/store/useToastStore';
-import { resolveActivityActor, resolveActivityNarrative } from '@/lib/activityActor';
+import { resolveActivityActor, resolveActivityNarrative, deduplicateActivities } from '@/lib/activityActor';
 import { DEFAULT_PARTY_COVER } from '@/data/mockData';
 import { Web3ErrorBanner } from '@/components/ui/Web3ErrorBanner';
 import { formatWeb3Error, type FormattedWeb3Error } from '@/lib/web3Error';
@@ -68,7 +68,7 @@ export const PartyDetailView: React.FC = () => {
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const partyMemories = (memories || []).filter((m) => m.partyId === party?.id);
-  const partyActivities = (activities || []).filter((a) => a.partyId === party?.id);
+  const partyActivities = deduplicateActivities((activities || []).filter((a) => a.partyId === party?.id));
   const partyMembers = party?.members || [];
   const hostMember = partyMembers.find((m) => m.role === 'host' || m.id === party?.hostId);
   const hostName = party?.hostName || hostMember?.name || (isEs ? 'Anfitrión' : 'Host');

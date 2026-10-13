@@ -37,7 +37,6 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { uploadImageFile } from '@/services/storageService';
 import { useMonPrice } from '@/hooks/useMonPrice';
 import { getCoverUrl } from '@/lib/imageOptimization';
-import { ReputationBadge } from '@/components/ui/ReputationBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { toast } from '@/store/useToastStore';
@@ -327,7 +326,7 @@ export const PartyDetailView: React.FC = () => {
 
             {/* Host Row */}
             <div className="flex items-center gap-2 mb-3 drop-shadow">
-              <div className="shrink-0">
+              <div className="shrink-0 flex items-center justify-center">
                 <Avatar
                   user={{
                     avatar: hostAvatar,
@@ -339,18 +338,13 @@ export const PartyDetailView: React.FC = () => {
               <span className="text-xs sm:text-sm font-semibold text-white">
                 {isEs ? `Organizado por ${hostName}` : `Hosted by ${hostName}`}
               </span>
-              <ReputationBadge
-                sharedNights={hostMember?.nightsTogether || 3}
-                gatheringsCount={hostMember?.nightsTogether || 3}
-                size="xs"
-              />
             </div>
 
             <div className="flex items-center -space-x-1.5">
               {partyMembers.slice(0, 7).map((m, idx) => (
                 <div
                   key={m.id || idx}
-                  className="shrink-0 relative hover:z-20 transition-transform hover:scale-110"
+                  className="w-7 h-7 min-w-[28px] max-w-[28px] min-h-[28px] max-h-[28px] shrink-0 relative flex items-center justify-center rounded-full hover:z-20 transition-transform hover:scale-110"
                   title={`${m.name} · ${m.nightsTogether || 1} ${isEs ? 'noches juntos' : 'nights together'}`}
                 >
                   <Avatar

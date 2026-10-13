@@ -9,8 +9,8 @@
 | **Track** | Metropolis — **Track 03: Social, Attention & Culture** |
 | **Demo video (≤3 min)** | _add link before submitting_ |
 | **Pitch video (≤2 min)** | _add link before submitting_ |
-| **Product ad (30 s, optional)** | _add link before submitting_ |
-| **Logo** | [`public/brand/partylot-logo-1024.png`](public/brand/partylot-logo-1024.png) |
+| **Product ad (30 s)** | [![Watch Partylot product ad](https://img.youtube.com/vi/EmNsRLpgXoI/hqdefault.jpg)](https://youtu.be/EmNsRLpgXoI) |
+| **Logo** | <img src="public/brand/partylot-logo-1024.png" alt="Partylot Logo" width="160"> |
 | **License** | [MIT](LICENSE) |
 
 ## The problem and who it's for

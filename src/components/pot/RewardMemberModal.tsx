@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Trophy, X, Coins, ExternalLink, Loader2, CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react';
+import { Trophy, X, Coins, ExternalLink, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { usePartyStore } from '@/store/usePartyStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -10,6 +10,8 @@ import { Member } from '@/types';
 import { Avatar } from '@/components/ui/Avatar';
 import { useMonPrice } from '@/hooks/useMonPrice';
 import { GAME_CONFETTI_COLORS } from '@/lib/games';
+import { Web3ErrorBanner } from '@/components/ui/Web3ErrorBanner';
+import { formatWeb3Error, type FormattedWeb3Error } from '@/lib/web3Error';
 
 interface RewardMemberModalProps {
   isOpen: boolean;
@@ -25,7 +27,8 @@ export const RewardMemberModal: React.FC<RewardMemberModalProps> = ({
   defaultRecipientId,
 }) => {
   const { parties, currentPartyId, currentUser, rewardGameWinner } = usePartyStore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const isEs = language === 'es';
   const shouldReduceMotion = useReducedMotion();
   const { formatUsd } = useMonPrice();
 
@@ -44,7 +47,7 @@ export const RewardMemberModal: React.FC<RewardMemberModalProps> = ({
   const [customAmount, setCustomAmount] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorState, setErrorState] = useState<FormattedWeb3Error | null>(null);
 
   const potBalance = Number(party?.potBalance || 0);
   const presetAmounts = [0.1, 0.25, 0.5, 1.0];
@@ -55,7 +58,7 @@ export const RewardMemberModal: React.FC<RewardMemberModalProps> = ({
   const handleSelectPreset = (amount: number) => {
     setRewardAmount(amount);
     setCustomAmount('');
-    setErrorMsg(null);
+    setErrorState(null);
   };
 
   const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,28 +67,40 @@ export const RewardMemberModal: React.FC<RewardMemberModalProps> = ({
     const num = parseFloat(val);
     if (!isNaN(num) && num > 0) {
       setRewardAmount(num);
-      setErrorMsg(null);
+      setErrorState(null);
     }
   };
 
   const handleReward = async () => {
     if (!party?.id) {
-      setErrorMsg(t.common.error);
+      setErrorState({
+        title: t.common.error,
+        message: t.common.error,
+        isUserRejection: false,
+      });
       return;
     }
 
     if (!selectedMemberId) {
-      setErrorMsg(t.partyPot.selectRecipient);
+      setErrorState({
+        title: t.common.error,
+        message: t.partyPot.selectRecipient,
+        isUserRejection: false,
+      });
       return;
     }
 
     if (rewardAmount <= 0) {
-      setErrorMsg(t.partyPot.rewardAmountLabel);
+      setErrorState({
+        title: t.common.error,
+        message: t.partyPot.rewardAmountLabel,
+        isUserRejection: false,
+      });
       return;
     }
 
     setIsLoading(true);
-    setErrorMsg(null);
+    setErrorState(null);
 
     try {
       const res = await rewardGameWinner({
@@ -111,8 +126,8 @@ export const RewardMemberModal: React.FC<RewardMemberModalProps> = ({
         });
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setErrorMsg(msg || t.common.error);
+      console.error('Error distributing reward:', err);
+      setErrorState(formatWeb3Error(err, isEs));
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +135,7 @@ export const RewardMemberModal: React.FC<RewardMemberModalProps> = ({
 
   const handleResetAndClose = () => {
     setTxHash(null);
-    setErrorMsg(null);
+    setErrorState(null);
     setIsLoading(false);
     onClose();
   };
@@ -291,12 +306,12 @@ export const RewardMemberModal: React.FC<RewardMemberModalProps> = ({
               </div>
 
               {/* Error notice */}
-              {errorMsg && (
-                <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
+              <Web3ErrorBanner
+                error={errorState}
+                isEs={isEs}
+                onDismiss={() => setErrorState(null)}
+                className="mb-4"
+              />
 
               {/* Action Button */}
               <button

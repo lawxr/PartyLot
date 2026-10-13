@@ -4,6 +4,8 @@ import React from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
+import { Web3ErrorBanner } from '@/components/ui/Web3ErrorBanner';
+import type { FormattedWeb3Error } from '@/lib/web3Error';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export interface SettleDebtorItem {
@@ -20,7 +22,8 @@ interface SettleDebtsSheetProps {
   isSettling: boolean;
   debtorsList: SettleDebtorItem[];
   onSettle: () => Promise<void>;
-  errorMessage?: string | null;
+  errorMessage?: FormattedWeb3Error | string | null;
+  onClearError?: () => void;
 }
 
 export const SettleDebtsSheet: React.FC<SettleDebtsSheetProps> = ({
@@ -30,6 +33,7 @@ export const SettleDebtsSheet: React.FC<SettleDebtsSheetProps> = ({
   debtorsList,
   onSettle,
   errorMessage,
+  onClearError,
 }) => {
   const { t, language } = useTranslation();
   const isEs = language === 'es';
@@ -59,9 +63,11 @@ export const SettleDebtsSheet: React.FC<SettleDebtsSheetProps> = ({
         </div>
 
         {errorMessage && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-medium">
-            {errorMessage}
-          </div>
+          <Web3ErrorBanner
+            error={errorMessage}
+            isEs={isEs}
+            onDismiss={onClearError}
+          />
         )}
 
         <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">

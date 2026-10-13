@@ -7,7 +7,7 @@ This document establishes the single source of truth for the PartyLot codebase s
 **Release Readiness**: Solid foundation established; feature-based modularity active.
 
 ### Current treasury architecture (Monad Testnet)
-The Multi-Party PartyTreasury Vault contract (V2) is live on Monad Testnet at `0x69c7851af46d56345838fd4eb9e505d090c397c3` (Tx: `0xfb93fdb7141d0d39f94c7e5611841d309ea8c2628a173b270e54625c23a04685`). V2 introduces decentralized auto-registration on first deposit, participant pro-rata refunds, host emergency sweep, and multi-token/ERC-20 readiness. All payments operate with native MON, fail closed on RPC/contract reverts, eliminate synthetic fallback hashes, and isolate accounting per gathering.
+The Multi-Party PartyTreasury Vault contract (V2) is live on Monad Testnet at `0x7e92f443c26c36e80a7f7ab8939a915dd9fbd991` (Tx: `0xfb93fdb7141d0d39f94c7e5611841d309ea8c2628a173b270e54625c23a04685`). V2 introduces decentralized auto-registration on first deposit, participant pro-rata refunds, host emergency sweep, and multi-token/ERC-20 readiness. All payments operate with native MON, fail closed on RPC/contract reverts, eliminate synthetic fallback hashes, and isolate accounting per gathering.
 
 ---
 

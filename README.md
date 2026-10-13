@@ -47,15 +47,29 @@ Nights out are organised in group chats: *what's the plan, who's coming, where, 
 
 | Contract | Address | Purpose |
 |---|---|---|
-| PartyTreasury V2 | [`0x69c7851af46d56345838fd4eb9e505d090c397c3`](https://testnet.monadexplorer.com/address/0x69c7851af46d56345838fd4eb9e505d090c397c3) | Party pots: deposits, rewards, reimbursements, settlements, refunds, rollover |
-| PartyRegistry | [`0xb7d922488daa522443ffe1627efc6d65825eebad`](https://testnet.monadexplorer.com/address/0xb7d922488daa522443ffe1627efc6d65825eebad) | Parties and membership events |
-| SocialGraph | [`0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9`](https://testnet.monadexplorer.com/address/0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9) | Shared-experience graph (gatherings, ties) |
+| PartyTreasury V2 | [`0x7e92f443c26c36e80a7f7ab8939a915dd9fbd991`](https://testnet.monadexplorer.com/address/0x7e92f443c26c36e80a7f7ab8939a915dd9fbd991) | Party pots: deposits, rewards, reimbursements, settlements, refunds, rollover |
+| PartyRegistry | [`0xce58a0cf7b9f80994eaeba0138e1525496090d25`](https://testnet.monadexplorer.com/address/0xce58a0cf7b9f80994eaeba0138e1525496090d25) | Parties and membership events |
+| SocialGraph | [`0x11ca2ef9acad94fe83d3269bdeabd2c1b627b3d2`](https://testnet.monadexplorer.com/address/0x11ca2ef9acad94fe83d3269bdeabd2c1b627b3d2) | Shared-experience graph (gatherings, ties) |
 
-- PartyTreasury V2 deployment: [`0xfb93fdb7…3a04685`](https://testnet.monadexplorer.com/tx/0xfb93fdb7141d0d39f94c7e5611841d309ea8c2628a173b270e54625c23a04685) (block 68,777,006).
-- App transaction (deposit from the live product): _add hash before submitting_.
-- Sources in [`contracts/`](contracts), compiled ABI/bytecode in [`contracts/artifacts/`](contracts/artifacts), client config in [`src/contracts/index.ts`](src/contracts/index.ts), indexer in [`indexer/`](indexer) (Envio HyperIndex).
+Owner / relayer: [`0x3e040C0e394e2409C29906f275C041dFEd005fAb`](https://testnet.monadexplorer.com/address/0x3e040C0e394e2409C29906f275C041dFEd005fAb). Deployed 2026-10-12 from the sources in [`contracts/`](contracts) (solc 0.8.24, optimizer 200 runs, `pnpm contracts:build`).
 
-> **Security note:** the deployer key was found in public git history during the pre-submission audit and is being rotated; the contracts above will be redeployed with a new owner and this table updated. Details and remediation: [`docs/SECURITY_INCIDENT_2026-10.md`](docs/SECURITY_INCIDENT_2026-10.md).
+Transactions:
+
+| What | Hash | Block |
+|---|---|---|
+| Deploy SocialGraph | [`0xdfe20131…3bbfdc`](https://testnet.monadexplorer.com/tx/0xdfe201314440cda8c49b2fc7de71b84893960f431384eb459ad5e50e3c3bbfdc) | 70,555,033 |
+| Deploy PartyRegistry | [`0x61daafd7…bcd53c2`](https://testnet.monadexplorer.com/tx/0x61daafd7ea03b760962a83954bc6b807bb0ffe8693d95b686fe0c6f99bcd53c2) | 70,555,035 |
+| Deploy PartyTreasury V2 | [`0xec8dd18c…f7007b50`](https://testnet.monadexplorer.com/tx/0xec8dd18cd43f5c23f98fd8678d6f53d4f36d80a4152d9e5306572cecf7007b50) | 70,555,037 |
+| Smoke test: register party | [`0x79ec0925…3d45a39`](https://testnet.monadexplorer.com/tx/0x79ec092556193430343093627df14272b1d50a57cdd4e6b0c17b565a13d45a39) | 70,555,510 |
+| Smoke test: deposit 0.01 MON | [`0x904c05f8…9f22e`](https://testnet.monadexplorer.com/tx/0x904c05f89ebec706d1ca4429c00635a6c06a8bf1a4a790b3e6121a2528c9f22e) | 70,555,512 |
+| Smoke test: close pot & withdraw | [`0x7539a110…6d0e58b`](https://testnet.monadexplorer.com/tx/0x7539a110e04c5ed9eed6a50e12c5e87fa8e6688e76dddbaee6b5e9e9c6d0e58b) | 70,555,515 |
+| Deposit from the live product | _add hash before submitting_ | |
+
+The three smoke-test transactions (register → deposit → withdraw) confirmed end to end in **2.4 s**.
+
+Sources in [`contracts/`](contracts), compiled ABI/bytecode in [`contracts/artifacts/`](contracts/artifacts), client config in [`src/contracts/index.ts`](src/contracts/index.ts), indexer in [`indexer/`](indexer) (Envio HyperIndex).
+
+> **Retired deployments.** The previous contracts (`0x69c7…97c3` treasury, `0xb7d9…ebad` registry, `0x7e87…adf9` social graph) were owned by a deployer key that leaked into git history. They are no longer used by the app and must not receive funds. Details: [`docs/SECURITY_INCIDENT_2026-10.md`](docs/SECURITY_INCIDENT_2026-10.md).
 
 ## Architecture
 

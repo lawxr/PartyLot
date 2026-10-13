@@ -1,6 +1,6 @@
 # Security incident: deployer key in public git history
 
-**Status:** open, rotation pending (owner action required).
+**Status:** key rotated and contracts redeployed on 2026-10-12. Pending: update the Vercel environment (step 2) and redeploy the web app.
 **Found:** 2026-10-12 during the pre-submission audit.
 
 ## What happened
@@ -39,6 +39,18 @@ This also conflicts with the Metropolis rules (§5.3: no private keys or credent
 6. Optional: purge the file from history (`git filter-repo --path scripts/test-monad-treasury-playwright.mjs --invert-paths`)
    and force-push. This rewrites public history and needs every collaborator to re-clone. Rotation
    (steps 1–4) is what actually removes the risk; purging only reduces exposure.
+
+## Resolution log (2026-10-12)
+
+| Step | Result |
+|---|---|
+| Rotate + sweep | New owner/relayer `0x3e04…5fAb`; 11.465 MON moved in [`0x53e1cf89…6657bc`](https://testnet.monadexplorer.com/tx/0x53e1cf8950c8c32333b8b5f2288bf2a335a41c0cf3775cf5295a2d8e766657bc). Leaked account left with dust (~0.004 MON). |
+| Redeploy | SocialGraph `0x11ca…b3d2`, PartyRegistry `0xce58…0d25`, PartyTreasury `0x7e92…d991`, compiled from current sources. `owner()` / `partySigner()` verified = new account. |
+| Smoke test | register → deposit 0.01 MON → close & withdraw, all `success` (README). |
+| Code | Addresses updated in `src/contracts/index.ts`, `.env.example`, `scripts/deploy.ts`, `indexer/config.yaml` (`start_block: 70555033`), stats and Party Pot views, README. |
+| **Vercel** | **Owner action:** set `MONAD_DEPLOYER_PRIVATE_KEY`, `NEXT_PUBLIC_DEPLOYER_ADDRESS` and the three `NEXT_PUBLIC_*_ADDRESS` values to the new ones, then redeploy. Until then production still uses the old key/contracts. |
+| Envio | Redeploy the indexer from `indexer/` so `/stats` follows the new addresses. |
+| History purge | Not done (optional, rewrites public history). |
 
 ## Prevention
 

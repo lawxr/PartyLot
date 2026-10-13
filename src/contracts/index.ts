@@ -5,11 +5,11 @@
 
 export const MONAD_CONTRACT_ADDRESSES = {
   partyRegistry: (process.env.NEXT_PUBLIC_PARTY_REGISTRY_ADDRESS ||
-    '0xb7d922488daa522443ffe1627efc6d65825eebad') as `0x${string}`,
+    '0xce58a0cf7b9f80994eaeba0138e1525496090d25') as `0x${string}`,
   partyTreasury: (process.env.NEXT_PUBLIC_PARTY_TREASURY_ADDRESS ||
-    '0x69c7851af46d56345838fd4eb9e505d090c397c3') as `0x${string}`,
+    '0x7e92f443c26c36e80a7f7ab8939a915dd9fbd991') as `0x${string}`,
   socialGraph: (process.env.NEXT_PUBLIC_SOCIAL_GRAPH_ADDRESS ||
-    '0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9') as `0x${string}`,
+    '0x11ca2ef9acad94fe83d3269bdeabd2c1b627b3d2') as `0x${string}`,
   pythOracle: (process.env.NEXT_PUBLIC_PYTH_ORACLE_ADDRESS ||
     '0x2880aB155794e7179c9eE2e38200202908C17B43') as `0x${string}`,
 };

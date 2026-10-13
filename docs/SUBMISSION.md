@@ -15,9 +15,9 @@ Track: **03 — Social, Attention & Culture** (one track only, §2.5).
 | §4.1.4 | Pre-existing code identified | ✅ | `README.md` → *Build window and originality* (none) |
 | §4.1.4 | AI tools disclosed | ✅ | `README.md` → *AI tools used* |
 | §4.1.5 | Description, architecture, stack, setup | ✅ | `README.md` |
-| §4.1.3 / §9.2 | Contract addresses + tx hashes, testnet | ⚠️ | Addresses verified live (bytecode present) and deploy tx verified (`status 0x1`). **Add one app transaction hash** (a deposit from the live product). |
+| §4.1.3 / §9.2 | Contract addresses + tx hashes, testnet | ✅ / ⏳ | New contracts + 3 deploy txs + 3 smoke-test txs in README. **Add one deposit hash from the live product** after Vercel is updated. |
 | §9.2 | Why Monad | ✅ | `README.md` → *How Partylot uses Monad* |
-| §5.3 / §10.2 | No private keys / credentials / backdoors | ❌ **blocker** | Deployer key is in public history and is `owner` of the treasury. Rotate + redeploy: `docs/SECURITY_INCIDENT_2026-10.md`. |
+| §5.3 / §10.2 | No private keys / credentials / backdoors | ✅ / ⏳ | Leaked key rotated, funds swept, contracts redeployed with a new owner. **Update Vercel env** (incident doc, resolution log). |
 | §9.1 | Working prototype a third party can run | ✅ | `pnpm install && pnpm dev`; `pnpm release:check` green |
 | §9.4 | Demo video ≤ 3 min, product in operation, Monad interactions | ⏳ owner | Script in §3 below |
 | Track 03 | Pitch video ≤ 2 min | ⏳ owner | Outline in §4 below |
@@ -60,7 +60,7 @@ Record the real product (no mockups or slides, §9.4). Use the rotated contracts
 
 ## 5. Launch order for the next 24 hours
 
-1. Rotate the key and redeploy contracts (`docs/SECURITY_INCIDENT_2026-10.md`, steps 1–5). Update Vercel env and redeploy.
+1. ~~Rotate the key and redeploy contracts~~ (done). **Update the Vercel env** with the new key and addresses (values in `.env.local`) and redeploy; redeploy the Envio indexer.
 2. Merge `release/metropolis` → `main`, push, wait for Vercel, smoke-test login → party → game → deposit on a phone.
 3. Make a deposit from the live product; put the tx hash and the new addresses in the README; commit and push.
 4. Record and upload the demo (§3) and pitch (§4); upload the 30 s ad.

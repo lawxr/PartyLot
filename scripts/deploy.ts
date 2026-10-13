@@ -66,8 +66,8 @@ async function main() {
   const artifactsDir = path.join(process.cwd(), 'contracts', 'artifacts');
   const deployAll = process.argv.includes('--all');
 
-  let socialGraphAddress = process.env.NEXT_PUBLIC_SOCIAL_GRAPH_ADDRESS || '0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9';
-  let registryAddress = process.env.NEXT_PUBLIC_PARTY_REGISTRY_ADDRESS || '0xb7d922488daa522443ffe1627efc6d65825eebad';
+  let socialGraphAddress = process.env.NEXT_PUBLIC_SOCIAL_GRAPH_ADDRESS || '0x11ca2ef9acad94fe83d3269bdeabd2c1b627b3d2';
+  let registryAddress = process.env.NEXT_PUBLIC_PARTY_REGISTRY_ADDRESS || '0xce58a0cf7b9f80994eaeba0138e1525496090d25';
 
   if (deployAll) {
     // 1. Deploy SocialGraph

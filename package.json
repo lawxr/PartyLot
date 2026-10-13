@@ -15,7 +15,8 @@
     "check:slop": "node scripts/check-slop.mjs",
     "check:slop:strict": "node scripts/check-slop.mjs --strict",
     "release:check": "pnpm check:secrets && pnpm check:slop && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
-    "check:secrets": "node scripts/check-secrets.mjs"
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "contracts:build": "cd contracts && npx -y solc@0.8.24 --optimize --optimize-runs 200 --bin --abi -o .solc-out PartyRegistry.sol PartyTreasury.sol SocialGraph.sol && for n in PartyRegistry PartyTreasury SocialGraph; do mv .solc-out/${n}_sol_${n}.abi artifacts/contracts_${n}_sol_${n}.abi && mv .solc-out/${n}_sol_${n}.bin artifacts/contracts_${n}_sol_${n}.bin; done && rm -rf .solc-out"
   },
   "dependencies": {
     "@privy-io/react-auth": "^3.45.0",

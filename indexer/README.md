@@ -5,9 +5,9 @@ This directory contains the production-grade **Envio HyperIndex** indexer for **
 ## Architecture
 
 The indexer captures and aggregates onchain state across three core contracts:
-- **`PartyRegistry`** (`0xb7d922488daa522443ffe1627efc6d65825eebad`): Parties created and guest member joins.
-- **`PartyTreasury`** (`0x69c7851af46d56345838fd4eb9e505d090c397c3`): V2 vault handling pot deposits with auto-registration, role reward distributions, P2P debt settlements, expense reimbursements, pro-rata participant refunds, and emergency host closes.
-- **`SocialGraph`** (`0x7e87e96bc959fa9ee559fad9c2e3d017d757adf9`): Crew creations, onchain gathering attestations, and pair-wise social ties.
+- **`PartyRegistry`** (`0xce58a0cf7b9f80994eaeba0138e1525496090d25`): Parties created and guest member joins.
+- **`PartyTreasury`** (`0x7e92f443c26c36e80a7f7ab8939a915dd9fbd991`): V2 vault handling pot deposits with auto-registration, role reward distributions, P2P debt settlements, expense reimbursements, pro-rata participant refunds, and emergency host closes.
+- **`SocialGraph`** (`0x11ca2ef9acad94fe83d3269bdeabd2c1b627b3d2`): Crew creations, onchain gathering attestations, and pair-wise social ties.
 
 ## Key Bounty Highlights
 

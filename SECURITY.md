@@ -11,6 +11,12 @@ PartyLot is currently in active development for the Monad Metropolis Hackathon.
 
 ---
 
+## Known incidents
+
+- **2026-10 — deployer key in git history.** Status and remediation: [`docs/SECURITY_INCIDENT_2026-10.md`](docs/SECURITY_INCIDENT_2026-10.md). `pnpm release:check` now scans tracked files for secrets.
+
+---
+
 ## Reporting a Vulnerability
 
 The PartyLot team (Law & Gabriela) takes security seriously. If you discover a security vulnerability or exploit in the web application, API endpoints, or deployed smart contracts on Monad Testnet, please disclose it responsibly.

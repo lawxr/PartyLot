@@ -98,3 +98,6 @@ launch-film/
 trailer-film/
 *.mp4
 odd/tasks/*launch-film*
+
+# Contract build outputs are small and needed by scripts/deploy.ts
+!contracts/artifacts/

@@ -139,7 +139,7 @@ export const WhosMostLikely: React.FC = () => {
         />
 
         <div className="flex-1 flex flex-col items-center justify-center text-center p-6 my-auto">
-          <div className="w-16 h-16 rounded-full bg-party-yellow/20 border border-party-yellow text-party-yellow flex items-center justify-center mb-4 shadow-sm">
+          <div className="w-16 h-16 rounded-full bg-party-yellow/20 border border-party-yellow text-[var(--stage-accent-text)] flex items-center justify-center mb-4 shadow-sm">
             <Users className="w-8 h-8" />
           </div>
 

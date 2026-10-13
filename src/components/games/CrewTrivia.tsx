@@ -112,11 +112,11 @@ export const CrewTrivia: React.FC = () => {
         />
 
         <div className="flex-1 flex flex-col items-center justify-center text-center p-6 my-auto w-full">
-          <div className="w-20 h-20 rounded-full bg-party-yellow/20 ring-6 ring-party-yellow text-party-yellow flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <div className="w-20 h-20 rounded-full bg-party-yellow/20 ring-6 ring-party-yellow text-[var(--stage-accent-text)] flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Trophy className="w-10 h-10 stroke-[2.5]" />
           </div>
 
-          <span className="font-mono text-xs uppercase font-black tracking-widest text-party-yellow">
+          <span className="font-mono text-xs uppercase font-black tracking-widest text-[var(--stage-accent-text)]">
             {isEs ? 'PODIO FINAL' : 'FINAL PODIUM'}
           </span>
           <h3 className="font-bubble text-4xl sm:text-5xl text-[var(--stage-text)] tracking-tight mt-1 mb-2">
@@ -132,7 +132,7 @@ export const CrewTrivia: React.FC = () => {
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--stage-muted)] block">
               {isEs ? 'PUNTAJE FINAL' : 'FINAL SCORE'}
             </span>
-            <div className="font-display font-black text-4xl text-party-yellow mt-1">
+            <div className="font-display font-black text-4xl text-[var(--stage-accent-text)] mt-1">
               {score} PTS
             </div>
             <span className="text-xs text-[var(--stage-muted)] block mt-1.5 font-medium">
@@ -168,7 +168,7 @@ export const CrewTrivia: React.FC = () => {
       <div className="flex-1 flex flex-col justify-between my-auto w-full py-2">
         {/* Question Heading */}
         <div className="text-center my-auto py-2">
-          <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-party-yellow block mb-1">
+          <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--stage-accent-text)] block mb-1">
             {isEs ? 'PREGUNTA DEL GRUPO' : 'CREW PROMPT'}
           </span>
           <h2 className="font-display font-black text-2xl sm:text-[28px] text-[var(--stage-text)] tracking-tight leading-[1.12]">
@@ -240,7 +240,7 @@ export const CrewTrivia: React.FC = () => {
                 className="w-full space-y-2.5"
               >
                 <div className="p-3.5 rounded-2xl bg-[var(--stage-card)] border border-[var(--stage-card-border)] text-xs text-[var(--stage-text)] leading-relaxed shadow-2xs">
-                  <span className="font-bold text-party-yellow mr-1">
+                  <span className="font-bold text-[var(--stage-accent-text)] mr-1">
                     {isEs ? 'Dato:' : 'Fact:'}
                   </span>
                   <span>{explanationText}</span>

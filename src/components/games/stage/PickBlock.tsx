@@ -58,7 +58,7 @@ export const PickBlock: React.FC<PickBlockProps> = ({
       transition={{ duration: 0.25, ease: 'easeOut' }}
       className={`relative w-full rounded-[32px] p-6 flex flex-col justify-between items-center text-center transition-all cursor-pointer select-none overflow-hidden ${bgStyle} ${
         isChosen
-          ? 'ring-6 ring-white shadow-2xl z-20'
+          ? 'ring-6 ring-[var(--stage-ring-outline)] dark:ring-white shadow-2xl z-20'
           : 'shadow-md hover:brightness-105 active:brightness-95'
       } ${disabled ? 'cursor-not-allowed' : ''} ${className}`}
     >

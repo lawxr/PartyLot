@@ -32,7 +32,7 @@ export const WinnerReveal: React.FC<WinnerRevealProps> = ({
   return (
     <div className={`flex flex-col items-center text-center my-4 ${className}`}>
       {/* Title Eyebrow */}
-      <span className="font-mono text-xs font-black uppercase tracking-widest text-party-yellow mb-4">
+      <span className="font-mono text-xs font-black uppercase tracking-widest text-[var(--stage-accent-text)] mb-4">
         THE CREW HAS SPOKEN
       </span>
 

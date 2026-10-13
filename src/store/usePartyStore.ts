@@ -23,6 +23,7 @@ import {
   DebtSettlement,
 } from '@/types';
 import { generatePartyCode } from '@/services/party';
+import { formatHandle } from '@/lib/handle';
 import {
   addMemberRemote,
   deletePartyRemote,
@@ -1728,13 +1729,9 @@ export const usePartyStore = create<PartyStoreState>()(
           sparkLevel = 'Kindling';
         }
 
-        let cleanHandle = targetMember.handle;
-        if (!cleanHandle) {
-          cleanHandle = `@${targetMember.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-        }
-        if (!cleanHandle.startsWith('@')) {
-          cleanHandle = `@${cleanHandle}`;
-        }
+        const cleanHandle =
+          formatHandle(targetMember.handle) ||
+          formatHandle(targetMember.name.toLowerCase().replace(/[^a-z0-9]/g, ''));
 
         return {
           targetUserId: targetId,

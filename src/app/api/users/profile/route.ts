@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
 import { checkRateLimit } from '@/lib/security/rateLimit';
+import { formatHandle } from '@/lib/handle';
 
 export async function POST(request: NextRequest) {
   // Rate limiting against automated profile mutation flooding
@@ -90,8 +91,8 @@ export async function POST(request: NextRequest) {
   }
 
   const cleanHandle = handle && typeof handle === 'string'
-    ? handle.trim().startsWith('@') ? handle.trim() : `@${handle.trim()}`
-    : verifiedProfile.handle;
+    ? formatHandle(handle)
+    : formatHandle(verifiedProfile.handle);
 
   if (cleanHandle && !/^@[a-zA-Z0-9_]{3,24}$/.test(cleanHandle)) {
     return NextResponse.json(

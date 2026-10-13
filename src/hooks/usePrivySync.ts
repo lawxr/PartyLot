@@ -4,6 +4,7 @@ import { useEffect, useCallback } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { usePartyStore } from '@/store/usePartyStore';
 import { fetchUserProfileFromDb } from '@/services/supabaseService';
+import { formatHandle } from '@/lib/handle';
 
 // Global signature of the last synchronized identity to avoid duplicate sync cycles across component lifecycles
 let globalSyncedKey = '';
@@ -94,7 +95,7 @@ export function usePrivySync() {
 
     // Unique handle fallback: alphanumeric core + last 4 chars of user id
     const uniqueSuffix = user.id.replace(/[^a-zA-Z0-9]/g, '').slice(-4).toLowerCase();
-    const defaultUniqueHandle = `@${displayName.toLowerCase().replace(/[^a-z0-9_]/g, '')}_${uniqueSuffix}`;
+    const defaultUniqueHandle = formatHandle(`${displayName.toLowerCase().replace(/[^a-z0-9_]/g, '')}_${uniqueSuffix}`);
 
     const store = usePartyStore.getState();
 
@@ -124,7 +125,7 @@ export function usePrivySync() {
           ...store.currentUser,
           id: user.id,
           name: persisted.name || displayName,
-          handle: persisted.handle || defaultUniqueHandle,
+          handle: formatHandle(persisted.handle) || defaultUniqueHandle,
           avatar: persisted.avatar || store.currentUser.avatar || '',
           email: email || undefined,
           walletAddress: walletAddress || undefined,

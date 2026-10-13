@@ -8,7 +8,6 @@ import {
   MapPin,
   Plus,
   ChevronRight,
-  Star,
   Globe,
   Users,
   Zap,
@@ -23,6 +22,7 @@ import confetti from 'canvas-confetti';
 import { usePartyStore } from '@/store/usePartyStore';
 import { Member, Party } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { formatHandle } from '@/lib/handle';
 import { EditProfileModal } from '@/components/ui/EditProfileModal';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
 import { ProfilePeopleModal } from '@/components/profile/ProfilePeopleModal';
@@ -57,8 +57,6 @@ export const ProfileView: React.FC = () => {
     selectCrew,
     selectParty,
     updateUser,
-    toggleStarUser,
-    isUserStarred,
     attendedPartyIds,
     addAttendedNight,
     createParty,
@@ -469,7 +467,7 @@ export const ProfileView: React.FC = () => {
                 </h2>
               </div>
               <span className="text-xs sm:text-sm font-semibold text-[#8E887E] dark:text-[#A8A196] block mt-0.5">
-                {currentUser.handle?.startsWith('@') ? currentUser.handle : currentUser.handle ? `@${currentUser.handle}` : currentUser.walletAddress ? `${currentUser.walletAddress.slice(0, 6)}...${currentUser.walletAddress.slice(-4)}` : '@member'}
+                {formatHandle(currentUser.handle) || (currentUser.walletAddress ? `${currentUser.walletAddress.slice(0, 6)}...${currentUser.walletAddress.slice(-4)}` : '@member')}
               </span>
             </div>
 
@@ -869,54 +867,31 @@ export const ProfileView: React.FC = () => {
           </div>
 
           <div className="space-y-2.5 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3">
-            {peopleConnections.slice(0, 3).map((person) => {
-              const starred = isUserStarred(person.id);
-
-              return (
-                <div
-                  key={person.id}
-                  className="flex items-center justify-between p-2 md:p-3 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] md:border md:border-black/5 md:dark:border-white/10 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-                >
-                  <div
-                    onClick={() => setSelectedConnectionMember(person)}
-                    className="flex items-center gap-3 cursor-pointer flex-1"
-                  >
-                    <Avatar
-                      user={{ avatar: person.avatar, name: person.name }}
-                      size="lg"
-                    />
-                    <div>
-                      <span className="font-bold text-sm text-[#171512] dark:text-white block">
-                        {person.name}
-                      </span>
-                      <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block">
-                        {person.nightsTogether ?? 1} {isEs ? 'noches juntos' : 'nights together'}
-                      </span>
-                    </div>
+            {peopleConnections.slice(0, 3).map((person) => (
+              <button
+                type="button"
+                key={person.id}
+                onClick={() => setSelectedConnectionMember(person)}
+                className="w-full flex items-center justify-between p-2.5 md:p-3 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] md:border md:border-black/5 md:dark:border-white/10 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-[0.99] transition-all text-left cursor-pointer"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar
+                    user={{ avatar: person.avatar, name: person.name }}
+                    size="lg"
+                  />
+                  <div className="min-w-0">
+                    <span className="font-bold text-sm text-[#171512] dark:text-white block truncate">
+                      {person.name}
+                    </span>
+                    <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block truncate">
+                      {formatHandle(person.handle) ? `${formatHandle(person.handle)} • ` : ''}
+                      {person.nightsTogether ?? 1} {isEs ? 'noches juntos' : 'nights together'}
+                    </span>
                   </div>
-
-                  {/* REAL FOLLOW / STAR TOGGLE */}
-                  <motion.button
-                    onClick={() => toggleStarUser(person.id)}
-                    whileTap={{ scale: 0.85 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center shadow-sm cursor-pointer transition-colors duration-200 ${
-                      starred
-                        ? 'bg-[#F0DC00] text-[#171512]'
-                        : 'bg-black/5 dark:bg-white/10 hover:bg-black/10 text-[#8E887E] dark:text-[#A8A196]'
-                    }`}
-                    aria-label={`Follow ${person.name}`}
-                    title={starred ? (isEs ? 'Siguiendo (estrella)' : 'Following (starred)') : (isEs ? 'Seguir (dar estrella)' : 'Follow (star)')}
-                  >
-                    <Star
-                      className={`w-4 h-4 transition-transform ${
-                        starred ? 'fill-current stroke-[1.5] scale-105' : 'stroke-[2]'
-                      }`}
-                    />
-                  </motion.button>
                 </div>
-              );
-            })}
+                <ChevronRight className="w-4 h-4 text-[#8E887E] dark:text-[#A8A196] shrink-0" />
+              </button>
+            ))}
           </div>
         </section>
       </div>

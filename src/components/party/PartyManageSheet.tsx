@@ -10,6 +10,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { uploadImageFile } from '@/services/storageService';
 import { fetchCandidatesRemote, type PartyCandidate, type PartyEditableFields } from '@/services/partyAdmin';
 import { LIMITS } from '@/lib/partyAdmin';
+import { formatHandle } from '@/lib/handle';
 import type { Party } from '@/types';
 
 interface PartyManageSheetProps {
@@ -370,7 +371,7 @@ export const PartyManageSheet: React.FC<PartyManageSheetProps> = ({ party, isOpe
                       <Avatar user={{ avatar: c.avatar, name: c.name }} size="md" />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-[15px] truncate">{c.name}</p>
-                        {c.handle && <p className="text-xs text-secondary truncate">@{c.handle}</p>}
+                        {c.handle && <p className="text-xs text-secondary truncate">{formatHandle(c.handle)}</p>}
                       </div>
                       <button type="button" className={ghostBtn} disabled={busyId === c.id} onClick={() => add(c)} aria-label={`${a.add} ${c.name}`}>
                         {busyId === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}

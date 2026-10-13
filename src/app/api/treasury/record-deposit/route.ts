@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { publicMonadClient } from '@/lib/web3/monad';
+import { MONAD_CONTRACT_ADDRESSES } from '@/contracts';
 import { checkRateLimit } from '@/lib/security/rateLimit';
 import { verifyPrivyToken } from '@/lib/auth/serverPrivy';
 
@@ -98,6 +99,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const expectedTreasury = MONAD_CONTRACT_ADDRESSES.partyTreasury.toLowerCase();
+    if (!receipt.to || receipt.to.toLowerCase() !== expectedTreasury) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'INVALID_RECIPIENT_CONTRACT',
+          message: 'Transaction target does not match the PartyTreasury contract address.',
+        },
+        { status: 400 }
+      );
+    }
   } catch (txErr) {
     console.warn('Monad tx receipt check notice:', txErr);
     return NextResponse.json(
@@ -123,12 +136,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const potTxId = `pot-tx-${txHash.slice(2, 16)}`;
+
+    // Anti-replay check: prevent double-crediting if this transaction hash was already processed
+    const { data: existingTx } = await supabase
+      .from('pot_transactions')
+      .select('id')
+      .eq('id', potTxId)
+      .maybeSingle();
+
+    if (existingTx) {
+      return NextResponse.json({
+        success: true,
+        partyId,
+        updatedBalance: Number(party.pot_balance) || 0,
+        txHash,
+        duplicate: true,
+      });
+    }
+
     const prevBal = Number(party.pot_balance) || 0;
     const updatedBalance = Number((prevBal + amount).toFixed(4));
 
     // 3. Insert pot transaction
     const potTxPayload = {
-      id: `pot-tx-${txHash.slice(2, 16)}`,
+      id: potTxId,
       party_id: partyId,
       amount,
       type: 'add',

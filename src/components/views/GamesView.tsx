@@ -14,8 +14,7 @@ import { GameStage } from '@/components/games/stage';
 
 export const GamesView: React.FC = () => {
   const { parties, currentPartyId, activeGameId, setActiveGame, goBack, setCurrentView } = usePartyStore();
-  const { t, language } = useTranslation();
-  const isEs = language === 'es';
+  const { t } = useTranslation();
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
   const members = party?.members || [];
@@ -53,7 +52,7 @@ export const GamesView: React.FC = () => {
           <button
             type="button"
             onClick={goBack || (() => setCurrentView('party-detail'))}
-            aria-label={isEs ? 'Volver a la fiesta' : 'Back to party'}
+            aria-label={t.games.backToParty}
             className="w-9 h-9 rounded-full bg-[var(--stage-card)] border border-[var(--stage-card-border)] text-[var(--stage-text)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
@@ -62,13 +61,11 @@ export const GamesView: React.FC = () => {
           {/* Party title & room attendees */}
           <div className="text-center min-w-0 px-2">
             <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-[var(--stage-accent-text)] block">
-              {party?.title || (isEs ? 'FIESTA EN CURSO' : 'LIVE GATHERING')}
+              {party?.title || t.games.liveGathering}
             </span>
             <div className="flex items-center justify-center gap-1.5 text-xs text-[var(--stage-muted)] font-bold">
               <Users className="w-3.5 h-3.5" />
-              <span>
-                {members.length} {isEs ? 'en la sala' : 'playing'}
-              </span>
+              <span>{t.games.inRoom(members.length)}</span>
             </div>
           </div>
 
@@ -88,7 +85,7 @@ export const GamesView: React.FC = () => {
         {/* Game Switcher Tabs with Yellow Active Pill */}
         <nav
           role="tablist"
-          aria-label={isEs ? 'Juegos disponibles' : 'Available games'}
+          aria-label={t.games.availableGames}
           className="flex items-center justify-center gap-1 p-1 rounded-full bg-[var(--stage-card)] border border-[var(--stage-card-border)] w-full mx-auto shadow-2xs"
         >
           {games.map((g) => {

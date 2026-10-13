@@ -3,6 +3,7 @@
 import React from 'react';
 import { ArrowLeft, X } from 'lucide-react';
 import { Avatar, AvatarUser } from '@/components/ui/Avatar';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface GameEyebrowProps {
   label: string;
@@ -25,6 +26,8 @@ export const GameEyebrow: React.FC<GameEyebrowProps> = ({
   currentUser,
   className = '',
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div className={`w-full flex items-center justify-between gap-3 pt-0.5 pb-2 shrink-0 ${className}`}>
       {/* Left: Back or Close button */}
@@ -33,7 +36,7 @@ export const GameEyebrow: React.FC<GameEyebrowProps> = ({
           <button
             type="button"
             onClick={onBack}
-            aria-label="Go back"
+            aria-label={t.common.back}
             className="w-9 h-9 rounded-full bg-[var(--stage-card)] border border-[var(--stage-card-border)] text-[var(--stage-text)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
@@ -42,7 +45,7 @@ export const GameEyebrow: React.FC<GameEyebrowProps> = ({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close game"
+            aria-label={t.common.close}
             className="w-9 h-9 rounded-full bg-[var(--stage-card)] border border-[var(--stage-card-border)] text-[var(--stage-text)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
           >
             <X className="w-4 h-4 stroke-[2.5]" />

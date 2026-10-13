@@ -18,12 +18,9 @@ export const ThisOrThat: React.FC = () => {
     loadPartyFromSupabase,
     listenToActivePartyRealtime,
     currentUser,
-    goBack,
-    setCurrentView,
   } = usePartyStore();
 
-  const { language } = useTranslation();
-  const isEs = language === 'es';
+  const { t, language } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
@@ -46,8 +43,8 @@ export const ThisOrThat: React.FC = () => {
   const percentA = totalVotes > 0 ? votePcts[0] : 50;
   const percentB = totalVotes > 0 ? votePcts[1] : 50;
 
-  const optionTextA = isEs && currentQ.optionAEs ? currentQ.optionAEs : currentQ.optionA;
-  const optionTextB = isEs && currentQ.optionBEs ? currentQ.optionBEs : currentQ.optionB;
+  const optionTextA = (language === 'es' && currentQ.optionAEs) ? currentQ.optionAEs : currentQ.optionA;
+  const optionTextB = (language === 'es' && currentQ.optionBEs) ? currentQ.optionBEs : currentQ.optionB;
 
   const userChoice = currentUser?.id ? currentQ.voters?.[currentUser.id] : currentQ.userVote;
   const isVotedA = userChoice === 'A';
@@ -71,7 +68,7 @@ export const ThisOrThat: React.FC = () => {
     <div className="w-full flex-1 flex flex-col justify-between">
       {/* 1. Header with Eyebrow */}
       <GameEyebrow
-        label={isEs ? 'ESTO O AQUELLO' : 'THIS OR THAT'}
+        label={t.games.thisOrThatEyebrow}
         stepIndicator={`${currentStep}/${questions.length}`}
         currentUser={currentUser}
       />
@@ -84,9 +81,9 @@ export const ThisOrThat: React.FC = () => {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQ.id}
-            initial={{ opacity: 0, y: 15 }}
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -15 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
             className="w-full flex flex-col gap-3 relative"
           >
@@ -133,13 +130,13 @@ export const ThisOrThat: React.FC = () => {
             onClick={handleNext}
             className="w-full py-3.5 px-5 rounded-full bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow font-display font-black text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
           >
-            <span>{isEs ? 'Siguiente dilema' : 'Next dilemma'}</span>
+            <span>{t.games.nextDilemma}</span>
             <RefreshCw className="w-4 h-4 stroke-[2.5]" />
           </button>
         ) : (
           <div className="w-full flex items-center justify-between text-xs text-center font-mono font-bold text-[var(--stage-muted)] py-1">
             <span className="mx-auto">
-              {totalVotes} {totalVotes === 1 ? 'voto registrado' : 'votos registrados'}
+              {t.games.votesRegistered(totalVotes)}
             </span>
           </div>
         )}
@@ -151,7 +148,7 @@ export const ThisOrThat: React.FC = () => {
             className="flex-1 py-2.5 px-4 rounded-full border border-[var(--stage-card-border)] bg-[var(--stage-card)] text-[var(--stage-text)] font-semibold text-xs flex items-center justify-center gap-1.5 transition-all hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 cursor-pointer shadow-2xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>{isEs ? 'Anterior' : 'Previous'}</span>
+            <span>{t.games.previous}</span>
           </button>
 
           <button
@@ -159,7 +156,7 @@ export const ThisOrThat: React.FC = () => {
             onClick={handleNext}
             className="flex-1 py-2.5 px-4 rounded-full border border-[var(--stage-card-border)] bg-[var(--stage-card)] text-[var(--stage-text)] font-semibold text-xs flex items-center justify-center gap-1.5 transition-all hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 cursor-pointer shadow-2xs"
           >
-            <span>{isEs ? 'Omitir' : 'Skip'}</span>
+            <span>{t.games.skip}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

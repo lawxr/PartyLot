@@ -2,6 +2,8 @@
 
 import React from 'react';
 
+import { useTranslation } from '@/lib/i18n/useTranslation';
+
 interface GameProgressProps {
   votedCount: number;
   totalMembers: number;
@@ -18,19 +20,22 @@ interface GameProgressProps {
 export const GameProgress: React.FC<GameProgressProps> = ({
   votedCount,
   totalMembers,
-  hintText = 'Tap a friend to vote',
+  hintText,
   className = '',
 }) => {
+  const { t } = useTranslation();
+  const displayHint = hintText || t.games.tapFriendToVote;
+
   return (
     <footer
       aria-live="polite"
       className={`w-full flex flex-col items-center text-center gap-1.5 pt-3 pb-1 ${className}`}
     >
       <span className="text-xs sm:text-[13px] font-semibold text-[var(--stage-muted)]">
-        {hintText}
+        {displayHint}
       </span>
       <span className="font-mono text-[11px] font-bold text-[var(--stage-text)] opacity-80 uppercase tracking-wider">
-        {votedCount} de {totalMembers} {totalMembers === 1 ? 'persona votó' : 'personas votaron'}
+        {t.games.votedOf(votedCount, totalMembers)}
       </span>
     </footer>
   );

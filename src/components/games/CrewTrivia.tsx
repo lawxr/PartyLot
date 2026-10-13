@@ -19,12 +19,9 @@ export const CrewTrivia: React.FC = () => {
     loadPartyFromSupabase,
     listenToActivePartyRealtime,
     currentUser,
-    goBack,
-    setCurrentView,
   } = usePartyStore();
 
-  const { language } = useTranslation();
-  const isEs = language === 'es';
+  const { t, language } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
 
@@ -52,9 +49,9 @@ export const CrewTrivia: React.FC = () => {
   const totalRounds = questions.length;
   const currentQ = questions[currentRound % totalRounds] || TRIVIA_QUESTIONS[0];
 
-  const questionText = isEs && currentQ.questionEs ? currentQ.questionEs : currentQ.question;
-  const optionsList = isEs && currentQ.optionsEs ? currentQ.optionsEs : currentQ.options;
-  const explanationText = isEs && currentQ.explanationEs ? currentQ.explanationEs : currentQ.explanation;
+  const questionText = (language === 'es' && currentQ.questionEs) ? currentQ.questionEs : currentQ.question;
+  const optionsList = (language === 'es' && currentQ.optionsEs) ? currentQ.optionsEs : currentQ.options;
+  const explanationText = (language === 'es' && currentQ.explanationEs) ? currentQ.explanationEs : currentQ.explanation;
 
   const handleSelectOption = (idx: number) => {
     if (isAnswered) return;
@@ -107,7 +104,7 @@ export const CrewTrivia: React.FC = () => {
     return (
       <div className="w-full flex-1 flex flex-col justify-between">
         <GameEyebrow
-          label={isEs ? 'CREW TRIVIA' : 'CREW TRIVIA'}
+          label={t.games.crewTriviaEyebrow}
           currentUser={currentUser}
         />
 
@@ -117,28 +114,24 @@ export const CrewTrivia: React.FC = () => {
           </div>
 
           <span className="font-mono text-xs uppercase font-black tracking-widest text-[var(--stage-accent-text)]">
-            {isEs ? 'PODIO FINAL' : 'FINAL PODIUM'}
+            {t.games.finalPodium}
           </span>
-          <h3 className="font-bubble text-4xl sm:text-5xl text-[var(--stage-text)] tracking-tight mt-1 mb-2">
-            {isEs ? '¡GENIO DEL GRUPO!' : 'CREW GENIUS!'}
+          <h3 className="font-display font-black text-3xl sm:text-4xl text-[var(--stage-text)] tracking-tight mt-1 mb-2">
+            {t.games.crewGenius}
           </h3>
           <p className="text-xs sm:text-sm text-[var(--stage-muted)] mb-6 max-w-xs">
-            {isEs
-              ? `Completaste las ${totalRounds} rondas de la trivia.`
-              : `You completed all ${totalRounds} rounds of crew trivia.`}
+            {t.games.completedAllRounds(totalRounds)}
           </p>
 
           <div className="w-full max-w-xs p-5 rounded-3xl bg-[var(--stage-card)] border border-[var(--stage-card-border)] mb-6 shadow-xs">
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--stage-muted)] block">
-              {isEs ? 'PUNTAJE FINAL' : 'FINAL SCORE'}
+              {t.games.finalScore}
             </span>
             <div className="font-display font-black text-4xl text-[var(--stage-accent-text)] mt-1">
               {score} PTS
             </div>
             <span className="text-xs text-[var(--stage-muted)] block mt-1.5 font-medium">
-              {score >= 200
-                ? isEs ? 'Conocimiento legendario de la fiesta' : 'Legendary crew knowledge'
-                : isEs ? 'Aún falta más asistencia a fiestas' : 'Needs more party attendance'}
+              {score >= 200 ? t.games.legendaryKnowledge : t.games.needsMoreAttendance}
             </span>
           </div>
 
@@ -148,7 +141,7 @@ export const CrewTrivia: React.FC = () => {
             className="w-full max-w-xs py-3.5 px-6 rounded-full bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow font-display font-black text-sm shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
             <RotateCcw className="w-4 h-4 stroke-[2.5]" />
-            <span>{isEs ? 'Jugar de nuevo' : 'Play again'}</span>
+            <span>{t.games.playAgain}</span>
           </button>
         </div>
       </div>
@@ -159,7 +152,7 @@ export const CrewTrivia: React.FC = () => {
     <div className="w-full flex-1 flex flex-col justify-between">
       {/* Eyebrow Header */}
       <GameEyebrow
-        label={isEs ? 'CREW TRIVIA' : 'CREW TRIVIA'}
+        label={t.games.crewTriviaEyebrow}
         stepIndicator={`${currentRound + 1}/${totalRounds}`}
         currentUser={currentUser}
       />
@@ -169,7 +162,7 @@ export const CrewTrivia: React.FC = () => {
         {/* Question Heading */}
         <div className="text-center my-auto py-2">
           <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--stage-accent-text)] block mb-1">
-            {isEs ? 'PREGUNTA DEL GRUPO' : 'CREW PROMPT'}
+            {t.games.crewPrompt}
           </span>
           <h2 className="font-display font-black text-2xl sm:text-[28px] text-[var(--stage-text)] tracking-tight leading-[1.12]">
             {questionText}
@@ -241,7 +234,7 @@ export const CrewTrivia: React.FC = () => {
               >
                 <div className="p-3.5 rounded-2xl bg-[var(--stage-card)] border border-[var(--stage-card-border)] text-xs text-[var(--stage-text)] leading-relaxed shadow-2xs">
                   <span className="font-bold text-[var(--stage-accent-text)] mr-1">
-                    {isEs ? 'Dato:' : 'Fact:'}
+                    {t.games.factLabel}
                   </span>
                   <span>{explanationText}</span>
                 </div>
@@ -251,7 +244,7 @@ export const CrewTrivia: React.FC = () => {
                   onClick={handleNextRound}
                   className="w-full py-3.5 px-5 rounded-full bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow font-display font-black text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
                 >
-                  <span>{isEs ? 'Siguiente pregunta' : 'Next question'}</span>
+                  <span>{t.games.nextQuestion}</span>
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </button>
               </motion.div>

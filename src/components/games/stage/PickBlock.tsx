@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface PickBlockProps {
   choice: 'A' | 'B';
@@ -18,11 +19,9 @@ interface PickBlockProps {
 
 /**
  * PickBlock matching the trailer's This or That split layout:
- * - Option A in energetic warm orange (#ff7a3d) and Option B in party yellow (#F0DC00).
- * - Text is dark (#1c0d04) across both themes for high contrast.
- * - Interactive state: grows to scale 1.03 with a thick 6px white ring when chosen;
- *   dimms the opposing choice to 55% opacity.
- * - Displays vote percentage when selected.
+ * - Option A in energetic warm orange (--game-orange) and Option B in party yellow.
+ * - Text is high contrast across both themes.
+ * - Interactive state: grows to scale 1.03 with a thick 6px ring when chosen.
  */
 export const PickBlock: React.FC<PickBlockProps> = ({
   choice,
@@ -35,12 +34,13 @@ export const PickBlock: React.FC<PickBlockProps> = ({
   disabled = false,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
   const isA = choice === 'A';
 
   // Base background: A = game-orange, B = party-yellow
   const bgStyle = isA
-    ? 'bg-[#ff7a3d] text-[#1c0d04]'
+    ? 'bg-[var(--game-orange)] text-[var(--game-orange-ink)]'
     : 'bg-party-yellow text-on-party-yellow';
 
   return (
@@ -49,7 +49,7 @@ export const PickBlock: React.FC<PickBlockProps> = ({
       onClick={onPick}
       disabled={disabled}
       aria-pressed={isChosen}
-      aria-label={`Choose ${title}`}
+      aria-label={t.games.choose(title)}
       whileTap={!disabled && !shouldReduceMotion ? { scale: 0.96 } : undefined}
       animate={{
         scale: isChosen && !shouldReduceMotion ? 1.03 : 1,
@@ -65,7 +65,7 @@ export const PickBlock: React.FC<PickBlockProps> = ({
       {/* Top Header: Choice identifier pill */}
       <div className="w-full flex items-center justify-between">
         <span className="px-3 py-1 rounded-full bg-black/15 text-[11px] font-mono font-black uppercase tracking-wider">
-          OPCIÓN {choice}
+          {t.games.optionLabel(choice)}
         </span>
 
         {isChosen && (
@@ -77,7 +77,7 @@ export const PickBlock: React.FC<PickBlockProps> = ({
 
       {/* Center: Large dilemma title */}
       <div className="my-auto py-3">
-        <h3 className="font-bubble text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-none">
+        <h3 className="font-display font-black text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-none">
           {title}
         </h3>
       </div>
@@ -88,12 +88,12 @@ export const PickBlock: React.FC<PickBlockProps> = ({
           <>
             <span className="text-xl sm:text-2xl">{percentage}%</span>
             {typeof votesCount === 'number' && (
-              <span className="opacity-80">{votesCount} votos</span>
+              <span className="opacity-80">{t.games.votesCountText(votesCount)}</span>
             )}
           </>
         ) : (
           <span className="mx-auto text-[11px] opacity-75 uppercase tracking-wider font-bold">
-            Toca para votar
+            {t.games.tapToVote}
           </span>
         )}
       </div>

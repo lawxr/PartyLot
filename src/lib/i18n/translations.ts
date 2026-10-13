@@ -310,6 +310,9 @@ export interface TranslationDictionary {
     voted: string;
     nextDilemma: string;
     whosMostLikelyTitle: string;
+    whosMostLikelyEyebrow: string;
+    thisOrThatEyebrow: string;
+    crewTriviaEyebrow: string;
     whosMostLikelySubtitle: string;
     yourVote: string;
     votes: string;
@@ -318,6 +321,44 @@ export interface TranslationDictionary {
     correct: string;
     incorrect: string;
     nextQuestion: string;
+    crewHasSpoken: string;
+    optionLabel: (choice: 'A' | 'B' | string) => string;
+    tapToVote: string;
+    summaryVotes: (count: number, total: number) => string;
+    votedOf: (n: number, total: number) => string;
+    votesCountText: (n: number) => string;
+    voteBreakdown: string;
+    topPick: string;
+    viewResult: string;
+    keepVoting: string;
+    nextPrompt: string;
+    previous: string;
+    next: string;
+    skip: string;
+    votesRegistered: (n: number) => string;
+    voteFor: (name: string) => string;
+    choose: (title: string) => string;
+    backToParty: string;
+    liveGathering: string;
+    inRoom: (count: number) => string;
+    availableGames: string;
+    inviteFriendsToPlay: string;
+    inviteRequiredDescription: string;
+    partyCode: string;
+    codeCopied: string;
+    copyCodeToInvite: string;
+    backToDetail: string;
+    nobodyYet: string;
+    factLabel: string;
+    finalPodium: string;
+    crewGenius: string;
+    completedAllRounds: (total: number) => string;
+    finalScore: string;
+    legendaryKnowledge: string;
+    needsMoreAttendance: string;
+    playAgain: string;
+    crewPrompt: string;
+    tapFriendToVote: string;
   };
   polls: {
     title: string;
@@ -673,6 +714,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       voted: 'VOTASTE',
       nextDilemma: 'Siguiente dilema',
       whosMostLikelyTitle: '¿QUIÉN ES MÁS PROBABLE QUE...',
+      whosMostLikelyEyebrow: '¿QUIÉN ENCAJA MÁS?',
+      thisOrThatEyebrow: 'ESTO O AQUELLO',
+      crewTriviaEyebrow: 'CREW TRIVIA',
       whosMostLikelySubtitle: 'Vota en secreto por alguien del grupo',
       yourVote: 'Tu voto',
       votes: 'votos',
@@ -681,6 +725,44 @@ export const translations: Record<Language, TranslationDictionary> = {
       correct: '¡Correcto!',
       incorrect: 'Incorrecto',
       nextQuestion: 'Siguiente pregunta',
+      crewHasSpoken: 'EL GRUPO HA HABLADO',
+      optionLabel: (choice) => `OPCIÓN ${choice}`,
+      tapToVote: 'Toca para votar',
+      summaryVotes: (count, total) => `${count} de ${total} ${total === 1 ? 'voto' : 'votos'}`,
+      votedOf: (n, total) => `${n} de ${total} personas votaron`,
+      votesCountText: (n) => `${n} ${n === 1 ? 'voto' : 'votos'}`,
+      voteBreakdown: 'Desglose de votos',
+      topPick: 'MÁS VOTADO',
+      viewResult: 'Ver resultado',
+      keepVoting: 'Seguir votando',
+      nextPrompt: 'Siguiente pregunta',
+      previous: 'Anterior',
+      next: 'Siguiente',
+      skip: 'Omitir',
+      votesRegistered: (n) => `${n} ${n === 1 ? 'voto registrado' : 'votos registrados'}`,
+      voteFor: (name) => `Votar por ${name}`,
+      choose: (title) => `Elegir ${title}`,
+      backToParty: 'Volver a la fiesta',
+      liveGathering: 'FIESTA EN CURSO',
+      inRoom: (count) => `${count} en la sala`,
+      availableGames: 'Juegos disponibles',
+      inviteFriendsToPlay: 'Invita a tu grupo para jugar',
+      inviteRequiredDescription: 'Este juego necesita al menos 2 personas en la fiesta para poder votar quién encaja mejor con cada pregunta.',
+      partyCode: 'Código de la fiesta',
+      codeCopied: '¡Código copiado!',
+      copyCodeToInvite: 'Copiar código para invitar',
+      backToDetail: 'Volver al detalle',
+      nobodyYet: 'Nadie aún',
+      factLabel: 'Dato:',
+      finalPodium: 'PODIO FINAL',
+      crewGenius: '¡GENIO DEL GRUPO!',
+      completedAllRounds: (total) => `Completaste las ${total} rondas de la trivia.`,
+      finalScore: 'PUNTAJE FINAL',
+      legendaryKnowledge: 'Conocimiento legendario de la fiesta',
+      needsMoreAttendance: 'Aún falta más asistencia a fiestas',
+      playAgain: 'Jugar de nuevo',
+      crewPrompt: 'PREGUNTA DEL GRUPO',
+      tapFriendToVote: 'Toca un amigo para votar',
     },
     polls: {
       title: 'VOTACIONES DE GRUPO',
@@ -1034,6 +1116,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       voted: 'YOU VOTED',
       nextDilemma: 'Next dilemma',
       whosMostLikelyTitle: 'WHO IS MOST LIKELY TO...',
+      whosMostLikelyEyebrow: "WHO'S MOST LIKELY?",
+      thisOrThatEyebrow: 'THIS OR THAT',
+      crewTriviaEyebrow: 'CREW TRIVIA',
       whosMostLikelySubtitle: 'Secretly vote for someone in the group',
       yourVote: 'Your vote',
       votes: 'votes',
@@ -1042,6 +1127,44 @@ export const translations: Record<Language, TranslationDictionary> = {
       correct: 'Correct!',
       incorrect: 'Incorrect',
       nextQuestion: 'Next question',
+      crewHasSpoken: 'THE CREW HAS SPOKEN',
+      optionLabel: (choice) => `OPTION ${choice}`,
+      tapToVote: 'Tap to vote',
+      summaryVotes: (count, total) => `${count} of ${total} ${total === 1 ? 'vote' : 'votes'}`,
+      votedOf: (n, total) => `${n} of ${total} people voted`,
+      votesCountText: (n) => `${n} ${n === 1 ? 'vote' : 'votes'}`,
+      voteBreakdown: 'Vote breakdown',
+      topPick: 'TOP PICK',
+      viewResult: 'View result',
+      keepVoting: 'Keep voting',
+      nextPrompt: 'Next prompt',
+      previous: 'Previous',
+      next: 'Next',
+      skip: 'Skip',
+      votesRegistered: (n) => `${n} ${n === 1 ? 'vote registered' : 'votes registered'}`,
+      voteFor: (name) => `Vote for ${name}`,
+      choose: (title) => `Choose ${title}`,
+      backToParty: 'Back to party',
+      liveGathering: 'LIVE GATHERING',
+      inRoom: (count) => `${count} playing`,
+      availableGames: 'Available games',
+      inviteFriendsToPlay: 'Invite friends to play',
+      inviteRequiredDescription: 'This game requires at least 2 members in the party to vote on who fits each prompt best.',
+      partyCode: 'Party code',
+      codeCopied: 'Code copied!',
+      copyCodeToInvite: 'Copy code to invite',
+      backToDetail: 'Back to gathering',
+      nobodyYet: 'Nobody yet',
+      factLabel: 'Fact:',
+      finalPodium: 'FINAL PODIUM',
+      crewGenius: 'CREW GENIUS!',
+      completedAllRounds: (total) => `You completed all ${total} rounds of crew trivia.`,
+      finalScore: 'FINAL SCORE',
+      legendaryKnowledge: 'Legendary crew knowledge',
+      needsMoreAttendance: 'Needs more party attendance',
+      playAgain: 'Play again',
+      crewPrompt: 'CREW PROMPT',
+      tapFriendToVote: 'Tap a friend to vote',
     },
     polls: {
       title: 'GROUP POLLS',

@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Avatar, AvatarUser } from '@/components/ui/Avatar';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface WinnerRevealProps {
   winners: AvatarUser[];
@@ -26,6 +27,7 @@ export const WinnerReveal: React.FC<WinnerRevealProps> = ({
   subtitle,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
   const isTie = winners.length > 1;
 
@@ -33,7 +35,7 @@ export const WinnerReveal: React.FC<WinnerRevealProps> = ({
     <div className={`flex flex-col items-center text-center my-4 ${className}`}>
       {/* Title Eyebrow */}
       <span className="font-mono text-xs font-black uppercase tracking-widest text-[var(--stage-accent-text)] mb-4">
-        THE CREW HAS SPOKEN
+        {t.games.crewHasSpoken}
       </span>
 
       {/* Hero Winner Avatar(s) with 6px Yellow Ring */}
@@ -59,17 +61,15 @@ export const WinnerReveal: React.FC<WinnerRevealProps> = ({
       </div>
 
       {/* Winner Name in Big Display Font */}
-      <h2 className="font-bubble text-4xl sm:text-5xl text-[var(--stage-text)] tracking-tight leading-none mt-4 mb-2">
+      <h2 className="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-[var(--stage-text)] tracking-tight leading-none mt-4 mb-2">
         {isTie
           ? winners.map((w) => w.name).join(' & ')
-          : winners[0]?.name || 'Nobody yet'}
+          : winners[0]?.name || t.games.nobodyYet}
       </h2>
 
       {/* Vote Count Summary Pill */}
       <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--stage-card)] border border-[var(--stage-card-border)] text-xs font-mono font-bold text-[var(--stage-muted)] shadow-2xs">
-        <span>
-          {votesCount} de {totalVotes} {totalVotes === 1 ? 'voto' : 'votos'}
-        </span>
+        <span>{t.games.summaryVotes(votesCount, totalVotes)}</span>
         {subtitle && <span>· {subtitle}</span>}
       </div>
     </div>

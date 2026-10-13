@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Avatar, AvatarUser } from '@/components/ui/Avatar';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface FriendVoteCardProps {
   friend: AvatarUser;
@@ -31,6 +32,7 @@ export const FriendVoteCard: React.FC<FriendVoteCardProps> = ({
   showVotes = false,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -39,7 +41,7 @@ export const FriendVoteCard: React.FC<FriendVoteCardProps> = ({
       onClick={onVote}
       disabled={disabled}
       aria-pressed={isSelected}
-      aria-label={`Vote for ${friend.name || 'friend'}`}
+      aria-label={t.games.voteFor(friend.name || 'friend')}
       whileTap={!disabled && !shouldReduceMotion ? { scale: 0.93 } : undefined}
       animate={
         isSelected && !shouldReduceMotion

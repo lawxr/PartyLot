@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Avatar, AvatarUser } from '@/components/ui/Avatar';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface VoteBarProps {
   friend: AvatarUser;
@@ -28,6 +29,7 @@ export const VoteBar: React.FC<VoteBarProps> = ({
   index = 0,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -47,7 +49,7 @@ export const VoteBar: React.FC<VoteBarProps> = ({
             {friend.name || 'Friend'}
           </span>
           <span className="font-mono text-[11px] text-[var(--stage-muted)] ml-2">
-            {votes} {votes === 1 ? 'voto' : 'votos'} ({percentage}%)
+            {t.games.votesCountText(votes)} ({percentage}%)
           </span>
         </div>
 

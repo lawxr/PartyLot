@@ -35,8 +35,7 @@ export const WhosMostLikely: React.FC = () => {
     currentUser,
   } = usePartyStore();
 
-  const { language } = useTranslation();
-  const isEs = language === 'es';
+  const { t, language } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
@@ -57,11 +56,11 @@ export const WhosMostLikely: React.FC = () => {
 
   const questions = whosMostLikely && whosMostLikely.length > 0 ? whosMostLikely : WHOS_MOST_LIKELY_QUESTIONS;
   const currentQ = questions[questionIndex % questions.length] || WHOS_MOST_LIKELY_QUESTIONS[0];
-  const questionText = isEs && currentQ.questionEs ? currentQ.questionEs : currentQ.question;
+  const questionText = (language === 'es' && currentQ.questionEs) ? currentQ.questionEs : currentQ.question;
 
   // Real party members mapped with current user priority
   const friendsToDisplay = useMemo(() => {
-    return partyMembers.map((m) => {
+    return (party?.members || []).map((m) => {
       const isMe =
         (currentUser?.id && m.id === currentUser.id) ||
         (currentUser?.walletAddress &&
@@ -75,7 +74,7 @@ export const WhosMostLikely: React.FC = () => {
         avatar: isMe && currentUser?.avatar ? currentUser.avatar : m.avatar,
       };
     });
-  }, [partyMembers, currentUser]);
+  }, [party?.members, currentUser]);
 
   const totalQuestions = questions.length;
   const currentStep = (questionIndex % totalQuestions) + 1;
@@ -134,7 +133,7 @@ export const WhosMostLikely: React.FC = () => {
     return (
       <div className="w-full flex-1 flex flex-col justify-between">
         <GameEyebrow
-          label={isEs ? '¿QUIÉN ENCAJA MÁS?' : "WHO'S MOST LIKELY?"}
+          label={t.games.whosMostLikelyEyebrow}
           currentUser={currentUser}
         />
 
@@ -144,18 +143,16 @@ export const WhosMostLikely: React.FC = () => {
           </div>
 
           <h3 className="font-display font-extrabold text-xl sm:text-2xl text-[var(--stage-text)] mb-2">
-            {isEs ? 'Invita a tu grupo para jugar' : 'Invite friends to play'}
+            {t.games.inviteFriendsToPlay}
           </h3>
           <p className="text-xs sm:text-sm text-[var(--stage-muted)] max-w-xs leading-relaxed mb-6">
-            {isEs
-              ? 'Este juego necesita al menos 2 personas en la fiesta para poder votar quién encaja mejor con cada pregunta.'
-              : 'This game requires at least 2 members in the party to vote on who fits each prompt best.'}
+            {t.games.inviteRequiredDescription}
           </p>
 
           {party?.code && (
             <div className="w-full max-w-xs p-4 rounded-2xl bg-[var(--stage-card)] border border-[var(--stage-card-border)] mb-4 flex flex-col items-center shadow-xs">
               <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--stage-muted)] block mb-1">
-                {isEs ? 'Código de la fiesta' : 'Party code'}
+                {t.games.partyCode}
               </span>
               <span className="font-mono text-3xl font-black tracking-widest text-[var(--stage-text)]">
                 {party.code}
@@ -172,12 +169,12 @@ export const WhosMostLikely: React.FC = () => {
               {copiedCode ? (
                 <>
                   <Check className="w-4 h-4 stroke-[3]" />
-                  <span>{isEs ? '¡Código copiado!' : 'Code copied!'}</span>
+                  <span>{t.games.codeCopied}</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-4 h-4" />
-                  <span>{isEs ? 'Copiar código para invitar' : 'Copy code to invite'}</span>
+                  <span>{t.games.copyCodeToInvite}</span>
                 </>
               )}
             </button>
@@ -188,7 +185,7 @@ export const WhosMostLikely: React.FC = () => {
             onClick={goBack || (() => setCurrentView('party-detail'))}
             className="w-full max-w-xs py-3 px-6 rounded-full border border-[var(--stage-card-border)] bg-[var(--stage-card)] text-[var(--stage-text)] font-semibold text-xs transition-all active:scale-95 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
           >
-            {isEs ? 'Volver al detalle' : 'Back to gathering'}
+            {t.games.backToDetail}
           </button>
         </div>
       </div>
@@ -199,7 +196,7 @@ export const WhosMostLikely: React.FC = () => {
     <div className="w-full flex-1 flex flex-col justify-between">
       {/* 1. TOP STAGE EYEBROW */}
       <GameEyebrow
-        label={isEs ? '¿QUIÉN ENCAJA MÁS?' : "WHO'S MOST LIKELY?"}
+        label={t.games.whosMostLikelyEyebrow}
         stepIndicator={`${currentStep}/${totalQuestions}`}
         currentUser={currentUser}
       />
@@ -245,7 +242,7 @@ export const WhosMostLikely: React.FC = () => {
             <GameProgress
               votedCount={totalVotesCount}
               totalMembers={partyMembers.length}
-              hintText={isEs ? 'Toca un amigo para votar' : 'Tap a friend to vote'}
+              hintText={t.games.tapFriendToVote}
             />
 
             {/* Bottom Actions: Reveal Results + Nav Controls */}
@@ -258,7 +255,7 @@ export const WhosMostLikely: React.FC = () => {
               >
                 <Eye className="w-4 h-4 stroke-[2.5]" />
                 <span>
-                  {isEs ? 'Ver resultado' : 'View result'}
+                  {t.games.viewResult}
                   {totalVotesCount > 0 ? ` · ${totalVotesCount}` : ''}
                 </span>
               </button>
@@ -270,7 +267,7 @@ export const WhosMostLikely: React.FC = () => {
                   className="flex-1 py-2.5 px-4 rounded-full border border-[var(--stage-card-border)] bg-[var(--stage-card)] text-[var(--stage-text)] font-semibold text-xs flex items-center justify-center gap-1.5 transition-all hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 cursor-pointer shadow-2xs"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>{isEs ? 'Anterior' : 'Previous'}</span>
+                  <span>{t.games.previous}</span>
                 </button>
 
                 <button
@@ -278,7 +275,7 @@ export const WhosMostLikely: React.FC = () => {
                   onClick={handleNext}
                   className="flex-1 py-2.5 px-4 rounded-full border border-[var(--stage-card-border)] bg-[var(--stage-card)] text-[var(--stage-text)] font-semibold text-xs flex items-center justify-center gap-1.5 transition-all hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 cursor-pointer shadow-2xs"
                 >
-                  <span>{isEs ? 'Siguiente' : 'Next'}</span>
+                  <span>{t.games.next}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -301,13 +298,13 @@ export const WhosMostLikely: React.FC = () => {
               winners={winners}
               votesCount={topVoteCount}
               totalVotes={totalVotesCount}
-              subtitle={isEs ? 'Más votado' : 'Top pick'}
+              subtitle={t.games.topPick}
             />
 
             {/* Cascading Bars Breakdown */}
             <div className="w-full bg-[var(--stage-card)] rounded-[28px] border border-[var(--stage-card-border)] p-4 sm:p-5 my-3 shadow-xs">
               <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--stage-muted)] block mb-2">
-                {isEs ? 'Desglose de votos' : 'Vote breakdown'}
+                {t.games.voteBreakdown}
               </span>
 
               <div className="divide-y divide-black/5 dark:divide-white/5">
@@ -339,7 +336,7 @@ export const WhosMostLikely: React.FC = () => {
                 onClick={() => setViewMode('voting')}
                 className="w-full py-3.5 px-5 rounded-full bg-[var(--stage-card)] border border-[var(--stage-card-border)] text-[var(--stage-text)] font-display font-black text-sm shadow-xs flex items-center justify-center gap-2 cursor-pointer transition-all hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
               >
-                <span>{isEs ? 'Seguir votando' : 'Keep voting'}</span>
+                <span>{t.games.keepVoting}</span>
               </button>
 
               <button
@@ -347,7 +344,7 @@ export const WhosMostLikely: React.FC = () => {
                 onClick={handleNext}
                 className="w-full py-3.5 px-5 rounded-full bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow font-display font-black text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
               >
-                <span>{isEs ? 'Siguiente pregunta' : 'Next prompt'}</span>
+                <span>{t.games.nextPrompt}</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>

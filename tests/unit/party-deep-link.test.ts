@@ -80,7 +80,7 @@ describe('Dynamic Party Deep-Link Route Resolution (Item 2)', () => {
       code: 'REMT',
     };
 
-    const loadSpy = vi.fn().mockImplementation(async (id: string) => {
+    const loadSpy = vi.fn().mockImplementation(async () => {
       usePartyStore.setState((s) => ({
         parties: [...s.parties, remoteParty],
       }));

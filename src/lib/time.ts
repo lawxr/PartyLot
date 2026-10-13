@@ -54,6 +54,7 @@ export function formatRelativeTime(
 
 export function formatShortRelativeTime(
   timestamp?: string | number | Date | null,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   locale: SupportedLocale = 'es'
 ): string {
   if (!timestamp) return '1m';

@@ -18,7 +18,6 @@ import {
   Landmark,
   Coins,
   ArrowRightLeft,
-  Sparkles,
   Trophy,
 } from 'lucide-react';
 import QRCode from 'qrcode';
@@ -28,7 +27,7 @@ import { useWallets } from '@privy-io/react-auth';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { MONAD_CONTRACT_ADDRESSES } from '@/contracts';
 import { useMonPrice } from '@/hooks/useMonPrice';
-import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
+import { getCoverUrl } from '@/lib/imageOptimization';
 import { Avatar } from '@/components/ui/Avatar';
 import { UsdcLogo, MonadLogo } from '@/components/ui/TokenLogo';
 import { RewardMemberModal } from '@/components/pot/RewardMemberModal';

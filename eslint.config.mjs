@@ -13,6 +13,12 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "indexer/**",
     "scripts/**",
+    // local video / agent tooling, not app code
+    ".agents/**",
+    ".claude/**",
+    "launch-film/**",
+    "trailer-film/**",
+    "brag-output*/**",
   ]),
 ]);
 

@@ -12,13 +12,11 @@ import {
   Users,
   Receipt,
   Gamepad2,
-  ExternalLink,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { TopNav } from '@/components/navigation/TopNav';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { recordGatheringOnchain } from '@/services/socialGraphService';
-import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
 import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Avatar } from '@/components/ui/Avatar';

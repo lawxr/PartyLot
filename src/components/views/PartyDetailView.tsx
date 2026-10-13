@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   MapPin,
   Calendar,
-  Sparkles,
   Plus,
   Minus,
   X,
@@ -31,12 +30,12 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { PartyInviteModal } from '@/components/ui/PartyInviteModal';
 import { SharedExperienceModal } from '@/components/ui/SharedExperienceModal';
 import { GlassButton } from '@/components/ui/GlassButton';
-import { TokenLogo, CryptoBadge, MonadLogo } from '@/components/ui/TokenLogo';
+import { TokenLogo, CryptoBadge } from '@/components/ui/TokenLogo';
 import { Member, PartyMemory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { uploadImageFile } from '@/services/storageService';
 import { useMonPrice } from '@/hooks/useMonPrice';
-import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
+import { getCoverUrl } from '@/lib/imageOptimization';
 import { ReputationBadge } from '@/components/ui/ReputationBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';

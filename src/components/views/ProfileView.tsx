@@ -29,7 +29,7 @@ import { ProfilePeopleModal } from '@/components/profile/ProfilePeopleModal';
 import { ProfileAddNightModal } from '@/components/profile/ProfileAddNightModal';
 import { ProfileSettingsModal } from '@/components/profile/ProfileSettingsModal';
 import { CreateCrewModal } from '@/components/ui/CreateCrewModal';
-import { getCoverUrl, getAvatarUrl, getOptimizedImageUrl } from '@/lib/imageOptimization';
+import { getCoverUrl, getOptimizedImageUrl } from '@/lib/imageOptimization';
 import { Avatar } from '@/components/ui/Avatar';
 import { AvatarCropModal } from '@/components/ui/AvatarCropModal';
 import { usePrivy } from '@privy-io/react-auth';
@@ -57,7 +57,6 @@ export const ProfileView: React.FC = () => {
     selectCrew,
     selectParty,
     updateUser,
-    theme,
     toggleStarUser,
     isUserStarred,
     attendedPartyIds,
@@ -165,8 +164,6 @@ export const ProfileView: React.FC = () => {
       );
     }
   };
-
-  const userNightsCount = currentUser.gatheringsCount || attendedPartyIds.length;
 
   // Attended nights / events (real gatherings hosted, joined, or attended)
   const attendedPartiesList: Party[] = useMemo(() => {

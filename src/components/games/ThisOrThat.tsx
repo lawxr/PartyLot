@@ -4,9 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
-import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { THIS_OR_THAT_QUESTIONS } from '@/data/mockData';
+import { percentages, votersCount } from '@/lib/games';
 import { GameStage, GameEyebrow, PickBlock } from './stage';
 
 export const ThisOrThat: React.FC = () => {
@@ -41,30 +41,22 @@ export const ThisOrThat: React.FC = () => {
 
   const questions = thisOrThat && thisOrThat.length > 0 ? thisOrThat : THIS_OR_THAT_QUESTIONS;
   const currentQ = questions[index % questions.length] || THIS_OR_THAT_QUESTIONS[0];
-  const totalVotes = (currentQ.votesA || 0) + (currentQ.votesB || 0);
-  const percentA = totalVotes > 0 ? Math.round(((currentQ.votesA || 0) / totalVotes) * 100) : 50;
-  const percentB = totalVotes > 0 ? 100 - percentA : 50;
+  const totalVotes = votersCount(currentQ);
+  const votePcts = percentages([currentQ.votesA || 0, currentQ.votesB || 0]);
+  const percentA = totalVotes > 0 ? votePcts[0] : 50;
+  const percentB = totalVotes > 0 ? votePcts[1] : 50;
 
   const optionTextA = isEs && currentQ.optionAEs ? currentQ.optionAEs : currentQ.optionA;
   const optionTextB = isEs && currentQ.optionBEs ? currentQ.optionBEs : currentQ.optionB;
 
-  const isVotedA = currentQ.userVote === 'A';
-  const isVotedB = currentQ.userVote === 'B';
-  const hasVoted = Boolean(currentQ.userVote);
+  const userChoice = currentUser?.id ? currentQ.voters?.[currentUser.id] : currentQ.userVote;
+  const isVotedA = userChoice === 'A';
+  const isVotedB = userChoice === 'B';
+  const hasVoted = Boolean(userChoice);
   const currentStep = (index % questions.length) + 1;
 
   const handleVote = (choice: 'A' | 'B') => {
     voteThisOrThat(currentQ.id, choice);
-
-    if (!shouldReduceMotion) {
-      confetti({
-        particleCount: 50,
-        spread: 65,
-        origin: { y: choice === 'A' ? 0.4 : 0.7 },
-        colors: choice === 'A' ? ['#FF7A3D', '#FFA000', '#FFFFFF'] : ['#F0DC00', '#171512', '#FFFFFF'],
-        disableForReducedMotion: true,
-      });
-    }
   };
 
   const handlePrev = () => {

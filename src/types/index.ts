@@ -208,6 +208,7 @@ export interface WhosMostLikelyQuestion {
   id: string;
   question: string;
   questionEs?: string;
+  voters?: Record<string, string>; // userId -> memberId chosen
   votes: Record<string, number>; // memberId -> count
 }
 
@@ -217,6 +218,7 @@ export interface ThisOrThatQuestion {
   optionB: string;
   optionAEs?: string;
   optionBEs?: string;
+  voters?: Record<string, 'A' | 'B'>; // userId -> choice ('A' | 'B')
   votesA: number;
   votesB: number;
   userVote?: 'A' | 'B';

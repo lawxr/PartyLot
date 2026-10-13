@@ -1003,6 +1003,32 @@ export async function fetchGameSessionsFromDb(
 }
 
 /**
+ * Records an individual vote for minigames via authenticated scoped API
+ */
+export async function recordGameVoteInSupabase(params: {
+  partyId: string;
+  gameType: 'whos-most-likely' | 'this-or-that';
+  questionId: string;
+  choice: string;
+}): Promise<void> {
+  const authToken = await getClientPrivyToken();
+  if (!authToken) return;
+
+  try {
+    await fetch('/api/parties/games', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+  } catch (err) {
+    console.warn('Failed to record game vote via API:', err);
+  }
+}
+
+/**
  * Persists a game session to Supabase via authenticated scoped API
  */
 export async function persistGameSessionToSupabase(session: {
@@ -1027,3 +1053,4 @@ export async function persistGameSessionToSupabase(session: {
     console.warn('Failed to persist game session via API:', err);
   }
 }
+

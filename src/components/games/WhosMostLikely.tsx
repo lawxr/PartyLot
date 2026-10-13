@@ -8,6 +8,13 @@ import confetti from 'canvas-confetti';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { WHOS_MOST_LIKELY_QUESTIONS } from '@/data/mockData';
 import {
+  rank,
+  winners as getWinners,
+  votersCount,
+  percentages,
+  GAME_CONFETTI_COLORS,
+} from '@/lib/games';
+import {
   GameStage,
   GameEyebrow,
   FriendVoteCard,
@@ -37,7 +44,6 @@ export const WhosMostLikely: React.FC = () => {
   const partyMembers = party?.members || [];
 
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [votedMemberId, setVotedMemberId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [viewMode, setViewMode] = useState<'voting' | 'results'>('voting');
 
@@ -75,38 +81,21 @@ export const WhosMostLikely: React.FC = () => {
   const totalQuestions = questions.length;
   const currentStep = (questionIndex % totalQuestions) + 1;
 
-  // Votes aggregation
-  const effectiveVotes = useMemo(() => {
-    const votesMap = { ...(currentQ.votes || {}) };
-    if (votedMemberId && !votesMap[votedMemberId]) {
-      votesMap[votedMemberId] = 1;
-    }
-    return votesMap;
-  }, [currentQ.votes, votedMemberId]);
-
-  const totalVotesCount = useMemo(() => {
-    return Object.values(effectiveVotes).reduce((sum, v) => sum + (Number(v) || 0), 0);
-  }, [effectiveVotes]);
+  // Derive current user's voted member from the shared voters record
+  const votedMemberId = currentUser?.id ? currentQ.voters?.[currentUser.id] ?? null : null;
+  const totalVotesCount = votersCount(currentQ);
 
   // Ranked results for results screen
   const rankedFriends = useMemo(() => {
-    return [...friendsToDisplay].sort((a, b) => {
-      const aVotes = effectiveVotes[a.id] || 0;
-      const bVotes = effectiveVotes[b.id] || 0;
-      return bVotes - aVotes;
-    });
-  }, [friendsToDisplay, effectiveVotes]);
+    return rank(friendsToDisplay, currentQ.votes || {});
+  }, [friendsToDisplay, currentQ.votes]);
 
-  const topVoteCount = rankedFriends.length > 0 ? effectiveVotes[rankedFriends[0].id] || 0 : 0;
+  const topVoteCount = rankedFriends.length > 0 ? (currentQ.votes || {})[rankedFriends[0].id] || 0 : 0;
   const winners = useMemo(() => {
-    if (topVoteCount === 0 && rankedFriends.length > 0) {
-      return [rankedFriends[0]];
-    }
-    return rankedFriends.filter((f) => (effectiveVotes[f.id] || 0) === topVoteCount);
-  }, [rankedFriends, effectiveVotes, topVoteCount]);
+    return getWinners(rankedFriends, currentQ.votes || {});
+  }, [rankedFriends, currentQ.votes]);
 
   const handleVote = (memberId: string) => {
-    setVotedMemberId(memberId);
     voteWhosMostLikely(currentQ.id, memberId);
   };
 
@@ -117,20 +106,18 @@ export const WhosMostLikely: React.FC = () => {
         particleCount: 90,
         spread: 70,
         origin: { y: 0.35 },
-        colors: ['#F0DC00', '#FFF8E6', '#FF7A3D', '#171512'],
+        colors: [...GAME_CONFETTI_COLORS],
         disableForReducedMotion: true,
       });
     }
   };
 
   const handlePrev = () => {
-    setVotedMemberId(null);
     setViewMode('voting');
     setQuestionIndex((prev) => (prev > 0 ? prev - 1 : questions.length - 1));
   };
 
   const handleNext = () => {
-    setVotedMemberId(null);
     setViewMode('voting');
     setQuestionIndex((prev) => (prev + 1) % questions.length);
   };
@@ -246,7 +233,7 @@ export const WhosMostLikely: React.FC = () => {
             <div className="grid grid-cols-2 gap-3 sm:gap-3.5 my-3 w-full max-h-[380px] overflow-y-auto scrollbar-none py-1">
               {friendsToDisplay.map((friend) => {
                 const isSelected = votedMemberId === friend.id;
-                const votesCount = effectiveVotes[friend.id] || 0;
+                const votesCount = (currentQ.votes || {})[friend.id] || 0;
 
                 return (
                   <FriendVoteCard
@@ -332,9 +319,9 @@ export const WhosMostLikely: React.FC = () => {
 
               <div className="divide-y divide-black/5 dark:divide-white/5">
                 {rankedFriends.map((friend, idx) => {
-                  const votes = effectiveVotes[friend.id] || 0;
-                  const percentage =
-                    totalVotesCount > 0 ? Math.round((votes / totalVotesCount) * 100) : 0;
+                  const votes = (currentQ.votes || {})[friend.id] || 0;
+                  const percentagesMap = percentages(currentQ.votes || {});
+                  const percentage = percentagesMap[friend.id] || 0;
                   const isWinner = topVoteCount > 0 && votes === topVoteCount;
 
                   return (

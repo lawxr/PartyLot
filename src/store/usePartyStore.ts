@@ -43,13 +43,18 @@ import {
   subscribeToPartyRealtime,
   subscribeToTasksRealtime,
   persistPartyMemoryToSupabase,
-  persistGameSessionToSupabase,
+  recordGameVoteInSupabase,
 } from '@/services/supabaseService';
 import {
   WHOS_MOST_LIKELY_QUESTIONS,
   THIS_OR_THAT_QUESTIONS,
   TRIVIA_QUESTIONS,
 } from '@/data/mockData';
+import {
+  applyVote,
+  recalculateWhosMostLikely,
+  recalculateThisOrThat,
+} from '@/lib/games';
 import { Language } from '@/lib/i18n/translations';
 import {
   FinancialActionResult,
@@ -1382,24 +1387,30 @@ export const usePartyStore = create<PartyStoreState>()(
 
       voteWhosMostLikely: (questionId, memberId) => {
         set((state) => {
+          const userId = state.currentUser?.id;
+          if (!userId) return state;
+
+          let hasChanged = false;
           const updated = state.whosMostLikely.map((q) => {
             if (q.id === questionId) {
-              const currentVotes = q.votes[memberId] || 0;
-              return {
-                ...q,
-                votes: { ...q.votes, [memberId]: currentVotes + 1 },
-              };
+              const nextQ = applyVote(q, userId, memberId);
+              if (nextQ !== q) {
+                hasChanged = true;
+                return nextQ;
+              }
             }
             return q;
           });
 
+          if (!hasChanged) return state;
+
           const currentPartyId = state.currentPartyId || state.parties[0]?.id;
           if (currentPartyId) {
-            persistGameSessionToSupabase({
-              id: `gs-${currentPartyId}-wml`,
+            recordGameVoteInSupabase({
               partyId: currentPartyId,
               gameType: 'whos-most-likely',
-              questions: updated,
+              questionId,
+              choice: memberId,
             });
           }
 
@@ -1409,25 +1420,30 @@ export const usePartyStore = create<PartyStoreState>()(
 
       voteThisOrThat: (questionId, choice) => {
         set((state) => {
+          const userId = state.currentUser?.id;
+          if (!userId) return state;
+
+          let hasChanged = false;
           const updated = state.thisOrThat.map((q) => {
             if (q.id === questionId) {
-              return {
-                ...q,
-                votesA: choice === 'A' ? (q.votesA || 0) + 1 : (q.votesA || 0),
-                votesB: choice === 'B' ? (q.votesB || 0) + 1 : (q.votesB || 0),
-                userVote: choice,
-              };
+              const nextQ = applyVote(q, userId, choice);
+              if (nextQ !== q) {
+                hasChanged = true;
+                return nextQ;
+              }
             }
             return q;
           });
 
+          if (!hasChanged) return state;
+
           const currentPartyId = state.currentPartyId || state.parties[0]?.id;
           if (currentPartyId) {
-            persistGameSessionToSupabase({
-              id: `gs-${currentPartyId}-tot`,
+            recordGameVoteInSupabase({
               partyId: currentPartyId,
               gameType: 'this-or-that',
-              questions: updated,
+              questionId,
+              choice,
             });
           }
 
@@ -1821,9 +1837,29 @@ export const usePartyStore = create<PartyStoreState>()(
         // Load game sessions into appropriate game state
         dbGameSessions.forEach((session) => {
           if (session.gameType === 'whos-most-likely' && Array.isArray(session.questions) && session.questions.length > 0) {
-            set({ whosMostLikely: session.questions as unknown as WhosMostLikelyQuestion[] });
+            const currentUserId = get().currentUser?.id;
+            const currentLocal = get().whosMostLikely;
+            const merged = (session.questions as unknown as WhosMostLikelyQuestion[]).map((remoteQ) => {
+              const localQ = currentLocal.find((l) => l.id === remoteQ.id);
+              let q = recalculateWhosMostLikely(remoteQ);
+              if (currentUserId && localQ?.voters?.[currentUserId] && !q.voters?.[currentUserId]) {
+                q = applyVote(q, currentUserId, localQ.voters[currentUserId]);
+              }
+              return q;
+            });
+            set({ whosMostLikely: merged });
           } else if (session.gameType === 'this-or-that' && Array.isArray(session.questions) && session.questions.length > 0) {
-            set({ thisOrThat: session.questions as unknown as ThisOrThatQuestion[] });
+            const currentUserId = get().currentUser?.id;
+            const currentLocal = get().thisOrThat;
+            const merged = (session.questions as unknown as ThisOrThatQuestion[]).map((remoteQ) => {
+              const localQ = currentLocal.find((l) => l.id === remoteQ.id);
+              let q = recalculateThisOrThat(remoteQ, currentUserId);
+              if (currentUserId && localQ?.voters?.[currentUserId] && !q.voters?.[currentUserId]) {
+                q = applyVote(q, currentUserId, localQ.voters[currentUserId]);
+              }
+              return q;
+            });
+            set({ thisOrThat: merged });
           } else if (session.gameType === 'crew-trivia' && Array.isArray(session.questions) && session.questions.length > 0) {
             set({ crewTrivia: session.questions as unknown as TriviaQuestion[] });
           }

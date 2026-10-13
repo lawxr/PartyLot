@@ -31,7 +31,7 @@ import { useMonPrice } from '@/hooks/useMonPrice';
 import { getCoverUrl, getAvatarUrl } from '@/lib/imageOptimization';
 import { Avatar } from '@/components/ui/Avatar';
 import { UsdcLogo, MonadLogo } from '@/components/ui/TokenLogo';
-import { RewardWinnerModal } from '@/components/games/RewardWinnerModal';
+import { RewardMemberModal } from '@/components/pot/RewardMemberModal';
 import {
   formatWeb3Error,
   formatShortRelativeTime,
@@ -1198,7 +1198,7 @@ export const PartyPotView: React.FC = () => {
       </AnimatePresence>
 
       {/* Reward Winner Modal */}
-      <RewardWinnerModal
+      <RewardMemberModal
         isOpen={isRewardModalOpen}
         onClose={() => setIsRewardModalOpen(false)}
         gameTitle={party?.title || 'Party Pot'}

@@ -1,38 +1,41 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, X, Coins, ExternalLink, Loader2, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Trophy, X, Coins, ExternalLink, Loader2, CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { usePartyStore } from '@/store/usePartyStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Member } from '@/types';
-import { getMonadExplorerTxUrl } from '@/lib/web3/monad';
 import { Avatar } from '@/components/ui/Avatar';
+import { useMonPrice } from '@/hooks/useMonPrice';
+import { GAME_CONFETTI_COLORS } from '@/lib/games';
 
-interface RewardWinnerModalProps {
+interface RewardMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
   gameTitle: string;
   defaultRecipientId?: string;
 }
 
-export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
+export const RewardMemberModal: React.FC<RewardMemberModalProps> = ({
   isOpen,
   onClose,
   gameTitle,
   defaultRecipientId,
 }) => {
   const { parties, currentPartyId, currentUser, rewardGameWinner } = usePartyStore();
-  const { language } = useTranslation();
-  const isEs = language === 'es';
+  const { t } = useTranslation();
+  const shouldReduceMotion = useReducedMotion();
+  const { formatUsd } = useMonPrice();
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
-  const members: Member[] = party?.members && party.members.length > 0
-    ? party.members
-    : currentUser
-    ? [currentUser]
-    : [];
+  const members: Member[] =
+    party?.members && party.members.length > 0
+      ? party.members
+      : currentUser
+      ? [currentUser]
+      : [];
 
   const [selectedMemberId, setSelectedMemberId] = useState<string>(
     defaultRecipientId || members[0]?.id || ''
@@ -45,6 +48,9 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
 
   const potBalance = Number(party?.potBalance || 0);
   const presetAmounts = [0.1, 0.25, 0.5, 1.0];
+
+  const selectedMember = members.find((m) => m.id === selectedMemberId) || members[0];
+  const recipientName = selectedMember?.name || 'Winner';
 
   const handleSelectPreset = (amount: number) => {
     setRewardAmount(amount);
@@ -64,17 +70,17 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
 
   const handleReward = async () => {
     if (!party?.id) {
-      setErrorMsg(isEs ? 'No hay fiesta activa seleccionada.' : 'No active party selected.');
+      setErrorMsg(t.common.error);
       return;
     }
 
     if (!selectedMemberId) {
-      setErrorMsg(isEs ? 'Selecciona a un ganador.' : 'Select a winner.');
+      setErrorMsg(t.partyPot.selectRecipient);
       return;
     }
 
     if (rewardAmount <= 0) {
-      setErrorMsg(isEs ? 'El monto debe ser mayor a 0 MON.' : 'Amount must be greater than 0 MON.');
+      setErrorMsg(t.partyPot.rewardAmountLabel);
       return;
     }
 
@@ -89,22 +95,24 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
         gameTitle,
       });
 
-      if (res.receipt?.txHash) {
+      if (res?.receipt?.txHash) {
         setTxHash(res.receipt.txHash);
       } else {
-        // Fallback local tx hash if offline
         setTxHash(`0x${'f'.repeat(64)}`);
       }
 
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#F0DC00', '#836EF9', '#10B981'],
-      });
+      if (!shouldReduceMotion) {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: [...GAME_CONFETTI_COLORS],
+          disableForReducedMotion: true,
+        });
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setErrorMsg(msg || (isEs ? 'Error al enviar la recompensa onchain.' : 'Failed to send onchain reward.'));
+      setErrorMsg(msg || t.common.error);
     } finally {
       setIsLoading(false);
     }
@@ -126,13 +134,13 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
           initial={{ opacity: 0, scale: 0.94, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 12 }}
-          className="relative w-full max-w-md rounded-[32px] p-6 bg-[#FFFDF8] dark:bg-[#1A1815] border border-black/10 dark:border-white/10 shadow-2xl overflow-hidden text-[#171512] dark:text-[#F5F1E8]"
+          className="relative w-full max-w-md rounded-[32px] p-6 bg-[var(--stage-card)] border border-[var(--stage-card-border)] shadow-2xl overflow-hidden text-[var(--stage-text)]"
         >
           {/* Close button */}
           <button
             onClick={handleResetAndClose}
-            className="absolute top-5 right-5 w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 flex items-center justify-center text-[#6F6A62] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white transition-all cursor-pointer"
-            aria-label="Close"
+            className="absolute top-5 right-5 w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 flex items-center justify-center text-[var(--stage-muted)] hover:text-[var(--stage-text)] transition-all cursor-pointer"
+            aria-label={t.common.close}
           >
             <X className="w-4 h-4" />
           </button>
@@ -143,35 +151,42 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
               <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <span className="text-[11px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-                {isEs ? 'RECOMPENSA ONCHAIN CONFIRMADA' : 'ONCHAIN REWARD CONFIRMED'}
+              <span className="text-[11px] font-mono font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                {t.partyPot.rewardSuccessTitle}
               </span>
               <h3 className="font-display font-black text-2xl mt-1 mb-2">
-                {isEs ? '¡Ganador Premiado!' : 'Winner Rewarded!'}
+                {recipientName}
               </h3>
-              <p className="text-xs text-[#6F6A62] dark:text-[#A8A196] max-w-xs mb-5">
-                {isEs
-                  ? `Se enviaron ${rewardAmount.toFixed(2)} MON desde el Party Pot hacia el participante.`
-                  : `Successfully transferred ${rewardAmount.toFixed(2)} MON from the Party Pot.`}
+              <p className="text-xs text-[var(--stage-muted)] max-w-xs mb-4">
+                {t.partyPot.rewardSuccessSubtitle(formatUsd(rewardAmount), recipientName)}
               </p>
 
-              {txHash && (
-                <a
-                  href={getMonadExplorerTxUrl(txHash)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mb-6 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 text-xs font-mono font-bold text-[#836EF9] dark:text-[#A78BFA] transition-colors"
-                >
-                  <span>Tx: {txHash.slice(0, 10)}...{txHash.slice(-8)}</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
+              {/* Technical Details Accordion (Closed by default) */}
+              <details className="group w-full mb-5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-3 text-left">
+                <summary className="cursor-pointer font-mono text-xs font-bold text-[var(--stage-muted)] flex items-center justify-between select-none">
+                  <span>{t.glossary.technicalDetails}</span>
+                  <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="mt-2.5 pt-2.5 border-t border-black/5 dark:border-white/5 flex flex-col gap-1.5 text-[11px] font-mono text-[var(--stage-muted)] break-all">
+                  <span>Tx: {txHash}</span>
+                  <a
+                    href={`https://testnet.monadexplorer.com/tx/${txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-bold text-[var(--stage-accent-text)] hover:underline mt-1"
+                  >
+                    <span>Explorer</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </details>
 
               <button
+                type="button"
                 onClick={handleResetAndClose}
-                className="w-full py-3.5 px-5 rounded-2xl bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] font-black text-sm shadow-md active:scale-95 transition-all cursor-pointer"
+                className="w-full py-3.5 px-5 rounded-2xl bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow font-display font-black text-sm shadow-md active:scale-95 transition-all cursor-pointer"
               >
-                {isEs ? 'Entendido' : 'Awesome, Done'}
+                {t.common.confirm}
               </button>
             </div>
           ) : (
@@ -179,36 +194,36 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
             <div>
               {/* Header */}
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#F0DC00]/20 border border-[#F0DC00] text-[#B89600] dark:text-[#F0DC00] flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-party-yellow/20 border border-party-yellow text-[var(--stage-accent-text)] flex items-center justify-center shrink-0">
                   <Trophy className="w-6 h-6" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196]">
-                      {isEs ? 'BOTE DE LA FIESTA' : 'PARTY POT'}
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--stage-muted)]">
+                      {t.glossary.partyPot}
                     </span>
                   </div>
                   <h3 className="font-display font-black text-xl tracking-tight leading-tight">
-                    {isEs ? 'Premiar Ganador' : 'Reward Winner'}
+                    {t.partyPot.rewardModalTitle}
                   </h3>
                 </div>
               </div>
 
               {/* Pot Banner */}
               <div className="flex items-center justify-between p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] border border-black/8 dark:border-white/10 mb-4 text-xs">
-                <span className="text-[#6F6A62] dark:text-[#A8A196] font-medium flex items-center gap-1.5">
-                  <Coins className="w-4 h-4 text-[#F0DC00]" />
-                  {isEs ? 'Fondo disponible en Pot:' : 'Available Party Pot:'}
+                <span className="text-[var(--stage-muted)] font-medium flex items-center gap-1.5">
+                  <Coins className="w-4 h-4 text-party-yellow" />
+                  {t.partyPot.availablePot}
                 </span>
-                <span className="font-mono font-black text-sm text-[#171512] dark:text-white">
-                  {potBalance.toFixed(2)} MON
+                <span className="font-mono font-black text-sm text-[var(--stage-text)]">
+                  {formatUsd(potBalance)}
                 </span>
               </div>
 
               {/* Recipient Selection */}
               <div className="mb-4">
-                <label className="block text-xs font-bold text-[#6F6A62] dark:text-[#A8A196] mb-2 uppercase tracking-wider">
-                  {isEs ? 'Seleccionar Ganador(a)' : 'Select Winner'}
+                <label className="block text-xs font-bold text-[var(--stage-muted)] mb-2 uppercase tracking-wider">
+                  {t.partyPot.selectRecipient}
                 </label>
                 <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
                   {members.map((m) => {
@@ -220,8 +235,8 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
                         onClick={() => setSelectedMemberId(m.id)}
                         className={`p-2 rounded-xl border flex items-center gap-2 transition-all cursor-pointer text-left ${
                           isSelected
-                            ? 'border-[#F0DC00] bg-[#F0DC00]/15 dark:bg-[#F0DC00]/20 shadow-sm'
-                            : 'border-black/10 dark:border-white/10 bg-transparent hover:border-black/20'
+                            ? 'border-party-yellow bg-party-yellow/15 dark:bg-party-yellow/20 shadow-sm'
+                            : 'border-[var(--stage-card-border)] bg-transparent hover:border-black/20 dark:hover:border-white/20'
                         }`}
                       >
                         <Avatar
@@ -231,7 +246,7 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
                           }}
                           size="xs"
                         />
-                        <span className="text-xs font-bold truncate text-[#171512] dark:text-white">
+                        <span className="text-xs font-bold truncate text-[var(--stage-text)]">
                           {m.name}
                         </span>
                       </button>
@@ -242,8 +257,8 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
 
               {/* Amount Selection */}
               <div className="mb-5">
-                <label className="block text-xs font-bold text-[#6F6A62] dark:text-[#A8A196] mb-2 uppercase tracking-wider">
-                  {isEs ? 'Monto a transferir (MON)' : 'Reward Amount (MON)'}
+                <label className="block text-xs font-bold text-[var(--stage-muted)] mb-2 uppercase tracking-wider">
+                  {t.partyPot.rewardAmountLabel}
                 </label>
                 <div className="grid grid-cols-4 gap-2 mb-2">
                   {presetAmounts.map((amt) => {
@@ -255,11 +270,11 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
                         onClick={() => handleSelectPreset(amt)}
                         className={`py-2 px-1 rounded-xl border font-mono font-bold text-xs transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#171512] text-white dark:bg-[#F0DC00] dark:text-[#171512] border-transparent shadow-sm'
-                            : 'border-black/10 dark:border-white/10 hover:border-black/20 text-[#171512] dark:text-white'
+                            ? 'bg-[var(--stage-text)] text-[var(--stage-card)] dark:bg-party-yellow dark:text-on-party-yellow border-transparent shadow-sm'
+                            : 'border-[var(--stage-card-border)] hover:border-black/20 dark:hover:border-white/20 text-[var(--stage-text)]'
                         }`}
                       >
-                        {amt} MON
+                        {formatUsd(amt)}
                       </button>
                     );
                   })}
@@ -268,10 +283,10 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
                   type="number"
                   step="0.05"
                   min="0.01"
-                  placeholder={isEs ? 'O ingresar monto personalizado...' : 'Or enter custom MON amount...'}
+                  placeholder={t.partyPot.customAmountPlaceholder}
                   value={customAmount}
                   onChange={handleCustomChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-black/10 dark:border-white/15 bg-black/[0.02] dark:bg-white/[0.05] text-xs font-mono focus:outline-none focus:border-[#F0DC00]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--stage-card-border)] bg-black/[0.02] dark:bg-white/[0.05] text-xs font-mono focus:outline-none focus:border-party-yellow"
                 />
               </div>
 
@@ -288,20 +303,18 @@ export const RewardWinnerModal: React.FC<RewardWinnerModalProps> = ({
                 type="button"
                 onClick={handleReward}
                 disabled={isLoading}
-                className="w-full py-3.5 px-5 rounded-2xl bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] font-black text-sm shadow-[0_4px_16px_rgba(240,220,0,0.3)] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3.5 px-5 rounded-2xl bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow font-display font-black text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{isEs ? 'Confirmando en Monad...' : 'Confirming on Monad...'}</span>
+                    <span>{t.partyPot.processing}</span>
                   </>
                 ) : (
                   <>
                     <Trophy className="w-4 h-4" />
                     <span>
-                      {isEs
-                        ? `Transferir ${rewardAmount.toFixed(2)} MON al Ganador`
-                        : `Transfer ${rewardAmount.toFixed(2)} MON Reward`}
+                      {t.partyPot.sendRewardTo(formatUsd(rewardAmount), recipientName)}
                     </span>
                   </>
                 )}

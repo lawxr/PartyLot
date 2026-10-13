@@ -297,6 +297,13 @@ export interface TranslationDictionary {
     confirmSpend: string;
     confirmReward: string;
     processing: string;
+    rewardSuccessTitle: string;
+    rewardSuccessSubtitle: (amount: string, name: string) => string;
+    availablePot: string;
+    selectRecipient: string;
+    rewardAmountLabel: string;
+    customAmountPlaceholder: string;
+    sendRewardTo: (amount: string, name: string) => string;
   };
   games: {
     gamesHeader: string;
@@ -700,7 +707,14 @@ export const translations: Record<Language, TranslationDictionary> = {
       confirmDeposit: 'Confirmar Aporte (USDC)',
       confirmSpend: 'Confirmar Gasto',
       confirmReward: 'Enviar Recompensa',
-      processing: 'Procesando en Monad...',
+      processing: 'Procesando...',
+      rewardSuccessTitle: '¡Recompensa enviada!',
+      rewardSuccessSubtitle: (amount, name) => `Se transfirieron ${amount} desde el fondo hacia ${name}.`,
+      availablePot: 'Fondo disponible en el bote:',
+      selectRecipient: 'Seleccionar miembro',
+      rewardAmountLabel: 'Monto de la recompensa',
+      customAmountPlaceholder: 'O ingresar monto personalizado...',
+      sendRewardTo: (amount, name) => `Enviar ${amount} a ${name}`,
     },
     games: {
       gamesHeader: 'MINIJUEGOS DE FIESTA',
@@ -1102,7 +1116,14 @@ export const translations: Record<Language, TranslationDictionary> = {
       confirmDeposit: 'Confirm Deposit (USDC)',
       confirmSpend: 'Confirm Expense',
       confirmReward: 'Send Reward',
-      processing: 'Processing on Monad...',
+      processing: 'Processing...',
+      rewardSuccessTitle: 'Reward Sent!',
+      rewardSuccessSubtitle: (amount, name) => `Transferred ${amount} from the pot to ${name}.`,
+      availablePot: 'Available in party pot:',
+      selectRecipient: 'Select member',
+      rewardAmountLabel: 'Reward amount',
+      customAmountPlaceholder: 'Or enter custom amount...',
+      sendRewardTo: (amount, name) => `Send ${amount} to ${name}`,
     },
     games: {
       gamesHeader: 'PARTY MINIGAMES',

@@ -178,6 +178,9 @@ describe('Envio HyperIndex Client & Integration', () => {
 
   describe('checkEnvioSyncStatus', () => {
     it('returns healthy status when blocks are synchronized', async () => {
+      const { publicMonadClient } = await import('@/lib/web3/monad');
+      vi.spyOn(publicMonadClient, 'getBlockNumber').mockResolvedValue(BigInt(105));
+
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({

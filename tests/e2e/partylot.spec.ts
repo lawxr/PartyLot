@@ -1,8 +1,52 @@
 import { test, expect, Page } from '@playwright/test';
 
+interface E2EParty {
+  id: string;
+  title?: string;
+  code?: string;
+}
+
+interface E2EQ {
+  id: string;
+  question?: string;
+  votes?: Record<string, number>;
+}
+
+interface E2EStoreState {
+  currentView?: string;
+  activeTab?: string;
+  theme?: string;
+  parties: E2EParty[];
+  currentPartyId?: string | null;
+  activeGameId?: string | null;
+  currentUser?: {
+    id: string;
+    name?: string;
+    handle?: string;
+    avatar?: string;
+    gatheringsCount?: number;
+    gamesCount?: number;
+    peopleCount?: number;
+    settlementsCount?: number;
+    balance?: number;
+    isPrivyAuthenticated?: boolean;
+  };
+  whosMostLikely: E2EQ[];
+  toggleTheme: () => void;
+  createParty: (data: Record<string, unknown>) => { id: string; code: string };
+  voteWhosMostLikely: (qId: string, userId: string) => void;
+}
+
+interface WindowWithStore {
+  __partyStore?: {
+    getState: () => E2EStoreState;
+    setState: (partial: Partial<E2EStoreState> | ((state: E2EStoreState) => Partial<E2EStoreState>)) => void;
+  };
+}
+
 // Helper to ensure Next.js hydration is completed and __partyStore is available
 async function waitForStore(page: Page) {
-  await page.waitForFunction(() => typeof (window as any).__partyStore?.getState === 'function');
+  await page.waitForFunction(() => typeof (window as unknown as WindowWithStore).__partyStore?.getState === 'function');
 }
 
 test.describe('PartyLot End-to-End Application Suite', () => {
@@ -76,7 +120,7 @@ test.describe('PartyLot End-to-End Application Suite', () => {
     await expect(inputs.first()).toBeVisible();
 
     const isJoinView = await page.evaluate(() => {
-      const store = (window as any).__partyStore?.getState();
+      const store = (window as unknown as WindowWithStore).__partyStore?.getState();
       return store?.currentView === 'join-party';
     });
     expect(isJoinView).toBe(true);
@@ -99,8 +143,8 @@ test.describe('PartyLot End-to-End Application Suite', () => {
     await waitForStore(page);
 
     await page.evaluate(() => {
-      const store = (window as any).__partyStore;
-      store.setState({
+      const store = (window as unknown as WindowWithStore).__partyStore;
+      store?.setState({
         currentUser: {
           id: 'u-e2e-user',
           name: 'Alex E2E',
@@ -126,13 +170,13 @@ test.describe('PartyLot End-to-End Application Suite', () => {
 
     // Toggle theme to dark
     await page.evaluate(() => {
-      (window as any).__partyStore?.getState().toggleTheme();
+      (window as unknown as WindowWithStore).__partyStore?.getState().toggleTheme();
     });
     await expect(page.locator('html')).toHaveClass(/dark/);
 
     // Toggle theme back to light
     await page.evaluate(() => {
-      (window as any).__partyStore?.getState().toggleTheme();
+      (window as unknown as WindowWithStore).__partyStore?.getState().toggleTheme();
     });
     await expect(page.locator('html')).not.toHaveClass(/dark/);
   });
@@ -142,8 +186,8 @@ test.describe('PartyLot End-to-End Application Suite', () => {
     await waitForStore(page);
 
     const createdParty = await page.evaluate(() => {
-      const store = (window as any).__partyStore;
-      return store.getState().createParty({
+      const store = (window as unknown as WindowWithStore).__partyStore;
+      return store?.getState().createParty({
         title: 'E2E Monad Celebration',
         date: 'TONIGHT',
         time: '11:00 PM',
@@ -158,8 +202,8 @@ test.describe('PartyLot End-to-End Application Suite', () => {
     expect(createdParty?.code).toHaveLength(4);
 
     const persists = await page.evaluate((partyId) => {
-      const store = (window as any).__partyStore?.getState();
-      return store?.parties.some((p: any) => p.id === partyId);
+      const store = (window as unknown as WindowWithStore).__partyStore?.getState();
+      return store?.parties.some((p: E2EParty) => p.id === partyId);
     }, createdParty?.id);
 
     expect(persists).toBe(true);
@@ -170,10 +214,10 @@ test.describe('PartyLot End-to-End Application Suite', () => {
     await waitForStore(page);
 
     await page.evaluate(() => {
-      const store = (window as any).__partyStore;
+      const store = (window as unknown as WindowWithStore).__partyStore;
       const state = store?.getState();
       const firstParty = state?.parties?.[0];
-      if (firstParty) {
+      if (firstParty && store) {
         store.setState({
           currentUser: {
             id: 'u-e2e-user',
@@ -196,8 +240,8 @@ test.describe('PartyLot End-to-End Application Suite', () => {
     await page.waitForTimeout(400);
 
     const activePartyTitle = await page.evaluate(() => {
-      const store = (window as any).__partyStore?.getState();
-      return store?.parties.find((p: any) => p.id === store.currentPartyId)?.title;
+      const store = (window as unknown as WindowWithStore).__partyStore?.getState();
+      return store?.parties.find((p: E2EParty) => p.id === store.currentPartyId)?.title;
     });
 
     if (activePartyTitle) {
@@ -210,8 +254,9 @@ test.describe('PartyLot End-to-End Application Suite', () => {
     await waitForStore(page);
 
     await page.evaluate(() => {
-      const store = (window as any).__partyStore;
-      const state = store.getState();
+      const store = (window as unknown as WindowWithStore).__partyStore;
+      const state = store?.getState();
+      if (!state || !store) return;
       const questions = (state.whosMostLikely && state.whosMostLikely.length > 0)
         ? state.whosMostLikely
         : [
@@ -246,8 +291,9 @@ test.describe('PartyLot End-to-End Application Suite', () => {
 
     // Cast vote in "Who is Most Likely"
     const voteCast = await page.evaluate(() => {
-      const store = (window as any).__partyStore;
-      const state = store.getState();
+      const store = (window as unknown as WindowWithStore).__partyStore;
+      const state = store?.getState();
+      if (!state || !store) return false;
       const firstQ = state.whosMostLikely[0];
       const currentUserId = state.currentUser?.id || 'u-e2e-user';
       store.getState().voteWhosMostLikely(firstQ.id, currentUserId);
@@ -257,11 +303,11 @@ test.describe('PartyLot End-to-End Application Suite', () => {
     expect(voteCast).toBe(true);
 
     const voteRecorded = await page.evaluate(() => {
-      const store = (window as any).__partyStore?.getState();
+      const store = (window as unknown as WindowWithStore).__partyStore?.getState();
       const firstQ = store?.whosMostLikely?.[0];
       const votes = firstQ?.votes || {};
       const currentUserId = store?.currentUser?.id;
-      return Boolean(votes[currentUserId] && votes[currentUserId] > 0);
+      return Boolean(currentUserId && votes[currentUserId] && votes[currentUserId] > 0);
     });
 
     expect(voteRecorded).toBe(true);
@@ -272,8 +318,8 @@ test.describe('PartyLot End-to-End Application Suite', () => {
     await waitForStore(page);
 
     await page.evaluate(() => {
-      const store = (window as any).__partyStore;
-      store.setState({
+      const store = (window as unknown as WindowWithStore).__partyStore;
+      store?.setState({
         currentUser: {
           id: 'u-e2e-user',
           name: 'Alex E2E',

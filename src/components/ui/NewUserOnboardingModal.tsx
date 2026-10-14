@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Camera, Check, AlertCircle, ArrowRight, User } from 'lucide-react';
+import { Sparkles, Camera, Check, AlertCircle, ArrowRight } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { usePrivy } from '@privy-io/react-auth';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -11,6 +11,7 @@ import confetti from 'canvas-confetti';
 import { uploadImageFile } from '@/services/storageService';
 import { User as UserType } from '@/types';
 import { AvatarCropModal } from '@/components/ui/AvatarCropModal';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface OnboardingFormProps {
   currentUser: UserType;
@@ -176,13 +177,12 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
                 <div className="w-5 h-5 border-2 border-[#F0DC00] border-t-transparent rounded-full animate-spin" />
                 <span className="text-[9px] font-mono uppercase tracking-widest text-white/90">Subiendo</span>
               </div>
-            ) : avatar ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={avatar} alt="Avatar" className="w-full h-full object-cover rounded-full" />
             ) : (
-              <div className="w-full h-full rounded-full bg-[#F0DC00]/20 text-[#171512] dark:text-[#F0DC00] flex items-center justify-center font-display font-black text-3xl">
-                {name ? name.charAt(0).toUpperCase() : <User className="w-8 h-8 text-[#171512]/60 dark:text-[#F0DC00]/80" />}
-              </div>
+              <Avatar
+                user={{ name: name || currentUser.name, avatar: avatar || null }}
+                size="2xl"
+                className="w-full h-full text-3xl font-display font-black"
+              />
             )}
           </div>
 

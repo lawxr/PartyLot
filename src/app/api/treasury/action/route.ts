@@ -43,7 +43,7 @@ export function toPartyBytes32(partyId: string): `0x${string}` {
 
 const ALLOWED_ACTIONS = new Set(['deposit', 'reward', 'reimbursement', 'spend', 'rollover', 'settle', 'register']);
 const RELAYER_FUNDED_USER_ACTIONS = new Set(['deposit', 'settle']);
-const HOST_ONLY_ACTIONS = new Set(['reward', 'reimbursement', 'spend', 'rollover', 'register']);
+const HOST_ONLY_ACTIONS = new Set(['reward', 'reimbursement', 'spend', 'rollover']);
 
 export async function POST(request: NextRequest) {
   // Rate limiting against spam
@@ -236,8 +236,9 @@ export async function POST(request: NextRequest) {
       ? (candidateAddress as `0x${string}`)
       : (account.address as `0x${string}`);
 
+    let targetHostAddress: string | null = null;
     if (action === 'register') {
-      // Registration identity comes from the verified party host, never caller-controlled request fields.
+      // Check if the party is already registered onchain in PartyTreasury
       const partyData = await publicMonadClient.readContract({
         address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
         abi: PartyTreasuryABI,
@@ -245,13 +246,42 @@ export async function POST(request: NextRequest) {
         args: [partyBytes],
       });
       if (partyData?.[4]) {
-        if (String(partyData[0]).toLowerCase() !== authenticatedWalletAddress?.toLowerCase()) {
-          return NextResponse.json(
-            { success: false, error: 'FORBIDDEN', message: 'The onchain party is registered to a different host wallet.' },
-            { status: 403 }
-          );
+        return NextResponse.json({
+          success: true,
+          partyId,
+          alreadyRegistered: true,
+          message: 'Party is already registered onchain.',
+        });
+      }
+
+      // If not registered yet, resolve the canonical host address from Supabase
+      try {
+        const supabase = getServerSupabase();
+        const partyRes = await supabase
+          .from('parties')
+          .select('host_id')
+          .eq('id', partyId)
+          .maybeSingle();
+
+        if (partyRes.data?.host_id) {
+          const userRes = await supabase
+            .from('users')
+            .select('wallet_address')
+            .eq('id', partyRes.data.host_id)
+            .maybeSingle();
+
+          if (userRes.data?.wallet_address && /^0x[a-fA-F0-9]{40}$/.test(userRes.data.wallet_address)) {
+            targetHostAddress = userRes.data.wallet_address;
+          }
         }
-        return NextResponse.json({ success: true, partyId, alreadyRegistered: true, message: 'Party is already registered onchain.' });
+      } catch {
+        // Fallback to caller or deployer
+      }
+
+      if (!targetHostAddress || !/^0x[a-fA-F0-9]{40}$/.test(targetHostAddress)) {
+        targetHostAddress = authenticatedWalletAddress && /^0x[a-fA-F0-9]{40}$/.test(authenticatedWalletAddress)
+          ? authenticatedWalletAddress
+          : account.address;
       }
     }
 
@@ -270,7 +300,7 @@ export async function POST(request: NextRequest) {
           address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
           abi: PartyTreasuryABI,
           functionName: 'registerParty',
-          args: [partyBytes, authenticatedWalletAddress as `0x${string}`],
+          args: [partyBytes, (targetHostAddress || account.address) as `0x${string}`],
           gas: BigInt(250000),
         });
       } else if (action === 'reward') {

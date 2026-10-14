@@ -14,6 +14,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { AvatarCropModal } from '@/components/ui/AvatarCropModal';
+import { Avatar } from '@/components/ui/Avatar';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { stripHandle, formatHandle } from '@/lib/handle';
 
@@ -224,13 +225,12 @@ const EditProfileForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   {isEs ? 'Subiendo' : 'Uploading'}
                 </span>
               </div>
-            ) : avatar ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={avatar} alt="Avatar Preview" className="w-full h-full object-cover rounded-full" />
             ) : (
-              <div className="w-full h-full rounded-full bg-[#F0DC00]/20 text-[#171512] dark:text-[#F0DC00] flex items-center justify-center font-display font-black text-2xl">
-                {name ? name.charAt(0).toUpperCase() : 'L'}
-              </div>
+              <Avatar
+                user={{ name: name || currentUser.name, avatar: avatar || null }}
+                size="2xl"
+                className="w-full h-full text-2xl font-display font-black"
+              />
             )}
           </div>
 

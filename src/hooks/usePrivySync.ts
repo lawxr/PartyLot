@@ -63,9 +63,9 @@ export function usePrivySync() {
       return;
     }
 
-    // Reset previous user's cached private data if switching authenticated accounts
+    // Reset previous user's cached private data if switching authenticated accounts or entering with fresh identity
     const initialStore = usePartyStore.getState();
-    if (initialStore.currentUser.isPrivyAuthenticated && initialStore.currentUser.id !== user.id) {
+    if (initialStore.currentUser.id && initialStore.currentUser.id !== user.id) {
       initialStore.resetUserSession();
     }
 
@@ -100,12 +100,14 @@ export function usePrivySync() {
     const store = usePartyStore.getState();
 
     // 1. Immediately apply authenticated state to store so downstream route gates
-    // and UI components see an active authenticated session without waiting for network I/O
+    // and UI components see an active authenticated session without waiting for network I/O.
+    // Explicitly reset avatar to '' so new users start with the clean initials avatar.
     store.setCurrentUser({
       ...store.currentUser,
       id: user.id,
       name: displayName,
       handle: defaultUniqueHandle,
+      avatar: '',
       email: email || undefined,
       walletAddress: walletAddress || undefined,
       authMethod,
@@ -126,7 +128,7 @@ export function usePrivySync() {
           id: user.id,
           name: persisted.name || displayName,
           handle: formatHandle(persisted.handle) || defaultUniqueHandle,
-          avatar: persisted.avatar || store.currentUser.avatar || '',
+          avatar: persisted.avatar || '',
           email: email || undefined,
           walletAddress: walletAddress || undefined,
           authMethod,

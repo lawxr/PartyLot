@@ -144,7 +144,7 @@ export async function depositToPartyPotOnchain(
     // Ensure the party is registered onchain in PartyTreasury before user deposits
     try {
       const headers = await getAuthHeaders();
-      await fetch('/api/treasury/action', {
+      const regRes = await fetch('/api/treasury/action', {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -153,8 +153,29 @@ export async function depositToPartyPotOnchain(
           recipientAddress: wallet.address,
         }),
       });
-    } catch {
-      // Non-blocking if already registered or network transient
+      if (!regRes.ok) {
+        const errJson = await regRes.json().catch(() => null);
+        console.warn('Party pot onchain registration response:', errJson?.message || regRes.statusText);
+      }
+    } catch (regErr) {
+      console.warn('Party pot registration notice:', regErr);
+    }
+
+    // Verify onchain that party exists in PartyTreasury before prompting user wallet
+    try {
+      const partyData = await publicMonadClient.readContract({
+        address: MONAD_CONTRACT_ADDRESSES.partyTreasury,
+        abi: PartyTreasuryABI,
+        functionName: 'parties',
+        args: [partyBytes],
+      });
+      if (!partyData?.[4]) {
+        throw new Error('El bote de la fiesta no está listo en la blockchain todavía. Por favor, reintenta en un momento.');
+      }
+    } catch (readErr) {
+      if (readErr instanceof Error && readErr.message.includes('El bote de la fiesta')) {
+        throw readErr;
+      }
     }
 
     const txHash = await walletClient.writeContract({

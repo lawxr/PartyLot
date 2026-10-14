@@ -754,7 +754,7 @@ export const usePartyStore = create<PartyStoreState>()(
                 peersMap.set(mId, {
                   id: mId,
                   name: m.name,
-                  handle: (m as any).handle,
+                  handle: (m as { handle?: string }).handle,
                   avatar: m.avatar || existing?.avatar || '',
                   nightsTogether: Math.max(nights, 1),
                   walletAddress: m.walletAddress || existing?.walletAddress,
@@ -935,6 +935,24 @@ export const usePartyStore = create<PartyStoreState>()(
 
         persistPartyToSupabase(newParty, state.currentUser);
         persistActivityToSupabase(newActivity);
+
+        // Pre-register party pot onchain in background so it is instantly ready for deposits
+        getClientPrivyToken().then((token) => {
+          if (token && newParty.id) {
+            fetch('/api/treasury/action', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                action: 'register',
+                partyId: newParty.id,
+                recipientAddress: state.currentUser.walletAddress,
+              }),
+            }).catch(() => {});
+          }
+        }).catch(() => {});
 
         return newParty;
       },

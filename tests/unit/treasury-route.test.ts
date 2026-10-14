@@ -213,6 +213,30 @@ describe('POST /api/treasury/action (Fail-Closed Multi-Party Treasury)', () => {
     }));
   });
 
+  it('returns alreadyRegistered: true for attendees when the party is already registered onchain', async () => {
+    const attendeeWallet = `0x${'7'.repeat(40)}`;
+    mocks.readContract.mockResolvedValue([hostWallet, BigInt(100), BigInt(100), BigInt(0), true]);
+    const response = await POST(request({ action: 'register', partyId: 'party-42', recipientAddress: attendeeWallet }));
+
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.success).toBe(true);
+    expect(json.alreadyRegistered).toBe(true);
+    expect(mocks.writeContract).not.toHaveBeenCalled();
+  });
+
+  it('allows non-host participants to initialize party pot onchain with the resolved host wallet', async () => {
+    const attendeeWallet = `0x${'8'.repeat(40)}`;
+    mocks.writeContract.mockResolvedValue(`0x${'d'.repeat(64)}`);
+    mocks.readContract.mockResolvedValue([hostWallet, BigInt(0), BigInt(0), BigInt(0), false]);
+    const response = await POST(request({ action: 'register', partyId: 'party-42', recipientAddress: attendeeWallet }));
+
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.success).toBe(true);
+    expect(mocks.writeContract).toHaveBeenCalled();
+  });
+
   it('allows an authenticated host rollover without an amount and skips MON amount parsing', async () => {
     mocks.writeContract.mockResolvedValue(`0x${'c'.repeat(64)}`);
     const response = await POST(request({ action: 'rollover', partyId: 'party-42', toPartyId: 'party-43' }));

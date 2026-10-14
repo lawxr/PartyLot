@@ -7,8 +7,8 @@
 | **Live product** | <https://partylot.vercel.app> (Monad Testnet, chain ID 10143) |
 | **Onchain stats** | <https://partylot.vercel.app/stats> |
 | **Track** | Metropolis — **Track 03: Social, Attention & Culture** |
-| **Demo video (≤3 min)** | _add link before submitting_ |
-| **Pitch video (≤2 min)** | _add link before submitting_ |
+| **Demo video (≤3 min)** | [Watch Technical Demo](https://www.youtube.com/watch?v=tYvqLC40048) |
+| **Pitch video (≤2 min)** | [Watch Pitch Video](https://canva.link/cu2m95gv1g2hlt6) |
 | **Product ad (30 s)** | [Watch Product Video](https://youtu.be/EmNsRLpgXoI) |
 | **Logo** | <img src="public/brand/partylot-logo-1024.png" alt="Partylot Logo" width="160"> |
 | **License** | [MIT](LICENSE) |

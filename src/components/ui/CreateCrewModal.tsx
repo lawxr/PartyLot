@@ -7,6 +7,7 @@ import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { uploadImageFile } from '@/services/storageService';
 import { Avatar } from '@/components/ui/Avatar';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface CreateCrewModalProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ const COVER_PRESETS = [
 
 export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClose }) => {
   const { createCrew, getPastPartyPeers } = usePartyStore();
+  const { language } = useTranslation();
+  const isEs = language === 'es';
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCover, setSelectedCover] = useState(COVER_PRESETS[0].url);
@@ -58,7 +61,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
       const url = await uploadImageFile(file, 'crews');
       setSelectedCover(url);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al subir la imagen';
+      const msg = err instanceof Error ? err.message : (isEs ? 'Error al subir la imagen' : 'Error uploading image');
       setUploadError(msg);
     } finally {
       setIsUploading(false);
@@ -121,8 +124,12 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                 <Users className="w-4 h-4 stroke-[2.5]" />
               </div>
               <div>
-                <h3 className="font-display font-extrabold text-xl text-[#171512]">Create New Crew</h3>
-                <p className="text-[11px] text-[#6F6A62]">Durable group container for recurring gatherings</p>
+                <h3 className="font-display font-extrabold text-xl text-[#171512]">
+                  {isEs ? 'Crear Nuevo Crew' : 'Create New Crew'}
+                </h3>
+                <p className="text-[11px] text-[#6F6A62]">
+                  {isEs ? 'Grupo duradero para organizar fiestas recurrentes' : 'Durable group container for recurring gatherings'}
+                </p>
               </div>
             </div>
             <button
@@ -137,12 +144,12 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
             {/* Crew Name */}
             <div>
               <label className="block text-xs uppercase font-mono tracking-wider text-[#6F6A62] mb-1.5">
-                Crew Name *
+                {isEs ? 'Nombre del Crew *' : 'Crew Name *'}
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. 404 House, Monad Hackers, Roomies"
+                placeholder={isEs ? 'Ej. 404 House, Monad Hackers, Roomies' : 'e.g. 404 House, Monad Hackers, Roomies'}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 rounded-2xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00] focus:ring-1 focus:ring-[#F0DC00] text-[#171512] placeholder-[#8E887E] text-sm outline-none transition-all shadow-sm"
@@ -152,11 +159,11 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
             {/* Crew Description */}
             <div>
               <label className="block text-xs uppercase font-mono tracking-wider text-[#6F6A62] mb-1.5">
-                Vibe / Mission
+                {isEs ? 'Vibra / Misión' : 'Vibe / Mission'}
               </label>
               <input
                 type="text"
-                placeholder="e.g. Secret rooftop sessions, late night builds & afters"
+                placeholder={isEs ? 'Ej. Sesiones secretas en rooftop, afters y fiestas' : 'e.g. Secret rooftop sessions, late night builds & afters'}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full px-4 py-3 rounded-2xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.1)] focus:border-[#F0DC00] focus:ring-1 focus:ring-[#F0DC00] text-[#171512] placeholder-[#8E887E] text-sm outline-none transition-all shadow-sm"
@@ -167,7 +174,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs uppercase font-mono tracking-wider text-[#6F6A62]">
-                  Cover Photography
+                  {isEs ? 'Foto de Portada' : 'Cover Photography'}
                 </label>
                 <button
                   type="button"
@@ -176,7 +183,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                   className="text-[11px] text-[#B8A700] hover:underline flex items-center gap-1 font-mono font-bold cursor-pointer disabled:opacity-50"
                 >
                   <Camera className="w-3 h-3" />
-                  {isUploading ? 'Subiendo...' : 'Subir foto'}
+                  {isUploading ? (isEs ? 'Subiendo...' : 'Uploading...') : (isEs ? 'Subir foto' : 'Upload photo')}
                 </button>
               </div>
 
@@ -204,14 +211,16 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                   className={`relative aspect-square rounded-xl border-2 border-dashed border-black/20 hover:border-[#F0DC00] flex flex-col items-center justify-center gap-1 bg-white/40 transition-all cursor-pointer ${
                     isUploading ? 'animate-pulse' : ''
                   }`}
-                  title="Subir foto desde dispositivo"
+                  title={isEs ? 'Subir foto desde dispositivo' : 'Upload photo from device'}
                 >
                   {isUploading ? (
                     <Loader2 className="w-4 h-4 animate-spin text-[#B8A700]" />
                   ) : (
                     <>
                       <Camera className="w-4 h-4 text-[#6F6A62]" />
-                      <span className="text-[9px] font-bold text-[#6F6A62]">Subir</span>
+                      <span className="text-[9px] font-bold text-[#6F6A62]">
+                        {isEs ? 'Subir' : 'Upload'}
+                      </span>
                     </>
                   )}
                 </button>
@@ -244,7 +253,9 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs uppercase font-mono tracking-wider text-[#6F6A62]">
-                    Personas con las que has ido a fiesta ({selectedPeerIds.length} seleccionadas)
+                    {isEs
+                      ? `Personas con las que has ido a fiesta (${selectedPeerIds.length} seleccionadas)`
+                      : `People you've partied with (${selectedPeerIds.length} selected)`}
                   </label>
                   {selectedPeerIds.length > 0 && (
                     <button
@@ -252,7 +263,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                       onClick={() => setSelectedPeerIds([])}
                       className="text-[11px] text-[#8E887E] hover:underline cursor-pointer"
                     >
-                      Limpiar
+                      {isEs ? 'Limpiar' : 'Clear'}
                     </button>
                   )}
                 </div>
@@ -283,7 +294,14 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                               {peer.name}
                             </span>
                             <span className="text-[10px] text-[#6F6A62]">
-                              {peer.nightsTogether} {peer.nightsTogether === 1 ? 'noche juntos' : 'noches juntos'}
+                              {peer.nightsTogether}{' '}
+                              {isEs
+                                ? peer.nightsTogether === 1
+                                  ? 'noche juntos'
+                                  : 'noches juntos'
+                                : peer.nightsTogether === 1
+                                ? 'night together'
+                                : 'nights together'}
                             </span>
                           </div>
                         </div>
@@ -308,14 +326,18 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
             <div className="p-3 rounded-2xl bg-[#F0DC00]/15 border border-[#F0DC00]/30 flex items-start gap-2.5">
               <ShieldCheck className="w-4 h-4 text-[#B8A700] shrink-0 mt-0.5" />
               <p className="text-[11px] text-[#171512] leading-relaxed">
-                You will be the <strong className="text-[#171512] font-extrabold">Owner</strong> of this Crew. Your members will share collective stats, memories, and access to private gatherings.
+                {isEs ? (
+                  <>Serás el <strong className="text-[#171512] font-extrabold">Dueño</strong> de este Crew. Tus miembros compartirán estadísticas, recuerdos y acceso a reuniones privadas.</>
+                ) : (
+                  <>You will be the <strong className="text-[#171512] font-extrabold">Owner</strong> of this Crew. Your members will share collective stats, memories, and access to private gatherings.</>
+                )}
               </p>
             </div>
 
             {/* Submit */}
             <div className="pt-2 flex items-center justify-end gap-3">
               <GlassButton type="button" variant="glass" size="md" onClick={onClose}>
-                Cancel
+                {isEs ? 'Cancelar' : 'Cancel'}
               </GlassButton>
               <GlassButton
                 type="submit"
@@ -324,7 +346,7 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                 disabled={!name.trim() || isSubmitting}
                 icon={<Sparkles className="w-4 h-4 text-black stroke-[2.5]" />}
               >
-                Create Crew Hub
+                {isEs ? 'Crear Crew Hub' : 'Create Crew Hub'}
               </GlassButton>
             </div>
           </form>

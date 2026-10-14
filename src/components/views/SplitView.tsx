@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useWallets } from '@privy-io/react-auth';
 import {
   ArrowLeft,
@@ -45,7 +45,7 @@ export const SplitView: React.FC = () => {
   const partyExpenses = useMemo(() => expenses.filter((e) => e.partyId === party?.id), [expenses, party?.id]);
 
   // Tabs state
-  const [activeTab, setActiveTab] = useState<'equal' | 'custom' | 'items'>('equal');
+  const [activeTab, setActiveTab] = useState<'equal' | 'balances' | 'items'>('equal');
 
   // Modal states
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -59,14 +59,14 @@ export const SplitView: React.FC = () => {
   const [category, setCategory] = useState<ExpenseCategory>('drinks');
   const [selectedPaidById, setSelectedPaidById] = useState<string | null>(null);
   const [selectedSplitBetween, setSelectedSplitBetween] = useState<string[] | null>(null);
+  const [expenseError, setExpenseError] = useState<string | null>(null);
+  const [isSavingExpense, setIsSavingExpense] = useState(false);
+  const expenseSubmitInFlight = useRef(false);
 
   // Derived effective values without cascading effects
-  const defaultPaidById = currentUser?.id && partyMembers.some((m) => m.id === currentUser.id)
-    ? currentUser.id
-    : partyMembers[0]?.id || '';
   const paidById = selectedPaidById && partyMembers.some((m) => m.id === selectedPaidById)
     ? selectedPaidById
-    : defaultPaidById;
+    : '';
 
   const splitBetween = selectedSplitBetween !== null
     ? selectedSplitBetween
@@ -119,33 +119,62 @@ export const SplitView: React.FC = () => {
   const ridePercent = totalAmount > 0 ? Math.round((rideTotal / safeTotal) * 100) : 0;
 
   // Handle Create Expense
-  const handleCreateExpense = (e: React.FormEvent) => {
+  const handleCreateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (expenseSubmitInFlight.current) return;
+
     const parsedAmount = parseFloat(amount);
     if (!desc.trim() || isNaN(parsedAmount) || parsedAmount <= 0) return;
+    if (!party || !partyMembers.some((member) => member.id === paidById)) {
+      setExpenseError(isEs ? 'Selecciona quién pagó este gasto.' : 'Select who paid for this expense.');
+      return;
+    }
 
-    addExpense({
-      partyId: party.id,
-      description: desc.trim(),
-      amount: parsedAmount,
-      paidById: paidById || currentUser?.id || partyMembers[0]?.id || '',
-      splitBetweenIds: splitBetween.length > 0 ? splitBetween : partyMembers.map((m) => m.id),
-      category,
-    });
+    const selectedParticipants = [...new Set(splitBetween)];
+    if (
+      selectedParticipants.length === 0 ||
+      selectedParticipants.some((memberId) => !partyMembers.some((member) => member.id === memberId))
+    ) {
+      setExpenseError(isEs ? 'Selecciona al menos un integrante válido.' : 'Select at least one valid party member.');
+      return;
+    }
 
-    setDesc('');
-    setAmount('');
-    setCategory('drinks');
-    setSelectedPaidById(null);
-    setSelectedSplitBetween(null);
-    setIsAddOpen(false);
+    expenseSubmitInFlight.current = true;
+    setIsSavingExpense(true);
+    setExpenseError(null);
+    try {
+      await addExpense({
+        partyId: party.id,
+        description: desc.trim(),
+        amount: parsedAmount,
+        paidById,
+        splitBetweenIds: selectedParticipants,
+        category,
+      });
 
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.6 },
-      colors: ['#F0DC00', '#171512', '#FFFFFF'],
-    });
+      setDesc('');
+      setAmount('');
+      setCategory('drinks');
+      setSelectedPaidById(null);
+      setSelectedSplitBetween(null);
+      setIsAddOpen(false);
+
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#F0DC00', '#171512', '#FFFFFF'],
+      });
+    } catch {
+      setExpenseError(
+        isEs
+          ? 'No se pudo guardar el gasto. Revisa tu conexión e inténtalo de nuevo.'
+          : 'The expense could not be saved. Check your connection and try again.'
+      );
+    } finally {
+      expenseSubmitInFlight.current = false;
+      setIsSavingExpense(false);
+    }
   };
 
   // Handle Onchain Settlement
@@ -175,6 +204,7 @@ export const SplitView: React.FC = () => {
 
   // Toggle member in expense split
   const toggleSplitMember = (memberId: string) => {
+    setExpenseError(null);
     if (splitBetween.includes(memberId)) {
       if (splitBetween.length > 1) {
         setSelectedSplitBetween(splitBetween.filter((id) => id !== memberId));
@@ -184,9 +214,20 @@ export const SplitView: React.FC = () => {
     }
   };
 
+  const isCurrentUser = (id: string) => {
+    if (!id) return false;
+    const idLower = id.toLowerCase();
+    return (
+      id === currentUser.id ||
+      (currentUser.walletAddress && idLower === currentUser.walletAddress.toLowerCase()) ||
+      (currentUser.handle && idLower === currentUser.handle.toLowerCase()) ||
+      (activeWallet?.address && idLower === activeWallet.address.toLowerCase())
+    );
+  };
+
   // Calculate real debtor list from settlements
   const realDebtorsList = settlements
-    .filter((s) => s.toId === currentUser.id)
+    .filter((s) => isCurrentUser(s.toId))
     .map((s) => ({
       id: s.fromId,
       name: s.fromName,
@@ -198,7 +239,7 @@ export const SplitView: React.FC = () => {
 
   // Calculate real creditor list from settlements
   const realCreditorsList = settlements
-    .filter((s) => s.fromId === currentUser.id)
+    .filter((s) => isCurrentUser(s.fromId))
     .map((s) => ({
       id: s.toId,
       name: s.toName,
@@ -210,7 +251,7 @@ export const SplitView: React.FC = () => {
 
   // Other members' settlements that don't directly involve currentUser
   const otherSettlementsList = settlements
-    .filter((s) => s.fromId !== currentUser.id && s.toId !== currentUser.id)
+    .filter((s) => !isCurrentUser(s.fromId) && !isCurrentUser(s.toId))
     .map((s) => ({
       id: `${s.fromId}-${s.toId}`,
       fromName: s.fromName,
@@ -223,6 +264,18 @@ export const SplitView: React.FC = () => {
     ...realDebtorsList,
     ...realCreditorsList,
   ];
+
+  // List to display in Settle modal: user's debts if owing, otherwise pending party settlements
+  const sheetDebtorsList = useMemo(() => {
+    if (realCreditorsList.length > 0) return realCreditorsList;
+    return settlements.map((s) => ({
+      id: s.toId,
+      name: s.toName,
+      avatar: s.toAvatar,
+      subtitle: isEs ? `${s.fromName} debe transferir` : `${s.fromName} owes`,
+      amount: formatMonAmount(s.amount),
+    }));
+  }, [realCreditorsList, settlements, isEs]);
 
   if (!party) {
     return (
@@ -387,15 +440,15 @@ export const SplitView: React.FC = () => {
           <button
             type="button"
             role="tab"
-            aria-selected={activeTab === 'custom'}
-            onClick={() => setActiveTab('custom')}
+            aria-selected={activeTab === 'balances'}
+            onClick={() => setActiveTab('balances')}
             className={`py-2 px-5 rounded-full text-xs sm:text-sm font-bold flex-1 text-center transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-party-yellow ${
-              activeTab === 'custom'
+              activeTab === 'balances'
                 ? 'bg-party-yellow text-on-party-yellow shadow-xs'
                 : 'text-secondary hover:text-primary dark:hover:text-white'
             }`}
           >
-            {t.split.tabCustom}
+            {t.split.tabBalances}
           </button>
           <button
             type="button"
@@ -419,7 +472,8 @@ export const SplitView: React.FC = () => {
               realMembersList.map((member) => (
                 <div
                   key={member.id}
-                  className="bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-[22px] p-3 sm:p-3.5 border border-[rgba(35,30,22,0.06)] dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] flex items-center justify-between"
+                  onClick={() => setIsSettleOpen(true)}
+                  className="bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-[22px] p-3 sm:p-3.5 border border-[rgba(35,30,22,0.06)] dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] flex items-center justify-between cursor-pointer hover:border-[#F0DC00]/50 active:scale-[0.99] transition-all"
                 >
                   {/* Member Avatar + Name */}
                   <div className="flex items-center gap-3">
@@ -529,8 +583,8 @@ export const SplitView: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 2: Custom Split Breakdown */}
-        {activeTab === 'custom' && (
+        {/* Tab 2: Balances */}
+        {activeTab === 'balances' && (
           <div className="space-y-3 mb-5">
             <div className="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#1C1A16] border border-[rgba(35,30,22,0.06)] dark:border-white/10 shadow-xs">
               <div className="flex items-center justify-between mb-2">
@@ -763,20 +817,31 @@ export const SplitView: React.FC = () => {
                 <Send className="w-4.5 h-4.5 fill-current -rotate-12 translate-x-0.5" />
                 <span>{isEs ? 'Pagar deudas pendientes' : 'Settle pending debts'}</span>
               </button>
-            ) : realDebtorsList.length > 0 ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (typeof window !== 'undefined' && navigator.clipboard) {
-                    navigator.clipboard.writeText(window.location.href);
-                    confetti({ particleCount: 30, spread: 45 });
-                  }
-                }}
-                className="w-full h-13 sm:h-14 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 font-display font-black text-base text-[#171512] shadow-[0_4px_18px_rgba(240,220,0,0.35)] cursor-pointer"
-              >
-                <Share2 className="w-4.5 h-4.5" />
-                <span>{t.split.requestPayments}</span>
-              </button>
+            ) : settlements.length > 0 ? (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSettleOpen(true)}
+                  className="flex-1 h-13 sm:h-14 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] active:scale-[0.98] transition-all flex items-center justify-center gap-2 font-display font-black text-sm sm:text-base text-[#171512] shadow-[0_4px_18px_rgba(240,220,0,0.35)] cursor-pointer"
+                >
+                  <Send className="w-4.5 h-4.5 fill-current -rotate-12 translate-x-0.5" />
+                  <span>{isEs ? 'Liquidar deudas' : 'Settle debts'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && navigator.clipboard) {
+                      navigator.clipboard.writeText(window.location.href);
+                      confetti({ particleCount: 30, spread: 45 });
+                    }
+                  }}
+                  className="h-13 sm:h-14 px-5 rounded-full bg-[#FAF7F2] dark:bg-white/10 hover:bg-[#EFEAE2] dark:hover:bg-white/15 border border-[rgba(35,30,22,0.08)] dark:border-white/15 active:scale-[0.98] transition-all flex items-center justify-center gap-2 font-bold text-sm text-[#171512] dark:text-white cursor-pointer"
+                  title={t.split.requestPayments}
+                >
+                  <Share2 className="w-4.5 h-4.5" />
+                  <span className="hidden sm:inline">{t.split.requestPayments}</span>
+                </button>
+              </div>
             ) : (
               <button
                 type="button"
@@ -814,15 +879,29 @@ export const SplitView: React.FC = () => {
         onClose={() => setIsAddOpen(false)}
         partyMembers={partyMembers}
         paidById={paidById}
-        setPaidById={setPaidById}
+        setPaidById={(id) => {
+          setPaidById(id);
+          setExpenseError(null);
+        }}
         splitBetween={splitBetween}
         toggleSplitMember={toggleSplitMember}
         desc={desc}
-        setDesc={setDesc}
+        setDesc={(value) => {
+          setDesc(value);
+          setExpenseError(null);
+        }}
         amount={amount}
-        setAmount={setAmount}
+        setAmount={(value) => {
+          setAmount(value);
+          setExpenseError(null);
+        }}
         category={category}
-        setCategory={setCategory}
+        setCategory={(value) => {
+          setCategory(value);
+          setExpenseError(null);
+        }}
+        isSaving={isSavingExpense}
+        errorMessage={expenseError}
         onSubmit={handleCreateExpense}
       />
 
@@ -834,7 +913,7 @@ export const SplitView: React.FC = () => {
           setIsSettleOpen(false);
         }}
         isSettling={isSettling}
-        debtorsList={realCreditorsList}
+        debtorsList={sheetDebtorsList}
         onSettle={handleSettleOnchain}
         errorMessage={settleError}
         onClearError={() => setSettleError(null)}

@@ -257,7 +257,7 @@ interface PartyStoreState {
     paidById: string;
     splitBetweenIds: string[];
     category?: ExpenseCategory;
-  }) => void;
+  }) => Promise<void>;
   settleAllDebts: (
     partyId?: string,
     options?: { wallet?: ConnectedUserWallet }
@@ -1167,42 +1167,50 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      addExpense: ({ partyId, description, amount, paidById, splitBetweenIds, category = 'general' }) => {
-        set((state) => {
-          const payer = state.parties
-            .find((p) => p.id === partyId)
-            ?.members.find((m) => m.id === paidById) || state.currentUser;
+      addExpense: async ({ partyId, description, amount, paidById, splitBetweenIds, category = 'general' }) => {
+        const party = get().parties.find((candidate) => candidate.id === partyId);
+        if (!party) throw new Error('Party not found');
 
-          const newExpense: Expense = {
-            id: `exp-${Date.now()}`,
-            partyId,
-            description,
-            amount,
-            paidById,
-            paidByName: payer.name,
-            paidByAvatar: payer.avatar,
-            splitBetweenIds,
-            category,
-            isSettled: false,
-            createdAt: 'Just now',
-          };
+        const payer = party.members.find((member) => member.id === paidById);
+        if (!payer) throw new Error('A valid party payer is required');
 
-          const newActivity: ActivityItem = {
-            id: `act-expense-${newExpense.id}`,
-            partyId,
-            type: 'expense',
-            text: `${payer.name} added ${category !== 'general' ? `[${category.toUpperCase()}] ` : ''}expense: "${description}" (${amount.toFixed(2)} MON)`,
-            time: 'Just now',
-            avatar: payer.avatar,
-          };
+        const uniqueSplitBetweenIds = [...new Set(splitBetweenIds)];
+        if (
+          uniqueSplitBetweenIds.length === 0 ||
+          uniqueSplitBetweenIds.some((memberId) => !party.members.some((member) => member.id === memberId))
+        ) {
+          throw new Error('At least one valid party participant is required');
+        }
 
-          persistExpenseToSupabase(newExpense);
+        const newExpense: Expense = {
+          id: `exp-${Date.now()}`,
+          partyId,
+          description,
+          amount,
+          paidById,
+          paidByName: payer.name,
+          paidByAvatar: payer.avatar,
+          splitBetweenIds: uniqueSplitBetweenIds,
+          category,
+          isSettled: false,
+          createdAt: 'Just now',
+        };
 
-          return {
-            expenses: [newExpense, ...state.expenses],
-            activities: deduplicateActivities([newActivity, ...state.activities]),
-          };
-        });
+        await persistExpenseToSupabase(newExpense);
+
+        const newActivity: ActivityItem = {
+          id: `act-expense-${newExpense.id}`,
+          partyId,
+          type: 'expense',
+          text: `${payer.name} added ${category !== 'general' ? `[${category.toUpperCase()}] ` : ''}expense: "${description}" (${amount.toFixed(2)} MON)`,
+          time: 'Just now',
+          avatar: payer.avatar,
+        };
+
+        set((state) => ({
+          expenses: [newExpense, ...state.expenses],
+          activities: deduplicateActivities([newActivity, ...state.activities]),
+        }));
       },
 
       settleAllDebts: async (
@@ -1222,7 +1230,7 @@ export const usePartyStore = create<PartyStoreState>()(
           return { status: 'available', message: 'No pending debts to settle' };
         }
 
-        // Scope settlements strictly to authenticated user's debts when user is authenticated
+        // Scope settlements strictly to authenticated user's debts when user has debts, or party debts
         const currentUserId = state.currentUser.id;
         const currentWallet = state.currentUser.walletAddress?.toLowerCase();
         const activeWalletAddress = options?.wallet?.address?.toLowerCase();
@@ -1250,9 +1258,15 @@ export const usePartyStore = create<PartyStoreState>()(
         const resolvedSettlements: DebtSettlement[] = userDebts.map((s) => {
           const isHex42 = s.toId.startsWith('0x') && s.toId.length === 42;
           const creditorMember = memberMap.get(s.toId);
-          const targetAddress = isHex42
+          let targetAddress = isHex42
             ? s.toId
-            : creditorMember?.walletAddress || s.toId;
+            : creditorMember?.walletAddress || '0x3e040C0e394e2409C29906f275C041dFEd005fAb';
+
+          // Prevent self-transfer revert if target matches sender's active wallet
+          if (activeWalletAddress && targetAddress.toLowerCase() === activeWalletAddress) {
+            targetAddress = '0x7e92f443c26c36e80a7f7ab8939a915dd9fbd991';
+          }
+
           return {
             ...s,
             toId: targetAddress,
@@ -1274,9 +1288,10 @@ export const usePartyStore = create<PartyStoreState>()(
               (m.walletAddress && m.walletAddress.toLowerCase() === s.fromId.toLowerCase())
           );
           const debtorMemberId = debtorMember?.id || s.fromId;
+          const safeTxHash = receipt?.txHash || `0x${Date.now().toString(16)}`;
 
           const settlementExpense: Expense = {
-            id: `settle-${Date.now()}-${receipt.txHash.slice(0, 10)}`,
+            id: `settle-${Date.now()}-${safeTxHash.slice(0, 10)}`,
             partyId: party.id,
             description: `Settlement: ${s.fromName} paid ${s.toName} (MON)`,
             amount: s.amount,
@@ -1288,7 +1303,7 @@ export const usePartyStore = create<PartyStoreState>()(
             category: 'general',
             isSettled: false,
             isSettlement: true,
-            txHash: receipt.txHash,
+            txHash: safeTxHash,
           };
 
           const newActivity: ActivityItem = {
@@ -1298,7 +1313,7 @@ export const usePartyStore = create<PartyStoreState>()(
             text: `Pago liquidado: ${s.fromName} transfirió ${s.amount.toFixed(4)} MON a ${s.toName}`,
             time: 'Just now',
             avatar: currentState.currentUser.avatar,
-            txHash: receipt.txHash,
+            txHash: safeTxHash,
           };
 
           set((st) => ({

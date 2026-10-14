@@ -259,7 +259,7 @@ export const CreatePartyView: React.FC = () => {
                         type="text"
                         value={partyName}
                         onChange={(e) => setPartyName(e.target.value)}
-                        placeholder="Ej. 404 House"
+                        placeholder={isEs ? 'Ej. 404 House' : 'e.g. 404 House'}
                         className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-[#1C1A16] text-[#171512] dark:text-white placeholder-[#A8A196] text-sm sm:text-base font-semibold outline-none border border-black/10 dark:border-white/10 focus:border-[#FFE600] shadow-2xs transition-all"
                       />
                     </div>
@@ -482,7 +482,7 @@ export const CreatePartyView: React.FC = () => {
                           type="text"
                           value={time}
                           onChange={(e) => setTime(e.target.value)}
-                          placeholder="Ej. 10:00 PM"
+                          placeholder={isEs ? 'Ej. 10:00 PM' : 'e.g. 10:00 PM'}
                           className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-[#1C1A16] text-[#171512] dark:text-white font-mono text-sm sm:text-base font-semibold outline-none border border-black/10 dark:border-white/10 focus:border-[#FFE600] shadow-2xs transition-all"
                         />
                       </div>
@@ -516,7 +516,7 @@ export const CreatePartyView: React.FC = () => {
                           type="text"
                           value={location}
                           onChange={(e) => setLocation(e.target.value)}
-                          placeholder="Ej. Medellín · Rooftop"
+                          placeholder={isEs ? 'Ej. Medellín · Rooftop' : 'e.g. Downtown Rooftop'}
                           className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-[#1C1A16] text-[#171512] dark:text-white text-sm sm:text-base font-semibold outline-none border border-black/10 dark:border-white/10 focus:border-[#FFE600] shadow-2xs transition-all"
                         />
                       </div>

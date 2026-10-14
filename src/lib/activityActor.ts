@@ -242,13 +242,64 @@ export function resolveActivityNarrative(
     if (/^creó la fiesta/i.test(narrative)) {
       return 'created the party';
     }
+    // Photo added
+    if (/^añadió una nueva foto al álbum/i.test(narrative) || /^añadió una foto/i.test(narrative)) {
+      return 'added a new photo to the album';
+    }
+    // Settlement
+    const esSettlementMatch = narrative.match(/^(?:pago liquidado|liquidó deuda|añadió liquidación):\s*(?:.*?\s+transfirió\s+)?(.*)/i);
+    if (esSettlementMatch) {
+      return `settled debt: ${esSettlementMatch[1].replace(/a\s+/i, 'to ')}`;
+    }
+    // Expense with category
+    const esCatExpMatch = narrative.match(/^añadió\s+gasto\s*\[(.*?)\]:\s*(.*)/i);
+    if (esCatExpMatch) {
+      return `added [${esCatExpMatch[1]}] expense: ${esCatExpMatch[2]}`;
+    }
+    // Regular expense
     const esExpenseMatch = narrative.match(/^añadió\s+(?:el\s+)?gasto:\s*(.*)/i);
     if (esExpenseMatch) {
       return `added expense: ${esExpenseMatch[1]}`;
     }
-    const esPotMatch = narrative.match(/^(?:aportó|depositó)\s+(.*)\s+al bote/i);
+    // Pot deposit
+    const esPotMatch = narrative.match(/^(?:aportó|depositó)\s+(.*?)\s+al\s+(?:Party Pot|bote)/i);
     if (esPotMatch) {
       return `contributed ${esPotMatch[1]} to the pot`;
+    }
+    // Crew members added
+    const esCrewMembersMatch = narrative.match(/^añadió\s+(\d+)\s+miembros del crew\s+"(.*?)"\s+a la fiesta/i);
+    if (esCrewMembersMatch) {
+      return `added ${esCrewMembersMatch[1]} crew members from "${esCrewMembersMatch[2]}" to the party`;
+    }
+    // Tasks
+    const esTaskClaim = narrative.match(/^aceptó la tarea:\s*"?([^"]*)"?/i);
+    if (esTaskClaim) {
+      return `accepted the task: "${esTaskClaim[1]}"`;
+    }
+    const esTaskDone = narrative.match(/^completó:\s*"?([^"]*)"?/i);
+    if (esTaskDone) {
+      return `completed: "${esTaskDone[1]}"`;
+    }
+    // Minigames
+    const esGameWin = narrative.match(/^ganó\s+(.*?)\s+jugando a\s+(.*)/i);
+    if (esGameWin) {
+      return `won ${esGameWin[1]} playing ${esGameWin[2]}`;
+    }
+    if (/^ganó el minijuego/i.test(narrative)) {
+      return 'won the minigame';
+    }
+    if (/^votó en la encuesta/i.test(narrative)) {
+      return 'voted in the poll';
+    }
+    // Cheers
+    const esCheers = narrative.match(/^brindó con\s+(.*)/i);
+    if (esCheers) {
+      return `cheered with ${esCheers[1]}`;
+    }
+    // Rollover
+    const esRollover = narrative.match(/^(.*?)\s+transferidos para la próxima fiesta del crew/i);
+    if (esRollover) {
+      return `transferred ${esRollover[1]} to the next crew party`;
     }
   }
 

@@ -35,6 +35,8 @@ interface AddExpenseSheetProps {
   setAmount: (a: string) => void;
   category: ExpenseCategory;
   setCategory: (c: ExpenseCategory) => void;
+  isSaving: boolean;
+  errorMessage: string | null;
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -52,9 +54,11 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   setAmount,
   category,
   setCategory,
+  isSaving,
+  errorMessage,
   onSubmit,
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={t.split.addExpense}>
@@ -124,6 +128,11 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
           <label className="block text-xs font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196] mb-1.5">
             {t.split.paidByLabel}
           </label>
+          {!paidById && (
+            <p className="mb-2 text-xs text-[#6F6A62] dark:text-[#A8A196]">
+              {language === 'es' ? 'Selecciona quién pagó el gasto.' : 'Choose who paid for the expense.'}
+            </p>
+          )}
           <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
             {partyMembers.map((member) => (
               <button
@@ -170,9 +179,15 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
           </div>
         </div>
 
+        {errorMessage && (
+          <p role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+            {errorMessage}
+          </p>
+        )}
+
         <div className="pt-2">
-          <GlassButton variant="accent" size="lg" fullWidth type="submit">
-            {t.split.splitButton}
+          <GlassButton variant="accent" size="lg" fullWidth type="submit" disabled={isSaving}>
+            {isSaving ? (language === 'es' ? 'Guardando…' : 'Saving…') : t.split.splitButton}
           </GlassButton>
         </div>
       </form>

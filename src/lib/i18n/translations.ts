@@ -246,7 +246,7 @@ export interface TranslationDictionary {
     totalSharedSpend: string;
     peopleUpdated: (count: number, time: string) => string;
     tabEqual: string;
-    tabCustom: string;
+    tabBalances: string;
     tabItems: string;
     youPaid: (amount: string) => string;
     youWillReceive: string;
@@ -720,7 +720,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       totalSharedSpend: 'Total compartido',
       peopleUpdated: (count: number, time: string) => `${count} personas · Actualizado ${time}`,
       tabEqual: 'Equitativo',
-      tabCustom: 'Personalizado',
+      tabBalances: 'Saldos',
       tabItems: 'Cuentas',
       youPaid: (amount: string) => `Pagaste $${amount}`,
       youWillReceive: 'Recibirás',
@@ -1192,7 +1192,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       totalSharedSpend: 'Total shared spend',
       peopleUpdated: (count: number, time: string) => `${count} people · Updated ${time}`,
       tabEqual: 'Equal',
-      tabCustom: 'Custom',
+      tabBalances: 'Balances',
       tabItems: 'Items',
       youPaid: (amount: string) => `You paid $${amount}`,
       youWillReceive: 'You will receive',

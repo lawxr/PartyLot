@@ -21,7 +21,8 @@ interface OnboardingFormProps {
 const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose }) => {
   const { updateUser } = usePartyStore();
   const { authenticated, getAccessToken } = usePrivy();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const isEs = language === 'es';
 
   const initialName =
     currentUser.name && currentUser.name !== 'PartyMember' && currentUser.name !== 'Guest'
@@ -151,7 +152,13 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
       onClose();
     } catch (err: unknown) {
       console.error('Onboarding save error:', err);
-      setError(err instanceof Error ? err.message : 'No se pudo guardar tu perfil. Intenta de nuevo.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : isEs
+          ? 'No se pudo guardar tu perfil. Intenta de nuevo.'
+          : 'Could not save your profile. Please try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -175,7 +182,9 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
             {isUploading ? (
               <div className="w-full h-full rounded-full bg-black/80 flex flex-col items-center justify-center gap-1 text-[#F0DC00]">
                 <div className="w-5 h-5 border-2 border-[#F0DC00] border-t-transparent rounded-full animate-spin" />
-                <span className="text-[9px] font-mono uppercase tracking-widest text-white/90">Subiendo</span>
+                <span className="text-[9px] font-mono uppercase tracking-widest text-white/90">
+                  {isEs ? 'Subiendo' : 'Uploading'}
+                </span>
               </div>
             ) : (
               <Avatar
@@ -191,7 +200,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
             className="absolute bottom-0 right-0 p-2.5 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] text-[#171512] border-2 border-[#FFFDF8] dark:border-[#1C1A16] shadow-md hover:scale-110 active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
-            title="Subir foto desde tu dispositivo o cámara"
+            title={isEs ? 'Subir foto desde tu dispositivo o cámara' : 'Upload photo from device or camera'}
           >
             <Camera className="w-4 h-4 stroke-[2.5]" />
           </button>
@@ -204,7 +213,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
           className="mt-3 px-3.5 py-1.5 rounded-full bg-black/[0.04] dark:bg-white/10 border border-black/10 dark:border-white/15 text-xs font-bold text-[#171512] dark:text-white hover:bg-black/[0.08] dark:hover:bg-white/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
         >
           <Camera className="w-3.5 h-3.5 text-[#786300] dark:text-[#F0DC00]" />
-          <span>{isUploading ? 'Subiendo...' : t.onboarding.uploadPhoto}</span>
+          <span>{isUploading ? (isEs ? 'Subiendo...' : 'Uploading...') : t.onboarding.uploadPhoto}</span>
         </button>
 
       </div>
@@ -237,7 +246,9 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentUser, onClose })
       <div>
         <label className="block text-xs font-bold text-[#57524A] dark:text-[#A8A196] uppercase tracking-wider mb-2 flex items-center justify-between">
           <span>{t.onboarding.usernameLabel} <span className="text-[#A38200] dark:text-[#F0DC00]">*</span></span>
-          <span className="text-[11px] font-mono text-[#706B62] dark:text-white/50 font-medium">3-24 letras, núm o _</span>
+          <span className="text-[11px] font-mono text-[#706B62] dark:text-white/50 font-medium">
+            {isEs ? '3-24 letras, núm o _' : '3-24 chars, num or _'}
+          </span>
         </label>
         <div className="relative flex items-center">
           <span className="absolute left-4 font-mono font-bold text-[#786300] dark:text-[#F0DC00] text-base select-none pointer-events-none">

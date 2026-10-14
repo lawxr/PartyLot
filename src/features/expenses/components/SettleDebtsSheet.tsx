@@ -109,8 +109,8 @@ export const SettleDebtsSheet: React.FC<SettleDebtsSheetProps> = ({
             onClick={onSettle}
           >
             {isSettling
-              ? t.split.settling
-              : t.split.confirmSettle(debtorsList.length || 4)}
+              ? (isEs ? 'Liquidando…' : t.split.settling)
+              : t.split.confirmSettle(debtorsList.length || 1)}
           </GlassButton>
         </div>
       </div>

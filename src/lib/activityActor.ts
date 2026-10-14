@@ -153,29 +153,131 @@ export function resolveActivityActor(
  */
 export function resolveActivityNarrative(
   activity: Partial<ActivityItem>,
-  actorName: string
+  actorName: string,
+  locale: 'es' | 'en' = 'es'
 ): string {
-  if (activity.verb) return activity.verb;
-  if (!activity.text) return '';
+  let narrative = activity.verb || '';
 
-  // 1. Strip leading emojis, money bags, or confetti
-  const text = activity.text.replace(/^[\p{Emoji}\s]+/u, '').trim();
+  if (!narrative && activity.text) {
+    // 1. Strip leading emojis, money bags, or confetti
+    const text = activity.text.replace(/^[\p{Emoji}\s]+/u, '').trim();
 
-  // 2. Check if a known action verb follows a subject prefix
-  const verbMatch = text.match(
-    /^([^:–—\n]+?)(?:\s+((?:created the party|creó la fiesta|joined the|se unió|added expense|añadió gasto|aportó|contributed|deposited|liquidó|settled|pagada a|paid to|ganó|won|jugó|played|voted|votó|transferred|rolled over).*))/i
-  );
+    // 2. Check if a known action verb follows a subject prefix
+    const verbMatch = text.match(
+      /^([^:–—\n]+?)(?:\s+((?:created the party|creó la fiesta|joined the|se unió|left the party|salió de la fiesta|added expense|añadió gasto|aportó|contributed|deposited|depositó|liquidó|settled|pagada a|paid to|ganó|won|jugó|played|voted|votó|transferred|rolled over).*))/i
+    );
 
-  if (verbMatch && verbMatch[2]) {
-    return verbMatch[2].trim();
+    if (verbMatch && verbMatch[2]) {
+      narrative = verbMatch[2].trim();
+    } else if (actorName && text.toLowerCase().startsWith(actorName.toLowerCase())) {
+      narrative = text.slice(actorName.length).trim();
+    } else {
+      narrative = text;
+    }
   }
 
-  // 3. If text begins with actor's name, strip it
-  if (actorName && text.toLowerCase().startsWith(actorName.toLowerCase())) {
-    return text.slice(actorName.length).trim();
+  if (!narrative) return '';
+
+  // 3. Internationalization / Localized mapping
+  if (locale === 'es') {
+    // Left party
+    if (/^left the party/i.test(narrative)) {
+      return 'salió de la fiesta';
+    }
+    // Joined party
+    if (/^joined the (?:party|crew)/i.test(narrative)) {
+      return 'se unió a la fiesta';
+    }
+    // Created party
+    if (/^created the party/i.test(narrative)) {
+      return 'creó la fiesta';
+    }
+    // Added [CATEGORY] expense: "name" ($X.XX)
+    const catExpenseMatch = narrative.match(/^added\s+\[([A-Z_]+)\]\s+expense:\s*(.*)/i);
+    if (catExpenseMatch) {
+      const catMap: Record<string, string> = {
+        DRINKS: 'Bebidas',
+        FOOD: 'Comida',
+        TRANSPORT: 'Transporte',
+        VENUE: 'Lugar',
+        OTHER: 'Otros',
+        GENERAL: 'General',
+      };
+      const cat = catMap[catExpenseMatch[1].toUpperCase()] || catExpenseMatch[1];
+      let details = catExpenseMatch[2];
+      details = details.replace(/Settlement:\s*(.*?)\s+paid\s+(.*?)\s*(\(MON\))/i, 'Liquidación: $1 le pagó a $2 $3');
+      return `añadió gasto [${cat}]: ${details}`;
+    }
+    // Added regular expense: "name" ($X.XX)
+    const expenseMatch = narrative.match(/^added\s+expense:\s*(.*)/i);
+    if (expenseMatch) {
+      let details = expenseMatch[1];
+      if (/^"?Settlement:/i.test(details) || /Settlement:/i.test(details)) {
+        details = details.replace(/Settlement:\s*(.*?)\s+paid\s+(.*?)\s*(\(MON\))/i, 'Liquidación: $1 le pagó a $2 $3');
+        return `añadió liquidación: ${details}`;
+      }
+      return `añadió el gasto: ${details}`;
+    }
+    // Contributed / deposited to pot
+    const potMatch = narrative.match(/^(?:contributed|deposited)\s+(.*)\s+to the pot/i);
+    if (potMatch) {
+      return `aportó ${potMatch[1]} al bote`;
+    }
+    // Voted in poll
+    if (/^voted in (?:the )?poll/i.test(narrative)) {
+      return 'votó en la encuesta';
+    }
+    // Won the game
+    if (/^won the (?:game|round)/i.test(narrative)) {
+      return 'ganó el minijuego';
+    }
+  } else if (locale === 'en') {
+    // English mapping if source was in Spanish
+    if (/^salió de la fiesta/i.test(narrative)) {
+      return 'left the party';
+    }
+    if (/^se unió a la fiesta/i.test(narrative)) {
+      return 'joined the party';
+    }
+    if (/^creó la fiesta/i.test(narrative)) {
+      return 'created the party';
+    }
+    const esExpenseMatch = narrative.match(/^añadió\s+(?:el\s+)?gasto:\s*(.*)/i);
+    if (esExpenseMatch) {
+      return `added expense: ${esExpenseMatch[1]}`;
+    }
+    const esPotMatch = narrative.match(/^(?:aportó|depositó)\s+(.*)\s+al bote/i);
+    if (esPotMatch) {
+      return `contributed ${esPotMatch[1]} to the pot`;
+    }
   }
 
-  return text;
+  return narrative;
+}
+
+/**
+ * Localizes time strings (e.g. "Just now" -> "Hace un momento", "5m ago" -> "Hace 5m").
+ */
+export function formatActivityTime(time?: string, locale: 'es' | 'en' = 'es'): string {
+  if (!time) return '';
+  const trimmed = time.trim();
+  const isEs = locale === 'es';
+
+  if (/^(?:just now|ahora mismo)$/i.test(trimmed)) {
+    return isEs ? 'Hace un momento' : 'Just now';
+  }
+  if (/^(?:yesterday|ayer)$/i.test(trimmed)) {
+    return isEs ? 'Ayer' : 'Yesterday';
+  }
+  const minMatch = trimmed.match(/^(?:hace\s+)?(\d+)\s*m(?:in)?(?:\s*ago)?$/i);
+  if (minMatch) {
+    return isEs ? `Hace ${minMatch[1]}m` : `${minMatch[1]}m ago`;
+  }
+  const hrMatch = trimmed.match(/^(?:hace\s+)?(\d+)\s*h(?:our|r)?s?(?:\s*ago)?$/i);
+  if (hrMatch) {
+    return isEs ? `Hace ${hrMatch[1]}h` : `${hrMatch[1]}h ago`;
+  }
+  return trimmed;
 }
 
 export {

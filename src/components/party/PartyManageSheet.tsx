@@ -31,11 +31,21 @@ const ghostBtn =
   'min-h-11 px-4 rounded-full border border-divider bg-surface text-primary font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50';
 
 export const PartyManageSheet: React.FC<PartyManageSheetProps> = ({ party, isOpen, onClose, onShareInvite }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const isEs = language === 'es';
   const a = t.partyAdmin;
   const showToast = useToastStore((s) => s.showToast);
-  const { currentUser, updatePartyDetails, removePartyMember, addPartyMember, rotatePartyCode, deleteParty, leaveParty } =
-    usePartyStore();
+  const {
+    currentUser,
+    updatePartyDetails,
+    removePartyMember,
+    addPartyMember,
+    rotatePartyCode,
+    deleteParty,
+    leaveParty,
+    crews,
+    addCrewMembersToParty,
+  } = usePartyStore();
 
   const isHost = Boolean(currentUser?.id && party.hostId === currentUser.id);
   const [tab, setTab] = useState<Tab>(isHost ? 'details' : 'more');
@@ -49,8 +59,10 @@ export const PartyManageSheet: React.FC<PartyManageSheetProps> = ({ party, isOpe
       location: party.location || '',
       description: party.description || '',
       coverImage: party.coverImage || '',
+      potGoal: party.potGoal != null && party.potGoal > 0 ? String(party.potGoal) : '',
+      potMessage: party.potMessage || '',
     }),
-    [party.title, party.date, party.time, party.location, party.description, party.coverImage],
+    [party.title, party.date, party.time, party.location, party.description, party.coverImage, party.potGoal, party.potMessage],
   );
   const [form, setForm] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -82,7 +94,18 @@ export const PartyManageSheet: React.FC<PartyManageSheetProps> = ({ party, isOpe
     }
     if (missing.length) return;
     setSaving(true);
-    const updates = Object.fromEntries(changed.map((k) => [k, form[k]])) as PartyEditableFields;
+    const updates: PartyEditableFields = {};
+    for (const k of changed) {
+      if (k === 'potGoal') {
+        const val = form.potGoal.trim();
+        updates.potGoal = val === '' ? 0 : Number(val);
+      } else if (k === 'potMessage') {
+        const val = form.potMessage.trim();
+        updates.potMessage = val === '' ? null : val;
+      } else {
+        (updates as Record<string, unknown>)[k] = form[k];
+      }
+    }
     const res = await updatePartyDetails(party.id, updates);
     setSaving(false);
     showToast(res.success ? a.saved : errorText(res), res.success ? 'success' : 'error');
@@ -293,6 +316,39 @@ export const PartyManageSheet: React.FC<PartyManageSheetProps> = ({ party, isOpe
               />
             </div>
 
+            <div>
+              <label htmlFor="pm-potGoal" className={labelClass}>
+                {a.potGoal}
+              </label>
+              <input
+                id="pm-potGoal"
+                type="number"
+                step="any"
+                min="0"
+                placeholder="0.00"
+                className={inputClass}
+                value={form.potGoal}
+                onChange={(e) => setForm((f) => ({ ...f, potGoal: e.target.value }))}
+              />
+              <p className="mt-1 text-xs text-secondary">{a.potGoalHint}</p>
+            </div>
+
+            <div>
+              <label htmlFor="pm-potMessage" className={labelClass}>
+                {a.potMessage}
+              </label>
+              <textarea
+                id="pm-potMessage"
+                rows={2}
+                className={`${inputClass} resize-none`}
+                placeholder={a.potMessagePlaceholder}
+                value={form.potMessage}
+                maxLength={LIMITS.potMessage}
+                onChange={(e) => setForm((f) => ({ ...f, potMessage: e.target.value }))}
+              />
+              <p className="mt-1 text-xs text-secondary">{a.potMessageHint}</p>
+            </div>
+
             <button type="submit" className={primaryBtn} disabled={saving || uploading || !changed.length || missing.length > 0}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               {saving ? a.saving : a.save}
@@ -357,6 +413,102 @@ export const PartyManageSheet: React.FC<PartyManageSheetProps> = ({ party, isOpe
                 {a.addPeople}
               </h3>
               <p className="text-xs text-secondary mb-3">{a.addFromYourPeople}</p>
+
+              {/* Crew Bulk Add Action */}
+              {(() => {
+                const partyCrew = party.crewId ? crews.find((c) => c.id === party.crewId) : null;
+                const otherCrews = crews.filter((c) => c.id !== party.crewId);
+
+                return (
+                  <div className="space-y-2 mb-4">
+                    {partyCrew && (
+                      <div className="rounded-2xl bg-surface-muted border border-divider p-3.5 flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-party-yellow bg-party-yellow/15 px-2 py-0.5 rounded-full inline-block mb-1">
+                            {isEs ? 'Crew de la fiesta' : 'Party Crew'}
+                          </span>
+                          <p className="font-semibold text-sm truncate text-primary">
+                            {partyCrew.name}
+                          </p>
+                          <p className="text-xs text-secondary">
+                            {partyCrew.members.length} {isEs ? (partyCrew.members.length === 1 ? 'miembro' : 'miembros') : (partyCrew.members.length === 1 ? 'member' : 'members')}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const added = addCrewMembersToParty(party.id, partyCrew.id);
+                            if (added > 0) {
+                              showToast(
+                                isEs
+                                  ? `${added} miembros de "${partyCrew.name}" agregados`
+                                  : `${added} members from "${partyCrew.name}" added`,
+                                'success'
+                              );
+                            } else {
+                              showToast(
+                                isEs
+                                  ? 'Todos los miembros de esta crew ya están en la fiesta'
+                                  : 'All members of this crew are already in the party',
+                                'info'
+                              );
+                            }
+                          }}
+                          className="min-h-10 px-4 rounded-full bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow font-bold text-xs flex items-center gap-1.5 shrink-0 transition-colors shadow-2xs"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>{isEs ? 'Agregar todos' : 'Add all'}</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {(!partyCrew && otherCrews.length > 0) && (
+                      <div className="rounded-2xl bg-surface-muted border border-divider p-3.5">
+                        <p className="font-semibold text-xs text-secondary uppercase tracking-wider mb-2">
+                          {isEs ? 'Agregar desde tus crews' : 'Add from your crews'}
+                        </p>
+                        <div className="space-y-2">
+                          {otherCrews.map((c) => (
+                            <div key={c.id} className="flex items-center justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-semibold text-sm truncate">{c.name}</p>
+                                <p className="text-xs text-secondary">
+                                  {c.members.length} {isEs ? (c.members.length === 1 ? 'miembro' : 'miembros') : (c.members.length === 1 ? 'member' : 'members')}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const added = addCrewMembersToParty(party.id, c.id);
+                                  if (added > 0) {
+                                    showToast(
+                                      isEs
+                                        ? `${added} miembros de "${c.name}" agregados`
+                                        : `${added} members from "${c.name}" added`,
+                                      'success'
+                                    );
+                                  } else {
+                                    showToast(
+                                      isEs
+                                        ? `Todos los miembros de "${c.name}" ya están en la fiesta`
+                                        : `All members from "${c.name}" are already in the party`,
+                                      'info'
+                                    );
+                                  }
+                                }}
+                                className="min-h-9 px-3.5 rounded-full bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow font-bold text-xs flex items-center gap-1.5 shrink-0 transition-colors"
+                              >
+                                <UserPlus className="w-3.5 h-3.5" />
+                                <span>{isEs ? 'Agregar todos' : 'Add all'}</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               {candidates === null && !candidatesError && (
                 <div className="py-6 flex justify-center">
                   <Loader2 className="w-5 h-5 animate-spin text-secondary" />

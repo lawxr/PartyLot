@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useWallets } from '@privy-io/react-auth';
 import {
   ArrowLeft,
@@ -14,6 +14,8 @@ import {
   Send,
   Plus,
   Receipt,
+  CheckCircle2,
+  Share2,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import {
@@ -23,7 +25,7 @@ import {
   calculateNetBalances,
   computeDebtSettlements,
 } from '@/features/expenses';
-import type { ExpenseCategory } from '@/types';
+import type { Expense, ExpenseCategory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Avatar } from '@/components/ui/Avatar';
 import confetti from 'canvas-confetti';
@@ -38,8 +40,8 @@ export const SplitView: React.FC = () => {
   const [settleError, setSettleError] = useState<FormattedWeb3Error | null>(null);
 
   const party = parties.find((p) => p.id === currentPartyId) || parties[0];
-  const partyMembers = party?.members || [];
-  const partyExpenses = expenses.filter((e) => e.partyId === party?.id);
+  const partyMembers = useMemo(() => party?.members || [], [party?.members]);
+  const partyExpenses = useMemo(() => expenses.filter((e) => e.partyId === party?.id), [expenses, party?.id]);
 
   // Tabs state
   const [activeTab, setActiveTab] = useState<'equal' | 'custom' | 'items'>('equal');
@@ -54,33 +56,59 @@ export const SplitView: React.FC = () => {
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('drinks');
-  const [paidById, setPaidById] = useState(partyMembers[0]?.id || currentUser?.id || '');
-  const [splitBetween, setSplitBetween] = useState<string[]>(partyMembers.map((m) => m.id));
+  const [selectedPaidById, setSelectedPaidById] = useState<string | null>(null);
+  const [selectedSplitBetween, setSelectedSplitBetween] = useState<string[] | null>(null);
 
-  // Custom split weights state
-  const [customWeights, setCustomWeights] = useState<Record<string, number>>(() => {
-    const initial: Record<string, number> = {};
-    partyMembers.forEach((m) => {
-      initial[m.id] = 1;
-    });
-    return initial;
-  });
+  // Derived effective values without cascading effects
+  const defaultPaidById = currentUser?.id && partyMembers.some((m) => m.id === currentUser.id)
+    ? currentUser.id
+    : partyMembers[0]?.id || '';
+  const paidById = selectedPaidById && partyMembers.some((m) => m.id === selectedPaidById)
+    ? selectedPaidById
+    : defaultPaidById;
 
-  // Calculations
+  const splitBetween = selectedSplitBetween !== null
+    ? selectedSplitBetween
+    : partyMembers.map((m) => m.id);
+
+  const setPaidById = (id: string) => setSelectedPaidById(id);
+
+  // Helper to distinguish real shared expenses from onchain debt clearance records
+  const isSettlementExpense = (e: Expense) =>
+    Boolean(e.isSettlement) ||
+    e.id.startsWith('settle-') ||
+    e.description.startsWith('Settlement:');
+
+  // Actual shared party expenses (excluding debt settlements)
+  const actualPartyExpenses = useMemo(
+    () => partyExpenses.filter((e) => !isSettlementExpense(e)),
+    [partyExpenses]
+  );
+  const settlementReceipts = useMemo(
+    () => partyExpenses.filter(isSettlementExpense),
+    [partyExpenses]
+  );
+
+  // Total shared spend strictly reflects actual group expenses, not debt settlements
+  const totalAmount = useMemo(
+    () => actualPartyExpenses.reduce((sum, e) => sum + e.amount, 0),
+    [actualPartyExpenses]
+  );
+
+  // Calculations for settlements and balances
   const netBalances = calculateNetBalances(partyExpenses, partyMembers);
   const settlements = computeDebtSettlements(netBalances, partyMembers);
-  const totalAmount = partyExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   // Category breakdown calculation
-  const drinksTotal = partyExpenses
+  const drinksTotal = actualPartyExpenses
     .filter((e) => e.category === 'drinks')
     .reduce((sum, e) => sum + e.amount, 0);
 
-  const snacksTotal = partyExpenses
+  const snacksTotal = actualPartyExpenses
     .filter((e) => e.category === 'food')
     .reduce((sum, e) => sum + e.amount, 0);
 
-  const rideTotal = partyExpenses
+  const rideTotal = actualPartyExpenses
     .filter((e) => e.category === 'transport')
     .reduce((sum, e) => sum + e.amount, 0);
 
@@ -99,14 +127,16 @@ export const SplitView: React.FC = () => {
       partyId: party.id,
       description: desc.trim(),
       amount: parsedAmount,
-      paidById,
-      splitBetweenIds: splitBetween.length > 0 ? splitBetween : party.members.map((m) => m.id),
+      paidById: paidById || currentUser?.id || partyMembers[0]?.id || '',
+      splitBetweenIds: splitBetween.length > 0 ? splitBetween : partyMembers.map((m) => m.id),
       category,
     });
 
     setDesc('');
     setAmount('');
     setCategory('drinks');
+    setSelectedPaidById(null);
+    setSelectedSplitBetween(null);
     setIsAddOpen(false);
 
     confetti({
@@ -146,10 +176,10 @@ export const SplitView: React.FC = () => {
   const toggleSplitMember = (memberId: string) => {
     if (splitBetween.includes(memberId)) {
       if (splitBetween.length > 1) {
-        setSplitBetween(splitBetween.filter((id) => id !== memberId));
+        setSelectedSplitBetween(splitBetween.filter((id) => id !== memberId));
       }
     } else {
-      setSplitBetween([...splitBetween, memberId]);
+      setSelectedSplitBetween([...splitBetween, memberId]);
     }
   };
 
@@ -162,7 +192,7 @@ export const SplitView: React.FC = () => {
       avatar: s.fromAvatar,
       subtitle: isEs ? 'Debe transferir' : 'Owes you',
       type: 'debtor' as const,
-      amount: `$${s.amount.toFixed(2)}`,
+      amount: `${s.amount.toFixed(2)} MON`,
     }));
 
   // Calculate real creditor list from settlements
@@ -174,7 +204,17 @@ export const SplitView: React.FC = () => {
       avatar: s.toAvatar,
       subtitle: isEs ? 'Debes transferir' : 'You owe',
       type: 'creditor' as const,
-      amount: `$${s.amount.toFixed(2)}`,
+      amount: `${s.amount.toFixed(2)} MON`,
+    }));
+
+  // Other members' settlements that don't directly involve currentUser
+  const otherSettlementsList = settlements
+    .filter((s) => s.fromId !== currentUser.id && s.toId !== currentUser.id)
+    .map((s) => ({
+      id: `${s.fromId}-${s.toId}`,
+      fromName: s.fromName,
+      toName: s.toName,
+      amount: `${s.amount.toFixed(2)} MON`,
     }));
 
   // Combine debtors and creditors for the equal tab display
@@ -274,7 +314,7 @@ export const SplitView: React.FC = () => {
             </div>
 
             <div className="font-display font-black text-3xl sm:text-4xl text-[#171512] dark:text-white tracking-tight mb-1">
-              ${totalAmount.toFixed(2)}
+              {totalAmount.toFixed(2)} MON
             </div>
 
             <p className="text-xs text-[#8A8173] dark:text-[#A8A196] font-medium">
@@ -421,6 +461,22 @@ export const SplitView: React.FC = () => {
                   )}
                 </div>
               ))
+            ) : actualPartyExpenses.length > 0 ? (
+              <div className="p-4 rounded-[22px] bg-[#EBF7EE] dark:bg-emerald-950/30 border border-[#BDE8CA] dark:border-emerald-800/40 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+                </div>
+                <div className="text-left">
+                  <span className="font-display font-bold text-sm text-emerald-900 dark:text-emerald-200 block">
+                    {isEs ? '¡Estás al día!' : "You're all settled up!"}
+                  </span>
+                  <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                    {isEs
+                      ? 'No tienes transferencias pendientes en este evento.'
+                      : 'You have no outstanding transfers in this gathering.'}
+                  </span>
+                </div>
+              </div>
             ) : (
               <div className="p-8 rounded-[24px] bg-[#FFFDF8] dark:bg-[#1C1A16] border border-[rgba(35,30,22,0.06)] dark:border-white/10 shadow-xs text-center flex flex-col items-center justify-center">
                 <div className="w-12 h-12 rounded-full bg-[#FAF7F2] dark:bg-white/5 border border-[rgba(35,30,22,0.08)] dark:border-white/10 flex items-center justify-center text-[#B89600] dark:text-[#F0DC00] mb-3">
@@ -443,33 +499,56 @@ export const SplitView: React.FC = () => {
                 </button>
               </div>
             )}
+
+            {/* Other settlements in the party (transfers between other members) */}
+            {otherSettlementsList.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-[rgba(35,30,22,0.06)] dark:border-white/10">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#8A8173] dark:text-[#A8A196] block mb-2 px-1">
+                  {isEs ? 'Otras deudas en el grupo' : 'Other balances in group'}
+                </span>
+                <div className="space-y-2">
+                  {otherSettlementsList.map((other) => (
+                    <div
+                      key={other.id}
+                      className="p-3 rounded-xl bg-[#FAF7F2] dark:bg-white/5 border border-[rgba(35,30,22,0.05)] dark:border-white/5 flex items-center justify-between text-xs"
+                    >
+                      <span className="text-[#6F6A62] dark:text-[#A8A196]">
+                        <strong className="text-[#171512] dark:text-white">{other.fromName}</strong>{' '}
+                        {isEs ? 'debe transferir a' : 'owes'}{' '}
+                        <strong className="text-[#171512] dark:text-white">{other.toName}</strong>
+                      </span>
+                      <span className="font-display font-black text-sm text-[#171512] dark:text-white">
+                        {other.amount}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Tab 2: Custom Split Adjustment */}
+        {/* Tab 2: Custom Split Breakdown */}
         {activeTab === 'custom' && (
           <div className="space-y-3 mb-5">
             <div className="p-4 rounded-2xl bg-[#FFFDF8] dark:bg-[#1C1A16] border border-[rgba(35,30,22,0.06)] dark:border-white/10 shadow-xs">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196]">
-                  {isEs ? 'Reparto personalizado' : 'Custom split weights'}
+                  {isEs ? 'Participación por integrante' : 'Member breakdown'}
                 </span>
                 <span className="text-xs font-bold text-[#B89600] dark:text-[#F0DC00]">
-                  ${totalAmount.toFixed(2)}
+                  {totalAmount.toFixed(2)} MON
                 </span>
               </div>
               <p className="text-xs text-[#8A8173] dark:text-[#A8A196] leading-relaxed mb-4">
                 {isEs
-                  ? 'Ajusta la proporción que aporta cada persona en este plan de gasto.'
-                  : 'Adjust individual share multipliers for members who consumed more or less.'}
+                  ? 'Cada gasto se divide equitativamente entre los integrantes elegidos al registrar la factura.'
+                  : 'Each expense is divided equally among members selected when adding the bill.'}
               </p>
 
               <div className="space-y-3">
-                {partyMembers.slice(0, 6).map((m) => {
-                  const weight = customWeights[m.id] ?? 1;
-                  const totalWeights = Object.values(customWeights).reduce((a, b) => a + b, 0) || 1;
-                  const memberAmount = (totalAmount * (weight / totalWeights));
-
+                {partyMembers.map((m) => {
+                  const memberNet = netBalances.find((b) => b.memberId === m.id)?.netAmount || 0;
                   return (
                     <div
                       key={m.id}
@@ -483,42 +562,19 @@ export const SplitView: React.FC = () => {
                         <span className="font-bold text-xs text-[#171512] dark:text-white">{m.name}</span>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <span className="font-display font-bold text-xs text-primary block">
-                            ${memberAmount.toFixed(2)}
-                          </span>
-                          <span className="text-xs text-secondary font-medium">
-                            {weight}x share
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setCustomWeights((prev) => ({
-                                ...prev,
-                                [m.id]: Math.max(0.5, (prev[m.id] ?? 1) - 0.5),
-                              }))
-                            }
-                            className="w-7 h-7 rounded-lg bg-white dark:bg-white/10 text-[#171512] dark:text-white border border-[rgba(35,30,22,0.1)] dark:border-white/15 flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-black/5 dark:hover:bg-white/15"
-                          >
-                            -
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setCustomWeights((prev) => ({
-                                ...prev,
-                                [m.id]: (prev[m.id] ?? 1) + 0.5,
-                              }))
-                            }
-                            className="w-7 h-7 rounded-lg bg-[#F0DC00] text-[#171512] flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-[#E6D300]"
-                          >
-                            +
-                          </button>
-                        </div>
+                      <div className="text-right">
+                        <span className={`font-display font-bold text-xs block ${
+                          memberNet > 0
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : memberNet < 0
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-[#6F6A62] dark:text-[#A8A196]'
+                        }`}>
+                          {memberNet > 0 ? `+${memberNet.toFixed(2)} MON` : memberNet < 0 ? `${memberNet.toFixed(2)} MON` : '0.00 MON'}
+                        </span>
+                        <span className="text-[10px] text-[#8A8173] dark:text-[#A8A196]">
+                          {memberNet > 0 ? (isEs ? 'Recibe' : 'Receives') : memberNet < 0 ? (isEs ? 'Debe' : 'Owes') : (isEs ? 'Al día' : 'Settled')}
+                        </span>
                       </div>
                     </div>
                   );
@@ -533,7 +589,7 @@ export const SplitView: React.FC = () => {
           <div className="space-y-3 mb-5">
             <div className="flex items-center justify-between px-1">
               <span className="text-xs font-bold uppercase tracking-wider text-[#6F6A62] dark:text-[#A8A196]">
-                {isEs ? 'Gastos detallados' : 'Itemized bills'} ({partyExpenses.length})
+                {isEs ? 'Gastos detallados' : 'Itemized bills'} ({actualPartyExpenses.length})
               </span>
               <button
                 type="button"
@@ -546,36 +602,77 @@ export const SplitView: React.FC = () => {
             </div>
 
             <div className="space-y-2.5">
-              {partyExpenses.map((exp) => (
-                <div
-                  key={exp.id}
-                  className="p-3.5 rounded-[20px] bg-[#FFFDF8] dark:bg-[#1C1A16] border border-[rgba(35,30,22,0.06)] dark:border-white/10 shadow-xs flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-[#FFE600]/20 dark:bg-[#FFE600]/15 flex items-center justify-center shrink-0 text-[#171512] dark:text-[#F0DC00]">
-                      <Receipt className="w-5 h-5 text-[#B89600] dark:text-[#F0DC00]" />
+              {actualPartyExpenses.length > 0 ? (
+                actualPartyExpenses.map((exp) => (
+                  <div
+                    key={exp.id}
+                    className="p-3.5 rounded-[20px] bg-[#FFFDF8] dark:bg-[#1C1A16] border border-[rgba(35,30,22,0.06)] dark:border-white/10 shadow-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#FFE600]/20 dark:bg-[#FFE600]/15 flex items-center justify-center shrink-0 text-[#171512] dark:text-[#F0DC00]">
+                        <Receipt className="w-5 h-5 text-[#B89600] dark:text-[#F0DC00]" />
+                      </div>
+                      <div>
+                        <h4 className="font-display font-bold text-sm text-[#171512] dark:text-white">
+                          {exp.description}
+                        </h4>
+                        <p className="text-xs text-[#8A8173] dark:text-[#A8A196]">
+                          {isEs ? 'Pagado por' : 'Paid by'}{' '}
+                          <span className="text-[#171512] dark:text-white font-semibold">{exp.paidByName}</span> · {isEs ? 'dividido entre' : 'split by'} {exp.splitBetweenIds.length} {isEs ? 'personas' : 'people'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-display font-bold text-sm text-[#171512] dark:text-white">
-                        {exp.description}
-                      </h4>
-                      <p className="text-xs text-[#8A8173] dark:text-[#A8A196]">
-                        Paid by <span className="text-[#171512] dark:text-white font-semibold">{exp.paidByName}</span> · split by {exp.splitBetweenIds.length} people
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="text-right">
-                    <span className="font-display font-black text-sm text-[#171512] dark:text-white block">
-                      ${exp.amount.toFixed(2)}
-                    </span>
-                    <span className="text-[11px] text-[#B89600] dark:text-[#F0DC00] font-bold">
-                      ${(exp.amount / Math.max(1, exp.splitBetweenIds.length)).toFixed(2)} / ea
-                    </span>
+                    <div className="text-right">
+                      <span className="font-display font-black text-sm text-[#171512] dark:text-white block">
+                        {exp.amount.toFixed(2)} MON
+                      </span>
+                      <span className="text-[11px] text-[#B89600] dark:text-[#F0DC00] font-bold">
+                        {(exp.amount / Math.max(1, exp.splitBetweenIds.length)).toFixed(2)} MON / ea
+                      </span>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="p-6 text-center text-xs text-[#8A8173] dark:text-[#A8A196] bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-2xl border border-[rgba(35,30,22,0.06)] dark:border-white/10">
+                  {isEs ? 'Sin facturas registradas' : 'No bills logged yet'}
                 </div>
-              ))}
+              )}
             </div>
+
+            {/* Confirmed Settlements / Receipts */}
+            {settlementReceipts.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-[rgba(35,30,22,0.06)] dark:border-white/10">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#8A8173] dark:text-[#A8A196] block mb-2 px-1">
+                  {isEs ? 'Liquidaciones confirmadas en Monad' : 'Confirmed settlements on Monad'} ({settlementReceipts.length})
+                </span>
+                <div className="space-y-2">
+                  {settlementReceipts.map((st) => (
+                    <div
+                      key={st.id}
+                      className="p-3 rounded-2xl bg-[#EBF7EE] dark:bg-emerald-950/20 border border-[#BDE8CA] dark:border-emerald-800/40 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                          <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 block">
+                            {st.description}
+                          </span>
+                          <span className="text-[10px] text-emerald-700 dark:text-emerald-400">
+                            {st.createdAt}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="font-display font-black text-sm text-emerald-700 dark:text-emerald-400">
+                        {st.amount.toFixed(2)} MON
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -606,7 +703,7 @@ export const SplitView: React.FC = () => {
                   {t.split.drinks}
                 </span>
                 <span className="font-display font-bold text-xs sm:text-sm text-primary leading-none mb-0.5 block">
-                  ${drinksTotal.toFixed(2)}
+                  {drinksTotal.toFixed(2)} MON
                 </span>
                 <span className="text-xs font-medium text-secondary leading-none block">
                   {drinksPercent}%
@@ -624,7 +721,7 @@ export const SplitView: React.FC = () => {
                   {t.split.snacks}
                 </span>
                 <span className="font-display font-bold text-xs sm:text-sm text-primary leading-none mb-0.5 block">
-                  ${snacksTotal.toFixed(2)}
+                  {snacksTotal.toFixed(2)} MON
                 </span>
                 <span className="text-xs font-medium text-secondary leading-none block">
                   {snacksPercent}%
@@ -642,7 +739,7 @@ export const SplitView: React.FC = () => {
                   {t.split.ride}
                 </span>
                 <span className="font-display font-bold text-xs sm:text-sm text-primary leading-none mb-0.5 block">
-                  ${rideTotal.toFixed(2)}
+                  {rideTotal.toFixed(2)} MON
                 </span>
                 <span className="text-xs font-medium text-secondary leading-none block">
                   {ridePercent}%
@@ -655,23 +752,48 @@ export const SplitView: React.FC = () => {
         {/* Sticky Action Footer */}
         <div className="fixed bottom-0 left-0 right-0 z-30 pt-3 pb-6 px-4 bg-gradient-to-t from-[#FAF7F2] via-[#FAF7F2]/95 dark:from-[#12110E] dark:via-[#12110E]/95 to-transparent pointer-events-none">
           <div className="max-w-md sm:max-w-lg mx-auto w-full pointer-events-auto">
-            {/* Primary CTA: Request payments */}
-            <button
-              type="button"
-              onClick={() => setIsSettleOpen(true)}
-              className="w-full h-13 sm:h-14 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 font-display font-black text-base text-[#171512] shadow-[0_4px_18px_rgba(240,220,0,0.35)] cursor-pointer"
-            >
-              <Send className="w-4.5 h-4.5 fill-current -rotate-12 translate-x-0.5" />
-              <span>{t.split.requestPayments}</span>
-            </button>
+            {/* Primary CTA dynamic according to user's real debt state */}
+            {realCreditorsList.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setIsSettleOpen(true)}
+                className="w-full h-13 sm:h-14 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 font-display font-black text-base text-[#171512] shadow-[0_4px_18px_rgba(240,220,0,0.35)] cursor-pointer"
+              >
+                <Send className="w-4.5 h-4.5 fill-current -rotate-12 translate-x-0.5" />
+                <span>{isEs ? 'Pagar deudas pendientes' : 'Settle pending debts'}</span>
+              </button>
+            ) : realDebtorsList.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined' && navigator.clipboard) {
+                    navigator.clipboard.writeText(window.location.href);
+                    confetti({ particleCount: 30, spread: 45 });
+                  }
+                }}
+                className="w-full h-13 sm:h-14 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 font-display font-black text-base text-[#171512] shadow-[0_4px_18px_rgba(240,220,0,0.35)] cursor-pointer"
+              >
+                <Share2 className="w-4.5 h-4.5" />
+                <span>{t.split.requestPayments}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsAddOpen(true)}
+                className="w-full h-13 sm:h-14 rounded-full bg-[#F0DC00] hover:bg-[#E6D300] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 font-display font-black text-base text-[#171512] shadow-[0_4px_18px_rgba(240,220,0,0.35)] cursor-pointer"
+              >
+                <Plus className="w-4.5 h-4.5 stroke-[2.5]" />
+                <span>{t.split.addExpense}</span>
+              </button>
+            )}
 
-            {/* Secondary Action: Edit split */}
+            {/* Secondary Action: Add or Edit split */}
             <button
               type="button"
               onClick={() => setIsAddOpen(true)}
               className="text-xs font-bold text-[#8A8173] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white pt-2.5 pb-1 text-center block w-full cursor-pointer transition-colors"
             >
-              {t.split.editSplit}
+              {realCreditorsList.length > 0 ? t.split.addExpense : t.split.editSplit}
             </button>
           </div>
         </div>

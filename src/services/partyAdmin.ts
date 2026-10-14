@@ -8,6 +8,8 @@ export type PartyEditableFields = Partial<{
   location: string;
   description: string;
   coverImage: string;
+  potGoal: number | null;
+  potMessage: string | null;
 }>;
 
 export interface AdminResult<T = Record<string, unknown>> {

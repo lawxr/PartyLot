@@ -27,7 +27,7 @@ import { MONAD_CONTRACT_ADDRESSES } from '@/contracts';
 import { useMonPrice } from '@/hooks/useMonPrice';
 import { getCoverUrl } from '@/lib/imageOptimization';
 import { Avatar } from '@/components/ui/Avatar';
-import { UsdcLogo, MonadLogo } from '@/components/ui/TokenLogo';
+import { MonadLogo } from '@/components/ui/TokenLogo';
 import { RewardMemberModal } from '@/components/pot/RewardMemberModal';
 import { Web3ErrorBanner } from '@/components/ui/Web3ErrorBanner';
 import {
@@ -95,18 +95,14 @@ export const PartyPotView: React.FC = () => {
     },
   ];
 
-  // Suggested Amount Selected
-  const [selectedSuggested, setSelectedSuggested] = useState<number | null>(10);
-  const [customAmount, setCustomAmount] = useState<string>('10');
+  // Suggested Amount Selected (in MON)
+  const [selectedSuggested, setSelectedSuggested] = useState<number | null>(5);
+  const [customAmount, setCustomAmount] = useState<string>('5');
   const [isCustomMode, setIsCustomMode] = useState<boolean>(false);
 
-  // Withdraw state
+  // Withdraw state (in MON)
   const [withdrawAmount, setWithdrawAmount] = useState<string>('5');
   const [withdrawDesc, setWithdrawDesc] = useState<string>('');
-
-  // Token & Network Selector State
-  const [isTokenSelectorOpen, setIsTokenSelectorOpen] = useState<boolean>(false);
-  const [selectedToken, setSelectedToken] = useState<'USDC' | 'MON'>('USDC');
 
   // QR Canvas
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -127,9 +123,6 @@ export const PartyPotView: React.FC = () => {
 
   // Derive USD balance and MON balance
   const monBalance = party?.potBalance ?? 0;
-  // If user views in USD, calculate via monPrice or default multiplier
-  const effectiveMonPrice = monPrice && monPrice > 0 ? monPrice : 18.64;
-  const potUsdAmount = (monBalance * effectiveMonPrice).toFixed(2);
 
   // Target deposit address (Party contract on Monad Testnet)
   const depositAddress: `0x${string}` =
@@ -174,28 +167,25 @@ export const PartyPotView: React.FC = () => {
   };
 
   const handleAddFunds = async () => {
-    const usdVal = parseFloat(customAmount);
-    if (isNaN(usdVal) || usdVal <= 0) {
+    const monDepositAmount = parseFloat(customAmount);
+    if (isNaN(monDepositAmount) || monDepositAmount <= 0) {
       setTxError({
         title: isEs ? 'Monto no válido' : 'Invalid amount',
         message: isEs
-          ? 'Ingresa un monto válido mayor a 0 para aportar al bote.'
-          : 'Enter a valid amount greater than 0 to add to the pot.',
+          ? 'Ingresa un monto válido mayor a 0 en MON para aportar al bote.'
+          : 'Enter a valid amount greater than 0 in MON to add to the pot.',
         isUserRejection: false,
       });
       return;
     }
-
-    // Convert USD input to MON for onchain contract execution if needed
-    const monDepositAmount = selectedToken === 'MON' ? usdVal : Number((usdVal / effectiveMonPrice).toFixed(4));
 
     setIsProcessing(true);
     setTxError(null);
     try {
       const res = await addToPot(
         party.id,
-        monDepositAmount > 0 ? monDepositAmount : 0.1,
-        `Added $${usdVal.toFixed(2)} (${selectedToken}) to Party Pot`,
+        monDepositAmount,
+        `Added ${monDepositAmount} MON to Party Pot`,
         { wallet: activeWallet }
       );
 
@@ -218,13 +208,13 @@ export const PartyPotView: React.FC = () => {
   };
 
   const handleWithdrawFunds = async () => {
-    const amountVal = parseFloat(withdrawAmount);
-    if (isNaN(amountVal) || amountVal <= 0) {
+    const monWithdrawAmount = parseFloat(withdrawAmount);
+    if (isNaN(monWithdrawAmount) || monWithdrawAmount <= 0) {
       setTxError({
         title: isEs ? 'Monto no válido' : 'Invalid amount',
         message: isEs
-          ? 'Ingresa un monto válido mayor a 0 para retirar.'
-          : 'Enter a valid amount greater than 0 to withdraw.',
+          ? 'Ingresa un monto válido mayor a 0 en MON para retirar.'
+          : 'Enter a valid amount greater than 0 in MON to withdraw.',
         isUserRejection: false,
       });
       return;
@@ -240,7 +230,6 @@ export const PartyPotView: React.FC = () => {
       return;
     }
 
-    const monWithdrawAmount = Number((amountVal / effectiveMonPrice).toFixed(4));
     if (party.potBalance < monWithdrawAmount) {
       setTxError({
         title: isEs ? 'Saldo insuficiente en el Pot' : 'Insufficient Pot Balance',
@@ -380,19 +369,34 @@ export const PartyPotView: React.FC = () => {
             </div>
 
             <div className="flex items-baseline gap-2.5 sm:gap-3 flex-wrap">
-              <h1 className="font-display font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-none text-white drop-shadow-md">
-                ${potUsdAmount}
-              </h1>
-              <span className="text-xs sm:text-sm font-mono font-bold px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-[#FFF5C0] shadow-sm inline-flex items-center gap-1.5">
-                <MonadLogo size="xs" className="w-3.5 h-3.5" />
+              <h1 className="font-display font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-none text-white drop-shadow-md flex items-center gap-2">
+                <MonadLogo size="lg" className="w-8 h-8 sm:w-10 sm:h-10 inline-block drop-shadow" />
                 {monBalance.toFixed(2)} MON
-              </span>
+              </h1>
               {monPrice && (
                 <span className="text-xs font-mono font-medium text-white/80">
                   (≈ ${((monBalance || 0) * monPrice).toFixed(2)} USD)
                 </span>
               )}
             </div>
+
+            {/* Goal progress bar if configured */}
+            {party.potGoal != null && party.potGoal > 0 && (
+              <div className="mt-3 p-3 rounded-2xl bg-black/40 backdrop-blur-md border border-white/20 max-w-sm">
+                <div className="flex items-center justify-between text-xs font-bold text-white mb-1.5">
+                  <span>{isEs ? 'Meta voluntaria del Bote' : 'Voluntary Pot Goal'}</span>
+                  <span className="font-mono text-party-yellow">
+                    {monBalance.toFixed(2)} / {party.potGoal.toFixed(2)} MON ({Math.min(100, Math.round((monBalance / party.potGoal) * 100))}%)
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-white/20 overflow-hidden">
+                  <div
+                    className="h-full bg-party-yellow rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.max(0, (monBalance / party.potGoal) * 100))}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             <p className="text-xs sm:text-sm text-white/85 font-medium mt-1 mb-2.5 drop-shadow">
               {isEs
@@ -518,6 +522,23 @@ export const PartyPotView: React.FC = () => {
             </div>
           )}
 
+          {/* Organizer Note / Purpose Card */}
+          {party.potMessage && (
+            <div className="mb-4 p-4 rounded-[24px] bg-[#FFF9D2] dark:bg-[#2A240C] border border-[#F0DC00]/40 text-[#171512] dark:text-[#F5F1E8]">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#B89600] block mb-1">
+                {isEs ? 'Propósito del bote' : "Host's Note"}
+              </span>
+              <p className="text-xs sm:text-sm font-medium leading-relaxed">
+                {party.potMessage}
+              </p>
+              <p className="text-[11px] text-[#8E887E] dark:text-[#A8A196] mt-2">
+                {isEs
+                  ? 'Aporte 100% voluntario · No condiciona asistencia ni deudas individuales.'
+                  : 'Voluntary funding · Attendance is never gated and does not offset individual debts.'}
+              </p>
+            </div>
+          )}
+
         {/* ============================================================== */}
         {/* TAB WORKSPACE CARD (MATCHING PARTY DETAIL LIQUID GLASS FINISH) */}
         {/* ============================================================== */}
@@ -530,191 +551,131 @@ export const PartyPotView: React.FC = () => {
             <div className="space-y-4">
               {/* Suggested Amounts Label & Pills */}
               <div>
-              <div className="flex items-center justify-between mb-2 px-1">
-                <span className="font-bold text-xs sm:text-sm text-[#171512] dark:text-white">
-                  {isEs ? 'Montos sugeridos' : 'Suggested amounts'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsCustomMode(!isCustomMode)}
-                  className="text-xs text-[#8E887E] dark:text-[#A8A196] font-semibold hover:text-[#171512] dark:hover:text-white cursor-pointer"
-                >
-                  {isCustomMode
-                    ? isEs
-                      ? 'Usar sugeridos'
-                      : 'Use suggested'
-                    : isEs
-                      ? 'Monto personalizado'
-                      : 'Custom amount'}
-                </button>
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <span className="font-bold text-xs sm:text-sm text-[#171512] dark:text-white">
+                    {isEs ? 'Montos sugeridos (MON)' : 'Suggested amounts (MON)'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomMode(!isCustomMode)}
+                    className="text-xs text-[#8E887E] dark:text-[#A8A196] font-semibold hover:text-[#171512] dark:hover:text-white cursor-pointer"
+                  >
+                    {isCustomMode
+                      ? isEs
+                        ? 'Usar sugeridos'
+                        : 'Use suggested'
+                      : isEs
+                        ? 'Monto personalizado'
+                        : 'Custom amount'}
+                  </button>
+                </div>
+
+                {!isCustomMode ? (
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5">
+                    {[1, 5, 10, 25].map((amt) => {
+                      const isSelected = selectedSuggested === amt;
+                      return (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => handleSelectSuggested(amt)}
+                          className={`py-2.5 sm:py-3 rounded-[20px] sm:rounded-[24px] text-xs sm:text-sm font-bold transition-all cursor-pointer text-center ${
+                            isSelected
+                              ? 'bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-black shadow-[0_2px_14px_rgba(240,220,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.9)]'
+                              : 'bg-white/95 dark:bg-[#1E1B17]/95 text-[#171512] dark:text-white shadow-[0_2px_8px_rgba(65,48,25,0.03),inset_0_1px_1px_rgba(255,255,255,0.8)] border border-black/[0.04] dark:border-white/10 hover:border-black/15'
+                          }`}
+                        >
+                          {amt} MON
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={customAmount}
+                      onChange={(e) => {
+                        setCustomAmount(e.target.value);
+                        setSelectedSuggested(null);
+                      }}
+                      placeholder="0.00"
+                      className="w-full pl-4 pr-16 py-3 rounded-2xl bg-white/95 dark:bg-[#1E1B17]/95 border border-black/10 dark:border-white/15 text-[#171512] dark:text-white font-bold text-base focus:outline-none focus:border-[#F0DC00]"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-xs text-[#8E887E]">
+                      MON
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {!isCustomMode ? (
-                <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5">
-                  {[5, 10, 20, 50].map((amt) => {
-                    const isSelected = selectedSuggested === amt;
-                    return (
-                      <button
-                        key={amt}
-                        type="button"
-                        onClick={() => handleSelectSuggested(amt)}
-                        className={`py-2.5 sm:py-3 rounded-[20px] sm:rounded-[24px] text-xs sm:text-sm font-bold transition-all cursor-pointer text-center ${
-                          isSelected
-                            ? 'bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-black shadow-[0_2px_14px_rgba(240,220,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.9)]'
-                            : 'bg-white/95 dark:bg-[#1E1B17]/95 text-[#171512] dark:text-white shadow-[0_2px_8px_rgba(65,48,25,0.03),inset_0_1px_1px_rgba(255,255,255,0.8)] border border-black/[0.04] dark:border-white/10 hover:border-black/15'
-                        }`}
-                      >
-                        ${amt}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-base text-[#8E887E]">
-                    $
-                  </span>
-                  <input
-                    type="number"
-                    step="any"
-                    value={customAmount}
-                    onChange={(e) => {
-                      setCustomAmount(e.target.value);
-                      setSelectedSuggested(null);
-                    }}
-                    placeholder="0.00"
-                    className="w-full pl-8 pr-4 py-3 rounded-2xl bg-white/95 dark:bg-[#1E1B17]/95 border border-black/10 dark:border-white/15 text-[#171512] dark:text-white font-bold text-base focus:outline-none focus:border-[#F0DC00]"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Token & Network Selector Card with Official Circle USDC & Monad SVGs */}
-            <div className="relative">
-              <div
-                onClick={() => setIsTokenSelectorOpen(!isTokenSelectorOpen)}
-                className="p-3.5 sm:p-4 rounded-[24px] sm:rounded-[28px] bg-white/95 dark:bg-[#1E1B17]/95 backdrop-blur-xl border border-white/80 dark:border-white/10 shadow-[0_4px_20px_rgba(70,52,28,0.04),inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.08)] flex items-center justify-between cursor-pointer hover:border-black/15 transition-all"
-              >
+              {/* Monad Testnet Network Card */}
+              <div className="p-3.5 sm:p-4 rounded-[24px] sm:rounded-[28px] bg-white/95 dark:bg-[#1E1B17]/95 backdrop-blur-xl border border-white/80 dark:border-white/10 shadow-[0_4px_20px_rgba(70,52,28,0.04),inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.08)] flex items-center justify-between">
                 <div className="flex items-center gap-3.5">
-                  {selectedToken === 'USDC' ? (
-                    <UsdcLogo size="xl" className="w-10 h-10 shrink-0" />
-                  ) : (
-                    <MonadLogo size="xl" className="w-10 h-10 shrink-0" />
-                  )}
+                  <MonadLogo size="xl" className="w-10 h-10 shrink-0" />
                   <div>
                     <span className="font-bold text-sm text-[#171512] dark:text-white block leading-tight">
-                      {selectedToken === 'USDC' ? 'USDC · Base' : 'MON'}
+                      MON · Monad Testnet
                     </span>
                     <span className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium block mt-0.5">
-                      {isEs ? 'Rápido, comisiones bajas' : 'Fast, low fees'}
+                      {isEs ? 'Chain ID 10143 · Fondo común onchain' : 'Chain ID 10143 · Shared onchain pot'}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-[#836EF9]/15 text-[#836EF9]">
+                  10143
+                </span>
+              </div>
+
+              {/* Big Prominent Yellow CTA Button */}
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={handleAddFunds}
+                disabled={isProcessing}
+                className="w-full py-3.5 sm:py-4 rounded-full bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-display font-black text-sm sm:text-base tracking-tight shadow-[0_6px_22px_rgba(240,220,0,0.38),inset_0_1px_1px_rgba(255,255,255,0.9)] hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isProcessing ? (
+                  <div className="w-5 h-5 border-2 border-[#161514] border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <span>
+                    {isEs
+                      ? `Añadir ${parseFloat(customAmount || '0').toFixed(2)} MON al bote`
+                      : `Add ${parseFloat(customAmount || '0').toFixed(2)} MON to pot`}
+                  </span>
+                )}
+              </motion.button>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB B: WITHDRAW FUNDS (EXPENSE SETTLEMENT)                      */}
+          {/* ============================================================== */}
+          {activeTab === 'withdraw' && (
+            <div className="space-y-4 mb-6">
+              <div className="p-4 rounded-2xl bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-[#171512] dark:text-white block mb-1">
+                    {isEs ? 'Monto a retirar (MON)' : 'Amount to withdraw (MON)'}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      className="w-full pl-4 pr-16 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-black/10 dark:border-white/15 text-sm font-bold focus:outline-none focus:border-[#F0DC00]"
+                      placeholder="0.00"
+                    />
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 font-bold text-xs text-[#8E887E]">
+                      MON
                     </span>
                   </div>
                 </div>
 
-                <ChevronDown
-                  className={`w-4 h-4 text-[#8E887E] transition-transform ${
-                    isTokenSelectorOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </div>
-
-              {/* Token Selector Dropdown */}
-              <AnimatePresence>
-                {isTokenSelectorOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    className="absolute top-full left-0 right-0 mt-2 z-30 p-2 rounded-2xl bg-white dark:bg-[#1E1B17] border border-black/10 dark:border-white/15 shadow-xl space-y-1"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedToken('USDC');
-                        setIsTokenSelectorOpen(false);
-                      }}
-                      className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left text-xs font-bold cursor-pointer transition-colors ${
-                        selectedToken === 'USDC'
-                          ? 'bg-[#F0DC00]/20 text-[#171512] dark:text-white'
-                          : 'hover:bg-black/5 dark:hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <UsdcLogo size="lg" className="w-6 h-6" />
-                        <span>USDC · Base Network</span>
-                      </div>
-                      {selectedToken === 'USDC' && <Check className="w-4 h-4 text-[#171512] dark:text-white" />}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedToken('MON');
-                        setIsTokenSelectorOpen(false);
-                      }}
-                      className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left text-xs font-bold cursor-pointer transition-colors ${
-                        selectedToken === 'MON'
-                          ? 'bg-[#836EF9]/20 text-[#171512] dark:text-white'
-                          : 'hover:bg-black/5 dark:hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <MonadLogo size="lg" className="w-6 h-6" />
-                        <span>MON</span>
-                      </div>
-                      {selectedToken === 'MON' && <Check className="w-4 h-4 text-[#171512] dark:text-white" />}
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Big Prominent Yellow CTA Button */}
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={handleAddFunds}
-              disabled={isProcessing}
-              className="w-full py-3.5 sm:py-4 rounded-full bg-[#FFE600] dark:bg-[#F0DC00] text-[#161514] font-display font-black text-sm sm:text-base tracking-tight shadow-[0_6px_22px_rgba(240,220,0,0.38),inset_0_1px_1px_rgba(255,255,255,0.9)] hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isProcessing ? (
-                <div className="w-5 h-5 border-2 border-[#161514] border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <span>
-                  {isEs
-                    ? `Añadir $${parseFloat(customAmount || '0').toFixed(2)} al bote`
-                    : `Add $${parseFloat(customAmount || '0').toFixed(2)} to pot`}
-                </span>
-              )}
-            </motion.button>
-          </div>
-        )}
-
-        {/* ============================================================== */}
-        {/* TAB B: WITHDRAW FUNDS (EXPENSE SETTLEMENT)                      */}
-        {/* ============================================================== */}
-        {activeTab === 'withdraw' && (
-          <div className="space-y-4 mb-6">
-            <div className="p-4 rounded-2xl bg-white/80 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-3">
-              <div>
-                <label className="text-xs font-bold text-[#171512] dark:text-white block mb-1">
-                  {isEs ? 'Monto a retirar' : 'Amount to withdraw'}
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sm text-[#8E887E]">
-                    $
-                  </span>
-                  <input
-                    type="number"
-                    step="any"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    className="w-full pl-7 pr-4 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-black/10 dark:border-white/15 text-sm font-bold focus:outline-none focus:border-[#F0DC00]"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              <div>
+                <div>
                 <label className="text-xs font-bold text-[#171512] dark:text-white block mb-1">
                   {isEs ? 'Motivo o gasto de la fiesta' : 'Reason or party expense'}
                 </label>
@@ -753,8 +714,8 @@ export const PartyPotView: React.FC = () => {
             </h4>
             <p className="text-[11px] sm:text-xs text-[#8E887E] dark:text-[#A8A196] max-w-xs mb-3">
               {isEs
-                ? 'Escanea para transferir MON o USDC directo a la tesorería de la fiesta.'
-                : 'Scan to transfer MON or USDC directly to the party treasury.'}
+                ? 'Escanea para transferir MON directo a la tesorería de la fiesta en Monad Testnet.'
+                : 'Scan to transfer native MON directly to the party treasury on Monad Testnet.'}
             </p>
 
             {/* Compact QR Canvas */}
@@ -834,10 +795,12 @@ export const PartyPotView: React.FC = () => {
                       {isEs ? 'Balance total' : 'Total balance'}
                     </span>
                     <span className="font-display font-extrabold text-primary">
-                      {monBalance.toFixed(2)} MON{' '}
-                      <span className="font-sans font-medium text-secondary">
-                        (≈ ${potUsdAmount} USD)
-                      </span>
+                      {monBalance.toFixed(2)} MON
+                      {monPrice && (
+                        <span className="font-sans font-medium text-secondary ml-1">
+                          (≈ ${(monBalance * monPrice).toFixed(2)} USD)
+                        </span>
+                      )}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
@@ -940,11 +903,11 @@ export const PartyPotView: React.FC = () => {
                                 <span className="font-normal text-secondary">
                                   {isDeposit
                                     ? isEs
-                                      ? `aportó $${(tx.amount * effectiveMonPrice).toFixed(0)}`
-                                      : `added $${(tx.amount * effectiveMonPrice).toFixed(0)}`
+                                      ? `aportó ${tx.amount.toFixed(2)} MON`
+                                      : `added ${tx.amount.toFixed(2)} MON`
                                     : isEs
-                                      ? `retiró $${(tx.amount * effectiveMonPrice).toFixed(0)}`
-                                      : `withdrew $${(tx.amount * effectiveMonPrice).toFixed(0)}`}
+                                      ? `retiró ${tx.amount.toFixed(2)} MON`
+                                      : `withdrew ${tx.amount.toFixed(2)} MON`}
                                 </span>
                               </span>
                               {tx.description && (

@@ -25,7 +25,7 @@ const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
 export default function App() {
-  const { currentView, parties, currentPartyId, currentUser, setCurrentView, theme } = usePartyStore();
+  const { currentView, parties, currentPartyId, currentUser, setCurrentView, theme, language } = usePartyStore();
   const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
 
   // Hydrate store from Supabase on mount
@@ -42,6 +42,12 @@ export default function App() {
       document.documentElement.classList.toggle('dark', theme === 'dark');
     }
   }, [theme]);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = language;
+    }
+  }, [language]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -65,18 +71,18 @@ export default function App() {
 
   // Centralized Route Gate: orchestrates view state transitions based on auth state
   useEffect(() => {
-    if (!mounted || !ready) return;
+    if (!mounted) return;
     const isAuthed = Boolean(currentUser?.isPrivyAuthenticated || isExplicitDevelopmentDemoMode());
 
-    if (!isAuthed) {
-      // Unauthenticated users are confined to splash or join-party view
-      if (currentView !== 'splash' && currentView !== 'join-party') {
-        setCurrentView('splash');
-      }
-    } else {
-      // Authenticated users on splash are promoted to home
+    if (isAuthed) {
+      // Authenticated users on splash are immediately promoted to home
       if (currentView === 'splash') {
         setCurrentView('home');
+      }
+    } else if (ready) {
+      // Once Privy has finalized and confirms user is unauthenticated, confine to splash or join-party
+      if (currentView !== 'splash' && currentView !== 'join-party') {
+        setCurrentView('splash');
       }
     }
   }, [mounted, ready, currentUser?.isPrivyAuthenticated, currentView, setCurrentView]);

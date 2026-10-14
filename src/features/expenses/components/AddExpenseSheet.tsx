@@ -105,17 +105,17 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             {t.split.amountLabel}
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-display font-black text-xl text-[#8E887E] dark:text-[#A8A196]">
-              $
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-display font-black text-xs uppercase tracking-wider text-[#8E887E] dark:text-[#A8A196]">
+              MON
             </span>
             <input
               type="number"
-              step="0.01"
+              step="0.0001"
               required
               placeholder="0.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full pl-9 pr-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-white font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] dark:border-white/15 focus:border-[#F0DC00]"
+              className="w-full pl-15 pr-4 py-3 rounded-2xl bg-[#F7F2E8] dark:bg-[#12110E] text-[#171512] dark:text-white font-display font-black text-2xl outline-none border border-[rgba(35,30,22,0.1)] dark:border-white/15 focus:border-[#F0DC00]"
             />
           </div>
         </div>

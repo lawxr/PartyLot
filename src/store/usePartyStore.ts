@@ -59,6 +59,7 @@ import {
   persistPotTransactionToSupabase,
   persistCrewToSupabase,
   addMemberToCrewInDb,
+  removeMemberFromCrewInDb,
   persistTaskToSupabase,
   updateTaskInSupabase,
   fetchPartiesFromDb,
@@ -99,6 +100,7 @@ import { calculateNetBalances, computeDebtSettlements } from '@/services/settlem
 import { recordGatheringOnchain } from '@/services/socialGraphService';
 import { isExplicitDevelopmentDemoMode } from '@/lib/runtimeMode';
 import { deduplicateActivities } from '@/lib/activityDeduplication';
+import { getClientPrivyToken } from '@/hooks/usePrivySync';
 
 const demoMode = isExplicitDevelopmentDemoMode();
 const signedOutUser: User = {
@@ -121,6 +123,18 @@ const volatileStorage: StateStorage = {
 
 export const detectInitialLanguage = (): Language => {
   if (typeof window === 'undefined') return 'es';
+  try {
+    const raw = window.localStorage.getItem('partylot-storage-v1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const saved = parsed?.state?.language;
+      if (saved === 'es' || saved === 'en') {
+        return saved;
+      }
+    }
+  } catch {
+    // Fallback to navigator
+  }
   const navLang =
     window.navigator.languages?.[0] ||
     window.navigator.language ||
@@ -150,6 +164,7 @@ interface PartyStoreState {
   previousView: AppView | null;
   activeTab: MainTab;
   parties: Party[];
+  isLoadingParties: boolean;
   currentPartyId: string;
   crews: Crew[];
   currentCrewId: string | null;
@@ -180,12 +195,31 @@ interface PartyStoreState {
     name: string;
     description: string;
     coverImage: string;
+    initialMembers?: {
+      id?: string;
+      userId?: string;
+      name: string;
+      handle?: string;
+      avatar?: string;
+      walletAddress?: string;
+      nightsTogether?: number;
+    }[];
   }) => Crew;
   addCrewMember: (crewId: string, member: Partial<CrewMember>) => void;
+  removeCrewMember: (crewId: string, memberIdOrUserId: string) => boolean;
   addCrewMemory: (
     crewId: string,
     memory: { imageUrl: string; caption: string; partyTitle?: string }
   ) => void;
+  getPastPartyPeers: () => {
+    id: string;
+    name: string;
+    handle?: string;
+    avatar: string;
+    nightsTogether: number;
+    walletAddress?: string;
+  }[];
+  addCrewMembersToParty: (partyId: string, crewId: string) => number;
 
   // Party Actions
   createParty: (params: {
@@ -196,6 +230,7 @@ interface PartyStoreState {
     description: string;
     coverImage: string;
     crewId?: string;
+    addAllCrewMembers?: boolean;
   }) => Party;
   joinPartyByCode: (
     code: string,
@@ -315,7 +350,12 @@ export const usePartyStore = create<PartyStoreState>()(
       previousView: null,
       activeTab: 'home',
       language: detectInitialLanguage(),
-      setLanguage: (lang) => set({ language: lang }),
+      setLanguage: (lang) => {
+        if (typeof document !== 'undefined') {
+          document.documentElement.lang = lang;
+        }
+        set({ language: lang });
+      },
       theme: 'light',
       setTheme: (theme) => {
         if (typeof document !== 'undefined') {
@@ -330,6 +370,7 @@ export const usePartyStore = create<PartyStoreState>()(
         }
         set({ theme: nextTheme });
       },
+      isLoadingParties: false,
       starredUserIds: [],
       toggleStarUser: (userId) => {
         set((state) => {
@@ -515,15 +556,41 @@ export const usePartyStore = create<PartyStoreState>()(
         }));
       },
 
-      createCrew: ({ name, description, coverImage }) => {
+      createCrew: ({ name, description, coverImage, initialMembers }) => {
         const state = get();
+        const ownerMember: CrewMember = {
+          id: `cm-${Date.now()}-0`,
+          userId: state.currentUser.id,
+          name: state.currentUser.name,
+          handle: state.currentUser.handle,
+          avatar: state.currentUser.avatar,
+          role: 'owner',
+          joinedAt: 'Today',
+          walletAddress: state.currentUser.walletAddress,
+          nightsTogether: 1,
+        };
+
+        const initialCrewMembers: CrewMember[] = (initialMembers || []).map((im, idx) => ({
+          id: `cm-${Date.now()}-${idx + 1}`,
+          userId: im.userId || im.id || `u-${Date.now()}-${idx + 1}`,
+          name: im.name,
+          handle: im.handle || `@${im.name.toLowerCase().replace(/\s+/g, '')}`,
+          avatar: im.avatar || '',
+          role: 'member' as const,
+          joinedAt: 'Today',
+          walletAddress: im.walletAddress,
+          nightsTogether: im.nightsTogether || 1,
+        }));
+
+        const allCrewMembers = [ownerMember, ...initialCrewMembers];
+
         const newCrew: Crew = {
           id: `c-${Date.now()}`,
           name: name.trim() || 'My Secret Crew',
           description: description.trim() || 'Private trust network for gatherings.',
           coverImage: coverImage || '',
           ownerId: state.currentUser.id,
-          membersCount: 1,
+          membersCount: allCrewMembers.length,
           partiesCount: 0,
           totalSpent: 0,
           nightsTogether: 1,
@@ -531,19 +598,7 @@ export const usePartyStore = create<PartyStoreState>()(
           treasuryBalance: 0,
           lastActivity: 'Just now',
           createdAt: new Date().toISOString(),
-          members: [
-            {
-              id: `cm-${Date.now()}`,
-              userId: state.currentUser.id,
-              name: state.currentUser.name,
-              handle: state.currentUser.handle,
-              avatar: state.currentUser.avatar,
-              role: 'owner',
-              joinedAt: 'Today',
-              walletAddress: state.currentUser.walletAddress,
-              nightsTogether: 1,
-            },
-          ],
+          members: allCrewMembers,
           memories: [],
         };
 
@@ -555,6 +610,14 @@ export const usePartyStore = create<PartyStoreState>()(
         }));
 
         persistCrewToSupabase(newCrew, state.currentUser);
+        initialCrewMembers.forEach((cm) => {
+          addMemberToCrewInDb(newCrew.id, {
+            id: cm.userId,
+            name: cm.name,
+            role: cm.role,
+          });
+        });
+
         return newCrew;
       },
 
@@ -571,7 +634,7 @@ export const usePartyStore = create<PartyStoreState>()(
               role: memberData.role || 'member',
               joinedAt: 'Today',
               walletAddress: memberData.walletAddress,
-              nightsTogether: 1,
+              nightsTogether: memberData.nightsTogether || 1,
             };
             return {
               ...c,
@@ -587,6 +650,55 @@ export const usePartyStore = create<PartyStoreState>()(
           name: memberData.name || 'Anonymous Guest',
           role: memberData.role || 'member',
         });
+      },
+
+      removeCrewMember: (crewId, memberIdOrUserId) => {
+        const state = get();
+        const crew = state.crews.find((c) => c.id === crewId);
+        if (!crew) return false;
+
+        const currentUserId = state.currentUser?.id;
+        const isOwner =
+          crew.ownerId === currentUserId ||
+          crew.members.some((m) => (m.userId === currentUserId || m.id === currentUserId) && m.role === 'owner');
+        const isAdmin =
+          isOwner ||
+          crew.members.some((m) => (m.userId === currentUserId || m.id === currentUserId) && m.role === 'admin');
+
+        const targetMember = crew.members.find(
+          (m) => m.id === memberIdOrUserId || m.userId === memberIdOrUserId
+        );
+        if (!targetMember) return false;
+
+        // Never remove the owner
+        if (targetMember.role === 'owner' || targetMember.userId === crew.ownerId) {
+          return false;
+        }
+
+        const isSelf = targetMember.userId === currentUserId || targetMember.id === currentUserId;
+        if (!isOwner && !isAdmin && !isSelf) {
+          return false;
+        }
+
+        const updatedMembers = crew.members.filter(
+          (m) => m.id !== targetMember.id && m.userId !== targetMember.userId
+        );
+
+        set((s) => ({
+          crews: s.crews.map((c) =>
+            c.id === crewId
+              ? {
+                  ...c,
+                  members: updatedMembers,
+                  membersCount: Math.max(1, updatedMembers.length),
+                  lastActivity: 'Just now',
+                }
+              : c
+          ),
+        }));
+
+        removeMemberFromCrewInDb(crewId, targetMember.userId || targetMember.id);
+        return true;
       },
 
       addCrewMemory: (crewId, memory) => {
@@ -612,9 +724,163 @@ export const usePartyStore = create<PartyStoreState>()(
         }));
       },
 
-      createParty: ({ title, date, time, location, description, coverImage, crewId }) => {
+      getPastPartyPeers: () => {
+        const state = get();
+        const currentUserId = state.currentUser?.id;
+        const peersMap = new Map<
+          string,
+          {
+            id: string;
+            name: string;
+            handle?: string;
+            avatar: string;
+            nightsTogether: number;
+            walletAddress?: string;
+          }
+        >();
+
+        // 1. From all parties user attended or hosted
+        state.parties.forEach((p) => {
+          const userInParty =
+            p.hostId === currentUserId ||
+            p.members?.some((m) => m.id === currentUserId || m.name === state.currentUser?.name);
+
+          if (userInParty) {
+            p.members?.forEach((m) => {
+              const mId = m.id;
+              if (mId && mId !== currentUserId && m.name !== state.currentUser?.name) {
+                const existing = peersMap.get(mId);
+                const nights = (existing?.nightsTogether || 0) + (m.nightsTogether || 1);
+                peersMap.set(mId, {
+                  id: mId,
+                  name: m.name,
+                  handle: (m as any).handle,
+                  avatar: m.avatar || existing?.avatar || '',
+                  nightsTogether: Math.max(nights, 1),
+                  walletAddress: m.walletAddress || existing?.walletAddress,
+                });
+              }
+            });
+          }
+        });
+
+        // 2. From all crews user belongs to
+        state.crews.forEach((c) => {
+          const userInCrew =
+            c.ownerId === currentUserId ||
+            c.members?.some(
+              (m) =>
+                m.userId === currentUserId ||
+                m.id === currentUserId ||
+                m.name === state.currentUser?.name
+            );
+
+          if (userInCrew) {
+            c.members?.forEach((m) => {
+              const mId = m.userId || m.id;
+              if (mId && mId !== currentUserId && m.name !== state.currentUser?.name) {
+                const existing = peersMap.get(mId);
+                peersMap.set(mId, {
+                  id: mId,
+                  name: m.name,
+                  handle: m.handle || existing?.handle,
+                  avatar: m.avatar || existing?.avatar || '',
+                  nightsTogether: Math.max(existing?.nightsTogether || 0, m.nightsTogether || 1),
+                  walletAddress: m.walletAddress || existing?.walletAddress,
+                });
+              }
+            });
+          }
+        });
+
+        return Array.from(peersMap.values());
+      },
+
+      addCrewMembersToParty: (partyId: string, crewId: string) => {
+        const state = get();
+        const party = state.parties.find((p) => p.id === partyId);
+        const crew = state.crews.find((c) => c.id === crewId);
+        if (!party || !crew) return 0;
+
+        const existingMemberIds = new Set(party.members.map((m) => m.id));
+        const existingNames = new Set(party.members.map((m) => m.name.toLowerCase()));
+
+        const newMembersToAdd: Member[] = [];
+        crew.members.forEach((cm) => {
+          const targetId = cm.userId || cm.id;
+          const isUser =
+            (targetId && targetId === state.currentUser?.id) ||
+            cm.name.toLowerCase() === state.currentUser?.name?.toLowerCase();
+
+          if (!isUser && !existingMemberIds.has(targetId) && !existingNames.has(cm.name.toLowerCase())) {
+            newMembersToAdd.push({
+              id: targetId,
+              name: cm.name,
+              avatar: cm.avatar || '',
+              role: 'guest',
+              status: 'invited',
+              nightsTogether: cm.nightsTogether || 1,
+              walletAddress: cm.walletAddress,
+            });
+          }
+        });
+
+        if (newMembersToAdd.length === 0) return 0;
+
+        const updatedParty: Party = {
+          ...party,
+          crewId: party.crewId || crew.id,
+          members: [...party.members, ...newMembersToAdd],
+        };
+
+        const newActivity: ActivityItem = {
+          id: `act-${Date.now()}`,
+          partyId,
+          type: 'join',
+          text: `${state.currentUser.name} añadió ${newMembersToAdd.length} miembros del crew "${crew.name}" a la fiesta`,
+          time: 'Just now',
+          avatar: state.currentUser.avatar,
+        };
+
+        set((s) => ({
+          parties: s.parties.map((p) => (p.id === partyId ? updatedParty : p)),
+          activities: [newActivity, ...s.activities],
+        }));
+
+        persistPartyToSupabase(updatedParty, state.currentUser);
+        persistActivityToSupabase(newActivity);
+
+        return newMembersToAdd.length;
+      },
+
+      createParty: ({ title, date, time, location, description, coverImage, crewId, addAllCrewMembers }) => {
         const state = get();
         const code = generatePartyCode();
+
+        const crew = crewId ? state.crews.find((c) => c.id === crewId) : null;
+        const crewMembersToAdd: Member[] = [];
+
+        if (crew && addAllCrewMembers !== false) {
+          crew.members.forEach((cm) => {
+            const cmId = cm.userId || cm.id;
+            const isUser =
+              (cmId && cmId === state.currentUser.id) ||
+              cm.name.toLowerCase() === state.currentUser.name.toLowerCase();
+
+            if (!isUser) {
+              crewMembersToAdd.push({
+                id: cmId || `cm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                name: cm.name,
+                avatar: cm.avatar || '',
+                role: 'guest',
+                status: 'invited',
+                nightsTogether: cm.nightsTogether || 1,
+                walletAddress: cm.walletAddress,
+              });
+            }
+          });
+        }
+
         const newParty: Party = {
           id: `p-${Date.now()}`,
           code,
@@ -636,6 +902,7 @@ export const usePartyStore = create<PartyStoreState>()(
               status: 'going',
               nightsTogether: state.currentUser.gatheringsCount,
             },
+            ...crewMembersToAdd,
           ],
           potBalance: 0,
           createdAt: new Date().toISOString(),
@@ -646,7 +913,9 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId: newParty.id,
           type: 'join',
-          text: `${state.currentUser.name} created the party: ${newParty.title}`,
+          text: crewMembersToAdd.length > 0
+            ? `${state.currentUser.name} created the party: ${newParty.title} and invited ${crewMembersToAdd.length} members from ${crew?.name || 'crew'}`
+            : `${state.currentUser.name} created the party: ${newParty.title}`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
         };
@@ -904,7 +1173,7 @@ export const usePartyStore = create<PartyStoreState>()(
             id: `act-expense-${newExpense.id}`,
             partyId,
             type: 'expense',
-            text: `${payer.name} added ${category !== 'general' ? `[${category.toUpperCase()}] ` : ''}expense: "${description}" ($${amount.toFixed(2)})`,
+            text: `${payer.name} added ${category !== 'general' ? `[${category.toUpperCase()}] ` : ''}expense: "${description}" (${amount.toFixed(2)} MON)`,
             time: 'Just now',
             avatar: payer.avatar,
           };
@@ -973,7 +1242,7 @@ export const usePartyStore = create<PartyStoreState>()(
         });
 
         // Record confirmed settlement in store state incrementally upon transaction receipt
-        const recordSettlementConfirmed = (s: DebtSettlement, receipt: TreasuryReceipt) => {
+        const recordSettlementConfirmed = async (s: DebtSettlement, receipt: TreasuryReceipt) => {
           const currentState = get();
           const creditorMember = party.members.find(
             (m) =>
@@ -1000,6 +1269,7 @@ export const usePartyStore = create<PartyStoreState>()(
             createdAt: 'Just now',
             category: 'general',
             isSettled: false,
+            isSettlement: true,
             txHash: receipt.txHash,
           };
 
@@ -1007,7 +1277,7 @@ export const usePartyStore = create<PartyStoreState>()(
             id: `act-expense-${settlementExpense.id}`,
             partyId: party.id,
             type: 'pot',
-            text: `Pago liquidado: ${s.fromName} transfirió $${s.amount.toFixed(2)} a ${s.toName}`,
+            text: `Pago liquidado: ${s.fromName} transfirió ${s.amount.toFixed(4)} MON a ${s.toName}`,
             time: 'Just now',
             avatar: currentState.currentUser.avatar,
             txHash: receipt.txHash,
@@ -1018,7 +1288,11 @@ export const usePartyStore = create<PartyStoreState>()(
             activities: deduplicateActivities([newActivity, ...st.activities]),
           }));
 
-          persistExpenseToSupabase(settlementExpense);
+          try {
+            await persistExpenseToSupabase(settlementExpense);
+          } catch (persistErr) {
+            console.warn('Settlement confirmed onchain but database persistence failed:', persistErr);
+          }
         };
 
         try {
@@ -1029,7 +1303,7 @@ export const usePartyStore = create<PartyStoreState>()(
             {
               wallet: options?.wallet,
               onSettlementConfirmed: async ({ settlement, receipt: individualReceipt }) => {
-                recordSettlementConfirmed(settlement, individualReceipt);
+                await recordSettlementConfirmed(settlement, individualReceipt);
               },
             }
           );
@@ -1115,7 +1389,7 @@ export const usePartyStore = create<PartyStoreState>()(
           id: actId,
           partyId,
           type: 'pot',
-          text: `${state.currentUser.name} aportó $${numAmount.toFixed(2)} al Party Pot`,
+          text: `${state.currentUser.name} aportó ${numAmount.toFixed(2)} MON al Party Pot`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
           actorId: state.currentUser.id,
@@ -1183,7 +1457,7 @@ export const usePartyStore = create<PartyStoreState>()(
           id: actId,
           partyId,
           type: 'pot',
-          text: `Gasto de $${numAmount.toFixed(2)} pagado del Party Pot: "${description}"`,
+          text: `Gasto de ${numAmount.toFixed(2)} MON pagado del Party Pot: "${description}"`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
           actorId: state.currentUser.id,
@@ -1207,7 +1481,7 @@ export const usePartyStore = create<PartyStoreState>()(
 
         return {
           status: 'available',
-          message: `$${numAmount.toFixed(2)} reimbursement processed`,
+          message: `${numAmount.toFixed(2)} MON reimbursement processed`,
           receipt,
         };
       },
@@ -1239,7 +1513,7 @@ export const usePartyStore = create<PartyStoreState>()(
           id: `act-${Date.now()}`,
           partyId,
           type: 'pot',
-          text: `$${currentBalance.toFixed(2)} transferidos para la próxima fiesta del crew`,
+          text: `${currentBalance.toFixed(2)} MON transferidos para la próxima fiesta del crew`,
           time: 'Just now',
           avatar: state.currentUser.avatar,
           actorId: state.currentUser.id,
@@ -1257,7 +1531,7 @@ export const usePartyStore = create<PartyStoreState>()(
 
         return {
           status: 'available',
-          message: `$${currentBalance.toFixed(2)} rolled over successfully`,
+          message: `${currentBalance.toFixed(2)} MON rolled over successfully`,
           receipt,
         };
       },
@@ -1870,48 +2144,55 @@ export const usePartyStore = create<PartyStoreState>()(
           thisOrThat: [],
           crewTrivia: [],
           starredUserIds: [],
+          isLoadingParties: false,
         });
       },
 
       hydrateFromSupabase: async () => {
         if (!get().currentUser?.isPrivyAuthenticated) {
-          set({ parties: [], currentPartyId: '', crews: [], currentCrewId: null, activities: [] });
           return;
         }
 
-        const currentUserId = get().currentUser?.id;
-        const [dbParties, dbCrews, dbActivities] = await Promise.all([
-          fetchPartiesFromDb(currentUserId || undefined),
-          fetchCrewsFromDb(currentUserId || undefined),
-          fetchActivitiesFromDb(),
-        ]);
+        const token = await getClientPrivyToken();
+        if (!token) {
+          // Token is not ready yet: preserve cached parties (Stale-While-Revalidate)
+          return;
+        }
 
-        if (dbParties.length > 0) {
+        const hasCachedParties = get().parties.length > 0;
+        if (!hasCachedParties) {
+          set({ isLoadingParties: true });
+        }
+
+        try {
+          const currentUserId = get().currentUser?.id;
+          const [dbParties, dbCrews, dbActivities] = await Promise.all([
+            fetchPartiesFromDb(currentUserId || undefined),
+            fetchCrewsFromDb(currentUserId || undefined),
+            fetchActivitiesFromDb(),
+          ]);
+
           set((s) => ({
             parties: dbParties,
             currentPartyId:
               s.currentPartyId && dbParties.some((p) => p.id === s.currentPartyId)
                 ? s.currentPartyId
-                : dbParties[0].id,
+                : dbParties[0]?.id || '',
           }));
-        } else {
-          set({ parties: [], currentPartyId: '' });
-        }
 
-        if (dbCrews.length > 0) {
           set((s) => ({
             crews: dbCrews,
             currentCrewId:
               s.currentCrewId && dbCrews.some((c) => c.id === s.currentCrewId)
                 ? s.currentCrewId
-                : dbCrews[0].id,
+                : dbCrews[0]?.id || null,
           }));
-        } else {
-          set({ crews: [], currentCrewId: null });
-        }
 
-        if (dbActivities.length > 0) {
-          set({ activities: deduplicateActivities(dbActivities) });
+          if (dbActivities.length > 0) {
+            set({ activities: deduplicateActivities(dbActivities) });
+          }
+        } finally {
+          set({ isLoadingParties: false });
         }
       },
 
@@ -2062,6 +2343,16 @@ export const usePartyStore = create<PartyStoreState>()(
         starredUserIds: state.starredUserIds,
         attendedPartyIds: state.attendedPartyIds,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state && typeof document !== 'undefined') {
+          if (state.language) {
+            document.documentElement.lang = state.language;
+          }
+          if (state.theme) {
+            document.documentElement.classList.toggle('dark', state.theme === 'dark');
+          }
+        }
+      },
     }
   )
 );

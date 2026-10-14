@@ -14,6 +14,9 @@ import {
   Award,
   MapPin,
   PartyPopper,
+  UserMinus,
+  UserPlus,
+  X,
 } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
@@ -29,10 +32,13 @@ export const CrewDetailView: React.FC = () => {
     currentCrewId,
     crews,
     parties,
+    currentUser,
     setCurrentView,
     selectParty,
     addCrewMember,
+    removeCrewMember,
     addCrewMemory,
+    getPastPartyPeers,
   } = usePartyStore();
 
   const { t, language } = useTranslation();
@@ -74,6 +80,23 @@ export const CrewDetailView: React.FC = () => {
   const crew = crews.find((c) => c.id === currentCrewId) || crews[0];
   const crewParties = parties.filter((p) => p.crewId === crew?.id);
 
+  const currentUserId = currentUser?.id;
+  const isOwner =
+    crew?.ownerId === currentUserId ||
+    crew?.members?.some((m) => (m.userId === currentUserId || m.id === currentUserId) && m.role === 'owner');
+  const isAdmin =
+    isOwner ||
+    crew?.members?.some((m) => (m.userId === currentUserId || m.id === currentUserId) && m.role === 'admin');
+
+  const pastPartyPeers = getPastPartyPeers().filter((peer) => {
+    return !crew?.members?.some(
+      (m) =>
+        (m.userId && m.userId === peer.id) ||
+        m.id === peer.id ||
+        m.name.toLowerCase() === peer.name.toLowerCase()
+    );
+  });
+
   if (!crew) {
     return (
       <div className="min-h-screen bg-[#F7F2E8] text-[#171512] flex items-center justify-center">
@@ -102,6 +125,31 @@ export const CrewDetailView: React.FC = () => {
     setNewMemberName('');
     setNewMemberHandle('');
     setIsInviteOpen(false);
+  };
+
+  const handleAddPastPeer = (peer: {
+    id: string;
+    name: string;
+    handle?: string;
+    avatar: string;
+    nightsTogether: number;
+    walletAddress?: string;
+  }) => {
+    addCrewMember(crew.id, {
+      userId: peer.id,
+      name: peer.name,
+      handle: peer.handle ? formatHandle(peer.handle) : formatHandle(peer.name.toLowerCase().replace(/\s+/g, '')),
+      avatar: peer.avatar,
+      walletAddress: peer.walletAddress,
+      nightsTogether: peer.nightsTogether,
+      role: 'member',
+    });
+  };
+
+  const handleRemoveMember = (e: React.MouseEvent, memberId: string) => {
+    e.stopPropagation();
+    if (!isAdmin) return;
+    removeCrewMember(crew.id, memberId);
   };
 
   const handleAddMemory = (e: React.FormEvent) => {
@@ -371,14 +419,16 @@ export const CrewDetailView: React.FC = () => {
             <span className="text-xs font-semibold text-secondary">
               {isEs ? 'CÍRCULO DE CONFIANZA' : 'TRUST CIRCLE'}
             </span>
-            <GlassButton
-              variant="glass"
-              size="sm"
-              onClick={() => setIsInviteOpen(true)}
-              icon={<Plus className="w-4 h-4 text-primary" />}
-            >
-              {isEs ? 'Añadir Miembro' : 'Add Member'}
-            </GlassButton>
+            {isAdmin && (
+              <GlassButton
+                variant="glass"
+                size="sm"
+                onClick={() => setIsInviteOpen(true)}
+                icon={<Plus className="w-4 h-4 text-primary" />}
+              >
+                {isEs ? 'Añadir Miembro' : 'Add Member'}
+              </GlassButton>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -426,12 +476,25 @@ export const CrewDetailView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <span className="text-xs font-bold text-primary block">
-                    {t.crewDetail.nightsTogether(m.nightsTogether || 1)}
-                  </span>
-                  {m.walletAddress && (
-                    <span className="text-xs font-mono text-tertiary">{m.walletAddress.slice(0, 6)}...</span>
+                <div className="flex items-center gap-2">
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-primary block">
+                      {t.crewDetail.nightsTogether(m.nightsTogether || 1)}
+                    </span>
+                    {m.walletAddress && (
+                      <span className="text-xs font-mono text-tertiary">{m.walletAddress.slice(0, 6)}...</span>
+                    )}
+                  </div>
+                  {isAdmin && m.role !== 'owner' && m.userId !== crew.ownerId && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemoveMember(e, m.id)}
+                      className="p-2 ml-1 rounded-xl text-secondary hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      title={isEs ? 'Quitar del Crew' : 'Remove from Crew'}
+                      aria-label={isEs ? `Quitar a ${m.name} del Crew` : `Remove ${m.name} from Crew`}
+                    >
+                      <UserMinus className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
               </div>
@@ -441,13 +504,70 @@ export const CrewDetailView: React.FC = () => {
           {/* Add Member Modal */}
           {isInviteOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
-              <div className="w-full max-w-md rounded-3xl border border-divider bg-surface p-6 shadow-xl text-primary">
-                <h3 className="font-display font-bold text-xl text-primary mb-1">
-                  {isEs ? `Añadir Miembro a ${crew.name}` : `Add Member to ${crew.name}`}
-                </h3>
+              <div className="w-full max-w-md rounded-3xl border border-divider bg-surface p-6 shadow-xl text-primary max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-display font-bold text-xl text-primary">
+                    {isEs ? `Añadir Miembro a ${crew.name}` : `Add Member to ${crew.name}`}
+                  </h3>
+                  <button
+                    onClick={() => setIsInviteOpen(false)}
+                    className="w-8 h-8 rounded-full bg-surface-secondary flex items-center justify-center text-secondary hover:text-primary transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
                 <p className="text-xs text-secondary mb-4">
-                  {isEs ? 'Añade a un amigo directamente a tu círculo de confianza.' : 'Add a friend directly to your trust circle.'}
+                  {isEs ? 'Añade amigos con los que has ido de fiesta o invítalos por nombre.' : 'Add party peers or invite by name.'}
                 </p>
+
+                {/* Past party peers selector */}
+                {pastPartyPeers.length > 0 && (
+                  <div className="mb-5 pb-4 border-b border-divider">
+                    <span className="text-xs uppercase font-mono tracking-wider text-secondary block mb-2">
+                      {isEs ? 'Personas con las que has ido a fiesta' : 'People you partied with'}
+                    </span>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                      {pastPartyPeers.map((peer) => (
+                        <div
+                          key={peer.id}
+                          className="flex items-center justify-between p-2 rounded-xl bg-surface-secondary/70 border border-divider/60"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Avatar
+                              user={{
+                                name: peer.name,
+                                avatar: peer.avatar,
+                                id: peer.id,
+                              }}
+                              size="sm"
+                            />
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-primary block truncate">
+                                {peer.name}
+                              </span>
+                              <span className="text-[10px] text-secondary">
+                                {peer.nightsTogether} {peer.nightsTogether === 1 ? (isEs ? 'noche juntos' : 'night together') : (isEs ? 'noches juntos' : 'nights together')}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAddPastPeer(peer)}
+                            className="px-3 py-1.5 rounded-full bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>{isEs ? 'Añadir' : 'Add'}</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <span className="text-xs uppercase font-mono tracking-wider text-secondary block mb-2">
+                  {isEs ? 'O añadir manualmente' : 'Or add manually'}
+                </span>
+
                 <form onSubmit={handleAddMember} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-secondary mb-1">

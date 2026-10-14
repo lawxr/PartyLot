@@ -37,6 +37,7 @@ export const CreatePartyView: React.FC = () => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [partyName, setPartyName] = useState('');
   const [selectedCrewId, setSelectedCrewId] = useState<string>(currentCrewId || '');
+  const [addAllCrewMembers, setAddAllCrewMembers] = useState(true);
   const [selectedCover, setSelectedCover] = useState(SAMPLE_PARTY_COVERS[1].url);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
@@ -91,6 +92,7 @@ export const CreatePartyView: React.FC = () => {
         description,
         coverImage: selectedCover,
         crewId: validCrewId,
+        addAllCrewMembers: Boolean(validCrewId && addAllCrewMembers),
       });
 
       setCreatedParty(newParty);
@@ -301,6 +303,36 @@ export const CreatePartyView: React.FC = () => {
                           );
                         })}
                       </div>
+
+                      {selectedCrewId && (
+                        <div className="mt-3 p-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-center justify-between">
+                          <div className="pr-3">
+                            <p className="text-xs font-bold text-[#171512] dark:text-white">
+                              {isEs ? 'Agregar a todos los de la crew' : 'Add all crew members'}
+                            </p>
+                            <p className="text-[11px] text-[#8E887E] dark:text-[#A8A196]">
+                              {isEs
+                                ? 'Se invitarán automáticamente a esta fiesta'
+                                : 'They will be automatically invited to this party'}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={addAllCrewMembers}
+                            onClick={() => setAddAllCrewMembers((prev) => !prev)}
+                            className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 ${
+                              addAllCrewMembers ? 'bg-[#FFE600]' : 'bg-black/20 dark:bg-white/20'
+                            }`}
+                          >
+                            <div
+                              className={`bg-[#171512] w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                                addAllCrewMembers ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* FIELD 3: PORTADA */}
@@ -550,6 +582,7 @@ export const CreatePartyView: React.FC = () => {
                           {selectedCrewId && (
                             <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-[#FFE600]/20 text-[#171512] dark:text-white font-bold text-[10px]">
                               {crews.find((c) => c.id === selectedCrewId)?.name || 'Crew'}
+                              {addAllCrewMembers && (isEs ? ' · Miembros invitados' : ' · Members invited')}
                             </span>
                           )}
                         </div>

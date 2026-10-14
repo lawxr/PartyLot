@@ -53,6 +53,8 @@ export interface Party {
   createdAt: string;
   status: 'upcoming' | 'live' | 'past';
   crewId?: string;
+  potGoal?: number | null;
+  potMessage?: string | null;
 }
 
 export interface CrewMember {
@@ -129,6 +131,7 @@ export interface Expense {
   createdAt: string;
   category?: ExpenseCategory;
   isSettled?: boolean;
+  isSettlement?: boolean;
   txHash?: string;
 }
 

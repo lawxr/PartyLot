@@ -39,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="bg-[#F7F2E8] text-[#171512]">
+    <html lang="es" className="bg-[#F7F2E8] text-[#171512]" suppressHydrationWarning>
       <body className="min-h-screen bg-[#F7F2E8] text-[#171512] font-ui antialiased selection:bg-[#F0DC00] selection:text-[#171512] relative">
         <div className="grain" aria-hidden="true" />
         <ToastContainer />

@@ -19,6 +19,7 @@ export const HomeView: React.FC = () => {
   const {
     currentUser,
     parties,
+    isLoadingParties,
     crews,
     selectParty,
     setCurrentView,
@@ -122,7 +123,19 @@ export const HomeView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8 lg:items-start">
         {/* Main Party Card (Hero) */}
         <section className="lg:col-span-7 xl:col-span-8 mb-6 lg:mb-0">
-          {!heroParty ? (
+          {isLoadingParties && parties.length === 0 ? (
+            <div
+              data-testid="hero-party-skeleton"
+              className="w-full rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 bg-surface border border-divider shadow-xs flex flex-col justify-between min-h-[220px] sm:min-h-[260px] animate-pulse"
+            >
+              <div>
+                <div className="w-28 h-5 rounded-full bg-black/10 dark:bg-white/10 mb-4" />
+                <div className="w-3/4 h-8 rounded-xl bg-black/10 dark:bg-white/10 mb-3" />
+                <div className="w-1/2 h-4 rounded-lg bg-black/10 dark:bg-white/10" />
+              </div>
+              <div className="w-36 h-10 rounded-full bg-black/10 dark:bg-white/10 mt-6" />
+            </div>
+          ) : !heroParty ? (
             <div className="w-full rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 bg-surface border border-divider shadow-xs flex flex-col justify-between min-h-[220px] sm:min-h-[260px]">
               <div>
                 <span className="inline-flex items-center px-3 py-1 rounded-full bg-party-yellow/20 text-on-party-yellow dark:text-party-yellow font-bold text-xs">
@@ -338,7 +351,19 @@ export const HomeView: React.FC = () => {
           </div>
 
           {/* Upcoming Party Card */}
-          {(() => {
+          {isLoadingParties && parties.length === 0 ? (
+            <div
+              data-testid="upcoming-parties-skeleton"
+              className="rounded-[24px] p-4 bg-surface border border-divider shadow-xs flex items-center gap-3.5 sm:gap-4 animate-pulse"
+            >
+              <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-[18px] bg-black/10 dark:bg-white/10 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="w-1/3 h-3.5 rounded bg-black/10 dark:bg-white/10" />
+                <div className="w-3/4 h-5 rounded bg-black/10 dark:bg-white/10" />
+                <div className="w-1/2 h-3.5 rounded bg-black/10 dark:bg-white/10" />
+              </div>
+            </div>
+          ) : (() => {
             const upcomingParties = parties.slice(1);
             if (upcomingParties.length === 0) {
               return (

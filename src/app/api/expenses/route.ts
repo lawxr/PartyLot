@@ -158,6 +158,9 @@ export async function POST(request: NextRequest) {
     const paidByName = typeof payer.name === 'string' ? payer.name : '';
     const paidByAvatar = typeof payer.avatar === 'string' ? payer.avatar : '';
 
+    const txHash = typeof body.txHash === 'string' && body.txHash.startsWith('0x') ? body.txHash : null;
+    const isSettlement = Boolean(body.isSettlement || txHash);
+
     // 2. Insert only; expense IDs are never update selectors.
     const { error: insertErr } = await supabase.from('expenses').insert({
       id: expenseId,
@@ -169,7 +172,7 @@ export async function POST(request: NextRequest) {
       split_between_ids: splitBetweenIds,
       category,
       is_settled: false,
-      tx_hash: null,
+      tx_hash: txHash,
     });
 
     if (insertErr) {
@@ -224,6 +227,8 @@ export async function POST(request: NextRequest) {
       splitBetweenIds: splitBetweenIds as string[],
       category,
       isSettled: false,
+      isSettlement,
+      txHash: txHash || undefined,
       createdAt: 'Just now',
     };
 

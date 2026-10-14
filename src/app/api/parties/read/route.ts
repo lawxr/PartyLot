@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 const PRIVATE_HEADERS = { 'Cache-Control': 'private, no-store' };
 const PARTY_COLUMNS =
-  'id, code, title, date, time, location, description, cover_image, host_id, host_name, pot_balance, created_at, status, crew_id';
+  'id, code, title, date, time, location, description, cover_image, host_id, host_name, pot_balance, pot_goal, pot_message, created_at, status, crew_id';
 const MEMBER_COLUMNS =
   'party_id, user_id, name, avatar, role, status, nights_together, wallet_address';
 

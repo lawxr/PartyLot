@@ -2,10 +2,11 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Users, Sparkles, ShieldCheck, Camera, Loader2 } from 'lucide-react';
+import { X, Users, Sparkles, ShieldCheck, Camera, Loader2, Check } from 'lucide-react';
 import { usePartyStore } from '@/store/usePartyStore';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { uploadImageFile } from '@/services/storageService';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface CreateCrewModalProps {
   isOpen: boolean;
@@ -28,16 +29,25 @@ const COVER_PRESETS = [
 ];
 
 export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClose }) => {
-  const { createCrew } = usePartyStore();
+  const { createCrew, getPastPartyPeers } = usePartyStore();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCover, setSelectedCover] = useState(COVER_PRESETS[0].url);
+  const [selectedPeerIds, setSelectedPeerIds] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const pastPeers = getPastPartyPeers();
+
   if (!isOpen) return null;
+
+  const togglePeer = (peerId: string) => {
+    setSelectedPeerIds((prev) =>
+      prev.includes(peerId) ? prev.filter((id) => id !== peerId) : [...prev, peerId]
+    );
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,10 +72,23 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
 
     setIsSubmitting(true);
 
+    const initialMembers = pastPeers
+      .filter((p) => selectedPeerIds.includes(p.id))
+      .map((p) => ({
+        id: p.id,
+        userId: p.id,
+        name: p.name,
+        handle: p.handle,
+        avatar: p.avatar,
+        walletAddress: p.walletAddress,
+        nightsTogether: p.nightsTogether,
+      }));
+
     createCrew({
       name: name.trim(),
       description: description.trim() || 'Private trust network for gatherings.',
       coverImage: selectedCover,
+      initialMembers,
     });
 
     setIsSubmitting(false);
@@ -215,6 +238,71 @@ export const CreateCrewModal: React.FC<CreateCrewModalProps> = ({ isOpen, onClos
                 ))}
               </div>
             </div>
+
+            {/* Past Party Attendees / Peers */}
+            {pastPeers.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs uppercase font-mono tracking-wider text-[#6F6A62]">
+                    Personas con las que has ido a fiesta ({selectedPeerIds.length} seleccionadas)
+                  </label>
+                  {selectedPeerIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPeerIds([])}
+                      className="text-[11px] text-[#8E887E] hover:underline cursor-pointer"
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-40 overflow-y-auto space-y-1.5 p-2 rounded-2xl bg-[#F8F3EA] border border-[rgba(35,30,22,0.08)]">
+                  {pastPeers.map((peer) => {
+                    const isSelected = selectedPeerIds.includes(peer.id);
+                    return (
+                      <div
+                        key={peer.id}
+                        onClick={() => togglePeer(peer.id)}
+                        className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-[#F0DC00]/30 border border-[#F0DC00]/50 shadow-xs'
+                            : 'hover:bg-black/5 border border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Avatar
+                            user={{
+                              name: peer.name,
+                              avatar: peer.avatar,
+                              id: peer.id,
+                            }}
+                            size="sm"
+                          />
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-[#171512] block truncate">
+                              {peer.name}
+                            </span>
+                            <span className="text-[10px] text-[#6F6A62]">
+                              {peer.nightsTogether} {peer.nightsTogether === 1 ? 'noche juntos' : 'noches juntos'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div
+                          className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
+                            isSelected
+                              ? 'bg-[#171512] border-[#171512] text-white'
+                              : 'border-black/20 bg-white'
+                          }`}
+                        >
+                          {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Trust Network Notice */}
             <div className="p-3 rounded-2xl bg-[#F0DC00]/15 border border-[#F0DC00]/30 flex items-start gap-2.5">

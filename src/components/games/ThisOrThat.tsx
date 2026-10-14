@@ -89,6 +89,11 @@ export const ThisOrThat: React.FC = () => {
     setIndex((prev) => (prev + 1) % questions.length);
   };
 
+  const partyMembers = party?.members || [];
+  if (!party || partyMembers.length < 2) {
+    return null;
+  }
+
   return (
     <div className="w-full flex-1 flex flex-col justify-between">
       {/* 1. Header with Eyebrow */}

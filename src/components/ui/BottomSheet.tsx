@@ -40,6 +40,16 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     };
   }, [isOpen]);
 
+  // Keyboard Escape listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.y > 80 || info.velocity.y > 400) {
       onClose();
@@ -68,9 +78,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
             drag="y"
             dragConstraints={{ top: 0 }}
-            dragElastic={0.2}
+            dragElastic={{ top: 0, bottom: 0.5 }}
             onDragEnd={handleDragEnd}
-            className={`relative z-10 w-full max-w-lg sm:max-w-md bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-t-[34px] sm:rounded-[34px] overflow-hidden flex flex-col ${maxHeight} safe-bottom border border-[rgba(35,30,22,0.12)] dark:border-white/10 shadow-[0_-14px_70px_rgba(62,43,21,0.16)] text-[#171512] dark:text-[#F5F1E8]`}
+            className={`relative z-10 w-full max-w-lg sm:max-w-md bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-t-[34px] sm:rounded-[34px] overflow-hidden flex flex-col ${maxHeight} safe-bottom border border-[rgba(35,30,22,0.12)] dark:border-white/10 shadow-[0_-14px_70px_rgba(62,43,21,0.16)] text-[#171512] dark:text-[#F5F1E8] touch-pan-y`}
           >
             {/* Top Specular Rim Highlight */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent pointer-events-none" />
@@ -88,7 +98,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                 </h3>
                 <button
                   onClick={onClose}
-                  className="w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-[#171512]/70 hover:text-[#171512] dark:text-white/70 dark:hover:text-white flex items-center justify-center text-xs transition-colors shrink-0 cursor-pointer"
+                  className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-[#171512]/70 hover:text-[#171512] dark:text-white/70 dark:hover:text-white flex items-center justify-center text-xs transition-colors shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-party-yellow"
                   aria-label="Close"
                 >
                   <X className="w-4 h-4" />

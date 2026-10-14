@@ -349,6 +349,10 @@ export interface TranslationDictionary {
     backToParty: string;
     liveGathering: string;
     inRoom: (count: number) => string;
+    waitingForPlayers: string;
+    minPlayersRequired: (current: number, min: number) => string;
+    waitingForFriend: string;
+    gamesLockedHint: string;
     availableGames: string;
     inviteFriendsToPlay: string;
     inviteRequiredDescription: string;
@@ -420,6 +424,11 @@ export interface TranslationDictionary {
     time: string;
     location: string;
     description: string;
+    potGoal: string;
+    potGoalHint: string;
+    potMessage: string;
+    potMessageHint: string;
+    potMessagePlaceholder: string;
     cover: string;
     changePhoto: string;
     uploading: string;
@@ -814,6 +823,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       backToParty: 'Volver a la fiesta',
       liveGathering: 'FIESTA EN CURSO',
       inRoom: (count) => `${count} en la sala`,
+      waitingForPlayers: 'Esperando jugadores en tiempo real',
+      minPlayersRequired: (current, min) => `${current} de ${min} jugadores necesarios`,
+      waitingForFriend: 'Esperando amigo...',
+      gamesLockedHint: 'Invita a al menos un amigo más a la fiesta para desbloquear los juegos.',
       availableGames: 'Juegos disponibles',
       inviteFriendsToPlay: 'Invita a tu grupo para jugar',
       inviteRequiredDescription: 'Este juego necesita al menos 2 personas en la fiesta para poder votar quién encaja mejor con cada pregunta.',
@@ -885,6 +898,11 @@ export const translations: Record<Language, TranslationDictionary> = {
       time: 'Hora',
       location: 'Ubicación',
       description: 'Descripción',
+      potGoal: 'Meta voluntaria del Bote (MON)',
+      potGoalHint: 'Meta opcional en MON. Los aportes son 100% voluntarios y no condicionan la asistencia ni liquidan deudas.',
+      potMessage: 'Propósito del bote / Mensaje del anfitrión',
+      potMessageHint: 'Explica a los invitados en qué se usará el fondo voluntario.',
+      potMessagePlaceholder: 'Ej. Para hielos, vasos y snacks. Todo aporte voluntario suma.',
       cover: 'Foto de portada',
       changePhoto: 'Cambiar foto',
       uploading: 'Subiendo…',
@@ -1277,6 +1295,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       backToParty: 'Back to party',
       liveGathering: 'LIVE GATHERING',
       inRoom: (count) => `${count} playing`,
+      waitingForPlayers: 'Waiting for real-time players',
+      minPlayersRequired: (current, min) => `${current} of ${min} players required`,
+      waitingForFriend: 'Waiting for friend...',
+      gamesLockedHint: 'Invite at least one more friend to the party to unlock games.',
       availableGames: 'Available games',
       inviteFriendsToPlay: 'Invite friends to play',
       inviteRequiredDescription: 'This game requires at least 2 members in the party to vote on who fits each prompt best.',
@@ -1348,6 +1370,11 @@ export const translations: Record<Language, TranslationDictionary> = {
       time: 'Time',
       location: 'Location',
       description: 'Description',
+      potGoal: 'Voluntary Pot Goal (MON)',
+      potGoalHint: 'Optional target in MON. Contributions are 100% voluntary and never gate attendance or offset individual debts.',
+      potMessage: 'Pot Purpose / Host Note',
+      potMessageHint: 'Explain to guests how the voluntary fund will be used.',
+      potMessagePlaceholder: 'e.g. For ice, cups, and snacks. Any contribution helps.',
       cover: 'Cover photo',
       changePhoto: 'Change photo',
       uploading: 'Uploading…',

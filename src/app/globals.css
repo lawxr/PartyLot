@@ -130,8 +130,21 @@
 html {
   background-color: var(--background);
   color: var(--foreground);
-  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
+}
+
+@media (pointer: fine) {
+  html {
+    overscroll-behavior: none;
+  }
+}
+
+button, [role="button"], a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 html.dark,

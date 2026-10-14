@@ -40,7 +40,7 @@ import { getCoverUrl } from '@/lib/imageOptimization';
 import { Avatar } from '@/components/ui/Avatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { toast } from '@/store/useToastStore';
-import { resolveActivityActor, resolveActivityNarrative, deduplicateActivities } from '@/lib/activityActor';
+import { resolveActivityActor, resolveActivityNarrative, deduplicateActivities, formatActivityTime } from '@/lib/activityActor';
 import { DEFAULT_PARTY_COVER } from '@/data/mockData';
 import { Web3ErrorBanner } from '@/components/ui/Web3ErrorBanner';
 import { formatWeb3Error, type FormattedWeb3Error } from '@/lib/web3Error';
@@ -48,6 +48,7 @@ import { formatWeb3Error, type FormattedWeb3Error } from '@/lib/web3Error';
 export const PartyDetailView: React.FC = () => {
   const {
     parties,
+    isLoadingParties,
     currentPartyId,
     memories,
     activities,
@@ -227,6 +228,18 @@ export const PartyDetailView: React.FC = () => {
   }, [party?.id, listenToActivePartyRealtime, loadPartyFromSupabase]);
 
   if (!party) {
+    if (isLoadingParties) {
+      return (
+        <div
+          data-testid="party-detail-skeleton"
+          className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] flex flex-col items-center justify-center p-6 text-center animate-pulse"
+        >
+          <div className="w-16 h-16 rounded-full bg-black/10 dark:bg-white/10 mb-4" />
+          <div className="w-48 h-6 rounded-xl bg-black/10 dark:bg-white/10 mb-2" />
+          <div className="w-32 h-4 rounded-lg bg-black/10 dark:bg-white/10" />
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-[#F7F2E8] dark:bg-[#12110E] flex flex-col items-center justify-center p-6 text-center">
         <h2 className="font-display font-black text-2xl text-[#171512] dark:text-white mb-2">
@@ -418,232 +431,245 @@ export const PartyDetailView: React.FC = () => {
             })}
           </nav>
 
-          {/* Desktop grid */}
+          {/* Desktop & Mobile Responsive Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8 lg:items-start -mt-5 lg:mt-0">
-            {/* Party Pot Summary Card (Directly below Quick Actions on mobile, right column on desktop) */}
-            <article
-              aria-label={isEs ? 'Bote de la fiesta' : 'Party Pot'}
-              className="lg:col-span-5 xl:col-span-4 lg:col-start-8 xl:col-start-9 lg:row-start-1 min-h-[108px] sm:min-h-[118px] grid grid-cols-[1fr_auto] items-center gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-[32px] transition-all bg-surface/80 border border-divider shadow-xs backdrop-blur-md"
-            >
-              <button
-                type="button"
-                onClick={() => setCurrentView('party-pot')}
-                className="flex items-center gap-3 sm:gap-3.5 text-left min-w-0 cursor-pointer rounded-2xl focus-visible:outline-2 focus-visible:outline-party-yellow"
-                aria-label={isEs ? `Ver bote de la fiesta: $${(party?.potBalance ?? 0).toFixed(2)}` : `View party pot: $${(party?.potBalance ?? 0).toFixed(2)}`}
+            {/* Right Column: Pot Card + Live Mini-games immediately beneath it (PC layout) */}
+            <div className="order-1 lg:order-2 lg:col-span-5 xl:col-span-4 lg:col-start-8 xl:col-start-9 flex flex-col gap-4">
+              {/* Party Pot Summary Card */}
+              <article
+                aria-label={isEs ? 'Bote de la fiesta' : 'Party Pot'}
+                className="min-h-[108px] sm:min-h-[118px] grid grid-cols-[1fr_auto] items-center gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-[32px] transition-all bg-surface/80 border border-divider shadow-xs backdrop-blur-md"
               >
-                <div
-                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-primary dark:text-party-yellow bg-surface-muted shadow-inner shrink-0"
-                  aria-hidden="true"
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('party-pot')}
+                  className="flex items-center gap-3 sm:gap-3.5 text-left min-w-0 cursor-pointer rounded-2xl focus-visible:outline-2 focus-visible:outline-party-yellow"
+                  aria-label={isEs ? `Ver bote de la fiesta: $${(party?.potBalance ?? 0).toFixed(2)}` : `View party pot: $${(party?.potBalance ?? 0).toFixed(2)}`}
                 >
-                  <Coins className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.35]" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-xs sm:text-sm font-medium text-primary tracking-tight block leading-none">
-                    {isEs ? 'Bote de la fiesta' : 'Party Pot'}
-                  </span>
-                  <div className="flex items-center gap-1.5 mt-1 mb-0.5">
-                    <span className="font-display font-black text-xl sm:text-[26px] text-primary tracking-tight leading-none">
-                      ${(party?.potBalance ?? 0).toFixed(2)}
-                    </span>
-                    <span className="text-xs font-bold text-secondary bg-surface-secondary border border-divider px-2 py-0.5 rounded-full inline-flex items-center">
-                      {isEs ? 'Fondo común' : 'Pool'}
-                    </span>
+                  <div
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-primary dark:text-party-yellow bg-surface-muted shadow-inner shrink-0"
+                    aria-hidden="true"
+                  >
+                    <Coins className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.35]" />
                   </div>
-                  <span className="text-xs text-secondary font-medium tracking-tight block truncate">
-                    {isEs ? 'Aportes del grupo para la noche' : 'Group pool for tonight'}
-                  </span>
-                </div>
-              </button>
-
-            {/* Add Button with Flat Party Yellow */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsPotSheetOpen(true)}
-              className="flex items-center gap-1.5 sm:gap-2 rounded-full py-2 sm:py-2.5 px-3.5 sm:px-4 bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow text-xs sm:text-sm font-bold shadow-xs cursor-pointer shrink-0"
-              aria-label={isEs ? 'Añadir dinero al bote' : 'Add money to party pot'}
-            >
-              <div className="w-4 h-4 rounded-full bg-black/80 text-white flex items-center justify-center p-0.5">
-                <Plus className="w-2.5 h-2.5 stroke-[3] text-white" />
-              </div>
-              <span>{isEs ? 'Añadir' : 'Add'}</span>
-            </motion.button>
-          </article>
-
-          {/* Activity feed */}
-          <section className="mt-6 lg:mt-0 lg:col-span-7 xl:col-span-8 lg:col-start-1 lg:row-start-1">
-            <div className="flex items-center justify-between mb-3 px-1">
-              <h3 className="font-display font-extrabold text-base text-[#171512] dark:text-white tracking-tight">
-                {isEs ? 'Actividad en vivo' : 'Live activity'}
-              </h3>
-              <button
-                onClick={() => {
-                  setActiveTab('activity');
-                  setCurrentView('home');
-                }}
-                className="text-xs font-semibold text-[#8E887E] dark:text-[#A8A196] hover:text-[#171512] dark:hover:text-white flex items-center gap-0.5 transition-colors cursor-pointer"
-              >
-                <span>{isEs ? 'Ver todo' : 'See all'}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Clean Activity Rows directly on warm cream background */}
-            <div className="space-y-1">
-              {partyActivities.length > 0 ? (
-                partyActivities.slice(0, 5).map((act) => {
-                  const getActivityIcon = (type: string) => {
-                    switch (type) {
-                      case 'pot':
-                        return Coins;
-                      case 'game':
-                        return Gamepad2;
-                      case 'poll':
-                        return BarChart3;
-                      case 'expense':
-                        return Receipt;
-                      default:
-                        return Users;
-                    }
-                  };
-                  const Icon = getActivityIcon(act.type);
-
-                  const actor = resolveActivityActor(act, hostName, partyMembers, currentUser);
-
-                  return (
-                    <div
-                      key={act.id}
-                      className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="relative shrink-0">
-                          <Avatar
-                            user={{
-                              avatar: actor.avatar || act.avatar,
-                              name: actor.name,
-                              id: actor.id,
-                            }}
-                            size="md"
-                          />
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-party-yellow text-on-party-yellow flex items-center justify-center border border-surface shadow-xs">
-                            <Icon className="w-2.5 h-2.5 stroke-[2.5]" />
-                          </div>
-                        </div>
-                        <p className="text-xs sm:text-sm text-primary truncate font-medium">
-                          <span className="font-bold text-primary mr-1">
-                            {actor.name}
-                          </span>
-                          <span>
-                            {resolveActivityNarrative(act, actor.name)}
-                          </span>
-                        </p>
-                      </div>
-                      <span className="text-[11px] text-[#8E887E] dark:text-[#A8A196] font-medium shrink-0 ml-2">
-                        {act.time}
+                  <div className="min-w-0">
+                    <span className="text-xs sm:text-sm font-medium text-primary tracking-tight block leading-none">
+                      {isEs ? 'Bote de la fiesta' : 'Party Pot'}
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-1 mb-0.5">
+                      <span className="font-display font-black text-xl sm:text-[26px] text-primary tracking-tight leading-none tabular-nums">
+                        ${(party?.potBalance ?? 0).toFixed(2)}
+                      </span>
+                      <span className="text-xs font-bold text-secondary bg-surface-secondary border border-divider px-2 py-0.5 rounded-full inline-flex items-center">
+                        {isEs ? 'Fondo común' : 'Pool'}
                       </span>
                     </div>
-                  );
-                })
-              ) : (
-                <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] text-center text-xs text-[#8E887E] dark:text-[#A8A196]">
-                  {isEs
-                    ? 'Sin actividad reciente todavía. ¡Sé el primero en aportar o jugar!'
-                    : 'No recent activity yet. Be the first to contribute or play!'}
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Memories */}
-          <section className="mt-8 lg:mt-6 lg:col-span-7 xl:col-span-8 lg:col-start-1 lg:row-start-2">
-            <div className="flex items-center justify-between mb-3 px-1">
-              <h3 className="font-display font-extrabold text-base text-[#171512] dark:text-white tracking-tight flex items-center gap-1.5">
-                <span>{isEs ? 'Álbum compartido' : 'Shared album'}</span>
-              </h3>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="py-1 px-3 rounded-full bg-[#F0DC00]/20 hover:bg-[#F0DC00]/30 text-[#171512] dark:text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{isEs ? 'Subir foto' : 'Add photo'}</span>
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </div>
-
-            {/* Photo Grid */}
-            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {partyMemories.length > 0 ? (
-                partyMemories.slice(0, 6).map((mem, i) => (
-                  <div
-                    key={mem.id || i}
-                    onClick={() => setSelectedPhoto(mem as PartyMemory)}
-                    className="h-24 sm:h-28 rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:scale-102 transition-transform relative group"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={mem.imageUrl} alt="Memory" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-full py-8 px-4 text-center rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.07] dark:border-white/10">
-                  <Camera className="w-7 h-7 text-[#8E887E] dark:text-[#A8A196] mx-auto mb-2 opacity-60" />
-                  <p className="text-xs text-[#8E887E] dark:text-[#A8A196] font-medium">
-                    {isEs ? 'Aún no hay fotos en este álbum.' : 'No photos in this album yet.'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="mt-2 text-xs font-bold text-[#171512] dark:text-[#F5F1E8] underline underline-offset-2 hover:text-[#B89600] dark:hover:text-[#F0DC00] transition-colors cursor-pointer"
-                  >
-                    {isEs ? 'Sé el primero en subir una' : 'Be the first to upload one'}
-                  </button>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Desktop-only Games & Polls Shortcuts */}
-          <section className="hidden lg:block lg:col-span-5 xl:col-span-4 lg:col-start-8 xl:col-start-9 lg:row-start-2 lg:mt-6 space-y-4">
-            <div className="rounded-[28px] p-5 bg-[#FFFDF8] dark:bg-[#1C1A16] border border-black/[0.07] dark:border-white/10 shadow-[0_4px_20px_rgba(40,30,20,0.04)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-display font-bold text-sm text-[#171512] dark:text-white">
-                  {isEs ? 'Mini-juegos en vivo' : 'Live Party Games'}
-                </h4>
-                <button
-                  onClick={() => setCurrentView('games')}
-                  className="text-xs font-bold text-[#171512] dark:text-[#F5F1E8] hover:text-[#B89600] dark:hover:text-[#F0DC00] transition-colors cursor-pointer"
-                >
-                  {isEs ? 'Jugar' : 'Play'}
-                </button>
-              </div>
-              <div
-                onClick={() => setCurrentView('games')}
-                className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between cursor-pointer hover:bg-amber-500/15 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-700 dark:text-amber-300">
-                    <Gamepad2 className="w-4 h-4 stroke-[2.5]" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-primary block">Who&apos;s Most Likely</span>
-                    <span className="text-xs text-secondary">
-                      {partyMembers.length > 0
-                        ? (isEs ? `${partyMembers.length} participantes` : `${partyMembers.length} active players`)
-                        : (isEs ? 'Juegos de fiesta' : 'Party games')}
+                    <span className="text-xs text-secondary font-medium tracking-tight block leading-snug">
+                      {isEs ? 'Aportes del grupo para la noche' : 'Group pool for tonight'}
                     </span>
                   </div>
+                </button>
+
+                {/* Add Button with Flat Party Yellow */}
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setIsPotSheetOpen(true)}
+                  className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 sm:gap-2 rounded-full py-2.5 px-3.5 sm:px-4 bg-party-yellow hover:bg-party-yellow-hover text-on-party-yellow text-xs sm:text-sm font-bold shadow-xs cursor-pointer shrink-0 focus-visible:outline-2 focus-visible:outline-party-yellow"
+                  aria-label={isEs ? 'Añadir dinero al bote' : 'Add money to party pot'}
+                >
+                  <div className="w-4 h-4 rounded-full bg-black/80 text-white flex items-center justify-center p-0.5">
+                    <Plus className="w-2.5 h-2.5 stroke-[3] text-white" />
+                  </div>
+                  <span>{isEs ? 'Añadir' : 'Add'}</span>
+                </motion.button>
+              </article>
+
+              {/* Desktop-only Games & Polls Shortcuts (DIRECTLY UNDER POT) */}
+              <section className="hidden lg:block">
+                <div className="rounded-[28px] p-4 sm:p-5 bg-surface border border-divider shadow-xs">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <h4 className="font-display font-bold text-sm text-primary">
+                        {isEs ? 'Mini-juegos en vivo' : 'Live Party Games'}
+                      </h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentView('games')}
+                      className="min-h-[40px] px-3 -mr-2 text-xs font-bold text-primary hover:text-party-yellow-pressed transition-colors cursor-pointer flex items-center justify-center rounded-xl focus-visible:outline-2 focus-visible:outline-party-yellow"
+                    >
+                      {isEs ? 'Jugar' : 'Play'}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentView('games')}
+                    className="w-full text-left p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between cursor-pointer hover:bg-amber-500/15 active:scale-[0.99] transition-all focus-visible:outline-2 focus-visible:outline-party-yellow"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-700 dark:text-amber-300 shrink-0">
+                        <Gamepad2 className="w-5 h-5 stroke-[2.3]" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-primary block">
+                          {isEs ? '¿Quién es más probable?' : "Who's Most Likely"}
+                        </span>
+                        <span className="text-xs text-secondary block mt-0.5">
+                          {partyMembers.length > 0
+                            ? (isEs ? `${partyMembers.length} participantes` : `${partyMembers.length} active players`)
+                            : (isEs ? 'Juegos de fiesta listos' : 'Party games ready')}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-secondary shrink-0" />
+                  </button>
                 </div>
-                <ChevronRight className="w-4 h-4 text-secondary" />
-              </div>
+              </section>
             </div>
-          </section>
+
+            {/* Left Column: Activity Feed + Shared Album */}
+            <div className="order-2 lg:order-1 lg:col-span-7 xl:col-span-8 lg:col-start-1 space-y-6 lg:space-y-8 mt-6 lg:mt-0">
+              {/* Activity feed */}
+              <section>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h3 className="font-display font-extrabold text-base text-primary tracking-tight">
+                    {isEs ? 'Actividad en vivo' : 'Live activity'}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setActiveTab('activity');
+                      setCurrentView('home');
+                    }}
+                    className="text-xs font-semibold text-secondary hover:text-primary flex items-center gap-0.5 transition-colors cursor-pointer min-h-[44px] sm:min-h-0 flex items-center"
+                  >
+                    <span>{isEs ? 'Ver todo' : 'See all'}</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Clean Activity Rows directly on warm cream background */}
+                <div className="space-y-1">
+                  {partyActivities.length > 0 ? (
+                    partyActivities.slice(0, 5).map((act) => {
+                      const getActivityIcon = (type: string) => {
+                        switch (type) {
+                          case 'pot':
+                            return Coins;
+                          case 'game':
+                            return Gamepad2;
+                          case 'poll':
+                            return BarChart3;
+                          case 'expense':
+                            return Receipt;
+                          default:
+                            return Users;
+                        }
+                      };
+                      const Icon = getActivityIcon(act.type);
+
+                      const actor = resolveActivityActor(act, hostName, partyMembers, currentUser);
+
+                      return (
+                        <div
+                          key={act.id}
+                          className="flex items-center justify-between p-2 rounded-2xl hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="relative shrink-0">
+                              <Avatar
+                                user={{
+                                  avatar: actor.avatar || act.avatar,
+                                  name: actor.name,
+                                  id: actor.id,
+                                }}
+                                size="md"
+                              />
+                              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-party-yellow text-on-party-yellow flex items-center justify-center border border-surface shadow-xs">
+                                <Icon className="w-2.5 h-2.5 stroke-[2.5]" />
+                              </div>
+                            </div>
+                            <p className="text-xs sm:text-sm text-primary truncate font-medium">
+                              <span className="font-bold text-primary mr-1">
+                                {actor.name}
+                              </span>
+                              <span>
+                                {resolveActivityNarrative(act, actor.name, isEs ? 'es' : 'en')}
+                              </span>
+                            </p>
+                          </div>
+                          <span className="text-[11px] text-secondary font-medium shrink-0 ml-2 tabular-nums">
+                            {formatActivityTime(act.time, isEs ? 'es' : 'en')}
+                          </span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] text-center text-xs text-secondary">
+                      {isEs
+                        ? 'Sin actividad reciente todavía. ¡Sé el primero en aportar o jugar!'
+                        : 'No recent activity yet. Be the first to contribute or play!'}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Memories */}
+              <section>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h3 className="font-display font-extrabold text-base text-primary tracking-tight flex items-center gap-1.5">
+                    <span>{isEs ? 'Álbum compartido' : 'Shared album'}</span>
+                  </h3>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="py-1.5 px-3.5 rounded-full bg-[#F0DC00]/20 hover:bg-[#F0DC00]/30 text-primary text-xs font-bold transition-all flex items-center gap-1 cursor-pointer min-h-[44px] sm:min-h-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{isEs ? 'Subir foto' : 'Add photo'}</span>
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </div>
+
+                {/* Photo Grid */}
+                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {partyMemories.length > 0 ? (
+                    partyMemories.slice(0, 6).map((mem, i) => (
+                      <div
+                        key={mem.id || i}
+                        onClick={() => setSelectedPhoto(mem as PartyMemory)}
+                        className="h-24 sm:h-28 rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:scale-102 transition-transform relative group"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={mem.imageUrl} alt="Memory" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-8 px-4 text-center rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.07] dark:border-white/10">
+                      <Camera className="w-7 h-7 text-secondary mx-auto mb-2 opacity-60" />
+                      <p className="text-xs text-secondary font-medium">
+                        {isEs ? 'Aún no hay fotos en este álbum.' : 'No photos in this album yet.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="mt-2 text-xs font-bold text-primary underline underline-offset-2 hover:text-[#B89600] dark:hover:text-[#F0DC00] transition-colors cursor-pointer min-h-[44px] sm:min-h-0 flex items-center justify-center mx-auto"
+                      >
+                        {isEs ? 'Sé el primero en subir una' : 'Be the first to upload one'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
 
       {/* Party Pot Bottom Sheet */}
       <AnimatePresence>
@@ -658,21 +684,30 @@ export const PartyDetailView: React.FC = () => {
               className="fixed inset-0 bg-black/45 backdrop-blur-[10px]"
             />
 
-            {/* Bottom sheet */}
+            {/* Bottom sheet with native mobile drag-to-dismiss */}
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="relative z-10 w-full max-w-md bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-t-[36px] sm:rounded-[36px] p-6 sm:p-8 flex flex-col items-center text-center shadow-[0_-14px_70px_rgba(62,43,21,0.18)] dark:shadow-[0_-14px_70px_rgba(0,0,0,0.6)] border border-white/85 dark:border-white/15 safe-bottom transition-colors duration-200"
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={{ top: 0, bottom: 0.5 }}
+              onDragEnd={(_e, info) => {
+                if (info.offset.y > 80 || info.velocity.y > 400) {
+                  setIsPotSheetOpen(false);
+                }
+              }}
+              className="relative z-10 w-full max-w-md bg-[#FFFDF8] dark:bg-[#1C1A16] rounded-t-[36px] sm:rounded-[36px] p-6 sm:p-8 flex flex-col items-center text-center shadow-[0_-14px_70px_rgba(62,43,21,0.18)] dark:shadow-[0_-14px_70px_rgba(0,0,0,0.6)] border border-white/85 dark:border-white/15 safe-bottom transition-colors duration-200 touch-pan-y"
             >
-              {/* Drag Handle */}
-              <div className="w-9 h-1.5 rounded-full bg-[#504437]/25 dark:bg-white/20 mb-4 shrink-0 sm:hidden" />
+              {/* Drag Handle with tactile feedback */}
+              <div className="w-10 h-1.5 rounded-full bg-[#504437]/25 dark:bg-white/20 mb-4 shrink-0 sm:hidden cursor-grab active:cursor-grabbing" />
 
-              {/* Close Button top-right */}
+              {/* Close Button top-right with accessible hit target */}
               <button
                 onClick={() => setIsPotSheetOpen(false)}
-                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#171512] dark:text-white border border-white/60 dark:border-white/10 active:scale-90 transition-transform cursor-pointer"
+                className="absolute top-4 right-4 w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 flex items-center justify-center text-primary border border-white/60 dark:border-white/10 active:scale-90 transition-transform cursor-pointer"
+                aria-label={isEs ? 'Cerrar' : 'Close'}
               >
                 <X className="w-4 h-4" />
               </button>

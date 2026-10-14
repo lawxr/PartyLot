@@ -134,6 +134,8 @@ export async function joinPartyWithInviteCode(
         walletAddress: (m.wallet_address as string) || undefined,
       })),
       potBalance: Number(rawParty.pot_balance) || 0,
+      potGoal: rawParty.pot_goal != null ? Number(rawParty.pot_goal) : undefined,
+      potMessage: rawParty.pot_message ? String(rawParty.pot_message) : undefined,
       createdAt: rawParty.created_at || new Date().toISOString(),
       status: (rawParty.status as 'upcoming' | 'live' | 'past') || 'upcoming',
     };
@@ -331,8 +333,9 @@ export function subscribeToPartyRealtime(
   const supabase = getSupabase();
   if (!supabase) return () => {};
 
+  const channelName = `party-${partyId}-${Math.random().toString(36).slice(2, 9)}`;
   const channel = supabase
-    .channel(`party-${partyId}`)
+    .channel(channelName)
     .on(
       'postgres_changes',
       {
@@ -455,8 +458,28 @@ export async function addMemberToCrewInDb(
 }
 
 /**
-  * Subscribes to real-time changes on Crews and Crew Members
-  */
+ * Removes a member from a Crew in Supabase
+ */
+export async function removeMemberFromCrewInDb(
+  crewId: string,
+  userId: string
+): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  try {
+    await supabase.from('crew_members').delete().match({
+      crew_id: crewId,
+      user_id: userId,
+    });
+  } catch (err) {
+    console.warn('Failed to remove crew member from Supabase:', err);
+  }
+}
+
+/**
+ * Subscribes to real-time changes on Crews and Crew Members
+ */
 export function subscribeToCrewsRealtime(onCrewChange: () => void): () => void {
   const supabase = getSupabase();
   if (!supabase) return () => {};
@@ -530,8 +553,9 @@ export function subscribeToTasksRealtime(partyId: string, onTaskChange: () => vo
   const supabase = getSupabase();
   if (!supabase) return () => {};
 
+  const channelName = `tasks-${partyId}-${Math.random().toString(36).slice(2, 9)}`;
   const channel = supabase
-    .channel(`tasks-${partyId}`)
+    .channel(channelName)
     .on(
       'postgres_changes',
       {
@@ -676,6 +700,8 @@ export async function fetchPartiesFromDb(userId?: string): Promise<Party[]> {
       hostId: p.host_id || 'u-host',
       hostName: p.host_name || 'Host',
       potBalance: Number(p.pot_balance) || 0,
+      potGoal: p.pot_goal != null ? Number(p.pot_goal) : undefined,
+      potMessage: p.pot_message ? String(p.pot_message) : undefined,
       status: (p.status as 'upcoming' | 'live' | 'past') || 'upcoming',
       createdAt: p.created_at,
       crewId: p.crew_id || undefined,
@@ -729,6 +755,12 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
       isSettled: Boolean(e.is_settled),
       createdAt: String(e.created_at || ''),
       txHash: e.tx_hash ? String(e.tx_hash) : undefined,
+      isSettlement: Boolean(
+        e.is_settlement ||
+        e.tx_hash ||
+        String(e.id).startsWith('settle-') ||
+        String(e.description).startsWith('Settlement:')
+      ),
     }));
 
     const transactions: PotTransaction[] = (data.transactions || []).map((t: Record<string, unknown>) => ({
@@ -795,6 +827,8 @@ export async function fetchPartyDetailsFromDb(partyId: string) {
       hostId: p.host_id || 'u-host',
       hostName: p.host_name || 'Host',
       potBalance: Number(p.pot_balance) || 0,
+      potGoal: p.pot_goal != null ? Number(p.pot_goal) : undefined,
+      potMessage: p.pot_message ? String(p.pot_message) : undefined,
       status: (p.status as 'upcoming' | 'live' | 'past') || 'upcoming',
       createdAt: p.created_at,
       crewId: p.crew_id || undefined,

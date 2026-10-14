@@ -100,6 +100,11 @@ export const CrewTrivia: React.FC = () => {
     setIsGameOver(false);
   };
 
+  const partyMembers = party?.members || [];
+  if (!party || partyMembers.length < 2) {
+    return null;
+  }
+
   if (isGameOver) {
     return (
       <div className="w-full flex-1 flex flex-col justify-between">

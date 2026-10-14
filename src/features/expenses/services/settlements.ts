@@ -7,16 +7,22 @@ import type { Expense, Member, NetBalance, DebtSettlement } from '../types';
  */
 export function calculateNetBalances(expenses: Expense[], members: Member[]): NetBalance[] {
   const balanceMap: Record<string, number> = {};
+  const metaMap: Record<string, { name: string; avatar?: string }> = {};
 
-  // Initialize all members with 0
+  // Initialize all current members with 0
   members.forEach((m) => {
     balanceMap[m.id] = 0;
+    metaMap[m.id] = { name: m.name, avatar: m.avatar };
   });
 
   // Accumulate paid amounts and owed shares for unsettled expenses
   expenses.forEach((exp) => {
     if (exp.isSettled) return;
     if (!exp.splitBetweenIds || exp.splitBetweenIds.length === 0) return;
+
+    if (exp.paidById && !metaMap[exp.paidById]) {
+      metaMap[exp.paidById] = { name: exp.paidByName || 'Former Member', avatar: exp.paidByAvatar };
+    }
 
     const share = exp.amount / exp.splitBetweenIds.length;
 
@@ -26,15 +32,41 @@ export function calculateNetBalances(expenses: Expense[], members: Member[]): Ne
     // Debit split participants
     exp.splitBetweenIds.forEach((participantId) => {
       balanceMap[participantId] = (balanceMap[participantId] || 0) - share;
+      if (!metaMap[participantId]) {
+        metaMap[participantId] = { name: 'Former Member', avatar: '' };
+      }
     });
   });
 
-  return members.map((m) => ({
-    memberId: m.id,
-    memberName: m.name,
-    avatar: m.avatar,
-    netAmount: Math.round((balanceMap[m.id] || 0) * 100) / 100,
-  }));
+  // Preserve all members in members list, PLUS any historical participant with non-zero balance
+  const result: NetBalance[] = [];
+  const visited = new Set<string>();
+
+  members.forEach((m) => {
+    visited.add(m.id);
+    result.push({
+      memberId: m.id,
+      memberName: m.name,
+      avatar: m.avatar,
+      netAmount: Math.round((balanceMap[m.id] || 0) * 100) / 100,
+    });
+  });
+
+  Object.keys(balanceMap).forEach((id) => {
+    if (!visited.has(id)) {
+      const netAmount = Math.round((balanceMap[id] || 0) * 100) / 100;
+      if (Math.abs(netAmount) >= 0.01) {
+        result.push({
+          memberId: id,
+          memberName: metaMap[id]?.name || 'Former Member',
+          avatar: metaMap[id]?.avatar || '',
+          netAmount,
+        });
+      }
+    }
+  });
+
+  return result;
 }
 
 /**

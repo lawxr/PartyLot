@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS parties (
   max_guests INTEGER DEFAULT 50,
   status TEXT DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'active', 'ended')),
   pot_balance DECIMAL(10, 2) DEFAULT 0.00,
+  pot_goal NUMERIC(12, 4) DEFAULT NULL,
+  pot_message TEXT DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

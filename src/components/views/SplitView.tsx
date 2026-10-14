@@ -24,6 +24,7 @@ import {
   SplitOptionsMenu,
   calculateNetBalances,
   computeDebtSettlements,
+  formatMonAmount,
 } from '@/features/expenses';
 import type { Expense, ExpenseCategory } from '@/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -192,7 +193,7 @@ export const SplitView: React.FC = () => {
       avatar: s.fromAvatar,
       subtitle: isEs ? 'Debe transferir' : 'Owes you',
       type: 'debtor' as const,
-      amount: `${s.amount.toFixed(2)} MON`,
+      amount: formatMonAmount(s.amount),
     }));
 
   // Calculate real creditor list from settlements
@@ -204,7 +205,7 @@ export const SplitView: React.FC = () => {
       avatar: s.toAvatar,
       subtitle: isEs ? 'Debes transferir' : 'You owe',
       type: 'creditor' as const,
-      amount: `${s.amount.toFixed(2)} MON`,
+      amount: formatMonAmount(s.amount),
     }));
 
   // Other members' settlements that don't directly involve currentUser
@@ -214,7 +215,7 @@ export const SplitView: React.FC = () => {
       id: `${s.fromId}-${s.toId}`,
       fromName: s.fromName,
       toName: s.toName,
-      amount: `${s.amount.toFixed(2)} MON`,
+      amount: formatMonAmount(s.amount),
     }));
 
   // Combine debtors and creditors for the equal tab display
@@ -314,7 +315,7 @@ export const SplitView: React.FC = () => {
             </div>
 
             <div className="font-display font-black text-3xl sm:text-4xl text-[#171512] dark:text-white tracking-tight mb-1">
-              {totalAmount.toFixed(2)} MON
+              {formatMonAmount(totalAmount)}
             </div>
 
             <p className="text-xs text-[#8A8173] dark:text-[#A8A196] font-medium">
@@ -537,7 +538,7 @@ export const SplitView: React.FC = () => {
                   {isEs ? 'Participación por integrante' : 'Member breakdown'}
                 </span>
                 <span className="text-xs font-bold text-[#B89600] dark:text-[#F0DC00]">
-                  {totalAmount.toFixed(2)} MON
+                  {formatMonAmount(totalAmount)}
                 </span>
               </div>
               <p className="text-xs text-[#8A8173] dark:text-[#A8A196] leading-relaxed mb-4">
@@ -570,7 +571,7 @@ export const SplitView: React.FC = () => {
                             ? 'text-rose-600 dark:text-rose-400'
                             : 'text-[#6F6A62] dark:text-[#A8A196]'
                         }`}>
-                          {memberNet > 0 ? `+${memberNet.toFixed(2)} MON` : memberNet < 0 ? `${memberNet.toFixed(2)} MON` : '0.00 MON'}
+                          {memberNet > 0 ? `+${formatMonAmount(memberNet)}` : formatMonAmount(memberNet)}
                         </span>
                         <span className="text-[10px] text-[#8A8173] dark:text-[#A8A196]">
                           {memberNet > 0 ? (isEs ? 'Recibe' : 'Receives') : memberNet < 0 ? (isEs ? 'Debe' : 'Owes') : (isEs ? 'Al día' : 'Settled')}
@@ -625,10 +626,10 @@ export const SplitView: React.FC = () => {
 
                     <div className="text-right">
                       <span className="font-display font-black text-sm text-[#171512] dark:text-white block">
-                        {exp.amount.toFixed(2)} MON
+                        {formatMonAmount(exp.amount)}
                       </span>
                       <span className="text-[11px] text-[#B89600] dark:text-[#F0DC00] font-bold">
-                        {(exp.amount / Math.max(1, exp.splitBetweenIds.length)).toFixed(2)} MON / ea
+                        {formatMonAmount(exp.amount / Math.max(1, exp.splitBetweenIds.length))} / ea
                       </span>
                     </div>
                   </div>
@@ -666,7 +667,7 @@ export const SplitView: React.FC = () => {
                         </div>
                       </div>
                       <span className="font-display font-black text-sm text-emerald-700 dark:text-emerald-400">
-                        {st.amount.toFixed(2)} MON
+                        {formatMonAmount(st.amount)}
                       </span>
                     </div>
                   ))}
@@ -703,7 +704,7 @@ export const SplitView: React.FC = () => {
                   {t.split.drinks}
                 </span>
                 <span className="font-display font-bold text-xs sm:text-sm text-primary leading-none mb-0.5 block">
-                  {drinksTotal.toFixed(2)} MON
+                  {formatMonAmount(drinksTotal)}
                 </span>
                 <span className="text-xs font-medium text-secondary leading-none block">
                   {drinksPercent}%
@@ -721,7 +722,7 @@ export const SplitView: React.FC = () => {
                   {t.split.snacks}
                 </span>
                 <span className="font-display font-bold text-xs sm:text-sm text-primary leading-none mb-0.5 block">
-                  {snacksTotal.toFixed(2)} MON
+                  {formatMonAmount(snacksTotal)}
                 </span>
                 <span className="text-xs font-medium text-secondary leading-none block">
                   {snacksPercent}%
@@ -739,7 +740,7 @@ export const SplitView: React.FC = () => {
                   {t.split.ride}
                 </span>
                 <span className="font-display font-bold text-xs sm:text-sm text-primary leading-none mb-0.5 block">
-                  {rideTotal.toFixed(2)} MON
+                  {formatMonAmount(rideTotal)}
                 </span>
                 <span className="text-xs font-medium text-secondary leading-none block">
                   {ridePercent}%

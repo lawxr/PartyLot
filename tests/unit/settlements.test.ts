@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateNetBalances, computeDebtSettlements } from '@/services/settlements';
+import { calculateNetBalances, computeDebtSettlements, formatMonAmount } from '@/services/settlements';
 import type { Expense, Member, NetBalance } from '@/types';
 
 describe('Settlements Service', () => {
@@ -140,8 +140,8 @@ describe('Settlements Service', () => {
       });
     });
 
-    it('correctly rounds decimals to two decimal places', () => {
-      // $100 split 3 ways is $33.3333... each
+    it('conserves a non-divisible amount at four-decimal MON precision', () => {
+      // One 0.0001 MON remainder unit is assigned to the first participant.
       const expenses: Expense[] = [
         {
           id: 'e1',
@@ -159,12 +159,47 @@ describe('Settlements Service', () => {
       const balances = calculateNetBalances(expenses, mockMembers.slice(0, 3));
       const balanceMap = Object.fromEntries(balances.map((b) => [b.memberId, b.netAmount]));
 
-      // Alice: 100 - 33.3333... = 66.67
-      expect(balanceMap['u1']).toBe(66.67);
-      // Bob: -33.33
-      expect(balanceMap['u2']).toBe(-33.33);
-      // Charlie: -33.33
-      expect(balanceMap['u3']).toBe(-33.33);
+      expect(balanceMap['u1']).toBe(66.6666);
+      expect(balanceMap['u2']).toBe(-33.3333);
+      expect(balanceMap['u3']).toBe(-33.3333);
+      expect(balances.reduce((sum, balance) => sum + Math.round(balance.netAmount * 10_000), 0)).toBe(0);
+    });
+
+    it('allocates 1 MON across three participants without losing scaled units', () => {
+      const expense: Expense = {
+        id: 'e-remainder',
+        partyId: 'p1',
+        description: 'Shared item',
+        amount: 1,
+        paidById: 'u1',
+        paidByName: 'Alice',
+        paidByAvatar: 'alice.png',
+        splitBetweenIds: ['u1', 'u2', 'u3'],
+        createdAt: new Date().toISOString(),
+      };
+      const balances = calculateNetBalances([expense], mockMembers.slice(0, 3));
+      const units = balances.map((balance) => Math.round(balance.netAmount * 10_000));
+
+      expect(units).toEqual([6_666, -3_333, -3_333]);
+      expect(units.reduce((sum, value) => sum + value, 0)).toBe(0);
+    });
+
+    it('deduplicates split participants while preserving their first-seen order', () => {
+      const expense: Expense = {
+        id: 'e-duplicate',
+        partyId: 'p1',
+        description: 'Shared item',
+        amount: 1,
+        paidById: 'u1',
+        paidByName: 'Alice',
+        paidByAvatar: 'alice.png',
+        splitBetweenIds: ['u1', 'u2', 'u2'],
+        createdAt: new Date().toISOString(),
+      };
+      const balances = calculateNetBalances([expense], mockMembers.slice(0, 2));
+
+      expect(balances.map((balance) => balance.netAmount)).toEqual([0.5, -0.5]);
+      expect(balances.reduce((sum, balance) => sum + Math.round(balance.netAmount * 10_000), 0)).toBe(0);
     });
   });
 
@@ -233,14 +268,16 @@ describe('Settlements Service', () => {
       expect(paid['u4']).toBe(40);
     });
 
-    it('ignores amounts within dust tolerance (< 0.01)', () => {
+    it('settles the smallest supported MON unit without looping or dropping it', () => {
       const netBalances: NetBalance[] = [
-        { memberId: 'u1', memberName: 'Alice', avatar: 'alice.png', netAmount: 0.004 },
-        { memberId: 'u2', memberName: 'Bob', avatar: 'bob.png', netAmount: -0.004 },
+        { memberId: 'u1', memberName: 'Alice', avatar: 'alice.png', netAmount: 0.0001 },
+        { memberId: 'u2', memberName: 'Bob', avatar: 'bob.png', netAmount: -0.0001 },
       ];
 
       const settlements = computeDebtSettlements(netBalances, mockMembers);
-      expect(settlements).toHaveLength(0);
+      expect(settlements).toHaveLength(1);
+      expect(settlements[0].amount).toBe(0.0001);
+      expect(Math.round(settlements[0].amount * 10_000)).toBe(1);
     });
 
     it('falls back gracefully when member info is missing in member map', () => {
@@ -254,6 +291,13 @@ describe('Settlements Service', () => {
       expect(settlements[0].fromName).toBe('Guest');
       expect(settlements[0].toName).toBe('Guest');
       expect(settlements[0].amount).toBe(15);
+    });
+  });
+
+  describe('formatMonAmount', () => {
+    it('keeps four-decimal values visible while retaining two decimal places for whole amounts', () => {
+      expect(formatMonAmount(0.0001)).toBe('0.0001 MON');
+      expect(formatMonAmount(1)).toBe('1.00 MON');
     });
   });
 });

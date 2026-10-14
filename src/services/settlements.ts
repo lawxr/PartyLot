@@ -5,4 +5,5 @@
 export {
   calculateNetBalances,
   computeDebtSettlements,
+  formatMonAmount,
 } from '@/features/expenses';

@@ -25,7 +25,7 @@ Ship honest expense accounting and voluntary event funding in native MON on Mona
 ## Tasks and acceptance
 
 - [x] **MON-01 — Verify and durably record real deposits.** Derive party, sender and amount from confirmed treasury deposit events, not client amounts. Make receipt identity and balance updates atomic/idempotent; surface persistence failures without encouraging a second wallet transfer. Route: delegated. Check wrong event/party/contract, replay, concurrency and database failure paths. Reconcile existing onchain deposits without inventing balances.
-- [x] **MON-02 — Make the MON debt ledger reliable.** Explicit denomination and precision, conserved allocations, historical participant preservation, and durable receipt-backed settlement records. Persist actual shares or remove unsupported custom-weight controls. No optimistic success after a failed save and no repeated payment caused by lost synchronization. Route: delegated. Check rounding, removed participants, partial confirmations, reload and replay.
+- [ ] **MON-02 — Make the MON debt ledger reliable (reopened).** Explicit denomination and precision, conserved allocations, historical participant preservation, and durable receipt-backed settlement records. Persist actual shares or remove unsupported custom-weight controls. No optimistic success after a failed save and no repeated payment caused by lost synchronization. Route: delegated. Check rounding, removed participants, partial confirmations, reload and replay. The Split repair below supersedes the earlier completion claim for this task.
 - [x] **MON-03 — Add voluntary Pot configuration end to end.** Additive schema, types, authenticated organizer editing, hydration, message, goal and confirmed-contribution progress. Non-contributors retain attendance access. No individual spendable Pot balance or automatic debt offset. Route: delegated. Check host authorization, validation, reload, zero/achieved goals and failed saves.
 - [x] **MON-04 — Unify money surfaces and remove simulated financial behavior.** Use MON Testnet consistently; remove USDC selection, dollar conversions, invented quotes and fabricated confirmations from active money paths. Clearly separate Pot funding from split liabilities. Preserve existing UI identity. Route: delegated. Inventory remaining mocked active financial paths and disclose any unavailable integrations rather than claim them real.
 - [x] **MON-05 — Prepare the scoped test-data reset and validate the release candidate.** Prepare an explicit, reviewed financial-only reset/migration with documented ordering, backup expectations and reconciliation of existing chain state. Do not execute remotely. Run functional, type, lint and build checks; report unavailable live verification and deployment separately. Route: delegated.
@@ -81,4 +81,35 @@ Ship honest expense accounting and voluntary event funding in native MON on Mona
 
 ## Next step
 
-All implementation tasks MON-01 through MON-05 are completed and locally verified. Ready to present full verification report to user.
+Complete the authorized Split repair below before claiming MON-02 is complete. Earlier progress records are historical reports, not current proof of these acceptance criteria.
+
+## Split repair — current execution
+
+User authorized fixing Split and confirmed the proposed TDD-first, integration-branch-chain plan. The current baseline is clean `main` at `7c7aa07`; the old branch, dirty-worktree and unresolved-policy entries above describe the earlier implementation only. The Engram mirror lagged behind the committed task file; preserve the file's history while correcting its unsupported MON-02 completion claim.
+
+- Scope: explicit payer selection; save failure feedback without losing the draft; conserved four-decimal MON splits; visible payment entry for the user's own debts; fail-closed settlement identity; honest onchain-confirmed/ledger-unsynced feedback. Relabel the unsupported Custom tab as Balances, retaining equal splits.
+- Excludes: unequal-share product design, Pot changes, data reset, remote migration execution, deployment, credentials, real payments, pushes and PR creation.
+- TDD: **on**, explicitly approved in the parent conversation (`arreglalo si`) after the TDD-first proposal. Require observed RED → GREEN → REFACTOR. Runner: `./node_modules/.bin/vitest run`.
+- Route: delegated direct for each unit; each spans multiple non-trivial files and requires implementation research. Parent performs structural readback and a spot check; writer runs the checks below.
+- Delivery: `auto-chain`, `feature-branch-chain`, approved as the proposed three linked changes on a local integration branch. Tracker: `fix/split-reliability`; children: `fix/split-01-precision`, `fix/split-02-expense-save`, `fix/split-03-payment`. Each child targets its immediate parent; no remote PR is authorized.
+- Forecast: 500–760 authored changed lines plus this reconciliation. Slice estimates: 180–280, 160–240, 160–240. Keep tests/docs with behavior; do not compress or omit them for a line budget.
+- Initial review boundary: `7c7aa07`. RDD on by default; candidate consent remains separate. No native candidate review or approval yet.
+
+### Repair checklist
+
+- [ ] **SPLIT-01 — Conserve MON precision.** Use deterministic integer allocations at four decimal places, including remainder and small debts; keep ledger displays and additive expense-column migration consistent. Check non-divisible amounts, settlement convergence, historical participants and minimum units. Rollback boundary: precision helpers/calculation, related displays, migration and tests only. Route: delegated.
+- [ ] **SPLIT-02 — Require payer and durable expense save.** Start without a payer; require a valid intentional selection and at least one participant. Await save, retain draft on failure, show useful feedback and prevent duplicate submission. Rename Custom to Balances. Rollback boundary: expense input/store persistence flow, relevant copy and regression tests. Route: delegated.
+- [ ] **SPLIT-03 — Restore safe payment access.** Use consistent identity matching in UI and store; never default to everyone else's debts. Show a reachable action or explanation when the user owes. Distinguish chain confirmation from failed ledger synchronization without suggesting repayment. Rollback boundary: debt ownership/filtering, settlement result feedback and regression tests. Route: delegated.
+
+### Repair checks and evidence
+
+- Focused regression suites: `./node_modules/.bin/vitest run tests/unit/settlements.test.ts tests/unit/mon-debt-ledger.test.ts src/features/expenses/__tests__/expenses.test.ts tests/unit/multi-settlement-batch.test.ts tests/unit/financial-fail-closed.test.ts`, plus new focused tests per unit.
+- Typecheck: `./node_modules/.bin/tsc --noEmit --incremental false`; lint changed paths with `./node_modules/.bin/eslint`; whitespace: `git diff --check`.
+- Closure: full `./node_modules/.bin/vitest run`, `pnpm build`, and local mocked browser interaction if available. Never contact remote wallets or databases for verification.
+- Baseline audit: 2 focused suites / 15 tests passed but failed to assert balance conservation. This does not prove browser or remote behavior.
+- **SPLIT-01 implementation:** Added deterministic 0.0001 MON integer-unit allocation, participant deduplication with first-seen order, historical-member dust retention, convergent integer-unit settlements, and 2–4 decimal MON formatting throughout Split View. Added an additive `expenses.amount` precision migration (`numeric(14,4)`, preserving the original 10-digit integer range). The migration was not applied.
+- **SPLIT-01 RED:** `./node_modules/.bin/vitest run tests/unit/settlements.test.ts tests/unit/mon-debt-ledger.test.ts` failed as expected before production edits: 2 files, 6 failed / 12 passed. Failures reproduced cent rounding, duplicate participant over-allocation, dropped minimum-unit settlement, and missing precision formatting.
+- **SPLIT-01 GREEN:** Same focused command passed after implementation: 2 files, 19 tests passed. Final required focused regression command passed: 5 files, 35 tests passed. TypeScript, changed-path ESLint and `git diff --check` passed. Impeccable detector returned `[]` for `SplitView.tsx`.
+- **SPLIT-01 boundaries:** No browser harness or remote wallet/database was exercised; the SQL migration remains unapplied. Rollback scope is `src/features/expenses/services/settlements.ts`, `src/services/settlements.ts`, `src/components/views/SplitView.tsx`, `supabase/migrations/20261013_expense_amount_precision.sql`, and the two settlement test files. No commit or native review has been run; SPLIT-01 remains unchecked until its work-unit commit is recorded.
+- SPLIT-01 authored implementation count: 299 changed lines (additions plus deletions; migration included, generated files excluded). This is above the initial slice estimate but within the 400-line review budget; no tests or code were compressed to reduce it.
+- Next: parent records the SPLIT-01 work-unit commit and then dispatches SPLIT-02 on its child branch.

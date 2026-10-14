@@ -57,6 +57,27 @@ describe('MON-02 — Reliable MON Debt Ledger', () => {
       expect(settlements[0].amount).toBe(20);
     });
 
+    it('retains a removed participant who owes only one 0.0001 MON unit', () => {
+      const expense: Expense = {
+        id: 'e-former-member-dust',
+        partyId: 'p1',
+        description: 'Small shared expense',
+        amount: 0.0001,
+        paidById: 'u1',
+        paidByName: 'Alice',
+        paidByAvatar: 'alice.png',
+        splitBetweenIds: ['u3', 'u1'],
+        createdAt: new Date().toISOString(),
+      };
+
+      const balances = calculateNetBalances([expense], currentMembers);
+      expect(balances.find((balance) => balance.memberId === 'u3')).toMatchObject({
+        memberName: 'Former Member',
+        netAmount: -0.0001,
+      });
+      expect(balances.reduce((sum, balance) => sum + Math.round(balance.netAmount * 10_000), 0)).toBe(0);
+    });
+
     it('conserves allocations and settles correctly with fractional MON precision', () => {
       // 10 MON split equally between 3 people (3.3333... each)
       const expenses: Expense[] = [
@@ -77,10 +98,10 @@ describe('MON-02 — Reliable MON Debt Ledger', () => {
       const allMembers = [alice, bob, charlie];
       const balances = calculateNetBalances(expenses, allMembers);
 
-      // Creditor gets paid back; debtor debts sum to total debt
+      // Creditor gets paid back; debtor debts sum to total debt in 0.0001 MON units.
       const settlements = computeDebtSettlements(balances, allMembers);
       const totalSettled = settlements.reduce((acc, s) => acc + s.amount, 0);
-      expect(totalSettled).toBeCloseTo(6.67, 1);
+      expect(Math.round(totalSettled * 10_000)).toBe(66_666);
     });
   });
 
